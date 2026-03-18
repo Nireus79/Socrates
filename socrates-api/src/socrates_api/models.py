@@ -936,3 +936,195 @@ class BulkImportData(BaseModel):
     imported_count: int = Field(..., description="Number of documents imported")
     failed_count: int = Field(default=0, description="Number of failed imports")
     details: List[Dict[str, Any]] = Field(..., description="Import details")
+
+
+# ============================================================================
+# Phase 4: Skills Ecosystem Models
+# ============================================================================
+
+
+# ---- Marketplace Models ----
+
+
+class RegisterSkillRequest(BaseModel):
+    """Request to register a skill in the marketplace"""
+
+    skill_id: str = Field(..., description="Unique skill identifier")
+    name: str = Field(..., description="Skill name")
+    type: str = Field(..., description="Skill type/category")
+    effectiveness: float = Field(..., description="Skill effectiveness (0.0-1.0)", ge=0.0, le=1.0)
+    agent: str = Field(..., description="Agent that created the skill")
+    tags: Optional[List[str]] = Field(default=None, description="Skill tags")
+    description: Optional[str] = Field(default=None, description="Skill description")
+
+
+class DiscoverSkillsRequest(BaseModel):
+    """Request to discover skills in the marketplace"""
+
+    skill_type: Optional[str] = Field(default=None, description="Filter by skill type")
+    min_effectiveness: float = Field(default=0.0, description="Minimum effectiveness filter")
+    min_usage: int = Field(default=0, description="Minimum usage count filter")
+    tags: Optional[List[str]] = Field(default=None, description="Filter by tags")
+    max_results: int = Field(default=10, description="Maximum results to return")
+
+
+class SearchSkillsRequest(BaseModel):
+    """Request to search skills by text"""
+
+    query: str = Field(..., description="Search query")
+    max_results: int = Field(default=10, description="Maximum results to return")
+
+
+class SkillMetadataResponse(BaseModel):
+    """Skill metadata response"""
+
+    skill_id: str = Field(..., description="Skill identifier")
+    name: str = Field(..., description="Skill name")
+    type: str = Field(..., description="Skill type")
+    effectiveness: float = Field(..., description="Skill effectiveness")
+    agent: str = Field(..., description="Creating agent")
+    usage_count: int = Field(default=0, description="Number of times used")
+    tags: List[str] = Field(default_factory=list, description="Skill tags")
+    adoption_stats: Optional[Dict[str, Any]] = Field(default=None, description="Adoption statistics")
+
+
+class MarketplaceStatsResponse(BaseModel):
+    """Marketplace statistics response"""
+
+    total_skills: int = Field(..., description="Total skills in marketplace")
+    total_types: int = Field(..., description="Number of skill types")
+    average_effectiveness: float = Field(..., description="Average skill effectiveness")
+    most_adopted: Optional[List[str]] = Field(default=None, description="Most adopted skills")
+
+
+# ---- Distribution Models ----
+
+
+class DistributeSkillRequest(BaseModel):
+    """Request to distribute a skill to an agent"""
+
+    source_skill_id: str = Field(..., description="Source skill ID")
+    source_agent: str = Field(..., description="Source agent")
+    target_agent: str = Field(..., description="Target agent to receive skill")
+    skill_data: Dict[str, Any] = Field(..., description="Skill data")
+
+
+class BroadcastSkillRequest(BaseModel):
+    """Request to broadcast skill to multiple agents"""
+
+    source_skill_id: str = Field(..., description="Source skill ID")
+    source_agent: str = Field(..., description="Source agent")
+    target_agents: List[str] = Field(..., description="Target agents")
+    skill_data: Dict[str, Any] = Field(..., description="Skill data")
+
+
+class RecordAdoptionRequest(BaseModel):
+    """Request to record skill adoption result"""
+
+    source_skill_id: str = Field(..., description="Source skill ID")
+    target_agent: str = Field(..., description="Agent adopting skill")
+    effectiveness: float = Field(..., description="Adoption effectiveness", ge=0.0, le=1.0)
+    success: bool = Field(default=True, description="Whether adoption was successful")
+
+
+class AdoptionStatusResponse(BaseModel):
+    """Adoption status response"""
+
+    skill_id: str = Field(..., description="Skill ID")
+    adoption_count: int = Field(..., description="Number of adoptions")
+    adoption_rate: float = Field(..., description="Adoption rate (0-1)")
+    adoptions: List[Dict[str, Any]] = Field(..., description="Adoption details")
+
+
+class DistributionMetricsResponse(BaseModel):
+    """Distribution metrics response"""
+
+    total_distributions: int = Field(..., description="Total distributions")
+    total_adoptions: int = Field(..., description="Total adoptions")
+    adoption_rate: float = Field(..., description="Overall adoption rate")
+
+
+# ---- Composition Models ----
+
+
+class CreateCompositionRequest(BaseModel):
+    """Request to create a skill composition"""
+
+    composition_id: str = Field(..., description="Unique composition ID")
+    name: str = Field(..., description="Composition name")
+    skills: List[str] = Field(..., description="List of skill IDs in order")
+    execution_type: str = Field(default="sequential", description="Execution type: sequential, parallel, or conditional")
+
+
+class ExecuteCompositionRequest(BaseModel):
+    """Request to execute a composition"""
+
+    composition_id: str = Field(..., description="Composition to execute")
+    initial_context: Dict[str, Any] = Field(..., description="Initial execution context")
+
+
+class AddParameterMappingRequest(BaseModel):
+    """Request to add parameter mapping"""
+
+    composition_id: str = Field(..., description="Composition ID")
+    from_skill_index: int = Field(..., description="Source skill index")
+    from_param: str = Field(..., description="Source parameter name")
+    to_skill_index: int = Field(..., description="Target skill index")
+    to_param: str = Field(..., description="Target parameter name")
+
+
+class CompositionResponse(BaseModel):
+    """Composition response"""
+
+    composition_id: str = Field(..., description="Composition ID")
+    name: str = Field(..., description="Composition name")
+    skills: List[str] = Field(..., description="Skills in composition")
+    execution_type: str = Field(..., description="Execution type")
+    created_at: Optional[str] = Field(default=None, description="Creation timestamp")
+
+
+class ExecutionResultResponse(BaseModel):
+    """Composition execution result"""
+
+    status: str = Field(..., description="Execution status")
+    results: Dict[str, Any] = Field(..., description="Execution results")
+    execution_id: Optional[str] = Field(default=None, description="Execution ID")
+    duration: Optional[float] = Field(default=None, description="Duration in milliseconds")
+
+
+# ---- Analytics Models ----
+
+
+class TrackMetricRequest(BaseModel):
+    """Request to track a skill metric"""
+
+    skill_id: str = Field(..., description="Skill ID")
+    agent_name: str = Field(..., description="Agent name")
+    metric_name: str = Field(..., description="Metric name")
+    metric_value: float = Field(..., description="Metric value")
+
+
+class PerformanceAnalysisResponse(BaseModel):
+    """Performance analysis response"""
+
+    skill_id: str = Field(..., description="Skill ID")
+    agents_using: int = Field(..., description="Number of agents using skill")
+    metric_summaries: Dict[str, Any] = Field(..., description="Metric statistics")
+    performance_score: float = Field(..., description="Overall performance score")
+
+
+class HighPerformerResponse(BaseModel):
+    """High performer skill response"""
+
+    skill_id: str = Field(..., description="Skill ID")
+    effectiveness: float = Field(..., description="Effectiveness score")
+    adoption: int = Field(..., description="Adoption count")
+
+
+class EcosystemHealthResponse(BaseModel):
+    """Ecosystem health response"""
+
+    total_skills: int = Field(..., description="Total skills in ecosystem")
+    total_agents: int = Field(..., description="Total agents")
+    average_effectiveness: float = Field(..., description="Average effectiveness")
+    ecosystem_health: str = Field(..., description="Health status: excellent, good, fair, poor, no_data")

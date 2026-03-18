@@ -1,0 +1,2055 @@
+"""
+Socratic counselor agent for guided questioning and response processing
+"""
+
+import datetime
+import logging
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+from colorama import Fore
+
+from socratic_system.agents.document_context_analyzer import DocumentContextAnalyzer
+from socratic_system.events import EventType
+from socratic_system.models import ROLE_FOCUS_AREAS, ConflictInfo, ProjectContext
+from socratic_system.services import DocumentUnderstandingService
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
+
+from .base import Agent
+
+if TYPE_CHECKING:
+    from socratic_system.models.workflow import WorkflowDefinition, WorkflowExecutionState
+    from socratic_system.orchestration import AgentOrchestrator
+
+
+class SocraticCounselorAgent(Agent):
+    """Core agent that guides users through Socratic questioning about their project"""
+
+    def __init__(self, orchestrator: "AgentOrchestrator") -> None:
+        super().__init__("SocraticCounselor", orchestrator)
+        self.use_dynamic_questions = True  # Toggle for dynamic vs static questions
+        self.max_questions_per_phase = 5
+        self.phase_docs_cache = {}  # Cache document context per phase to reduce vector DB calls
+        self.database = orchestrator.database  # Database for persisting changes
+
+        # Fallback static questions if Claude is unavailable
+        self.static_questions = {
+            "discovery": [
+                "What specific problem does your project solve?",
+                "Who is your target audience or user base?",
+                "What are the core features you envision?",
+                "Are there similar solutions that exist? How will yours differ?",
+                "What are your success criteria for this project?",
+            ],
+            "analysis": [
+                "What technical challenges do you anticipate?",
+                "What are your performance requirements?",
+                "How will you handle user authentication and security?",
+                "What third-party integrations might you need?",
+                "How will you test and validate your solution?",
+            ],
+            "design": [
+                "How will you structure your application architecture?",
+                "What design patterns will you use?",
+                "How will you organize your code and modules?",
+                "What development workflow will you follow?",
+                "How will you handle error cases and edge scenarios?",
+            ],
+            "implementation": [
+                "What will be your first implementation milestone?",
+                "How will you handle deployment and DevOps?",
+                "What monitoring and logging will you implement?",
+                "How will you document your code and API?",
+                "What's your plan for maintenance and updates?",
+            ],
+        }
+
+    def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process Socratic questioning requests"""
+        action = request.get("action")
+
+        if action == "generate_question":
+            return self._generate_question(request)
+        elif action == "process_response":
+            return self._process_response(request)
+        elif action == "extract_insights_only":
+            return self._extract_insights_only(request)
+        elif action == "advance_phase":
+            return self._advance_phase(request)
+        elif action == "rollback_phase":
+            return self._rollback_phase(request)
+        elif action == "explain_document":
+            return self._explain_document(request)
+        elif action == "generate_hint":
+            return self._generate_hint(request)
+        elif action == "toggle_dynamic_questions":
+            self.use_dynamic_questions = not self.use_dynamic_questions
+            return {"status": "success", "dynamic_mode": self.use_dynamic_questions}
+        elif action == "answer_question":
+            return self._answer_question(request)
+        elif action == "skip_question":
+            return self._skip_question(request)
+        elif action == "reopen_question":
+            return self._reopen_question(request)
+        elif action == "generate_answer_suggestions":
+            return self._generate_answer_suggestions(request)
+
+        return {"status": "error", "message": "Unknown action"}
+
+    def _generate_question(self, request: Dict) -> Dict:
+        """Generate the next Socratic question with usage tracking and workflow optimization"""
+        project = request.get("project")
+        current_user = request.get("current_user")  # NEW: Accept current user for role context
+        force_refresh = request.get("force_refresh", False)  # Force generation of new question after conflict resolution
+
+        # Validate that project exists
+        if not project:
+            return {
+                "status": "error",
+                "message": "Project context is required to generate questions",
+            }
+
+        import datetime
+
+        # Check if workflow optimization is enabled for this project
+        if self._should_use_workflow_optimization(project):
+            return self._generate_question_with_workflow(project, current_user)
+
+        # HYBRID APPROACH: Check for existing unanswered question before generating new one
+        # This prevents double question generation (unless force_refresh is set)
+        if not force_refresh and project.pending_questions:
+            unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
+            if unanswered:
+                # Return the first unanswered question instead of generating new
+                return {
+                    "status": "success",
+                    "question": unanswered[0].get("question"),
+                    "existing": True,
+                }
+
+        context = self.orchestrator.context_analyzer.get_context_summary(project)
+
+        # NEW: Check question limit
+        from socratic_system.subscription.checker import SubscriptionChecker
+
+        # Get or create user (auto-create for CLI/local users)
+        user = self.orchestrator.database.load_user(current_user)
+        if user is None:
+            # Auto-create user with pro tier for local/CLI use
+            from socratic_system.models.user import User
+
+            user = User(
+                username=current_user,
+                email=f"{current_user}@localhost",
+                passcode_hash="",
+                created_at=datetime.datetime.now(),
+                projects=[],
+                subscription_tier="pro",  # Unlimited for local use
+            )
+            self.orchestrator.database.save_user(user)
+            logging.debug(f"Auto-created user: {current_user}")
+
+        can_ask, error_message = SubscriptionChecker.check_question_limit(user)
+        if not can_ask:
+            return {
+                "status": "error",
+                "message": error_message,
+            }
+
+        # Count questions already asked in this phase
+        phase_questions = [
+            msg
+            for msg in project.conversation_history
+            if msg.get("type") == "assistant" and msg.get("phase") == project.phase
+        ]
+
+        if self.use_dynamic_questions:
+            question = self._generate_dynamic_question(
+                project, context, len(phase_questions), current_user
+            )
+        else:
+            question = self._generate_static_question(project, len(phase_questions))
+
+        # Store the question in conversation history
+        project.conversation_history.append(
+            {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "type": "assistant",
+                "content": question,
+                "phase": project.phase,
+                "question_number": len(phase_questions) + 1,
+            }
+        )
+
+        # HYBRID APPROACH: Also store in pending_questions for unified tracking
+        import uuid
+
+        project.pending_questions.append(
+            {
+                "id": f"q_{uuid.uuid4().hex[:8]}",
+                "question": question,
+                "phase": project.phase,
+                "status": "unanswered",
+                "created_at": datetime.datetime.now().isoformat(),
+                "answer": None,
+                "skipped_at": None,
+                "answered_at": None,
+            }
+        )
+
+        # NEW: Increment usage counter
+        user.increment_question_usage()
+        self.orchestrator.database.save_user(user)
+
+        # Save project with new question added to conversation history and pending questions
+        self.database.save_project(project)
+
+        return {"status": "success", "question": question}
+
+    def _generate_dynamic_question(
+        self, project: ProjectContext, context: str, question_count: int, current_user: str = None
+    ) -> str:
+        """Generate contextual questions using Claude with role-aware context"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        # Get conversation history for context
+        recent_conversation = ""
+        previously_asked_questions = []
+        if project.conversation_history:
+            recent_messages = project.conversation_history[-4:]  # Last 4 messages
+            for msg in recent_messages:
+                role = "Assistant" if msg["type"] == "assistant" else "User"
+                recent_conversation += f"{role}: {msg['content']}\n"
+            logger.debug(f"Using {len(recent_messages)} recent messages for context")
+
+            # Extract ALL previously asked questions in this phase to avoid repeats
+            for msg in project.conversation_history:
+                if msg.get("type") == "assistant" and msg.get("phase") == project.phase:
+                    previously_asked_questions.append(msg.get("content", ""))
+            logger.debug(
+                f"Found {len(previously_asked_questions)} previously asked questions in {project.phase} phase"
+            )
+
+        # Get relevant knowledge from vector database with adaptive loading strategy
+        # OPTIMIZATION: Cache document results per phase to reduce vector DB calls
+        relevant_knowledge = ""
+        knowledge_results = []
+        doc_understanding = None
+        strategy = "snippet"  # Default strategy
+        if context:
+            logger.debug("Analyzing question context for adaptive document loading...")
+
+            # Check if we have cached results for this phase
+            phase_key = f"{project.project_id}:{project.phase}"
+            if phase_key in self.phase_docs_cache:
+                logger.debug(f"Using cached document results for {project.phase} phase")
+                cache_data = self.phase_docs_cache[phase_key]
+                knowledge_results = cache_data.get("results", [])
+                strategy = cache_data.get("strategy", "snippet")
+            else:
+                # Use DocumentContextAnalyzer to determine loading strategy
+                doc_analyzer = DocumentContextAnalyzer()
+
+                # Convert project context to dict format for analyzer
+                project_context_dict = {
+                    "current_phase": project.phase,
+                    "goals": project.goals or "",
+                }
+
+                # Determine loading strategy based on conversation context
+                strategy = doc_analyzer.analyze_question_context(
+                    project_context=project_context_dict,
+                    conversation_history=project.conversation_history,
+                    question_count=question_count,
+                )
+
+                logger.debug(f"Using '{strategy}' document loading strategy")
+
+                # Get top_k based on strategy
+                top_k = 5 if strategy == "full" else 3
+
+                # Use adaptive search
+                logger.info(
+                    f"[KNOWLEDGE DEBUG] Searching for documents in project {project.project_id}"
+                )
+                context_preview = context[:100] if context else 'EMPTY'
+                logger.info(
+                    f"[KNOWLEDGE DEBUG] Query context: {context_preview}..."
+                )
+                logger.info(f"[KNOWLEDGE DEBUG] Strategy: {strategy}, top_k: {top_k}")
+
+                knowledge_results = self.orchestrator.vector_db.search_similar_adaptive(
+                    query=context, strategy=strategy, top_k=top_k, project_id=project.project_id
+                )
+
+                logger.info(
+                    f"[KNOWLEDGE DEBUG] Search returned {len(knowledge_results) if knowledge_results else 0} results"
+                )
+                if knowledge_results:
+                    logger.info(
+                        f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context"
+                    )
+                    for i, result in enumerate(knowledge_results[:3]):
+                        logger.info(
+                            f"[KNOWLEDGE DEBUG] Result {i+1}: source={result.get('metadata', {}).get('source', 'unknown')}, score={result.get('score', 'N/A')}"
+                        )
+
+                # Cache the results for this phase
+                self.phase_docs_cache[phase_key] = {
+                    "results": knowledge_results,
+                    "strategy": strategy,
+                }
+                logger.debug(f"Cached document results for {project.phase} phase")
+
+            if knowledge_results:
+                logger.info(
+                    f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context"
+                )
+                # Build knowledge context based on strategy
+                if strategy == "full":
+                    relevant_knowledge = self._build_full_knowledge_context(knowledge_results)
+                else:
+                    relevant_knowledge = self._build_snippet_knowledge_context(knowledge_results)
+
+                # Generate document understanding if we have document results
+                doc_understanding = self._generate_document_understanding(
+                    knowledge_results, project
+                )
+
+                logger.debug(
+                    f"Found {len(knowledge_results)} relevant knowledge items with strategy '{strategy}'"
+                )
+
+        logger.debug(
+            f"Building question prompt for {project.phase} phase (question #{question_count + 1})"
+        )
+        prompt = self._build_question_prompt(
+            project,
+            context,
+            recent_conversation,
+            relevant_knowledge,
+            question_count,
+            current_user,
+            knowledge_results=knowledge_results if knowledge_results else [],
+            doc_understanding=doc_understanding if "doc_understanding" in locals() else None,
+            previously_asked_questions=previously_asked_questions,
+        )
+
+        try:
+            logger.info(f"Generating dynamic question for {project.phase} phase")
+
+            # Get user's auth method for API calls
+            user_auth_method = "api_key"  # default
+            if current_user:
+                user = self.orchestrator.database.load_user(current_user)
+                if user and hasattr(user, "claude_auth_method"):
+                    user_auth_method = user.claude_auth_method or "api_key"
+                    logger.debug(f"Using auth method '{user_auth_method}' for user {current_user}")
+
+            # Generate cache key based on project context to avoid redundant Claude calls
+            # Cache key includes project ID, phase, and question number to ensure variety
+            cache_key = f"{project.project_id}:{project.phase}:{question_count}"
+
+            question = self.orchestrator.claude_client.generate_socratic_question(
+                prompt, cache_key=cache_key, user_auth_method=user_auth_method, user_id=current_user
+            )
+            logger.debug(f"Question generated successfully: {question[:100]}...")
+            self.log(f"Generated dynamic question for {project.phase} phase")
+            return question
+        except Exception as e:
+            logger.warning(f"Failed to generate dynamic question: {e}, falling back to static")
+            self.log(f"Failed to generate dynamic question: {e}, falling back to static", "WARN")
+            return self._generate_static_question(project, question_count)
+
+    def _build_question_prompt(
+        self,
+        project: ProjectContext,
+        context: str,
+        recent_conversation: str,
+        relevant_knowledge: str,
+        question_count: int,
+        current_user: str = None,
+        knowledge_results: List[Dict] = None,
+        doc_understanding: Optional[Dict[str, Any]] = None,
+        previously_asked_questions: List[str] = None,
+    ) -> str:
+        """Build prompt for dynamic question generation with role-aware context"""
+        if knowledge_results is None:
+            knowledge_results = []
+        if doc_understanding is None:
+            doc_understanding = {}
+        if previously_asked_questions is None:
+            previously_asked_questions = []
+
+        phase_descriptions = {
+            "discovery": "exploring the problem space, understanding user needs, and defining project goals",
+            "analysis": "analyzing technical requirements, identifying challenges, and planning solutions",
+            "design": "designing architecture, choosing patterns, and planning implementation structure",
+            "implementation": "planning development steps, deployment strategy, and maintenance approach",
+        }
+
+        phase_focus = {
+            "discovery": "problem definition, user needs, market research, competitive analysis",
+            "analysis": "technical feasibility, performance requirements, security considerations, integrations",
+            "design": "architecture patterns, code organization, development workflow, error handling",
+            "implementation": "development milestones, deployment pipeline, monitoring, documentation",
+        }
+
+        # NEW: Get role-aware context if user is provided
+        role_context = ""
+        if current_user:
+            user_role = project.get_member_role(current_user) or "lead"
+            role_focus = ROLE_FOCUS_AREAS.get(user_role, "general project aspects")
+            is_solo = project.is_solo_project()
+
+            if not is_solo:
+                role_context = f"""
+
+User Role Context:
+- Current User: {current_user}
+- Role: {user_role.upper()}
+- Role Focus Areas: {role_focus}
+
+As a {user_role}, this person should focus on: {role_focus}
+Tailor your question to their role and expertise. For example:
+- For 'lead': Ask about vision, strategy, goals, and resource allocation
+- For 'creator': Ask about implementation details, execution, and deliverables
+- For 'specialist': Ask about technical/domain depth, best practices, quality standards
+- For 'analyst': Ask about research, requirements, validation, and critical assessment
+- For 'coordinator': Ask about timelines, dependencies, process management, and coordination"""
+
+        # NEW: Check if documents include code files
+        code_context = ""
+        has_code = any(
+            result.get("metadata", {}).get("type") == "code"
+            or "code_structure" in str(result.get("metadata", {})).lower()
+            for result in knowledge_results
+        )
+
+        if has_code:
+            code_context = """
+
+Code Analysis Context:
+Since the knowledge base includes code or code structure, consider these code-specific questions:
+- Ask about design patterns and architectural choices in the code
+- Explore separation of concerns and code organization
+- Discuss error handling and edge cases
+- Question the trade-offs in implementation decisions
+- Ask about testability, maintainability, and extensibility
+- Explore dependencies and external library choices"""
+
+        # Document understanding context
+        doc_context = ""
+        if doc_understanding and doc_understanding.get("alignment"):
+            alignment = doc_understanding.get("alignment", "")
+            gaps = doc_understanding.get("gaps", [])
+            opportunities = doc_understanding.get("opportunities", [])
+            match_score = doc_understanding.get("match_score", 0.0)
+
+            doc_context = f"""
+
+Document Understanding:
+Goal Alignment: {alignment}
+Match Score: {int(match_score * 100)}%
+Identified Gaps: {', '.join(gaps[:2]) if gaps else 'None identified'}
+Opportunities: {', '.join(opportunities[:2]) if opportunities else 'Explore documents further'}"""
+
+        # Build section listing previously asked questions to avoid repetition
+        previous_questions_section = ""
+        if previously_asked_questions:
+            previous_questions_section = (
+                "\nPreviously Asked Questions in This Phase (DO NOT REPEAT THESE):"
+            )
+            for i, q in enumerate(
+                previously_asked_questions[-5:], 1
+            ):  # Show last 5 to avoid overwhelming
+                # Truncate long questions for readability
+                q_text = q[:120] + "..." if len(q) > 120 else q
+                previous_questions_section += f"\n{i}. {q_text}"
+
+        return f"""You are a Socratic tutor helping guide someone through their {project.project_type} project.
+
+Project Details:
+- Name: {project.name}
+- Type: {project.project_type.upper() if project.project_type else 'software'}
+- Current Phase: {project.phase} ({phase_descriptions.get(project.phase, '')})
+- Goals: {project.goals}
+- Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
+- Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
+
+Project Context:
+{context}{role_context}{code_context}{doc_context}
+
+Recent Conversation:
+{recent_conversation}
+
+Relevant Knowledge:
+{relevant_knowledge}{previous_questions_section}
+
+This is question #{question_count + 1} in the {project.phase} phase. Focus on: {phase_focus.get(project.phase, '')}.
+
+Generate ONE insightful Socratic question that:
+1. Builds on what we've discussed so far
+2. Helps the user think deeper about their {project.project_type} project
+3. Is specific to the {project.phase} phase
+4. Encourages critical thinking rather than just information gathering
+5. Is relevant to their stated goals and expertise
+6. Is appropriate for a {project.project_type} project (not just software-specific)
+7. MUST be different from the previously asked questions listed above - do not repeat or rephrase existing questions
+
+The question should be thought-provoking but not overwhelming. Make it conversational and engaging.
+Push the conversation forward by exploring new aspects not yet discussed.
+
+Return only the question, no additional text or explanation."""
+
+    def _generate_static_question(self, project: ProjectContext, question_count: int) -> str:
+        """Generate questions from static predefined lists"""
+        questions = self.static_questions.get(project.phase, [])
+
+        if question_count < len(questions):
+            return questions[question_count]
+        else:
+            # Extended fallback questions when we've exhausted the static list
+            # Use rotation to vary responses instead of repeating the same question
+            fallback_questions = {
+                "discovery": [
+                    "What other aspects of the problem space should we explore?",
+                    "Are there any assumptions we should validate further?",
+                    "What patterns or trends do you see in the market?",
+                    "How might your users' needs evolve over time?",
+                    "What would make your solution stand out?",
+                ],
+                "analysis": [
+                    "What technical considerations haven't we discussed yet?",
+                    "Are there any performance or scalability concerns we haven't addressed?",
+                    "What dependencies or third-party tools will be critical?",
+                    "How will you handle edge cases and error scenarios?",
+                    "What are the key technical risks we should mitigate?",
+                ],
+                "design": [
+                    "What design decisions are you still uncertain about?",
+                    "How will you ensure code maintainability as the project grows?",
+                    "What testing strategy will ensure quality?",
+                    "How will different components interact and communicate?",
+                    "What patterns will help you manage complexity?",
+                ],
+                "implementation": [
+                    "What implementation details would you like to work through?",
+                    "How will you prioritize features for initial release?",
+                    "What metrics will you track to measure success?",
+                    "How will you handle deployment and rollout?",
+                    "What's your strategy for maintaining the system long-term?",
+                ],
+            }
+
+            # Get phase-specific fallback questions
+            fallbacks = fallback_questions.get(
+                project.phase,
+                [
+                    "What would you like to explore further?",
+                    "What aspects are still unclear?",
+                    "What questions do you have?",
+                    "What should we focus on next?",
+                ],
+            )
+
+            # Rotate through fallback questions based on question_count
+            if fallbacks:
+                return fallbacks[(question_count - len(questions)) % len(fallbacks)]
+            return "What would you like to explore further?"
+
+    def _check_phase_completion(self, project: ProjectContext, logger) -> Dict[str, Any]:
+        """
+        Check if current phase is now complete (maturity >= 100%) and generate
+        a Socratic question asking if user wants to advance or enrich further.
+
+        Returns:
+            Dict with:
+            - is_complete: bool indicating if phase is complete
+            - message: Socratic question if complete, else None
+        """
+        try:
+            # Get current phase maturity
+            quality_result = safe_orchestrator_call(
+                self.orchestrator,
+                "quality_controller",
+                {
+                    "action": "get_phase_maturity",
+                    "project": project,
+                },
+                operation_name="get phase maturity",
+            )
+
+            if quality_result.get("status") != "success":
+                return {"is_complete": False, "message": None}
+
+            maturity = quality_result.get("maturity", {})
+            current_score = maturity.get("overall_score", 0.0)
+
+            # Check if phase is complete (>= 100%)
+            if current_score < 100.0:
+                return {"is_complete": False, "message": None}
+
+            # Phase is complete - generate Socratic question about advancing
+            phase_names = {
+                "discovery": "Discovery",
+                "analysis": "Analysis",
+                "design": "Design",
+                "implementation": "Implementation",
+            }
+            next_phases = {
+                "discovery": "Analysis",
+                "analysis": "Design",
+                "design": "Implementation",
+                "implementation": None,
+            }
+
+            current_phase_name = phase_names.get(project.phase, project.phase.title())
+            next_phase_name = next_phases.get(project.phase)
+
+            # Generate Socratic question based on phase status
+            if next_phase_name:
+                question = f"""Excellent work on the {current_phase_name} phase! You've thoroughly explored the project specifications.
+
+You now have the option to:
+1. **Advance to next phase** - Move forward with implementing your ideas
+2. **Enrich the {current_phase_name} phase further** - Deepen your understanding and fill in any remaining gaps
+
+Which would you prefer? Would you like to advance to the next phase, or would you like to explore the {current_phase_name} phase more deeply?"""
+            else:
+                # Final phase (implementation)
+                question = """Congratulations! You've completed the Implementation phase. Your project specifications are now fully defined.
+
+Would you like to:
+1. **Review and refine** - Take another look at any aspects of your implementation plan
+2. **Consider next steps** - Discuss what comes after implementation (deployment, maintenance, etc.)
+
+What would be most helpful for you?"""
+
+            logger.info(f"Phase {project.phase} is complete (maturity: {current_score:.1f}%)")
+            return {
+                "is_complete": True,
+                "message": question,
+                "maturity": current_score,
+                "next_phase": next_phase_name,
+            }
+
+        except Exception as e:
+            logger.debug(f"Failed to check phase completion: {e}")
+            return {"is_complete": False, "message": None}
+
+    def _build_full_knowledge_context(self, results: List[Dict]) -> str:
+        """Build rich knowledge context with full document content and summaries"""
+        if not results:
+            return ""
+
+        sections = []
+        for i, result in enumerate(results, 1):
+            source = (
+                result["metadata"].get("source", "Unknown") if result.get("metadata") else "Unknown"
+            )
+            summary = result.get("summary", "")
+            content = result.get("content", "")
+
+            section = f"Document {i}: {source}\nSummary: {summary}\nContent:\n{content}"
+            sections.append(section)
+
+        return "\n\n---\n\n".join(sections)
+
+    def _build_snippet_knowledge_context(self, results: List[Dict]) -> str:
+        """Build concise knowledge context with snippets and summaries"""
+        if not results:
+            return ""
+
+        sections = []
+        for result in results:
+            source = (
+                result["metadata"].get("source", "Unknown") if result.get("metadata") else "Unknown"
+            )
+            summary = result.get("summary", "")
+            content = result.get("content", "")
+
+            section = f"[{source}] {summary}: {content}"
+            sections.append(section)
+
+        return "\n".join(sections)
+
+    def _generate_document_understanding(
+        self, knowledge_results: List[Dict], project: ProjectContext
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Generate document understanding analysis from knowledge results.
+
+        Groups documents and generates summaries and goal comparisons.
+        """
+        if not knowledge_results:
+            return None
+
+        try:
+            # Group results by source document
+            docs_by_source = self._group_knowledge_by_source(knowledge_results)
+
+            if not docs_by_source:
+                return None
+
+            # Create document understanding service
+            doc_service = DocumentUnderstandingService()
+
+            # Generate summaries for each document
+            document_summaries = []
+            for source, chunks in docs_by_source.items():
+                chunk_contents = [c.get("full_content", c.get("content", "")) for c in chunks]
+
+                # Determine document type from metadata
+                doc_type = "text"
+                if chunks and chunks[0].get("metadata", {}).get("type") == "code":
+                    doc_type = "code"
+
+                summary = doc_service.generate_document_summary(
+                    chunk_contents, file_name=source, file_type=doc_type
+                )
+                document_summaries.append(summary)
+
+            # Compare goals with documents if goals exist
+            if project.goals and document_summaries:
+                goal_comparison = doc_service.compare_goals_with_documents(
+                    project.goals, document_summaries
+                )
+                return goal_comparison
+
+            return None
+
+        except Exception as e:
+            self.logger.warning(f"Error generating document understanding: {e}")
+            return None
+
+    def _group_knowledge_by_source(self, results: List[Dict]) -> Dict[str, List[Dict]]:
+        """Group knowledge results by source document."""
+        grouped = {}
+
+        for result in results:
+            source = result.get("metadata", {}).get("source", "Unknown")
+            if source not in grouped:
+                grouped[source] = []
+            grouped[source].append(result)
+
+        return grouped
+
+    def _extract_insights_only(self, request: Dict) -> Dict:
+        """Extract insights from response without processing (for direct mode confirmation)"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        project = request.get("project")
+        user_response = request.get("response")
+        current_user = request.get("current_user")
+
+        logger.debug(f"Extracting insights only ({len(user_response)} chars)")
+
+        # Get user's auth method for API calls
+        user_auth_method = "api_key"  # default
+        if current_user:
+            user = self.orchestrator.database.load_user(current_user)
+            if user and hasattr(user, "claude_auth_method"):
+                user_auth_method = user.claude_auth_method or "api_key"
+
+        # Extract insights using Claude
+        logger.info("Extracting insights from user response (confirmation mode)...")
+        insights = self.orchestrator.claude_client.extract_insights(
+            user_response, project, user_auth_method=user_auth_method, user_id=current_user
+        )
+        self._log_extracted_insights(logger, insights)
+
+        return {"status": "success", "insights": insights}
+
+    def _process_response(self, request: Dict) -> Dict:
+        """Process user response and extract insights"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        project = request.get("project")
+        user_response = request.get("response")
+        current_user = request.get("current_user")
+        pre_extracted_insights = request.get("pre_extracted_insights")
+        is_api_mode = request.get("is_api_mode", False)  # NEW: API mode flag
+
+        logger.debug(f"Processing user response ({len(user_response)} chars) from {current_user}")
+
+        # Add to conversation history with phase information
+        project.conversation_history.append(
+            {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "type": "user",
+                "content": user_response,
+                "phase": project.phase,
+                "author": current_user,  # Track who said what
+            }
+        )
+        logger.debug(
+            f"Added response to conversation history (total: {len(project.conversation_history)} messages)"
+        )
+
+        # Get user's auth method for API calls
+        user_auth_method = "api_key"  # default
+        if current_user:
+            user = self.orchestrator.database.load_user(current_user)
+            if user and hasattr(user, "claude_auth_method"):
+                user_auth_method = user.claude_auth_method or "api_key"
+                logger.debug(f"Using auth method '{user_auth_method}' for user {current_user}")
+
+        # Extract insights using Claude (or use pre-extracted if provided)
+        if pre_extracted_insights is not None:
+            logger.info("Using pre-extracted insights from direct mode confirmation")
+            insights = pre_extracted_insights
+        else:
+            logger.info("Extracting insights from user response...")
+            insights = self.orchestrator.claude_client.extract_insights(
+                user_response, project, user_auth_method=user_auth_method, user_id=current_user
+            )
+            self._log_extracted_insights(logger, insights)
+
+        # Mark the last unanswered question as answered BEFORE conflict detection
+        # This ensures the question is marked answered even if conflicts are found
+        # (conflicts don't prevent progress - they just need to be resolved)
+        if project.pending_questions:
+            for q in reversed(project.pending_questions):
+                if q.get("status") == "unanswered":
+                    q["status"] = "answered"
+                    q["answered_at"] = datetime.datetime.now().isoformat()
+                    logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
+                    break
+
+        # REAL-TIME CONFLICT DETECTION
+        if insights:
+            conflict_result = self._handle_conflict_detection(
+                insights, project, current_user, logger, is_api_mode
+            )
+            if conflict_result.get("has_conflicts"):
+                # Save project even when conflicts detected (question is already marked answered above)
+                self.database.save_project(project)
+                return {
+                    "status": "success",
+                    "insights": insights,
+                    "conflicts_pending": True,
+                    "conflicts": conflict_result.get("conflicts", []),
+                }
+
+        # Update context and maturity
+        self._update_project_and_maturity(project, insights, logger, current_user)
+
+        # Track question effectiveness for learning
+        self._track_question_effectiveness(project, insights, user_response, current_user, logger)
+
+        # Check if phase is now complete and offer advancement option
+        result = {"status": "success", "insights": insights}
+        phase_completion = self._check_phase_completion(project, logger)
+        if phase_completion["is_complete"]:
+            result["phase_complete"] = True
+            result["phase_completion_message"] = phase_completion["message"]
+
+        # Save project to persist question status updates and conversation history changes
+        self.database.save_project(project)
+
+        return result
+
+    def _handle_conflict_detection(
+        self, insights, project, current_user, logger, is_api_mode=False
+    ) -> dict:
+        """Handle conflict detection and return result dict with conflict status
+
+        Args:
+            is_api_mode: If True, returns conflicts for frontend handling. If False, handles interactively.
+
+        Returns:
+            Dict with 'has_conflicts' bool and 'conflicts' list if in API mode
+        """
+        logger.info("Running conflict detection on new insights...")
+        conflict_result = safe_orchestrator_call(
+            self.orchestrator,
+            "conflict_detector",
+            {
+                "action": "detect_conflicts",
+                "project": project,
+                "new_insights": insights,
+                "current_user": current_user,
+            },
+            operation_name="detect conflicts in insights",
+        )
+
+        if not (conflict_result["status"] == "success" and conflict_result["conflicts"]):
+            logger.debug("No conflicts detected")
+            return {"has_conflicts": False}
+
+        logger.warning(f"Detected {len(conflict_result['conflicts'])} conflict(s)")
+
+        # If in API mode, return conflicts to frontend
+        if is_api_mode:
+            return {
+                "has_conflicts": True,
+                "conflicts": [self._conflict_to_dict(c) for c in conflict_result["conflicts"]],
+            }
+
+        # CLI mode: handle interactively
+        # Load user auth method for API calls
+        user_auth_method = "api_key"
+        if current_user:
+            user_obj = self.orchestrator.database.load_user(current_user)
+            if user_obj and hasattr(user_obj, "claude_auth_method"):
+                user_auth_method = user_obj.claude_auth_method or "api_key"
+        conflicts_resolved = self._handle_conflicts_realtime(
+            conflict_result["conflicts"], project, insights, user_auth_method, current_user
+        )
+        if not conflicts_resolved:
+            logger.info("User chose not to resolve conflicts")
+            return {"has_conflicts": True, "conflicts": conflict_result["conflicts"]}
+        return {"has_conflicts": False}
+
+    def _update_project_and_maturity(
+        self, project, insights, logger, current_user: str = None
+    ) -> None:
+        """Update project context and phase maturity"""
+        logger.info("Updating project context with insights...")
+        self._update_project_context(project, insights)
+        logger.debug("Project context updated successfully")
+
+        if not insights:
+            return
+
+        logger.info("Calculating phase maturity...")
+        try:
+            request_data = {
+                "action": "update_after_response",
+                "project": project,
+                "insights": insights,
+            }
+            # Pass current_user if available for API key lookup
+            if current_user:
+                request_data["current_user"] = current_user
+
+            maturity_result = safe_orchestrator_call(
+                self.orchestrator,
+                "quality_controller",
+                request_data,
+                operation_name="update phase maturity",
+            )
+
+            if maturity_result["status"] == "success":
+                maturity = maturity_result.get("maturity", {})
+                score = maturity.get("overall_score", 0.0)
+                logger.info(f"Phase maturity updated: {score:.1f}%")
+        except Exception as e:
+            # Phase maturity calculation is non-critical
+            # Don't break the main flow if it fails
+            logger.warning(f"Failed to update phase maturity: {e}")
+
+    def _track_question_effectiveness(
+        self, project, insights, user_response, current_user, logger
+    ) -> None:
+        """Track question effectiveness in learning system"""
+        if not (insights and project.conversation_history):
+            return
+
+        phase_messages = [
+            msg for msg in project.conversation_history if msg.get("phase") == project.phase
+        ]
+        if len(phase_messages) < 2:  # Need at least question + response
+            return
+
+        question_msg = self._find_last_question(phase_messages)
+        if not question_msg:
+            return
+
+        # Get fallback content from second-to-last message if available
+        fallback_content = ""
+        if len(phase_messages) >= 2:
+            fallback_content = phase_messages[-2].get("content", "")[:50]
+        question_id = question_msg.get("id", fallback_content)
+        specs_extracted = self._count_extracted_specs(insights)
+
+        logger.debug(f"Tracking question effectiveness: {question_id}")
+
+        user_role = project.get_member_role(current_user) if current_user else "general"
+
+        try:
+            safe_orchestrator_call(
+                self.orchestrator,
+                "learning",
+                {
+                    "action": "track_question_effectiveness",
+                    "user_id": current_user,
+                    "question_template_id": question_id,
+                    "role": user_role,
+                    "answer_length": len(user_response),
+                    "specs_extracted": specs_extracted,
+                    "answer_quality": 0.5,
+                },
+                operation_name="track question effectiveness",
+            )
+        except Exception as e:
+            # Logging question effectiveness is a non-critical operation
+            # Don't break the main flow if it fails
+            logger.warning(f"Failed to track question effectiveness: {e}")
+
+    def _find_last_question(self, phase_messages: list) -> dict:
+        """Find the most recent question (assistant message) in phase"""
+        for msg in reversed(phase_messages[:-1]):
+            if msg.get("type") == "assistant":
+                return msg
+        return None
+
+    def _count_extracted_specs(self, insights: Dict) -> int:
+        """Count total specs extracted from insights"""
+        return sum(
+            [
+                len(insights.get("goals", [])) if insights.get("goals") else 0,
+                len(insights.get("requirements", [])) if insights.get("requirements") else 0,
+                len(insights.get("tech_stack", [])) if insights.get("tech_stack") else 0,
+                len(insights.get("constraints", [])) if insights.get("constraints") else 0,
+            ]
+        )
+
+    def _log_extracted_insights(self, logger, insights: Dict) -> None:
+        """Log detailed breakdown of extracted insights"""
+        if not insights:
+            logger.debug("No insights extracted from response")
+            return
+
+        spec_details = []
+        if insights.get("goals"):
+            goals = insights["goals"]
+            count = len([g for g in goals if g]) if isinstance(goals, list) else 1
+            spec_details.append(f"{count} goal(s)" if count > 1 else "1 goal")
+
+        if insights.get("requirements"):
+            reqs = insights["requirements"]
+            count = len(reqs) if isinstance(reqs, list) else 1
+            spec_details.append(f"{count} requirement(s)" if count > 1 else "1 requirement")
+
+        if insights.get("tech_stack"):
+            techs = insights["tech_stack"]
+            count = len(techs) if isinstance(techs, list) else 1
+            spec_details.append(f"{count} tech(s)" if count > 1 else "1 tech")
+
+        if insights.get("constraints"):
+            consts = insights["constraints"]
+            count = len(consts) if isinstance(consts, list) else 1
+            spec_details.append(f"{count} constraint(s)" if count > 1 else "1 constraint")
+
+        spec_summary = ", ".join(spec_details) if spec_details else "no specs"
+        logger.info(f"Extracted {spec_summary}")
+        logger.debug(f"Full insights: {insights}")
+
+    def _remove_from_project_context(self, project: ProjectContext, value: str, context_type: str):
+        """Remove a value from project context"""
+        if context_type == "tech_stack" and value in project.tech_stack:
+            project.tech_stack.remove(value)
+        elif context_type == "requirements" and value in project.requirements:
+            project.requirements.remove(value)
+        elif context_type == "constraints" and value in project.constraints:
+            project.constraints.remove(value)
+        elif context_type == "goals":
+            project.goals = ""
+
+    def _manual_resolution(self, conflict: ConflictInfo) -> str:
+        """Allow user to manually resolve conflict"""
+        print(f"\n{Fore.CYAN}Manual Resolution:")
+        print(f"Current options: '{conflict.old_value}' vs '{conflict.new_value}'")
+
+        new_value = input(f"{Fore.WHITE}Enter resolved specification: ").strip()
+        if new_value:
+            return new_value
+        return ""
+
+    def _handle_conflicts_realtime(
+        self,
+        conflicts: List[ConflictInfo],
+        project: ProjectContext,
+        insights: Dict = None,
+        user_auth_method: str = "api_key",
+        current_user: str = None,
+    ) -> bool:
+        """Handle conflicts in real-time during conversation
+
+        Args:
+            conflicts: List of detected conflicts
+            project: Current project context
+            insights: Mutable insights dict that will be modified based on resolution
+            user_auth_method: User's preferred auth method for API calls
+            current_user: Current user ID for fetching user-specific API keys
+        """
+        for conflict in conflicts:
+            print(f"\n{Fore.RED}[WARNING]  CONFLICT DETECTED!")
+            print(f"{Fore.YELLOW}Type: {conflict.conflict_type}")
+            print(f"{Fore.WHITE}Existing: '{conflict.old_value}' (by {conflict.old_author})")
+            print(f"{Fore.WHITE}New: '{conflict.new_value}' (by {conflict.new_author})")
+            print(f"{Fore.RED}Severity: {conflict.severity}")
+
+            # Get AI-generated suggestions
+            suggestions = self.orchestrator.claude_client.generate_conflict_resolution_suggestions(
+                conflict, project, user_auth_method, user_id=current_user
+            )
+            print(f"\n{Fore.MAGENTA}{suggestions}")
+
+            print(f"\n{Fore.CYAN}Resolution Options:")
+            print("1. Keep existing specification")
+            print("2. Replace with new specification")
+            print("3. Skip this specification (continue without adding)")
+            print("4. Manual resolution (edit both)")
+
+            while True:
+                choice = input(f"{Fore.WHITE}Choose resolution (1-4): ").strip()
+
+                if choice == "1":
+                    print(f"{Fore.GREEN}[OK] Keeping existing: '{conflict.old_value}'")
+                    self._remove_from_insights(conflict.new_value, conflict.conflict_type, insights)
+                    break
+                elif choice == "2":
+                    print(f"{Fore.GREEN}[OK] Replacing with: '{conflict.new_value}'")
+                    self._remove_from_project_context(
+                        project, conflict.old_value, conflict.conflict_type
+                    )
+                    break
+                elif choice == "3":
+                    print(f"{Fore.YELLOW}[SKIP]  Skipping specification")
+                    self._remove_from_insights(conflict.new_value, conflict.conflict_type, insights)
+                    break
+                elif choice == "4":
+                    resolved_value = self._manual_resolution(conflict)
+                    if resolved_value:
+                        self._remove_from_project_context(
+                            project, conflict.old_value, conflict.conflict_type
+                        )
+                        self._update_insights_value(
+                            conflict.new_value, resolved_value, conflict.conflict_type, insights
+                        )
+                        print(f"{Fore.GREEN}[OK] Updated to: '{resolved_value}'")
+                    break
+                else:
+                    print(f"{Fore.RED}Invalid choice. Please try again.")
+
+        return True
+
+    def _explain_document(self, request: Dict) -> Dict:
+        """
+        Provide explanation/summary of imported documents.
+
+        Generates comprehensive summaries and analysis of documents in the knowledge base.
+        """
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        project = request.get("project")
+        document_name = request.get("document_name")  # Optional: specific document
+
+        if not project:
+            return {"status": "error", "message": "Project context required"}
+
+        try:
+            # Search for document chunks
+            if document_name:
+                # Search for specific document
+                logger.debug(f"Searching for specific document: {document_name}")
+                query = document_name
+            else:
+                # Use project context to find documents
+                logger.debug("Searching for all documents in project")
+                query = project.goals or project.name or "document"
+
+            # Search knowledge base
+            results = self.orchestrator.vector_db.search_similar_adaptive(
+                query=query, strategy="full", top_k=10, project_id=project.project_id
+            )
+
+            if not results:
+                return {"status": "error", "message": "No documents found for this project"}
+
+            logger.debug(f"Found {len(results)} results for document explanation")
+
+            # Group by source and generate understanding
+            doc_service = DocumentUnderstandingService()
+            docs_by_source = self._group_knowledge_by_source(results)
+
+            explanations = []
+            for source, chunks in docs_by_source.items():
+                chunk_contents = [c.get("full_content", c.get("content", "")) for c in chunks]
+
+                # Determine document type
+                doc_type = "text"
+                if chunks and chunks[0].get("metadata", {}).get("type") == "code":
+                    doc_type = "code"
+
+                summary = doc_service.generate_document_summary(
+                    chunk_contents, file_name=source, file_type=doc_type
+                )
+
+                explanation = self._format_document_explanation(summary)
+                explanations.append(explanation)
+
+                logger.debug(f"Generated explanation for {source}")
+
+            return {
+                "status": "success",
+                "documents_found": len(explanations),
+                "explanations": explanations,
+                "message": f"Generated explanations for {len(explanations)} document(s)",
+            }
+
+        except Exception as e:
+            logger.error(f"Error explaining documents: {e}")
+            return {"status": "error", "message": f"Failed to explain documents: {str(e)}"}
+
+    def _format_document_explanation(self, summary: Dict[str, Any]) -> str:
+        """Format document summary into human-readable explanation."""
+        parts = []
+
+        # Document header
+        file_name = summary.get("file_name", "Unknown")
+        doc_type = summary.get("type", "text")
+        complexity = summary.get("complexity", "intermediate")
+
+        parts.append(f"Document: {file_name} ({doc_type}, {complexity} complexity)")
+        parts.append("-" * 60)
+        parts.append("")
+
+        # Summary
+        if summary.get("summary"):
+            parts.append("Summary:")
+            parts.append(summary["summary"])
+            parts.append("")
+
+        # Key points
+        key_points = summary.get("key_points", [])
+        if key_points:
+            parts.append("Key Points:")
+            for i, point in enumerate(key_points, 1):
+                parts.append(f"  {i}. {point}")
+            parts.append("")
+
+        # Topics
+        topics = summary.get("topics", [])
+        if topics:
+            parts.append("Main Topics:")
+            parts.append(", ".join(topics))
+            parts.append("")
+
+        # Metrics
+        length = summary.get("length", 0)
+        if length > 0:
+            parts.append("Document Metrics:")
+            parts.append(f"  - Length: {length} words")
+            parts.append(f"  - Complexity: {complexity}")
+            parts.append("")
+
+        return "\n".join(parts)
+
+    def _advance_phase(self, request: Dict) -> Dict:
+        """Advance project to the next phase with maturity verification"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        project = request.get("project")
+        phases = ["discovery", "analysis", "design", "implementation"]
+
+        current_index = phases.index(project.phase)
+        if current_index >= len(phases) - 1:
+            return {
+                "status": "error",
+                "message": "Already at final phase (implementation)",
+            }
+
+        # NEW: Check maturity before advancing
+        logger.info(f"Verifying readiness to advance from {project.phase}...")
+        try:
+            readiness_result = safe_orchestrator_call(
+                self.orchestrator,
+                "quality_controller",
+                {
+                    "action": "verify_advancement",
+                    "project": project,
+                    "from_phase": project.phase,
+                },
+                operation_name="verify readiness to advance phase",
+            )
+
+            if readiness_result["status"] == "success":
+                verification = readiness_result["verification"]
+                maturity_score = verification.get("maturity_score", 0.0)
+                warnings = verification.get("warnings", [])
+
+                # Display warnings to user if present
+                if warnings:
+                    print(f"\n{Fore.YELLOW}Advancement Warnings:{Fore.RESET}")
+                    for warning in warnings[:3]:  # Show top 3 warnings
+                        print(f"  - {warning}")
+
+                    # Ask for confirmation if maturity is low
+                    if maturity_score < 20.0:
+                        print(f"\n{Fore.RED}Current phase maturity: {maturity_score:.1f}%")
+                        print(f"Recommended minimum: 20%{Fore.RESET}")
+
+                        confirm = input(
+                            f"\n{Fore.CYAN}Advance anyway? (yes/no): {Fore.RESET}"
+                        ).lower()
+                        if confirm not in ["yes", "y"]:
+                            return {
+                                "status": "cancelled",
+                                "message": "Phase advancement cancelled",
+                            }
+        except Exception as e:
+            # If maturity verification fails, allow advancement but log warning
+            logger.warning(f"Could not verify advancement readiness: {e}")
+            readiness_result = {"status": "error"}
+            verification = {}
+
+        # Advance to next phase
+        new_phase = phases[current_index + 1]
+        project.phase = new_phase
+        logger.info(f"Advanced project from {phases[current_index]} to {new_phase}")
+
+        # NEW: Emit PHASE_ADVANCED event
+        self.emit_event(
+            EventType.PHASE_ADVANCED,
+            {
+                "from_phase": phases[current_index],
+                "to_phase": new_phase,
+                "maturity_at_advancement": (
+                    verification.get("maturity_score", 0.0)
+                    if readiness_result["status"] == "success"
+                    else None
+                ),
+            },
+        )
+
+        self.log(f"Advanced project to {new_phase} phase")
+
+        return {"status": "success", "new_phase": new_phase}
+
+    def _rollback_phase(self, request: Dict) -> Dict:
+        """Roll back project to the previous phase"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        project = request.get("project")
+        phases = ["discovery", "analysis", "design", "implementation"]
+
+        try:
+            current_index = phases.index(project.phase)
+        except ValueError:
+            return {
+                "status": "error",
+                "message": f"Invalid current phase: {project.phase}",
+            }
+
+        if current_index <= 0:
+            return {
+                "status": "error",
+                "message": "Already at first phase (discovery) - cannot roll back",
+            }
+
+        # Roll back to previous phase
+        new_phase = phases[current_index - 1]
+        project.phase = new_phase
+        logger.info(f"Rolled back project from {phases[current_index]} to {new_phase}")
+
+        # Emit phase change event
+        self.emit_event(
+            EventType.PHASE_ADVANCED,
+            {
+                "from_phase": phases[current_index],
+                "to_phase": new_phase,
+                "direction": "backward",
+            },
+        )
+
+        self.log(f"Rolled back project to {new_phase} phase")
+
+        return {"status": "success", "new_phase": new_phase}
+
+    def _normalize_to_list(self, value: Any) -> List[str]:
+        """Convert any value to a list of non-empty strings"""
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if item]
+        elif isinstance(value, str):
+            return [value.strip()] if value.strip() else []
+        else:
+            normalized = str(value).strip()
+            return [normalized] if normalized else []
+
+    def _update_list_field(self, current_list: List[str], new_items: List[str]) -> None:
+        """Add new unique items to a list field"""
+        for item in new_items:
+            if item and item not in current_list:
+                current_list.append(item)
+
+    def _update_project_context(self, project: ProjectContext, insights: Dict):
+        """Update project context based on extracted insights"""
+        if not insights or not isinstance(insights, dict):
+            return
+
+        try:
+            # Handle goals
+            if "goals" in insights and insights["goals"]:
+                goals_list = self._normalize_to_list(insights["goals"])
+                if goals_list:
+                    project.goals = " ".join(goals_list)
+
+            # Handle requirements
+            if "requirements" in insights and insights["requirements"]:
+                req_list = self._normalize_to_list(insights["requirements"])
+                self._update_list_field(project.requirements, req_list)
+
+            # Handle tech_stack
+            if "tech_stack" in insights and insights["tech_stack"]:
+                tech_list = self._normalize_to_list(insights["tech_stack"])
+                self._update_list_field(project.tech_stack, tech_list)
+
+            # Handle constraints
+            if "constraints" in insights and insights["constraints"]:
+                constraint_list = self._normalize_to_list(insights["constraints"])
+                self._update_list_field(project.constraints, constraint_list)
+
+        except Exception as e:
+            print(f"{Fore.YELLOW}Warning: Error updating project context: {e}")
+            print(f"Insights received: {insights}")
+
+    def _conflict_to_dict(self, conflict) -> dict:
+        """Convert ConflictInfo object to dictionary for JSON serialization"""
+        return {
+            "conflict_id": conflict.conflict_id,
+            "conflict_type": conflict.conflict_type,
+            "old_value": conflict.old_value,
+            "new_value": conflict.new_value,
+            "old_author": conflict.old_author,
+            "new_author": conflict.new_author,
+            "old_timestamp": conflict.old_timestamp,
+            "new_timestamp": conflict.new_timestamp,
+            "severity": conflict.severity,
+            "suggestions": conflict.suggestions,
+        }
+
+    def _remove_from_insights(self, value: str, insight_type: str, insights: Dict = None):
+        """Remove a value from insights before context update.
+
+        This method is called when user rejects a conflicting insight.
+        It removes the conflicting value from the insights dict so it won't be re-added.
+
+        Args:
+            value: The value to remove (the new/conflicting value)
+            insight_type: Type of insight (goals, requirements, tech_stack, constraints)
+            insights: Mutable insights dict to modify
+        """
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+        logger.info(f"Conflict resolution: Rejected {insight_type} - '{value}'")
+
+        # Remove from insights if provided
+        if insights and insight_type in insights and insights[insight_type]:
+            insight_list = self._normalize_to_list(insights[insight_type])
+            if value in insight_list:
+                insight_list.remove(value)
+                # Update insights with the modified list
+                if insight_list:
+                    insights[insight_type] = insight_list
+                else:
+                    insights[insight_type] = []
+
+    def _update_insights_value(
+        self, old_value: str, new_value: str, insight_type: str, insights: Dict = None
+    ):
+        """Update a value in insights after manual conflict resolution.
+
+        This method is called when user manually resolves a conflict.
+        It updates the insights dict with the manually resolved value.
+
+        Args:
+            old_value: The old/existing value in the project
+            new_value: The new/resolved value from manual input
+            insight_type: Type of insight (goals, requirements, tech_stack, constraints)
+            insights: Mutable insights dict to modify
+        """
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+        logger.info(
+            f"Conflict resolution: Manual resolution for {insight_type} - "
+            f"'{old_value}' -> '{new_value}'"
+        )
+
+        # Update insights with the manually resolved value
+        if insights:
+            if insight_type not in insights:
+                insights[insight_type] = []
+
+            insight_list = self._normalize_to_list(insights[insight_type])
+            # Remove old conflicting value if it exists
+            if old_value in insight_list:
+                insight_list.remove(old_value)
+            # Add the new resolved value if not already there
+            if new_value not in insight_list:
+                insight_list.append(new_value)
+            insights[insight_type] = insight_list
+
+    def _generate_hint(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate a context-aware hint for the user based on project state"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+        project = request.get("project")
+        current_user = request.get("current_user")
+
+        if not project:
+            return {"status": "error", "message": "Project context is required to generate hints"}
+
+        try:
+            context = self.orchestrator.context_analyzer.get_context_summary(project)
+
+            # Get recent conversation for context
+            recent_conversation = ""
+            if project.conversation_history:
+                recent_messages = project.conversation_history[-3:]
+                for msg in recent_messages:
+                    role = "Assistant" if msg.get("type") == "assistant" else "User"
+                    recent_conversation += f"{role}: {msg.get('content', '')}\n"
+
+            # Build hint prompt
+            hint_prompt = f"""Based on the following project context and conversation, provide a helpful, concise hint to guide the user forward.
+
+Project Phase: {project.phase}
+Project Goals: {project.goals or 'Not specified'}
+Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
+Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
+
+Recent Conversation:
+{recent_conversation if recent_conversation else 'No conversation history yet'}
+
+Provide ONE concise, actionable hint that helps the user move forward in the {project.phase} phase. The hint should be specific to their project context and no more than 2 sentences."""
+
+            logger.info(
+                f"Generating hint for project {project.project_id} in {project.phase} phase"
+            )
+
+            # Get user's auth method for API calls
+            user_auth_method = "api_key"  # default
+            if current_user:
+                user = self.orchestrator.database.load_user(current_user)
+                if user and hasattr(user, "claude_auth_method"):
+                    user_auth_method = user.claude_auth_method or "api_key"
+                    logger.debug(f"Using auth method '{user_auth_method}' for user {current_user}")
+
+            # Generate hint using Claude
+            hint = self.orchestrator.claude_client.generate_response(
+                prompt=hint_prompt,
+                max_tokens=500,  # Hints should be concise (1-2 sentences)
+                temperature=0.7,  # Balanced creativity
+                user_auth_method=user_auth_method,
+                user_id=current_user,
+            )
+
+            self.log(f"Generated hint for {project.phase} phase")
+
+            return {"status": "success", "hint": hint, "context": context}
+
+        except Exception as e:
+            logger.warning(f"Failed to generate dynamic hint: {e}, returning generic hint")
+            self.log(f"Failed to generate dynamic hint: {e}", "WARN")
+
+            # Provide context-appropriate generic hints as fallback
+            phase_hints = {
+                "discovery": "Focus on understanding the problem space. What specific needs does your project address?",
+                "analysis": "Break down technical requirements into smaller, manageable challenges. What's your biggest concern?",
+                "design": "Sketch out the architecture before implementation. What design patterns might help?",
+                "implementation": "Start with the core features and iterate. What's your minimum viable product?",
+            }
+
+            return {
+                "status": "success",
+                "hint": phase_hints.get(project.phase, "Keep making progress on your project!"),
+                "context": "",
+            }
+
+    def _answer_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Mark a question as answered"""
+        import datetime
+
+        project = request.get("project")
+        question_id = request.get("question_id")
+
+        if not project or not question_id:
+            return {"status": "error", "message": "Project and question_id required"}
+
+        # Find and mark the question as answered in pending_questions
+        for q in project.pending_questions or []:
+            if q.get("id") == question_id:
+                q["status"] = "answered"
+                q["answered_at"] = datetime.datetime.now().isoformat()
+                self.log(f"Marked question {question_id} as answered")
+                # Save project to persist the change
+                self.database.save_project(project)
+                return {"status": "success", "message": "Question marked as answered"}
+
+        return {"status": "error", "message": "Question not found"}
+
+    def _skip_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Mark a question as skipped"""
+        import datetime
+
+        project = request.get("project")
+        question_id = request.get("question_id")
+
+        if not project or not question_id:
+            return {"status": "error", "message": "Project and question_id required"}
+
+        # Find and mark the question as skipped in pending_questions
+        for q in project.pending_questions or []:
+            if q.get("id") == question_id:
+                q["status"] = "skipped"
+                q["skipped_at"] = datetime.datetime.now().isoformat()
+                self.log(f"Marked question {question_id} as skipped")
+                # Save project to persist the change
+                self.database.save_project(project)
+                return {"status": "success", "message": "Question marked as skipped"}
+
+        return {"status": "error", "message": "Question not found"}
+
+    def _reopen_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Reopen a skipped question (mark as unanswered)"""
+
+        project = request.get("project")
+        question_id = request.get("question_id")
+
+        if not project or not question_id:
+            return {"status": "error", "message": "Project and question_id required"}
+
+        # Find and mark the question as unanswered in pending_questions
+        for q in project.pending_questions or []:
+            if q.get("id") == question_id:
+                q["status"] = "unanswered"
+                q["skipped_at"] = None  # Clear skip timestamp
+                self.log(f"Reopened question {question_id}")
+                # Save project to persist the change
+                self.database.save_project(project)
+                return {"status": "success", "message": "Question reopened and ready to answer"}
+
+        return {"status": "error", "message": "Question not found"}
+
+    def _get_fallback_suggestions(self, project, current_question: str) -> List[str]:
+        """Generate context-aware fallback suggestions based on phase and question"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        # Create phase-specific suggestions that vary based on question content
+        phase_suggestions = {
+            "discovery": [
+                "Describe the problem you're trying to solve in detail",
+                "Who are your target users or stakeholders?",
+                "What are the key challenges you're facing?",
+                "What existing solutions have you considered?",
+                "What would success look like for this project?",
+            ],
+            "analysis": [
+                "Break down the requirements into smaller components",
+                "What are the technical constraints you need to consider?",
+                "How would you prioritize these requirements?",
+                "What dependencies exist between different parts?",
+                "What trade-offs do you need to make?",
+            ],
+            "design": [
+                "Sketch out the high-level architecture or flow",
+                "What design patterns would be appropriate here?",
+                "How would you organize the system components?",
+                "What are the key decisions in the design?",
+                "How would this design handle edge cases?",
+            ],
+            "implementation": [
+                "What's the first feature or module you'd implement?",
+                "What technologies would you use for this?",
+                "How would you test this implementation?",
+                "What's the deployment strategy?",
+                "How would you measure if it's working correctly?",
+            ],
+        }
+
+        phase = project.phase if hasattr(project, 'phase') else 'discovery'
+        suggestions = phase_suggestions.get(phase, phase_suggestions["discovery"])
+
+        logger.debug(f"Using {len(suggestions)} fallback suggestions for {phase} phase")
+        return suggestions
+
+    def _generate_answer_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate answer suggestions for the current question"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+        project = request.get("project")
+        current_question = request.get("current_question")
+        current_user = request.get("current_user")
+
+        logger.debug(
+            f"Generating suggestions for question: {current_question[:50]}..."
+            if current_question
+            else "No question provided"
+        )
+        logger.debug(f"Project: {project.name if project else 'None'}, User: {current_user}")
+
+        if not project or not current_question:
+            logger.warning("Missing project or current_question for suggestions")
+            return {"status": "error", "message": "Project and current_question required"}
+
+        try:
+            # Get user's auth method for API calls
+            user_auth_method = "api_key"  # default
+            if current_user:
+                user = self.orchestrator.database.load_user(current_user)
+                if user and hasattr(user, "claude_auth_method"):
+                    user_auth_method = user.claude_auth_method or "api_key"
+
+            # Build prompt for suggestions
+            suggestions_prompt = f"""Based on this Socratic question in the {project.phase} phase:
+
+Question: {current_question}
+
+Project Context:
+- Name: {project.name}
+- Phase: {project.phase}
+- Goals: {project.goals or 'Not specified'}
+- Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
+- Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
+
+Provide 3-5 DIVERSE and SPECIFIC answer suggestions or starting points. Each suggestion should be:
+- A complete sentence the user could use as a basis for their answer
+- Different in approach or focus from the other suggestions
+- Focused on different aspects of the answer (methodology, perspective, scope, depth)
+
+Make sure each suggestion explores a different angle or approach to answering this question.
+
+Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no additional text."""
+
+            logger.info(f"Generating answer suggestions for {project.phase} phase")
+
+            # Call Claude to generate suggestions
+            logger.debug(
+                f"Calling Claude API with auth_method={user_auth_method}, user_id={current_user}"
+            )
+            response = self.orchestrator.claude_client.generate_response(
+                prompt=suggestions_prompt,
+                max_tokens=800,
+                temperature=1.0,
+                user_auth_method=user_auth_method,
+                user_id=current_user,
+            )
+            logger.debug(f"Claude response length: {len(response)} chars")
+
+            # Parse suggestions from numbered list
+            suggestions = []
+            for line in response.split("\n"):
+                line = line.strip()
+                if line and any(line.startswith(f"{i}.") for i in range(1, 10)):
+                    # Remove numbering and clean up
+                    suggestion = line.split(".", 1)[1].strip() if "." in line else line
+                    suggestions.append(suggestion)
+
+            logger.info(f"Successfully generated {len(suggestions)} answer suggestions")
+            self.log(f"Generated {len(suggestions)} answer suggestions")
+
+            return {
+                "status": "success",
+                "suggestions": (
+                    suggestions
+                    if suggestions
+                    else self._get_fallback_suggestions(project, current_question)
+                ),
+            }
+
+        except Exception as e:
+            error_details = f"{type(e).__name__}: {str(e)}"
+            logger.error(f"Failed to generate answer suggestions: {error_details}")
+            self.log(f"Failed to generate answer suggestions: {error_details}", "ERROR")
+
+            # Return fallback suggestions based on phase
+            return {
+                "status": "error",
+                "message": f"Suggestion generation failed: {str(e)}",
+                "suggestions": self._get_fallback_suggestions(project, current_question),
+            }
+
+    # ========================================================================
+    # Workflow Optimization Methods (Phase 5)
+    # ========================================================================
+
+    def _should_use_workflow_optimization(self, project: ProjectContext) -> bool:
+        """
+        Check if workflow optimization is enabled for this project.
+
+        Args:
+            project: ProjectContext
+
+        Returns:
+            True if use_workflow_optimization flag is set in metadata
+        """
+        return (
+            project.metadata.get("use_workflow_optimization", False) if project.metadata else False
+        )
+
+    def _generate_question_with_workflow(self, project: ProjectContext, current_user: str) -> Dict:
+        """
+        Generate question constrained by approved workflow path.
+
+        Implements workflow-optimized question generation where questions
+        are selected from the approved workflow path rather than generated
+        dynamically.
+
+        Args:
+            project: ProjectContext with active workflow execution
+            current_user: User requesting the question
+
+        Returns:
+            Dict with status and question, or pending_approval status
+        """
+        logging.debug(f"Generating question with workflow optimization for project: {project.name}")
+
+        try:
+            # Check for active workflow execution
+            if not project.active_workflow_execution:
+                logging.info(
+                    f"No active workflow execution for project {project.project_id}, "
+                    "initiating approval request"
+                )
+                # No approved workflow - initiate approval (BLOCKING)
+                return self._initiate_workflow_approval(project, current_user)
+
+            # Have approved path - select next question from it
+            execution = project.active_workflow_execution
+            workflow = project.workflow_definitions.get(project.phase)
+
+            if not workflow:
+                logging.error(f"Workflow definition not found for phase: {project.phase}")
+                return {
+                    "status": "error",
+                    "message": f"Workflow definition not found for {project.phase}",
+                }
+
+            logging.debug(
+                f"Selecting questions for workflow execution {execution.execution_id} "
+                f"at node {execution.current_node_id}"
+            )
+
+            # Import here to avoid circular dependency
+            from socratic_system.core.question_selector import QuestionSelector
+
+            selector = QuestionSelector()
+            questions = selector.select_next_questions(
+                project, workflow, execution, max_questions=1
+            )
+
+            if not questions:
+                logging.info("No more questions in current node, advancing workflow")
+                # No more questions - advance to next node
+                return self._advance_workflow_node(project, execution, workflow)
+
+            question = questions[0]
+            logging.info(
+                f"Selected question from workflow node {execution.current_node_id}: "
+                f"{question[:80]}..."
+            )
+
+            # Store question in conversation history
+            import uuid
+
+            project.conversation_history.append(
+                {
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "type": "assistant",
+                    "content": question,
+                    "phase": project.phase,
+                    "workflow_node": execution.current_node_id,
+                }
+            )
+
+            project.pending_questions.append(
+                {
+                    "id": f"q_{uuid.uuid4().hex[:8]}",
+                    "question": question,
+                    "phase": project.phase,
+                    "status": "unanswered",
+                    "created_at": datetime.datetime.now().isoformat(),
+                    "workflow_node": execution.current_node_id,
+                    "answer": None,
+                    "skipped_at": None,
+                    "answered_at": None,
+                }
+            )
+
+            # Persist changes
+            self.database.save_project(project)
+
+            logging.debug("Question stored in conversation history and pending questions")
+
+            return {
+                "status": "success",
+                "question": question,
+                "workflow_node": execution.current_node_id,
+            }
+
+        except Exception as e:
+            logging.error(
+                f"Unexpected error in workflow-based question generation: {type(e).__name__}: {e}"
+            )
+            return {"status": "error", "message": str(e)}
+
+    def _initiate_workflow_approval(self, project: ProjectContext, current_user: str) -> Dict:
+        """
+        Request workflow approval - BLOCKING POINT.
+
+        Creates workflow definition for current phase and requests approval
+        from quality controller. Returns pending_approval status that halts
+        execution until user approves a path.
+
+        Args:
+            project: ProjectContext
+            current_user: User requesting approval
+
+        Returns:
+            Dict with status "pending_approval" (execution halts) if approval needed
+            Dict with status "success" and first question if single path
+        """
+        logging.debug(
+            f"Initiating workflow approval for project {project.project_id}, phase {project.phase}"
+        )
+
+        try:
+            # Create workflow for current phase
+            workflow = self._create_workflow_for_phase(project)
+
+            logging.info(f"Created workflow {workflow.workflow_id} for {project.phase} phase")
+
+            # Request approval from QC - BLOCKING call
+            logging.debug("Requesting workflow approval from QualityController")
+            result = safe_orchestrator_call(
+                self.orchestrator,
+                "quality_controller",
+                {
+                    "action": "request_workflow_approval",
+                    "project": project,
+                    "workflow": workflow,
+                    "requested_by": current_user,
+                },
+            )
+
+            if result.get("status") == "pending_approval":
+                logging.info(f"Workflow approval pending for request: {result.get('request_id')}")
+                # BLOCKING - execution stops here until approval
+                return result
+
+            # Approval succeeded or single path - proceed
+            logging.info("Workflow approval succeeded or single path approved")
+            return result
+
+        except Exception as e:
+            logging.error(f"Unexpected error initiating workflow approval: {type(e).__name__}: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _create_workflow_for_phase(self, project: ProjectContext) -> "WorkflowDefinition":
+        """
+        Create workflow definition for current phase.
+
+        Currently creates comprehensive workflows for discovery phase,
+        can be extended for other phases.
+
+        Args:
+            project: ProjectContext
+
+        Returns:
+            WorkflowDefinition for current phase
+        """
+        from socratic_system.core.workflow_builder import (
+            create_discovery_workflow_comprehensive,
+            create_legacy_compatible_workflow,
+        )
+
+        logging.debug(
+            f"Creating workflow for phase: {project.phase}, project_type: {project.project_type}"
+        )
+
+        if project.phase == "discovery":
+            logging.info("Creating comprehensive discovery workflow")
+            return create_discovery_workflow_comprehensive(project)
+        else:
+            # For other phases, create simple linear workflow
+            logging.info(f"Creating legacy-compatible workflow for {project.phase}")
+            return create_legacy_compatible_workflow(project.phase)
+
+    def _advance_workflow_node(
+        self,
+        project: ProjectContext,
+        execution: "WorkflowExecutionState",
+        workflow: "WorkflowDefinition",
+    ) -> Dict:
+        """
+        Advance to next node in workflow execution.
+
+        Called when current node is complete (all questions answered).
+
+        Args:
+            project: ProjectContext
+            execution: Current workflow execution state
+            workflow: WorkflowDefinition
+
+        Returns:
+            Dict with next question or completion status
+        """
+        from socratic_system.core.question_selector import QuestionSelector
+
+        logging.debug(
+            f"Advancing workflow execution {execution.execution_id} from node {execution.current_node_id}"
+        )
+
+        try:
+            selector = QuestionSelector()
+            next_node_id = selector.get_next_node(workflow, execution)
+
+            if not next_node_id:
+                logging.info("Workflow execution reached end node")
+                execution.status = "completed"
+                execution.current_node_id = None
+                self.database.save_project(project)
+
+                self.emit_event(
+                    EventType.WORKFLOW_NODE_COMPLETED,
+                    {
+                        "execution_id": execution.execution_id,
+                        "message": "Workflow completed",
+                    },
+                )
+
+                return {
+                    "status": "workflow_completed",
+                    "message": "Workflow path execution completed",
+                }
+
+            logging.info(f"Advancing to next node: {next_node_id}")
+            execution.current_node_id = next_node_id
+            execution.completed_nodes.append(next_node_id)
+
+            self.emit_event(
+                EventType.WORKFLOW_NODE_ENTERED,
+                {
+                    "execution_id": execution.execution_id,
+                    "node_id": next_node_id,
+                },
+            )
+
+            # Save and re-generate question from new node
+            self.database.save_project(project)
+            return self._generate_question_with_workflow(project, "system")
+
+        except Exception as e:
+            logging.error(f"Unexpected error advancing workflow node: {type(e).__name__}: {e}")
+            return {"status": "error", "message": str(e)}
