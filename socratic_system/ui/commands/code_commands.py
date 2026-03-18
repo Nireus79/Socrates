@@ -52,6 +52,20 @@ class CodeGenerateCommand(BaseCommand):
             # Display generated code
             self._display_generated_code(script, save_path, is_multi_file)
 
+            # Analyze generated code for quality, security, and performance
+            try:
+                analyzer = orchestrator.analyzer_integration
+                analysis = analyzer.analyze_code(
+                    code=script,
+                    language=project.tech_stack[0] if project.tech_stack else "python",
+                    file_path=save_path
+                )
+                if analysis.get("recommendations"):
+                    self._display_code_analysis(analysis)
+            except Exception as e:
+                # Analysis is optional - don't fail if unavailable
+                pass
+
             # Ask if user wants documentation
             if self._prompt_for_documentation():
                 self._generate_and_display_documentation(orchestrator, project, script, save_path)
@@ -136,6 +150,32 @@ class CodeGenerateCommand(BaseCommand):
                 )
         except ValueError:
             self.print_warning("Failed to generate documentation")
+
+    def _display_code_analysis(self, analysis: Dict[str, Any]) -> None:
+        """Display code analysis results (quality, security, performance)"""
+        print(f"\n{Fore.CYAN}Code Analysis Results:{Style.RESET_ALL}")
+
+        quality = analysis.get("quality", {})
+        if quality:
+            print(f"  {Fore.GREEN}Quality Score:{Style.RESET_ALL} {quality.get('score', 0):.2f}/10")
+
+        security = analysis.get("security", {})
+        if security and security.get("total_issues", 0) > 0:
+            print(f"  {Fore.YELLOW}Security Issues:{Style.RESET_ALL} {security.get('total_issues', 0)}")
+            if security.get("critical", 0) > 0:
+                print(f"    {Fore.RED}Critical: {security.get('critical', 0)}{Style.RESET_ALL}")
+
+        performance = analysis.get("performance", {})
+        if performance and performance.get("total_issues", 0) > 0:
+            print(f"  {Fore.YELLOW}Performance Issues:{Style.RESET_ALL} {performance.get('total_issues', 0)}")
+
+        recommendations = analysis.get("recommendations", [])
+        if recommendations:
+            print(f"\n  {Fore.CYAN}Top Recommendations:{Style.RESET_ALL}")
+            for rec in recommendations[:3]:
+                priority = rec.get("priority", "medium")
+                priority_color = Fore.RED if priority == "high" else Fore.YELLOW
+                print(f"    {priority_color}[{priority.upper()}]{Style.RESET_ALL} {rec.get('description', '')}")
 
 
 class CodeDocsCommand(BaseCommand):

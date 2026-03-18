@@ -305,6 +305,38 @@ class AgentOrchestrator:
             self._agents_cache["code_validation_agent"] = CodeValidator(self)
         return self._agents_cache["code_validation_agent"]
 
+    @property
+    def learning_integration(self) -> Any:
+        """Lazy-load learning integration (socratic-learning)"""
+        if "learning_integration" not in self._agents_cache:
+            from socratic_system.core import LearningIntegration
+
+            self._agents_cache["learning_integration"] = LearningIntegration(
+                log_path=str(self.config.data_dir / "learning_logs"),
+                llm_client=self.llm_client
+            )
+        return self._agents_cache["learning_integration"]
+
+    @property
+    def workflow_integration(self) -> Any:
+        """Lazy-load workflow integration (socratic-workflow)"""
+        if "workflow_integration" not in self._agents_cache:
+            from socratic_system.core import WorkflowIntegration
+
+            self._agents_cache["workflow_integration"] = WorkflowIntegration(
+                executor_type="sequential"
+            )
+        return self._agents_cache["workflow_integration"]
+
+    @property
+    def analyzer_integration(self) -> Any:
+        """Lazy-load analyzer integration (socratic-analyzer)"""
+        if "analyzer_integration" not in self._agents_cache:
+            from socratic_system.core import AnalyzerIntegration
+
+            self._agents_cache["analyzer_integration"] = AnalyzerIntegration()
+        return self._agents_cache["analyzer_integration"]
+
     def _load_knowledge_base(self) -> None:
         """Load default knowledge base from config file if not already loaded"""
         if self.vector_db.knowledge_loaded:

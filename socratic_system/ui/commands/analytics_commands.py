@@ -8,7 +8,7 @@ getting recommendations, and viewing progression trends.
 import logging
 from typing import Any, Callable, Dict, List
 
-from socratic_system.core.analytics_calculator import AnalyticsCalculator
+from socratic_learning.analytics.analytics_calculator import AnalyticsCalculator
 from socratic_system.ui.analytics_display import AnalyticsDisplay
 from socratic_system.ui.commands.base import BaseCommand
 
@@ -114,14 +114,32 @@ class AnalyticsRecommendCommand(BaseCommand):
                 logger.warning("No active project found")
                 return {"status": "error", "message": "No active project"}
 
-            # Generate recommendations
+            user_id = context.get("user_id", "default_user")
+
+            # Generate recommendations using both analytics and learning insights
             logger.debug(f"Generating recommendations for project type: {project.project_type}")
             calculator = AnalyticsCalculator(project.project_type)
             recommendations = calculator.generate_recommendations(project)
             questions = calculator.suggest_next_questions(project, count=5)
 
+            # Enhance with personalized learning recommendations
+            learning_recs = []
+            try:
+                learning_recs = self.orchestrator.learning_integration.get_recommendations(
+                    user_id=user_id,
+                    context={
+                        "project_id": project.id,
+                        "phase": project.phase,
+                        "project_type": project.project_type
+                    },
+                    top_k=3
+                )
+                logger.debug(f"Retrieved {len(learning_recs)} learning-based recommendations")
+            except Exception as e:
+                logger.debug(f"Learning recommendations unavailable: {e}")
+
             logger.info(
-                f"Generated {len(recommendations)} recommendations and {len(questions)} suggested questions"
+                f"Generated {len(recommendations)} recommendations, {len(learning_recs)} learning-based, and {len(questions)} suggested questions"
             )
 
             # Display results
@@ -131,6 +149,7 @@ class AnalyticsRecommendCommand(BaseCommand):
             return {
                 "status": "success",
                 "recommendations": recommendations,
+                "learning_recommendations": learning_recs,
                 "suggestions": questions,
             }
 
@@ -161,10 +180,20 @@ class AnalyticsTrendsCommand(BaseCommand):
                 logger.warning("No active project found")
                 return {"status": "error", "message": "No active project"}
 
+            user_id = context.get("user_id", "default_user")
+
             # Analyze trends
             logger.debug(f"Analyzing progression trends for project type: {project.project_type}")
             calculator = AnalyticsCalculator(project.project_type)
             trends = calculator.analyze_progression_trends(project)
+
+            # Enhance with learning metrics
+            learning_metrics = {}
+            try:
+                learning_metrics = self.orchestrator.learning_integration.get_learning_metrics(user_id)
+                logger.debug(f"Retrieved learning metrics: engagement={learning_metrics.get('engagement_score', 0)}")
+            except Exception as e:
+                logger.debug(f"Learning metrics unavailable: {e}")
 
             logger.info(
                 f"Trends analysis: velocity={trends.get('velocity', 0):.2f}, sessions={trends.get('total_sessions', 0)}"
@@ -174,7 +203,11 @@ class AnalyticsTrendsCommand(BaseCommand):
             logger.debug("Displaying trends")
             _safe_display(AnalyticsDisplay.display_trends, trends, project.maturity_history)
 
-            return {"status": "success", "trends": trends}
+            return {
+                "status": "success",
+                "trends": trends,
+                "learning_metrics": learning_metrics
+            }
 
         except Exception as e:
             logger.error(f"Trend analysis failed: {type(e).__name__}: {e}")
