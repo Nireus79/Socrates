@@ -63,6 +63,17 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
+    # Core extracted packages (replace internal implementations)
+    "socrates-nexus>=0.1.0",        # Universal LLM client (replaces claude_client)
+    "socratic-agents>=0.1.0",       # Multi-agent orchestration (replaces agents/)
+    "socratic-analyzer>=0.1.0",     # Code analysis capabilities
+    "socratic-conflict>=0.1.0",     # Conflict detection
+    "socratic-knowledge>=0.1.0",    # Knowledge management
+    "socratic-learning>=0.1.0",     # Learning system
+    "socratic-rag>=0.1.0",          # RAG/retrieval capabilities
+    "socratic-workflow>=0.1.0",     # Workflow orchestration
+
+    # External dependencies
     "anthropic>=0.40.0",
     "chromadb>=0.5.0",
     "sentence-transformers>=3.0.0",

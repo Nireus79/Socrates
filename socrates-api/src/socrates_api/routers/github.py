@@ -19,13 +19,8 @@ from socrates_api.models import (
 )
 from socratic_system.database import ProjectDatabase
 from socrates_api.auth.project_access import check_project_access
-from socratic_system.agents.github_sync_handler import (
-    create_github_sync_handler,
-    TokenExpiredError,
-    PermissionDeniedError,
-    RepositoryNotFoundError,
-    NetworkSyncFailedError,
-    ConflictResolutionError,
+from socratic_agents import (
+    GithubSyncHandler,
 )
 
 logger = logging.getLogger(__name__)
