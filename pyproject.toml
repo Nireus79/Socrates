@@ -97,7 +97,7 @@ dependencies = [
 [project.optional-dependencies]
 # Modular library installation options
 core = [
-    "socratic-core>=0.1.0",         # Core framework only (config, events, exceptions)
+    "socratic-core>=0.1.1",         # Core framework only (config, events, exceptions)
 ]
 
 # Individual libraries (can be combined)
@@ -117,7 +117,7 @@ knowledge = [
     "socratic-knowledge>=0.1.0",    # Knowledge management
 ]
 learning = [
-    "socratic-learning>=0.1.0",     # Learning system
+    "socratic-learning>=0.1.1",     # Learning system
 ]
 workflow = [
     "socratic-workflow>=0.1.0",     # Workflow orchestration
@@ -125,18 +125,26 @@ workflow = [
 nexus = [
     "socrates-nexus>=0.1.0",        # Universal LLM client
 ]
+cli = [
+    "socrates-cli>=0.1.0",          # Command-line interface tools
+]
+api = [
+    "socrates-core-api>=0.1.0",     # REST API base framework
+]
 
 # Convenience bundles
 full = [
-    "socratic-core>=0.1.0",
+    "socratic-core>=0.1.1",
+    "socratic-learning>=0.1.1",
     "socrates-nexus>=0.1.0",
     "socratic-agents>=0.1.0",
     "socratic-analyzer>=0.1.0",
     "socratic-conflict>=0.1.0",
     "socratic-knowledge>=0.1.0",
-    "socratic-learning>=0.1.0",
     "socratic-rag>=0.1.0",
     "socratic-workflow>=0.1.0",
+    "socrates-cli>=0.1.0",
+    "socrates-core-api>=0.1.0",
 ]
 
 # Development
@@ -171,15 +179,13 @@ Changelog = "https://github.com/Nireus79/Socrates/releases"
 [tool.setuptools]
 packages = [
     "socratic_system",
-    "socratic_system.agents",
     "socratic_system.clients",
-    "socratic_system.config",
     "socratic_system.conflict_resolution",
+    "socratic_system.core",
     "socratic_system.database",
-    "socratic_system.events",
-    "socratic_system.exceptions",
     "socratic_system.models",
     "socratic_system.orchestration",
+    "socratic_system.services",
     "socratic_system.ui",
     "socratic_system.ui.commands",
     "socratic_system.utils",
