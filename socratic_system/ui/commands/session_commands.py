@@ -522,38 +522,11 @@ If you don't have enough information, say so."""
             project: Project context
             orchestrator: Orchestrator instance
         """
-        try:
-            # ProjectFileLoader not available in socratic_agents yet, use internal version
-            from socratic_system.agents.project_file_loader import ProjectFileLoader
-
-            loader = ProjectFileLoader(orchestrator)
-
-            # Check if project has files to load
-            if not loader.should_load_files(project):
-                return  # No files to load, silently skip
-
-            # Load files into knowledge base
-            self.print_info("Loading project code files into knowledge base...")
-
-            try:
-                result = loader.load_project_files(
-                    project=project, strategy="priority", max_files=50, show_progress=True
-                )
-
-                files_loaded = result.get("files_loaded", 0)
-                chunks = result.get("total_chunks", 0)
-                if files_loaded > 0:
-                    self.print_success(
-                        f"✓ Loaded {files_loaded} files ({chunks} chunks) into knowledge base"
-                    )
-                else:
-                    self.print_info("Files were already loaded in knowledge base")
-            except ValueError as e:
-                self.print_warning(f"Could not load project files: {str(e)}")
-
-        except Exception as e:
-            self.print_warning(f"Error auto-loading project files: {str(e)}")
-            # Don't fail chat session if file loading fails
+        # Project file loading temporarily disabled
+        # ProjectFileLoader has been moved to socratic-rag package
+        # TODO: Integrate with socratic-rag when available
+        # For now, file loading happens through knowledge management endpoints
+        pass
 
 
 class DoneCommand(BaseCommand):
