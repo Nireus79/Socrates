@@ -7,10 +7,12 @@ from .checkers import (
     RequirementsConflictChecker,
     TechStackConflictChecker,
 )
+from .detector import ConflictDetector
 from .rules import CONFLICT_RULES, find_conflict_category
 
 __all__ = [
     "ConflictChecker",
+    "ConflictDetector",
     "TechStackConflictChecker",
     "RequirementsConflictChecker",
     "GoalsConflictChecker",
