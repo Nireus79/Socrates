@@ -371,26 +371,7 @@ def pytest_collection_modifyitems(config, items):
     api_8008_available = check_port(8008)
     api_8000_available = check_port(8000)
 
-    # Archived phase test files that reference outdated service patterns and should be skipped
-    # These files were part of historical phase development and no longer align with current architecture
-    archived_phase_files = {
-        "test_phase2_day3_eventbus.py",  # References undefined service classes (AgentsService, LearningService, etc.)
-        "test_phase2_day4_interservice.py",  # Uses old inter-service communication patterns
-        "test_phase2_day5_integration.py",  # Full phase 2 integration tests with outdated patterns
-    }
-
     for item in items:
-        # Skip archived phase test files that reference old service class patterns
-        if any(archived_file in str(item.fspath) for archived_file in archived_phase_files):
-            item.add_marker(
-                pytest.mark.skip(
-                    reason="Archived phase test file. References outdated service patterns from Phase 2-5 exploration. "
-                    "These tests served their purpose during development but are superseded by current Phase implementation tests. "
-                    "Use test_phase2_day2_orchestrator.py and tests/integration/workflows/ for orchestration testing."
-                )
-            )
-            continue
-
         # Add unit marker to tests that don't require external dependencies
         if "test_" in item.nodeid and not any(
             marker in item.nodeid for marker in ["integration", "e2e", "requires_api"]
