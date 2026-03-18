@@ -73,6 +73,8 @@ tests/
 htmlcov/
 test_*.py
 *_test.py
+MagicMock/
+coverage.xml
 
 # Documentation
 docs/
