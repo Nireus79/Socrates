@@ -193,3 +193,68 @@ def cleanup_test_database():
     # Tests must use isolated temporary directories only
     yield
     # No cleanup of home directory - tests should clean up their own temp files
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_database_with_users(tmp_path_factory):
+    """
+    Session-scoped fixture to set up test database with users for API tests.
+
+    This creates the test database once per session and populates it with
+    test users that authenticated API tests can use.
+    """
+    from socratic_system.models import User, ProjectContext
+    from socratic_system.database import ProjectDatabase
+    from socrates_api.database import DatabaseSingleton
+    import datetime
+
+    # Create test database in temporary directory
+    test_dir = tmp_path_factory.mktemp("test_db")
+    test_db_path = str(test_dir / "test_projects.db")
+    test_db = ProjectDatabase(test_db_path)
+
+    # Create test user
+    test_user = User(
+        username="testuser",
+        email="testuser@example.com",
+        passcode_hash="test_hash",
+        created_at=datetime.datetime.now(),
+        projects=["test_proj"],
+        subscription_tier="free"
+    )
+
+    # Create test project
+    test_project = ProjectContext(
+        project_id="test_proj",
+        name="Test Project",
+        owner="testuser",
+        collaborators=[],
+        goals="Test project for API tests",
+        requirements=[],
+        tech_stack=[],
+        constraints=[],
+        team_structure="individual",
+        language_preferences="python",
+        deployment_target="cloud",
+        code_style="standard",
+        phase="planning",
+        conversation_history=[],
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now()
+    )
+
+    # Reset singleton to use test database
+    DatabaseSingleton.reset()
+    DatabaseSingleton._instance = test_db
+
+    # Save test data to database
+    try:
+        test_db.save_user(test_user)
+        test_db.save_project(test_project)
+    except Exception as e:
+        # Data might already exist, that's fine
+        pass
+
+    yield test_db
+
+    # Don't restore - keep test database for all tests in session
