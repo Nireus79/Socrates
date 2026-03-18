@@ -41,3 +41,4 @@ __all__ = [
     "ROLE_FOCUS_AREAS",
     "VALID_ROLES",
 ]
+from socratic_learning import QuestionEffectiveness, UserBehaviorPattern, KnowledgeBaseDocument
