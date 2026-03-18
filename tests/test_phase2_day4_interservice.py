@@ -13,11 +13,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from core.orchestrator import ServiceOrchestrator
-from modules.agents.service import AgentsService
-from modules.learning.service import LearningService
-from modules.knowledge.service import KnowledgeService
-from modules.workflow.service import WorkflowService
-from modules.analytics.service import AnalyticsService
+from modules.analytics.service import SkillAnalytics
 
 
 def create_mock_service(name, class_name="MockService"):

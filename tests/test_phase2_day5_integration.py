@@ -13,13 +13,9 @@ Tests:
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from core.orchestrator import ServiceOrchestrator
 from core.event_bus import EventBus
-from modules.agents.service import AgentsService
-from modules.learning.service import LearningService
-from modules.knowledge.service import KnowledgeService
-from modules.workflow.service import WorkflowService
-from modules.analytics.service import AnalyticsService
+from core.orchestrator import ServiceOrchestrator
+from modules.analytics.service import SkillAnalytics
 
 
 def create_full_orchestrator():
