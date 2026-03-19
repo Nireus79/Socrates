@@ -6,7 +6,7 @@ actionable recommendations for improvement.
 """
 
 import logging
-from typing import Dict, List
+from typing import Any, Dict, List, cast
 
 from socratic_system.core.project_categories import get_phase_categories
 from socratic_system.models import ProjectContext
@@ -218,7 +218,7 @@ class AnalyticsCalculator:
                 if category not in category_scores:
                     missing_in_phase.append(category)
                 else:
-                    score_data = category_scores.get(category, {})
+                    score_data: Dict[str, Any] = cast(Dict[str, Any], category_scores.get(category, {}))
                     if isinstance(score_data, dict):
                         if score_data.get("spec_count", 0) == 0:
                             missing_in_phase.append(category)
@@ -408,7 +408,7 @@ class AnalyticsCalculator:
                     }
                 )
             elif isinstance(category_scores.get(category), dict):
-                category_score_data = category_scores.get(category, {})
+                category_score_data: Dict[str, Any] = cast(Dict[str, Any], category_scores.get(category, {}))
                 if isinstance(category_score_data, dict) and category_score_data.get("spec_count", 0) == 0:
                     missing_count += 1
                     logger.debug(f"Adding zero-spec category recommendation: {category}")
