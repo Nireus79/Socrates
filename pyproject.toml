@@ -274,6 +274,9 @@ module = [
     "socratic_system.core.analytics_calculator",
     "socratic_system.models.project",
     "socratic_system.config",
+    "modules.foundation.llm_service",
+    "modules.foundation.service",
+    "modules.agents.agents.github_sync_handler",
 ]
 ignore_errors = true
 
