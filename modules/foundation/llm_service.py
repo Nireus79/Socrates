@@ -225,7 +225,7 @@ class ClaudeClient:
         # Method 3: Try base64 fallback (for keys saved with base64 encoding)
         try:
             self.logger.info("Attempting base64 decoding as fallback...")
-            decrypted = base64.b64decode(encrypted_key.encode()).decode()
+            decrypted: str = base64.b64decode(encrypted_key.encode()).decode()
             self.logger.info("API key decoded successfully using base64 fallback")
             return decrypted
         except Exception as e:
@@ -1717,7 +1717,7 @@ Create documentation that will enable others to successfully understand, impleme
 
         return input_cost + output_cost
 
-    def _parse_json_response(self, response_text: str) -> any:
+    def _parse_json_response(self, response_text: str) -> Any:
         """Parse JSON from Claude response with error handling. Returns dict or list."""
         try:
             # Clean up markdown code blocks if present
