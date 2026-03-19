@@ -34,9 +34,9 @@ from socratic_agents import (
     QuestionQueueAgent,
 )
 from socrates_nexus import LLMClient
-from socratic_system.config import SocratesConfig
+from socratic_core import SocratesConfig
 from socratic_system.database import VectorDatabase
-from socratic_system.events import EventEmitter, EventType
+from socratic_core import EventEmitter, EventType
 from socratic_system.models import KnowledgeEntry
 
 

@@ -136,7 +136,7 @@ def test_socrates_config(tmp_path):
     Both projects.db and vector_db will be created in temp directory,
     never touching production data in ~/.socrates/
     """
-    from socratic_system.config import SocratesConfig
+    from socratic_core import SocratesConfig
 
     return SocratesConfig(
         api_key="sk-test-key-12345",

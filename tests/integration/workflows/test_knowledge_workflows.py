@@ -19,7 +19,7 @@ import pytest
 pytestmark = pytest.mark.skip(reason="KnowledgeAnalysisAgent extracted to socratic-agents library")
 
 # from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
-# from socratic_system.events import EventEmitter, EventType
+# from socratic_core import EventEmitter, EventType
 # from socratic_system.models.role import ROLE_EXAMPLES, ROLE_FOCUS_AREAS, VALID_ROLES
 
 

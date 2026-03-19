@@ -28,8 +28,8 @@ from socrates_api.middleware.rate_limit import (
     initialize_limiter,
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware
-from socratic_system.events import EventType
-from socratic_system.exceptions import SocratesError
+from socratic_core import EventType
+from socratic_core import SocratesError
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 # Phase 4 Service Integration

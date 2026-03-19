@@ -10,7 +10,7 @@ Tests cover:
 
 import uuid
 
-from socratic_system.utils.id_generator import ProjectIDGenerator, UserIDGenerator
+from socratic_core.utils import ProjectIDGenerator, UserIDGenerator
 
 
 class TestProjectIDGeneratorUUID:

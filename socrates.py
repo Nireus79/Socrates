@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from socratic_system.config import SocratesConfig
+from socratic_core import SocratesConfig
 from socratic_system.orchestration import AgentOrchestrator
 
 # ============================================================================
@@ -44,7 +44,7 @@ if str(_current_dir) not in sys.path:
 # ============================================================================
 
 try:
-    from socratic_system.exceptions import ProjectNotFoundError, SocratesError
+    from socratic_core import ProjectNotFoundError, SocratesError
 except ImportError:
     class SocratesError(Exception):
         """Base Socrates exception"""
@@ -55,10 +55,10 @@ except ImportError:
         pass
 
 try:
-    from socratic_system.events.event_types import EventType
+    from socratic_core import EventType
 except ImportError:
     try:
-        from socratic_system.events import EventType
+        from socratic_core import EventType
     except ImportError:
         class EventType:
             PROJECT_CREATED = "project_created"

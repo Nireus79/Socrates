@@ -165,7 +165,7 @@ def test_config(mock_api_key, tmp_path):
 
     Never touches production data in ~/.socrates/
     """
-    from socratic_system.config import SocratesConfig
+    from socratic_core import SocratesConfig
 
     config = SocratesConfig(
         api_key=mock_api_key,
@@ -182,7 +182,7 @@ def isolated_socrates_config(mock_api_key, tmp_path):
     Ensures both projects.db and vector_db are in temp directory,
     completely isolated from production.
     """
-    from socratic_system.config import SocratesConfig
+    from socratic_core import SocratesConfig
 
     test_data_dir = tmp_path / "socrates"
     test_data_dir.mkdir(parents=True, exist_ok=True)
@@ -303,7 +303,7 @@ def temp_data_dir(tmp_path):
 @pytest.fixture
 def mock_event_emitter():
     """Create a mock event emitter for testing."""
-    from socratic_system.events.event_emitter import EventEmitter
+    from socratic_core import EventEmitter
 
     return EventEmitter()
 

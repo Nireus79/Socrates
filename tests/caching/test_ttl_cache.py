@@ -6,7 +6,7 @@ Tests decorator-based method caching with time-to-live.
 
 import time
 
-from socratic_system.utils.ttl_cache import TTLCache, cached
+from socratic_core.utils import TTLCache, cached
 
 
 class TestTTLCacheDecorator:

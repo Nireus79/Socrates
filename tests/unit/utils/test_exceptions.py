@@ -4,7 +4,7 @@ Unit tests for Socrates exception system
 
 import pytest
 
-from socratic_system.exceptions import (
+from socratic_core import (
     AgentError,
     APIError,
     AuthenticationError,

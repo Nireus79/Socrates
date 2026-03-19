@@ -6,7 +6,7 @@ import datetime
 
 import pytest
 
-from socratic_system.utils.datetime_helpers import deserialize_datetime, serialize_datetime
+from socratic_core.utils import deserialize_datetime, serialize_datetime
 from socratic_system.utils.logger import DebugLogger, get_logger, is_debug_mode, set_debug_mode
 
 

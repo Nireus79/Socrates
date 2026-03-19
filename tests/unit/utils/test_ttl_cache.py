@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from socratic_system.utils.ttl_cache import TTLCache
+from socratic_core.utils import TTLCache
 
 
 class TestTTLCacheBasic:

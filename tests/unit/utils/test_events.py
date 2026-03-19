@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from socratic_system.events import EventEmitter, EventType
+from socratic_core import EventEmitter, EventType
 
 
 @pytest.mark.unit

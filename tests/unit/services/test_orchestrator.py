@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from socratic_system.events import EventType
+from socratic_core import EventType
 from socratic_system.models import ProjectContext
 
 
