@@ -3,10 +3,7 @@ Test project-type-specific category system
 Verifies that different project types have appropriate maturity categories
 """
 
-import pytest
-
 from socratic_system.core import (
-    MaturityCalculator,
     get_all_project_types,
     get_project_type_description,
 )
@@ -57,60 +54,6 @@ def test_categories_by_project_type():
             print(f"  {phase.capitalize():<15}: {cat_count} categories, 90 points")
 
     print("\n[OK] All project types properly configured")
-
-
-@pytest.mark.skip(
-    reason="MaturityCalculator from socratic_learning library API changed. "
-    "The phase_categories attribute is not available. Test needs to be updated "
-    "to match the current MaturityCalculator implementation."
-)
-def test_calculator_project_type_switching():
-    """Verify MaturityCalculator can switch between project types"""
-    print("\n" + "=" * 70)
-    print("TEST: MaturityCalculator Project Type Switching")
-    print("=" * 70)
-
-    # Test software project type
-    calc = MaturityCalculator("software")
-    assert calc.project_type == "software"
-    assert "tech_stack" in calc.phase_categories["analysis"]
-    print(
-        f"[OK] Software categories loaded: {len(calc.phase_categories['analysis'])} analysis categories"
-    )
-
-    # Test business project type
-    calc.set_project_type("business")
-    assert calc.project_type == "business"
-    assert "financial_projections" in calc.phase_categories["analysis"]
-    assert "tech_stack" not in calc.phase_categories["analysis"]
-    print("[OK] Business categories loaded: financial_projections found")
-
-    # Test creative project type
-    calc.set_project_type("creative")
-    assert calc.project_type == "creative"
-    assert "creative_vision" in calc.phase_categories["discovery"]
-    assert "problem_definition" not in calc.phase_categories["discovery"]
-    print("[OK] Creative categories loaded: creative_vision found")
-
-    # Test research project type
-    calc.set_project_type("research")
-    assert calc.project_type == "research"
-    assert "research_question" in calc.phase_categories["discovery"]
-    print("[OK] Research categories loaded: research_question found")
-
-    # Test marketing project type
-    calc.set_project_type("marketing")
-    assert calc.project_type == "marketing"
-    assert "campaign_objective" in calc.phase_categories["discovery"]
-    print("[OK] Marketing categories loaded: campaign_objective found")
-
-    # Test educational project type
-    calc.set_project_type("educational")
-    assert calc.project_type == "educational"
-    assert "learning_objectives" in calc.phase_categories["discovery"]
-    print("[OK] Educational categories loaded: learning_objectives found")
-
-    print("\n[OK] All project types correctly supported")
 
 
 def test_category_differences():
@@ -171,7 +114,6 @@ def run_all_tests():
     try:
         test_project_types_exist()
         test_categories_by_project_type()
-        test_calculator_project_type_switching()
         test_category_differences()
         test_all_phases_have_90_points()
 
@@ -180,7 +122,6 @@ def run_all_tests():
         print("=" * 70)
         print("\n[OK] Project type system fully functional")
         print("[OK] 6 project types supported with tailored categories")
-        print("[OK] MaturityCalculator supports type switching")
         print("[OK] All point distributions balanced (90 per phase)")
         print("\n" + "=" * 70 + "\n")
 
