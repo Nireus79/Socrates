@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/socrates-api/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/socrates-cli/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/docs/marketing" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.12 (Socrates)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
