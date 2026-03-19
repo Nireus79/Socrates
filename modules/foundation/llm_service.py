@@ -15,7 +15,7 @@ import anthropic
 
 from modules.foundation.events import EventType
 from modules.foundation.exceptions import APIError
-from modules.foundation.models import ConflictInfo, ProjectContext
+from socratic_system.models import ConflictInfo, ProjectContext
 
 if TYPE_CHECKING:
     from modules.foundation.orchestrator import AgentOrchestrator
@@ -149,7 +149,7 @@ class ClaudeClient:
             error_type="MISSING_API_KEY",
         )
 
-    def _decrypt_api_key_from_db(self, encrypted_key: str) -> str:
+    def _decrypt_api_key_from_db(self, encrypted_key: str) -> str | None:
         """
         Decrypt an API key stored in the database.
 
