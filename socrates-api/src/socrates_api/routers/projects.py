@@ -50,7 +50,7 @@ from socrates_api.models import (
 )
 from socratic_system.database import ProjectDatabase
 from socratic_system.models import ProjectContext, User
-from socratic_system.utils.id_generator import ProjectIDGenerator
+from socratic_core.utils import ProjectIDGenerator
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"])

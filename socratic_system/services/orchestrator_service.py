@@ -22,7 +22,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from socratic_system.config import SocratesConfig
+from socratic_core import SocratesConfig
 
 if TYPE_CHECKING:
     from socratic_system.orchestration.orchestrator import AgentOrchestrator

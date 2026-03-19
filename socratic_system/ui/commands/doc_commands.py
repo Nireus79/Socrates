@@ -132,7 +132,7 @@ class DocImportCommand(BaseCommand):
 
             # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
             try:
-                from socratic_system.events import EventType
+                from socratic_core import EventType
 
                 orchestrator.event_emitter.emit(
                     EventType.DOCUMENT_IMPORTED,
@@ -238,7 +238,7 @@ class DocImportDirCommand(BaseCommand):
 
             # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
             try:
-                from socratic_system.events import EventType
+                from socratic_core import EventType
 
                 orchestrator.event_emitter.emit(
                     EventType.DOCUMENT_IMPORTED,
@@ -414,7 +414,7 @@ class DocPasteCommand(BaseCommand):
     ) -> None:
         """Emit DOCUMENT_IMPORTED event to trigger knowledge analysis"""
         try:
-            from socratic_system.events import EventType
+            from socratic_core import EventType
 
             orchestrator.event_emitter.emit(
                 EventType.DOCUMENT_IMPORTED,
@@ -499,7 +499,7 @@ class DocImportUrlCommand(BaseCommand):
 
             # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
             try:
-                from socratic_system.events import EventType
+                from socratic_core import EventType
 
                 orchestrator.event_emitter.emit(
                     EventType.DOCUMENT_IMPORTED,

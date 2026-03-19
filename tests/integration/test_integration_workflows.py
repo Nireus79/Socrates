@@ -22,7 +22,7 @@ def test_project_creation_workflow():
 
         from socratic_system.models import User
         from socratic_system.subscription.checker import SubscriptionChecker
-        from socratic_system.utils.id_generator import ProjectIDGenerator
+        from socratic_core.utils import ProjectIDGenerator
 
         # Step 1: Initialize database singleton
         print("[1/7] Initializing DatabaseSingleton...")
@@ -126,7 +126,7 @@ def test_orchestrator_integration():
 
         from socrates_api.database import DatabaseSingleton
 
-        from socratic_system.config import SocratesConfig
+        from socratic_core import SocratesConfig
         from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
         # Initialize config from environment

@@ -31,7 +31,7 @@ from socratic_system.models.llm_provider import LLMUsageRecord
 from socratic_system.models.note import ProjectNote
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
-from socratic_system.utils.datetime_helpers import deserialize_datetime, serialize_datetime
+from socratic_core.utils import deserialize_datetime, serialize_datetime
 
 logger = logging.getLogger("socrates.database")
 

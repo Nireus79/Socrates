@@ -11,8 +11,8 @@ import tempfile
 import time
 from pathlib import Path
 
-from socratic_system.config import SocratesConfig
-from socratic_system.events import EventType
+from socratic_core import SocratesConfig
+from socratic_core import EventType
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 project_root = Path(__file__).parent.parent

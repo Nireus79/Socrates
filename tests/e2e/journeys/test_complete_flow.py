@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from socratic_system.config import SocratesConfig
+from socratic_core import SocratesConfig
 from socratic_system.models import ProjectContext, ProjectNote, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
