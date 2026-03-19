@@ -8,7 +8,13 @@ using socratic-workflow's Workflow and Task classes.
 import logging
 from typing import Any, Dict, List, Optional
 
-from socratic_workflow import Task, Workflow, WorkflowEngine
+try:
+    from socratic_workflow import Task, Workflow, WorkflowEngine
+except ImportError:
+    # socratic_workflow is optional - provide graceful fallback
+    Task = None  # type: ignore
+    Workflow = None  # type: ignore
+    WorkflowEngine = None  # type: ignore
 
 from socratic_system.models.workflow import WorkflowExecutionState
 
@@ -36,19 +42,22 @@ class WorkflowIntegration:
         """
         self.executor_type = executor_type
         self.logger = logging.getLogger("socrates.workflow")
-        self.engine: WorkflowEngine | None = None
+        self.engine: Any = None
+        self.active_workflows: Dict[str, Any] = {}
+        self.workflow_tasks: Dict[str, List[Any]] = {}
+
+        if WorkflowEngine is None:
+            self.logger.warning("socratic_workflow not available - workflow features disabled")
+            return
 
         try:
             # Initialize workflow engine
             self.engine = WorkflowEngine()
             self.logger.info(f"WorkflowEngine initialized ({executor_type})")
 
-            self.active_workflows: Dict[str, Workflow] = {}
-            self.workflow_tasks: Dict[str, List[Task]] = {}
-
         except Exception as e:
             self.logger.error(f"Failed to initialize workflow integration: {e}")
-            raise
+            # Don't raise - allow graceful degradation
 
     def create_workflow(
         self,
@@ -56,7 +65,7 @@ class WorkflowIntegration:
         name: str,
         description: str,
         phase: str = "discovery"
-    ) -> Workflow:
+    ) -> Any:
         """
         Create a new workflow.
 
@@ -69,6 +78,10 @@ class WorkflowIntegration:
         Returns:
             Workflow object
         """
+        if Workflow is None:
+            self.logger.debug("Workflow creation unavailable - workflow features disabled")
+            return None
+
         try:
             workflow = Workflow(
                 workflow_id=workflow_id,
@@ -83,7 +96,7 @@ class WorkflowIntegration:
 
         except Exception as e:
             self.logger.error(f"Failed to create workflow: {e}")
-            raise
+            return None
 
     def add_task(
         self,
@@ -94,7 +107,7 @@ class WorkflowIntegration:
         task_type: str = "question",
         dependencies: Optional[List[str]] = None,
         metadata: Optional[Dict] = None
-    ) -> Task:
+    ) -> Any:
         """
         Add a task to a workflow.
 
@@ -110,6 +123,10 @@ class WorkflowIntegration:
         Returns:
             Task object
         """
+        if Task is None:
+            self.logger.debug("Task creation unavailable - workflow features disabled")
+            return None
+
         try:
             if workflow_id not in self.active_workflows:
                 raise ValueError(f"Workflow {workflow_id} not found")
@@ -132,7 +149,7 @@ class WorkflowIntegration:
 
         except Exception as e:
             self.logger.error(f"Failed to add task: {e}")
-            raise
+            return None
 
     def execute_workflow(
         self,
@@ -366,7 +383,8 @@ class WorkflowIntegration:
     def close(self):
         """Close workflow integration"""
         try:
-            self.engine.shutdown()
+            if self.engine is not None:
+                self.engine.shutdown()
             self.active_workflows.clear()
             self.workflow_tasks.clear()
             self.logger.info("Workflow integration closed")
