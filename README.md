@@ -1,6 +1,22 @@
+# ⚠️ Socrates AI - DEPRECATED
+
+**This package is deprecated as of March 19, 2026. Use modular packages instead.**
+
+For new projects, use:
+- `socratic-core>=0.1.1` - Core framework
+- `socratic-learning>=0.1.1` - Learning system
+- `socratic-agents>=0.1.0` - Agent orchestration (if needed)
+- `socratic-rag>=0.1.0` - RAG capabilities (if needed)
+
+**See [MIGRATION_GUIDE_PACKAGE_UPDATES.md](MIGRATION_GUIDE_PACKAGE_UPDATES.md) for step-by-step migration instructions.**
+
+---
+
 # Socrates AI - Socratic Method Tutoring System
 
 **Self-hosted platform for AI-guided collaborative development using the Socratic method with multi-agent orchestration, RAG, and knowledge management.**
+
+**⚠️ Note**: This monolithic package is no longer actively maintained. Use modular libraries for new projects.
 
 ## What is Socrates?
 

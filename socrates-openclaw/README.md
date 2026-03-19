@@ -1,4 +1,19 @@
-# Socrates AI - OpenClaw Integration
+# ❌ Socrates AI - OpenClaw Integration - BROKEN & DEPRECATED
+
+**⚠️ DO NOT INSTALL** - This package is broken and no longer maintained.
+
+**Installation will fail** due to unmet dependency: `socrates-ai>=1.3.0` does not exist.
+
+### ✅ Use this instead:
+```bash
+pip install socratic-openclaw-skill>=0.1.0
+```
+
+**See [MIGRATION_GUIDE_PACKAGE_UPDATES.md](../MIGRATION_GUIDE_PACKAGE_UPDATES.md) for migration instructions.**
+
+---
+
+# Socrates AI - OpenClaw Integration (DEPRECATED)
 
 Official integration of Socrates AI with OpenClaw, the personal AI assistant platform.
 

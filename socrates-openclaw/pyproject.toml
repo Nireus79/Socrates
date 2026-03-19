@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "socrates-ai-openclaw"
 version = "1.0.0"
-description = "Official Socrates AI integration for OpenClaw"
+description = "❌ BROKEN & DEPRECATED - Installation will fail. Use socratic-openclaw-skill instead: pip install socratic-openclaw-skill"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["socrates", "ai", "openclaw", "discovery", "rag", "education"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 7 - Inactive",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
