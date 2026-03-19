@@ -7,8 +7,17 @@ Provides versioning, access control, audit logs, and retrieval-augmented generat
 import logging
 from typing import Any, Dict, List, Optional
 
-from socratic_knowledge import KnowledgeManager as SKnowledgeManager
-from socratic_rag import LLMPoweredRAG, RAGClient, RAGConfig
+try:
+    from socratic_knowledge import KnowledgeManager as SKnowledgeManager
+except ImportError:
+    SKnowledgeManager = None  # type: ignore
+
+try:
+    from socratic_rag import LLMPoweredRAG, RAGClient, RAGConfig
+except ImportError:
+    LLMPoweredRAG = None  # type: ignore
+    RAGClient = None  # type: ignore
+    RAGConfig = None  # type: ignore
 
 from socratic_system.models import KnowledgeEntry
 
