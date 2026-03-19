@@ -445,10 +445,29 @@ bandit -r socratic_system/ socrates-api/
 - **Testing**: pytest, pytest-cov
 - **Code Quality**: ruff, mypy, black, bandit
 
+## 🔄 Latest Updates
+
+### Recent Changes (March 2026)
+- ✅ Fixed MaturityCalculator import issue - now correctly imports from `socratic_learning` package
+- ✅ Improved module resolution for external dependencies
+- ✅ Enhanced API stability and reliability
+
+### 🎯 Open for Review & Contributions
+
+**I'm actively seeking:**
+- **Code Reviews** - Feedback on architecture, design patterns, and code quality
+- **Bug Reports** - Issues, edge cases, or unexpected behaviors
+- **Corrections** - Grammar, documentation, or technical inaccuracies
+- **Suggestions** - Improvements, optimizations, or new features
+- **Pull Requests** - Contributions to fix bugs or add features
+
+This is a collaborative learning project. All feedback, whether critical or constructive, helps improve the codebase. Don't hesitate to open issues or PRs!
+
 ## Community & Support
 
 - **GitHub Issues**: [Report bugs or request features](https://github.com/Nireus79/Socrates/issues)
 - **Discussions**: [Ask questions and share ideas](https://github.com/Nireus79/Socrates/discussions)
+- **Pull Requests**: [Submit code reviews and contributions](https://github.com/Nireus79/Socrates/pulls)
 - **Documentation**: [Full docs](docs/)
 - **Contributing**: [Contribution guide](docs/CONTRIBUTING.md)
 
