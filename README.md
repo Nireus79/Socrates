@@ -1,35 +1,3 @@
-# ⚠️ Socrates AI - DEPRECATED
-
-**This package is deprecated as of March 19, 2026. Use modular packages instead.**
-
-For new projects, use:
-- `socratic-core>=0.1.1` - Core framework
-- `socratic-learning>=0.1.1` - Learning system
-- `socratic-agents>=0.1.0` - Agent orchestration (if needed)
-- `socratic-rag>=0.1.0` - RAG capabilities (if needed)
-
-**See [MIGRATION_GUIDE_PACKAGE_UPDATES.md](MIGRATION_GUIDE_PACKAGE_UPDATES.md) for step-by-step migration instructions.**
-
-### What Changed?
-
-The monolithic `socrates-ai` package (v1.3.4) has been split into focused, modular libraries:
-
-- ✅ **Better**: Install only what you need
-- ✅ **Faster**: Reduced dependencies and smaller downloads
-- ✅ **Cleaner**: Simpler to maintain and update
-- ✅ **Flexible**: Mix and match components
-
-### Deprecated Packages
-
-| Package | Status | Replacement |
-|---------|--------|-------------|
-| **socrates-ai** | ⚠️ DEPRECATED | Use `socratic-core` + `socratic-learning` + others as needed |
-| **socrates-ai-openclaw** | ❌ BROKEN | Use `socratic-openclaw-skill>=0.1.0` |
-
-Both old packages are still available on PyPI for backward compatibility, but won't receive new features or updates (critical security fixes only).
-
----
-
 # Socrates AI - Socratic Method Tutoring System
 
 **Self-hosted platform for AI-guided collaborative development using the Socratic method with multi-agent orchestration, RAG, and knowledge management.**
@@ -510,3 +478,33 @@ Built with:
 ---
 
 **Made with ❤️ for teams who believe in thoughtful, collaborative development**
+
+# ⚠️ Socrates AI - DEPRECATED
+
+**This package is deprecated as of March 19, 2026. Use modular packages instead.**
+
+For new projects, use:
+- `socratic-core>=0.1.1` - Core framework
+- `socratic-learning>=0.1.1` - Learning system
+- `socratic-agents>=0.1.0` - Agent orchestration (if needed)
+- `socratic-rag>=0.1.0` - RAG capabilities (if needed)
+
+**See [MIGRATION_GUIDE_PACKAGE_UPDATES.md](MIGRATION_GUIDE_PACKAGE_UPDATES.md) for step-by-step migration instructions.**
+
+### What Changed?
+
+The monolithic `socrates-ai` package (v1.3.4) has been split into focused, modular libraries:
+
+- ✅ **Better**: Install only what you need
+- ✅ **Faster**: Reduced dependencies and smaller downloads
+- ✅ **Cleaner**: Simpler to maintain and update
+- ✅ **Flexible**: Mix and match components
+
+### Deprecated Packages
+
+| Package | Status | Replacement |
+|---------|--------|-------------|
+| **socrates-ai** | ⚠️ DEPRECATED | Use `socratic-core` + `socratic-learning` + others as needed |
+| **socrates-ai-openclaw** | ❌ BROKEN | Use `socratic-openclaw-skill>=0.1.0` |
+
+Both old packages are still available on PyPI for backward compatibility, but won't receive new features or updates (critical security fixes only).
