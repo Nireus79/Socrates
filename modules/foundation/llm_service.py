@@ -9,7 +9,7 @@ import asyncio
 import hashlib
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import anthropic
 
@@ -30,7 +30,7 @@ class ClaudeClient:
     """
 
     def __init__(
-        self, api_key: str = None, orchestrator: "AgentOrchestrator" = None, subscription_token: str = None
+        self, api_key: Optional[str] = None, orchestrator: Optional["AgentOrchestrator"] = None, subscription_token: Optional[str] = None
     ):
         """
         Initialize Claude client.
@@ -42,7 +42,7 @@ class ClaudeClient:
         """
         self.api_key = api_key
         self.subscription_token = subscription_token
-        self.orchestrator = orchestrator
+        self.orchestrator: Optional["AgentOrchestrator"] = orchestrator
         self.model = orchestrator.config.claude_model if orchestrator else "claude-haiku-4-5-20251001"
         self.logger = logging.getLogger("socrates.clients.claude")
 
