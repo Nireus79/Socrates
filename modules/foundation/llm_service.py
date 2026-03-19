@@ -125,7 +125,7 @@ class ClaudeClient:
             APIError: If user has no key and env variable is not set
         """
         # Try to get user's stored API key from database
-        if user_id:
+        if user_id and self.orchestrator:
             try:
                 stored_key = self.orchestrator.database.get_api_key(user_id, "claude")
                 if stored_key:
@@ -225,9 +225,9 @@ class ClaudeClient:
         # Method 3: Try base64 fallback (for keys saved with base64 encoding)
         try:
             self.logger.info("Attempting base64 decoding as fallback...")
-            decrypted: str = base64.b64decode(encrypted_key.encode()).decode()
+            decoded_key: str = base64.b64decode(encrypted_key.encode()).decode()
             self.logger.info("API key decoded successfully using base64 fallback")
-            return decrypted
+            return decoded_key
         except Exception as e:
             self.logger.debug(f"Base64 decoding failed: {e}")
 
@@ -420,9 +420,10 @@ class ClaudeClient:
 
         except Exception as e:
             self.logger.error(f"Error extracting insights: {e}")
-            self.orchestrator.event_emitter.emit(
-                EventType.LOG_ERROR, {"message": f"Failed to extract insights: {e}"}
-            )
+            if self.orchestrator:
+                self.orchestrator.event_emitter.emit(
+                    EventType.LOG_ERROR, {"message": f"Failed to extract insights: {e}"}
+                )
             return {}
 
     async def extract_insights_async(
@@ -511,6 +512,8 @@ class ClaudeClient:
         user_id: str = None,
     ) -> str:
         """Generate suggestions for resolving a specific conflict"""
+        if not self.orchestrator:
+            return "Orchestrator not initialized. Cannot generate conflict resolution suggestions."
         context_summary = self.orchestrator.context_analyzer.get_context_summary(project)
 
         prompt = f"""Help resolve this project specification conflict:
