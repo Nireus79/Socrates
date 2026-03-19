@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "socrates-ai"
 version = "1.3.4"
-description = "⚠️ DEPRECATED - Use modular packages instead: socratic-core, socratic-learning, socratic-agents, socratic-rag. See https://github.com/Nireus79/Socrates/MIGRATION_GUIDE_PACKAGE_UPDATES.md"
+description = "Socratic method tutoring system with Claude AI, RAG, and multi-agent orchestration for software development guidance"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -43,7 +43,7 @@ keywords = [
     "gitops"
 ]
 classifiers = [
-    "Development Status :: 7 - Inactive",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Programming Language :: Python :: 3",
