@@ -8,7 +8,11 @@ multi-agent conflict detection and resolution.
 import logging
 from typing import Any, Dict, List, Optional
 
-from socratic_conflict import ConflictDetector as SKConflictDetector
+try:
+    from socratic_conflict import ConflictDetector as SKConflictDetector
+except ImportError:
+    # socratic_conflict is optional - provide graceful fallback
+    SKConflictDetector = None  # type: ignore
 
 from socratic_system.models import ConflictInfo, ProjectContext
 
@@ -32,8 +36,18 @@ class ConflictDetector:
         """
         self.orchestrator = orchestrator
         self.logger = logging.getLogger("socrates.conflict")
-        self.detector = SKConflictDetector()
-        self.logger.info("ConflictDetector initialized (socratic-conflict)")
+        self.detector = None
+
+        if SKConflictDetector is None:
+            self.logger.warning("socratic_conflict not available - conflict detection disabled")
+            return
+
+        try:
+            self.detector = SKConflictDetector()
+            self.logger.info("ConflictDetector initialized (socratic-conflict)")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize ConflictDetector: {e}")
+            # Allow graceful degradation
 
     def detect_project_conflicts(
         self,
@@ -52,6 +66,10 @@ class ConflictDetector:
         Returns:
             List of detected conflicts
         """
+        if self.detector is None:
+            self.logger.debug("Conflict detection unavailable - feature disabled")
+            return []
+
         conflicts = []
 
         # Check goals conflicts (decision type)
@@ -137,6 +155,9 @@ class ConflictDetector:
         Returns:
             Conflict if detected, None otherwise
         """
+        if self.detector is None:
+            return None
+
         try:
             conflict = self.detector.detect_workflow_conflict(
                 workflow_id=workflow_id,
@@ -165,6 +186,9 @@ class ConflictDetector:
         Returns:
             Conflict if detected, None otherwise
         """
+        if self.detector is None:
+            return None
+
         try:
             conflict = self.detector.detect_decision_conflict(
                 decision_name=decision_name,
@@ -194,6 +218,9 @@ class ConflictDetector:
 
     def get_all_conflicts(self) -> List[Any]:
         """Get all detected conflicts"""
+        if self.detector is None:
+            return []
+
         try:
             return self.detector.get_conflicts()
         except Exception as e:
@@ -202,6 +229,9 @@ class ConflictDetector:
 
     def clear_conflicts(self):
         """Clear all conflicts"""
+        if self.detector is None:
+            return
+
         try:
             self.detector.clear_conflicts()
             self.logger.info("All conflicts cleared")
