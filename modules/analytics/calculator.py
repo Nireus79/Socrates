@@ -218,7 +218,7 @@ class AnalyticsCalculator:
                 if category not in category_scores:
                     missing_in_phase.append(category)
                 else:
-                    score_data: Dict = category_scores.get(category, {})
+                    score_data: Dict | None = category_scores.get(category)
                     if isinstance(score_data, dict):
                         if score_data.get("spec_count", 0) == 0:
                             missing_in_phase.append(category)
@@ -408,8 +408,8 @@ class AnalyticsCalculator:
                     }
                 )
             elif isinstance(category_scores.get(category), dict):
-                score_data: Dict | None = category_scores.get(category)
-                if isinstance(score_data, dict) and score_data.get("spec_count", 0) == 0:
+                category_score_data: Dict | None = category_scores.get(category)
+                if isinstance(category_score_data, dict) and category_score_data.get("spec_count", 0) == 0:
                     missing_count += 1
                     logger.debug(f"Adding zero-spec category recommendation: {category}")
                     recommendations.append(
