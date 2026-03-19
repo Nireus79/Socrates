@@ -53,6 +53,7 @@ Specialized agents for different development tasks:
 - Connection pooling for databases
 - Optimized vector search
 - Cross-platform compatible (Windows, Linux, macOS)
+![SocratesSS](https://github.com/user-attachments/assets/233891d6-b983-42a7-8e85-1040e99024f1)
 
 ## Architecture
 
