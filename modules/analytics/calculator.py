@@ -52,9 +52,9 @@ class AnalyticsCalculator:
         current_phase = project.phase
         category_scores = project.category_scores.get(current_phase, {})
 
-        weak_categories = []
-        strong_categories = []
-        missing_categories = []
+        weak_categories: List[Dict] = []
+        strong_categories: List[Dict] = []
+        missing_categories: List[str] = []
 
         for category, score_data in category_scores.items():
             if isinstance(score_data, dict):
@@ -117,7 +117,7 @@ class AnalyticsCalculator:
         current_phase = project.phase
         category_scores = project.category_scores.get(current_phase, {})
 
-        weak = []
+        weak: List[str] = []
         for category, score_data in category_scores.items():
             if isinstance(score_data, dict):
                 current = score_data.get("current_score", 0.0)
@@ -136,7 +136,7 @@ class AnalyticsCalculator:
         current_phase = project.phase
         category_scores = project.category_scores.get(current_phase, {})
 
-        strong = []
+        strong: List[str] = []
         for category, score_data in category_scores.items():
             if isinstance(score_data, dict):
                 current = score_data.get("current_score", 0.0)
@@ -165,7 +165,7 @@ class AnalyticsCalculator:
             return {"status": "UNKNOWN", "messages": []}
 
         # Calculate percentages for all categories
-        percentages = []
+        percentages: List[tuple] = []
         for category, score_data in category_scores.items():
             if isinstance(score_data, dict):
                 current = score_data.get("current_score", 0.0)
@@ -312,7 +312,7 @@ class AnalyticsCalculator:
 
         plateaus = []
         consecutive_low_delta = 0
-        plateau_start = None
+        plateau_start: int | None = None
 
         for i, event in enumerate(qa_events):
             delta = event.get("delta", 0.0)
@@ -322,7 +322,7 @@ class AnalyticsCalculator:
                     plateau_start = i
                 consecutive_low_delta += 1
             else:
-                if consecutive_low_delta >= 2:  # At least 2 stagnant sessions
+                if consecutive_low_delta >= 2 and plateau_start is not None:  # At least 2 stagnant sessions
                     plateau_info = {
                         "start_session": plateau_start + 1,
                         "duration": consecutive_low_delta,
@@ -408,7 +408,8 @@ class AnalyticsCalculator:
                     }
                 )
             elif isinstance(category_scores.get(category), dict):
-                if category_scores[category].get("spec_count", 0) == 0:
+                score_data = category_scores.get(category)
+                if isinstance(score_data, dict) and score_data.get("spec_count", 0) == 0:
                     missing_count += 1
                     logger.debug(f"Adding zero-spec category recommendation: {category}")
                     recommendations.append(
@@ -546,7 +547,7 @@ class AnalyticsCalculator:
             f"Generating insights from {len(qa_events)} Q&A events, velocity={velocity:.2f}"
         )
 
-        insights = []
+        insights: List[str] = []
 
         if not qa_events:
             logger.debug("No Q&A events provided, returning empty insights")
@@ -566,7 +567,7 @@ class AnalyticsCalculator:
         """Detect plateau patterns in Q&A events and add to insights."""
         plateaus = []
         consecutive_low = 0
-        plateau_start = None
+        plateau_start: int | None = None
 
         for i, event in enumerate(qa_events):
             delta = event.get("delta", 0.0)
@@ -575,7 +576,7 @@ class AnalyticsCalculator:
                     plateau_start = i
                 consecutive_low += 1
             else:
-                if consecutive_low >= 2:
+                if consecutive_low >= 2 and plateau_start is not None:
                     plateaus.append((plateau_start + 1, consecutive_low))
                 consecutive_low = 0
 
