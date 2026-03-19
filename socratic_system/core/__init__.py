@@ -4,6 +4,7 @@ Core calculation and utility modules for Socratic system
 
 from socratic_learning.analytics.analytics_calculator import AnalyticsCalculator
 from socratic_learning.analytics.maturity_calculator import MaturityCalculator
+
 from .analyzer_integration import AnalyzerIntegration
 from .insight_categorizer import InsightCategorizer
 from .learning_integration import LearningIntegration

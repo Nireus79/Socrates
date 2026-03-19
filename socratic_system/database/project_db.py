@@ -24,14 +24,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from socratic_system.database.migration_runner import MigrationRunner
+from socratic_core.utils import deserialize_datetime, serialize_datetime
+
 # Import learning models from modules/foundation (moved from socratic_system.models)
 from modules.foundation.models.learning import QuestionEffectiveness, UserBehaviorPattern
+from socratic_system.database.migration_runner import MigrationRunner
 from socratic_system.models.llm_provider import LLMUsageRecord
 from socratic_system.models.note import ProjectNote
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
-from socratic_core.utils import deserialize_datetime, serialize_datetime
 
 logger = logging.getLogger("socrates.database")
 

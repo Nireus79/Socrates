@@ -12,7 +12,7 @@ from socratic_learning import InteractionLogger
 from socratic_learning.recommendations.engine import RecommendationEngine
 
 # Import learning models from modules/foundation (moved from socratic_system.models)
-from modules.foundation.models.learning import QuestionEffectiveness, UserBehaviorPattern
+from modules.foundation.models.learning import UserBehaviorPattern
 
 
 class LearningIntegration:

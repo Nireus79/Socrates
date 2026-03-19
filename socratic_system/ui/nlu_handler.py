@@ -13,6 +13,7 @@ from colorama import Fore, Style
 
 if TYPE_CHECKING:
     from socrates_nexus import LLMClient
+
     from socratic_system.ui.command_handler import CommandHandler
 
 

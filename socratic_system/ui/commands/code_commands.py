@@ -62,7 +62,7 @@ class CodeGenerateCommand(BaseCommand):
                 )
                 if analysis.get("recommendations"):
                     self._display_code_analysis(analysis)
-            except Exception as e:
+            except Exception:
                 # Analysis is optional - don't fail if unavailable
                 pass
 

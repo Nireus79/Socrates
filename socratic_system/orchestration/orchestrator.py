@@ -15,28 +15,58 @@ import json
 from pathlib import Path
 from typing import Any
 
+from socrates_nexus import LLMClient
 from socratic_agents import (
     CodeGenerator as CodeGeneratorAgent,
+)
+from socratic_agents import (
     CodeValidator as CodeValidationAgent,
+)
+from socratic_agents import (
     ConflictDetector as ConflictDetectorAgent,
+)
+from socratic_agents import (
     ContextAnalyzer as ContextAnalyzerAgent,
+)
+from socratic_agents import (
     DocumentProcessor as DocumentProcessorAgent,
-    ProjectManager as ProjectManagerAgent,
-    QualityController as QualityControllerAgent,
-    SocraticCounselor as SocraticCounselorAgent,
-    SystemMonitor as SystemMonitorAgent,
-    UserManager as UserManagerAgent,
+)
+from socratic_agents import (
     KnowledgeAnalysis as KnowledgeAnalysisAgent,
+)
+from socratic_agents import (
     KnowledgeManager as KnowledgeManagerAgent,
+)
+from socratic_agents import (
     LearningAgent as UserLearningAgent,
+)
+from socratic_agents import (
     MultiLlmAgent as MultiLLMAgent,
+)
+from socratic_agents import (
     NoteManager as NoteManagerAgent,
+)
+from socratic_agents import (
+    ProjectManager as ProjectManagerAgent,
+)
+from socratic_agents import (
+    QualityController as QualityControllerAgent,
+)
+from socratic_agents import (
     QuestionQueueAgent,
 )
-from socrates_nexus import LLMClient
-from socratic_core import SocratesConfig
+from socratic_agents import (
+    SocraticCounselor as SocraticCounselorAgent,
+)
+from socratic_agents import (
+    SystemMonitor as SystemMonitorAgent,
+)
+from socratic_agents import (
+    UserManager as UserManagerAgent,
+)
+from socratic_core import EventEmitter, EventType, SocratesConfig
+
 from socratic_system.database import VectorDatabase
-from socratic_core import EventEmitter, EventType
 from socratic_system.models import KnowledgeEntry
 
 

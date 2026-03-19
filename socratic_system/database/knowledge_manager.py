@@ -5,10 +5,10 @@ Provides versioning, access control, audit logs, and retrieval-augmented generat
 """
 
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from socratic_knowledge import KnowledgeManager as SKnowledgeManager
-from socratic_rag import RAGClient, RAGConfig, LLMPoweredRAG
+from socratic_rag import LLMPoweredRAG, RAGClient, RAGConfig
 
 from socratic_system.models import KnowledgeEntry
 

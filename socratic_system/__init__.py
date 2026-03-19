@@ -75,20 +75,17 @@ __license__ = "MIT"
 # - Deleted: socratic_system/logging_config.py (now: socratic-core)
 # - Deleted: socratic_system/utils/{id_generator,datetime_helpers,ttl_cache}.py (now: socratic-core)
 
-# Core Configuration API (from socratic-core)
-from socratic_core import ConfigBuilder, SocratesConfig
-
-# Event System (from socratic-core)
-from socratic_core import EventEmitter, EventType
-
-# Custom Exceptions (from socratic-core)
 from socratic_core import (
     AgentError,
     APIError,
     AuthenticationError,
+    ConfigBuilder,
     ConfigurationError,
     DatabaseError,
+    EventEmitter,
+    EventType,
     ProjectNotFoundError,
+    SocratesConfig,
     SocratesError,
     UserNotFoundError,
     ValidationError,
@@ -97,11 +94,7 @@ from socratic_core import (
 # ============================================================================
 # INTERNAL IMPORTS (Still from socratic_system)
 # ============================================================================
-
-# Core Configuration API (also import local for any enhancements)
 from .clients import ClaudeClient
-
-# Data Models
 from .models import (
     ConflictInfo,
     KnowledgeEntry,
@@ -110,11 +103,7 @@ from .models import (
     TokenUsage,
     User,
 )
-
-# Core Components
 from .orchestration import AgentOrchestrator
-
-# Legacy UI (for CLI)
 from .ui import SocraticRAGSystem
 
 # ============================================================================

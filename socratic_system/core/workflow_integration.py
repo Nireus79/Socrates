@@ -8,9 +8,9 @@ using socratic-workflow's Workflow and Task classes.
 import logging
 from typing import Any, Dict, List, Optional
 
-from socratic_workflow import Workflow, WorkflowEngine, Task, SimpleTask
+from socratic_workflow import Task, Workflow, WorkflowEngine
 
-from socratic_system.models.workflow import WorkflowDefinition, WorkflowExecutionState
+from socratic_system.models.workflow import WorkflowExecutionState
 
 
 class WorkflowIntegration:
@@ -200,7 +200,7 @@ class WorkflowIntegration:
             return {
                 "task_id": task_id,
                 "name": getattr(task, "name", ""),
-                "status": getattr(task, "status", TaskStatus.PENDING),
+                "status": getattr(task, "status", "pending"),
                 "started_at": getattr(task, "started_at", None),
                 "completed_at": getattr(task, "completed_at", None),
                 "output": getattr(task, "output", {}),
@@ -225,7 +225,6 @@ class WorkflowIntegration:
             if workflow_id not in self.active_workflows:
                 return {"error": f"Workflow {workflow_id} not found"}
 
-            workflow = self.active_workflows[workflow_id]
             tasks = self.workflow_tasks.get(workflow_id, [])
 
             if not tasks:
@@ -238,8 +237,8 @@ class WorkflowIntegration:
                     "progress_percentage": 0.0
                 }
 
-            completed = sum(1 for t in tasks if getattr(t, "status", None) == TaskStatus.COMPLETED)
-            failed = sum(1 for t in tasks if getattr(t, "status", None) == TaskStatus.FAILED)
+            completed = sum(1 for t in tasks if getattr(t, "status", None) == "completed")
+            failed = sum(1 for t in tasks if getattr(t, "status", None) == "failed")
             pending = len(tasks) - completed - failed
 
             return {

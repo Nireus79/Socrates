@@ -4,6 +4,7 @@ Data models for Socrates AI
 
 from .conflict import ConflictInfo
 from .knowledge import KnowledgeEntry
+
 # Learning models moved to modules/foundation/models/learning.py
 from .llm_provider import (
     APIKeyRecord,
@@ -41,4 +42,3 @@ __all__ = [
     "ROLE_FOCUS_AREAS",
     "VALID_ROLES",
 ]
-from socratic_learning import QuestionEffectiveness, UserBehaviorPattern, KnowledgeBaseDocument
