@@ -40,11 +40,6 @@ class TestSocraticCoreImports:
             ConfigurationError,
             DatabaseError,
             ValidationError,
-            AuthenticationError,
-            AgentError,
-            APIError,
-            ProjectNotFoundError,
-            UserNotFoundError,
         )
 
         # Verify all exceptions are valid

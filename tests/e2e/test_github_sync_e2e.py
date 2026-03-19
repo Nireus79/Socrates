@@ -40,8 +40,10 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Import the components we're testing
-from socratic_agents import (
-    GithubSyncHandler,
+from modules.agents.agents.github_sync_handler import (
+    create_github_sync_handler,
+    TokenExpiredError,
+    NetworkSyncFailedError,
 )
 
 

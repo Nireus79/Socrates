@@ -304,7 +304,6 @@ class WorkflowIntegration:
                 return None
 
             workflow = self.active_workflows[workflow_id]
-            progress = self.get_workflow_progress(workflow_id)
 
             # Get execution state from workflow
             execution_id = getattr(workflow, "execution_id", f"exec_{workflow_id}")
