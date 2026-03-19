@@ -6,8 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from socratic_system.events.event_emitter import EventEmitter
-from socratic_system.events.event_types import EventType
+from socratic_core import EventEmitter, EventType
 from socratic_system.orchestration import AgentOrchestrator
 
 

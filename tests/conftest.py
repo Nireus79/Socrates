@@ -303,7 +303,7 @@ def temp_data_dir(tmp_path):
 @pytest.fixture
 def mock_event_emitter():
     """Create a mock event emitter for testing."""
-    from socratic_system.events.event_emitter import EventEmitter
+    from socratic_core import EventEmitter
 
     return EventEmitter()
 

@@ -11,7 +11,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Optional
 
-from socratic_system.events.event_emitter import EventType
+from socratic_core import EventType
 
 from .connection_manager import get_connection_manager
 from .message_handler import ResponseType, WebSocketResponse
