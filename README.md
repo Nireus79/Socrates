@@ -1,92 +1,282 @@
-# Socrates AI - Collaborative Development Platform
+# Socrates AI - Socratic Method Tutoring System
 
-Nireus79 Available for freelance work. Please contact me.
+**Self-hosted platform for AI-guided collaborative development using the Socratic method with multi-agent orchestration, RAG, and knowledge management.**
 
-Socrates AI
-Self-hosted AI agent platform with RAG, tools and collaboration.
+## What is Socrates?
 
-• Python API
-• CLI
-• Web UI
-• Docker deployment
+Socrates is a production-ready Python framework that implements the Socratic method using Claude AI to help software development teams think through complex architectural and design decisions. Rather than providing direct answers, Socrates asks carefully crafted questions to guide teams toward their own solutions, promoting deeper understanding and better decision-making.
 
-A complete project management and vibe coding RAG system.
-Comprehensive AI-powered platform for collaborative software project development, with real-time collaboration,
-multi-agent orchestration, and production-grade infrastructure.
+**Key insight**: Socrates uses Claude AI not to solve problems directly, but to ask better questions.
 
-> **Status**: Production Ready (v1.1.0)
-> **License**: MIT
-> **Architecture**: FastAPI Backend + React Frontend + PostgreSQL + Redis + ChromaDB
->
-> <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/075353f2-6871-4b03-93d0-d319b97d3efd" />
+## Core Features
 
+### 🤔 Socratic Method
+- AI-guided questioning to help teams think through design problems
+- Guides users toward better solutions through dialogue
+- Promotes collaborative problem-solving
+- Context-aware questions based on project state
 
-## Key Features
+### 🤖 Multi-Agent Orchestration
+Specialized agents for different development tasks:
+- **Code Generator**: Generates code with explanations
+- **Conflict Detector**: Identifies design/specification conflicts
+- **Context Analyzer**: Analyzes project context and dependencies
+- **Document Processor**: Processes and indexes documents
+- **Learning Agent**: Tracks user interactions and learning patterns
+- **And more**: 10+ specialized agents
 
-🎓 **Socratic Learning**: AI-guided Socratic questioning to help teams think through complex design and development problems
+### 📚 Knowledge Management (RAG)
+- Vector-based document search using ChromaDB
+- Retrieval-Augmented Generation for intelligent context
+- Multi-document indexing and querying
+- Semantic search across knowledge base
 
-🤖 **Multi-Agent System**: Specialized agents for project management, code generation, conflict resolution, knowledge management, and more
+### 💾 Persistent Storage
+- Project management and tracking
+- User sessions and history
+- Knowledge base with versioning
+- Team member and access control
 
-📚 **Knowledge Management**: RAG (Retrieval-Augmented Generation) with vector embeddings for intelligent knowledge retrieval and synthesis
+### 🔐 Production Features
+- JWT authentication
+- Multi-factor authentication (TOTP)
+- Role-based access control (RBAC)
+- API rate limiting
+- Comprehensive logging and monitoring
+- Error tracking and reporting
 
-🔄 **Real-Time Collaboration**: WebSocket-powered real-time presence, cursor tracking, and document synchronization
+### ⚡ Performance & Scale
+- Async/await support for concurrent operations
+- Redis caching with in-memory fallback
+- Connection pooling for databases
+- Optimized vector search
+- Cross-platform compatible (Windows, Linux, macOS)
 
-🔐 **Enterprise Security**: JWT authentication with MFA, OWASP-compliant security headers, role-based access control, encryption
+## Architecture
 
-⚡ **High-Performance**: Rate limiting, Redis caching, connection pooling, async database queries, optimized query execution
+Socrates is built on a modular library architecture:
 
-📊 **Production Monitoring**: Prometheus metrics, Grafana dashboards, health checks, detailed logging, performance tracking
+```
+┌─────────────────────────────────────────┐
+│     socratic-core (Configuration,       │
+│     Events, Exceptions, Logging, Utils) │
+└────────────┬────────────────────────────┘
+             │
+    ┌────────┼────────┬────────────┐
+    │        │        │            │
+    ▼        ▼        ▼            ▼
+ socratic- socratic- socratic-   socratic-
+ rag       agents    analyzer    knowledge
+ (RAG)     (Agents)  (Analysis)  (Storage)
+    │        │        │            │
+    └────────┼────────┼────────────┘
+             │
+    ┌────────▼────────────────────┐
+    │ Specialized Libraries:       │
+    │ - socratic-learning         │
+    │ - socratic-workflow         │
+    │ - socratic-conflict         │
+    └────────┬────────────────────┘
+             │
+    ┌────────┴──────────┬──────────┐
+    │                   │          │
+    ▼                   ▼          ▼
+ socrates-cli      socrates-api   Socrates
+ (CLI Tool)        (REST API)     (Main App)
+```
 
-☸️ **Kubernetes-Ready**: Complete Kubernetes manifests, Helm charts, Docker multi-platform builds, CI/CD automation
+### Component Overview
+
+**socratic-core**: Foundation library providing configuration, event system, exceptions, logging, and utilities
+
+**socratic-rag**: Retrieval-Augmented Generation system for intelligent document search and context
+
+**socratic-agents**: Multi-agent system with specialized agents for different tasks
+
+**socratic-knowledge**: Knowledge base management with versioning and access control
+
+**socratic-learning**: User interaction tracking, learning pattern detection, maturity calculation
+
+**socratic-analyzer**: Code and context analysis with LLM-powered insights
+
+**socratic-workflow**: Workflow orchestration with cost tracking
+
+**socratic-conflict**: Conflict detection and resolution
+
+**socrates-cli**: Command-line interface for Socrates
+
+**socrates-api**: REST API server built with FastAPI
+
+**Socrates**: Main application integrating all components with orchestration layer
 
 ## Quick Start
 
-### 1-Minute Setup
+### Installation
 
 ```bash
-# Install (choose one)
-pip install socrates-ai              # Everything
-# OR
-pip install socratic-core            # Just framework
-# OR
-pip install socratic-core socrates-cli    # Framework + CLI
+# Install the main package
+pip install socrates-ai
 
-# Set API key
-export ANTHROPIC_API_KEY="your-key-here"
-
-# Start API server (optional)
-socrates-api
-
-# In another terminal, use the CLI
-socrates project create --name "My Project" --owner "your-name"
+# OR install specific components
+pip install socratic-core                      # Just the framework
+pip install socratic-core socrates-cli         # Framework + CLI
+pip install socratic-core socratic-rag         # Framework + RAG
 ```
 
-### Full Setup (Docker)
+### Basic Usage
+
+```python
+import socrates
+from socratic_core import EventType
+
+# Create a config
+config = socrates.SocratesConfig(
+    api_key="your-anthropic-key",
+    data_dir="/path/to/data"
+)
+
+# Create orchestrator
+orchestrator = socrates.create_orchestrator(config)
+
+# Listen to events
+def on_question_generated(data):
+    print(f"Question: {data.get('question')}")
+
+orchestrator.event_emitter.on(
+    EventType.QUESTION_GENERATED,
+    on_question_generated
+)
+
+# Process request
+result = await orchestrator.process_request_async(
+    agent_name="socratic_counselor",
+    action_data={
+        "project_id": "proj_123",
+        "context": "We need to decide between microservices and monolith",
+        "constraints": ["team size: 5", "2-year timeline"]
+    }
+)
+
+print(result["question"])
+```
+
+### CLI Usage
 
 ```bash
-git clone https://github.com/themsou/Socrates.git
-cd Socrates
+# Create a new project
+socrates project create --name "My API" --owner "alice"
 
-# Create environment
-cp .env.example .env
+# Start interactive session
+socrates project chat proj_123
 
-# Start with Docker
+# Search knowledge base
+socrates knowledge search proj_123 "authentication"
+
+# View project details
+socrates project info proj_123
+```
+
+### REST API
+
+```bash
+# Start the API server
+socrates-api --port 8000
+
+# Create a project via API
+curl -X POST http://localhost:8000/projects \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name": "My Project", "owner": "alice"}'
+
+# Ask a Socratic question
+curl -X POST http://localhost:8000/projects/proj_123/question \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"context": "Monolith vs microservices"}'
+```
+
+## Use Cases
+
+### 1. Architectural Decision Making
+Help teams evaluate different architecture approaches by asking targeted questions about requirements, constraints, and trade-offs.
+
+### 2. Code Review & Design Discussion
+Use agents to analyze code, detect potential conflicts, and guide teams through resolution discussions.
+
+### 3. Team Learning & Onboarding
+Track team members' learning patterns and provide personalized guidance based on their interaction history.
+
+### 4. Knowledge Management
+Maintain a searchable knowledge base of project decisions, patterns, and best practices with RAG.
+
+### 5. Project Documentation
+Automatically generate documentation and decision records from project interactions.
+
+## Production Deployment
+
+### Docker
+
+```bash
+# Build Docker image
+docker build -t socrates:latest .
+
+# Run with Docker Compose
 docker-compose up -d
 
-# Access API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
+# Access API at http://localhost:8000
+# API docs at http://localhost:8000/docs
 ```
 
-See [QUICKSTART.md](QUICKSTART.md) for detailed instructions.
+### Kubernetes
+
+```bash
+# Deploy with Kubernetes manifests
+kubectl apply -f k8s/
+
+# Or use Helm chart
+helm install socrates ./helm/socrates
+```
+
+## Configuration
+
+Socrates can be configured via:
+
+1. **Environment Variables**
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+SOCRATES_DATA_DIR=/data/socrates
+SOCRATES_DB_URL=postgresql://user:pass@localhost/socrates
+SOCRATES_REDIS_URL=redis://localhost:6379
+```
+
+2. **Configuration File** (YAML/JSON)
+```yaml
+api_key: sk-ant-...
+data_dir: /data/socrates
+database:
+  url: postgresql://user:pass@localhost/socrates
+  pool_size: 20
+redis:
+  url: redis://localhost:6379
+logging:
+  level: INFO
+```
+
+3. **Python Code**
+```python
+config = socrates.SocratesConfig(
+    api_key="sk-ant-...",
+    data_dir="/data/socrates",
+    log_level="DEBUG",
+    database_url="postgresql://..."
+)
+```
 
 ## API Endpoints
 
 ### Authentication
 - `POST /auth/register` - User registration
 - `POST /auth/login` - User login with JWT
-- `POST /auth/logout` - Logout and invalidate session
-- `POST /auth/refresh` - Refresh access token
-- `POST /auth/mfa/setup` - Setup MFA (TOTP)
+- `POST /auth/logout` - Logout
+- `POST /auth/mfa/setup` - Setup MFA
 
 ### Projects
 - `POST /projects` - Create project
@@ -95,153 +285,53 @@ See [QUICKSTART.md](QUICKSTART.md) for detailed instructions.
 - `PUT /projects/{id}` - Update project
 - `DELETE /projects/{id}` - Delete project
 - `POST /projects/{id}/advance-phase` - Move to next phase
-- `POST /projects/{id}/team-members` - Add team member
 
-### Chat & Knowledge
-- `POST /projects/{id}/chat/sessions` - Create chat session
-- `POST /projects/{id}/chat/sessions/{sid}/message` - Send message
-- `GET /projects/{id}/knowledge` - List knowledge entries
+### Socratic Interaction
+- `POST /projects/{id}/question` - Get Socratic question
+- `POST /projects/{id}/question/answer` - Submit answer
+- `GET /projects/{id}/question/history` - Get question history
+
+### Knowledge Management
 - `POST /projects/{id}/knowledge` - Add knowledge entry
+- `GET /projects/{id}/knowledge` - List knowledge entries
 - `GET /projects/{id}/knowledge/search` - Search knowledge
 
-### Analytics & Reports
+### Analytics
 - `GET /projects/{id}/analytics` - Project analytics
-- `GET /projects/{id}/analytics/detail` - Detailed metrics
-- `GET /projects/{id}/chat/sessions/{sid}/export` - Export chat
+- `GET /projects/{id}/insights` - Generated insights
 
-See [API_REFERENCE.md](docs/API_REFERENCE.md) for complete endpoint documentation.
-
-## Architecture
-
-Socrates has been refactored from a 50,000-line monolith into a modular ecosystem of reusable libraries:
-
-```
-                    Socrates Nexus (LLM Foundation)
-                            ↓
-        ┌───────────────────────────────────┐
-        │      socratic-core (20 KB)        │
-        │  ─────────────────────────────    │
-        │  • Configuration                  │
-        │  • Events                         │
-        │  • Exceptions                     │
-        │  • Logging                        │
-        │  • Utilities                      │
-        └────────────────────┬──────────────┘
-             ┌───────────────┼───────────────┐
-             │               │               │
-    ┌────────▼────┐  ┌───────▼───────┐  ┌──▼──────────┐
-    │ socratic-rag│  │ socratic-     │  │ socratic-   │
-    │  (8 KB)     │  │ agents        │  │ analyzer    │
-    │             │  │  (15 KB)      │  │  (8 KB)     │
-    │ 1 dep       │  │               │  │             │
-    │ (Nexus)     │  │ 1 dep (Nexus) │  │ 1 dep       │
-    └─────────────┘  └───────────────┘  └─────────────┘
-             │               │               │
-             └───────────────┼───────────────┘
-                      ↓
-        ┌─────────────────────────────┐
-        │ socratic-knowledge (8 KB)   │
-        │ socratic-learning (10 KB)   │
-        │ socratic-workflow (9 KB)    │
-        │ socratic-conflict (8 KB)    │
-        └──────────────┬──────────────┘
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-   ┌────▼─────┐   ┌───▼────┐   ┌────▼───┐
-   │socrates- │   │socrates│   │Socrates│
-   │   cli    │   │  -api  │   │(Main)  │
-   │(50 KB)   │   │(100KB) │   │(200KB) │
-   └──────────┘   └────────┘   └────────┘
-```
-
-**Key Benefits of Modular Architecture**:
-- Pick components you need (no bloat)
-- 25x smaller core (20 KB vs 500 KB)
-- 10x fewer dependencies (3 vs 30)
-- 100% backward compatible
-- Scales from embedded to enterprise
-
-Learn more: [ARCHITECTURE.md](ARCHITECTURE.md) | [Transformation Story](TRANSFORMATION_STORY.md)
-
-## Documentation
-
-### Getting Started
-- [📖 QUICKSTART.md](QUICKSTART.md) - Get started in 5 minutes
-- [📋 INSTALL.md](INSTALL.md) - Complete installation guide
-- [🔄 MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Upgrade from old versions
-
-### Architecture & Design
-- [🏗️ ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and design
-- [📚 TRANSFORMATION_STORY.md](TRANSFORMATION_STORY.md) - How we decomposed the monolith
-- [✨ MODULAR_VS_MONOLITH_COMPARISON.md](MODULAR_VS_MONOLITH_COMPARISON.md) - Before/after comparison
-- [📝 BLOG_POST_MONOLITH_TO_MODULAR.md](BLOG_POST_MONOLITH_TO_MODULAR.md) - Marketing story
-
-### API & CLI Documentation
-- [🌐 socrates-api/README.md](socrates-api/README.md) - REST API server documentation
-- [💻 socrates-cli/README.md](socrates-cli/README.md) - CLI tool documentation
-- [🔧 socratic-core/README.md](socratic-core/README.md) - Core framework documentation
-
-## Production Features
-
-✅ **Security**
-- JWT authentication with TOTP MFA
-- OWASP Top 10 protection
-- Rate limiting (5/min free, 100/min pro)
-- Input validation & sanitization
-- Encrypted database fields
-
-✅ **Performance**
-- Connection pooling (20 connections)
-- Redis caching with in-memory fallback
-- Query optimization & indexing
-- Async database operations
-- Request compression
-
-✅ **Reliability**
-- Database transactions & rollback
-- Automated backups with S3 support
-- Health monitoring & self-healing
-- Graceful degradation
-- Error tracking & logging
-
-✅ **Operations**
-- Kubernetes manifests & Helm charts
-- Docker multi-platform builds
-- CI/CD GitHub Actions workflows
-- Prometheus metrics & Grafana dashboards
-- Structured logging
+See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for complete documentation.
 
 ## Development
 
 ### Setup Development Environment
 
 ```bash
-# Clone and setup
-git clone https://github.com/your-org/socrates.git
-cd socrates
+# Clone repository
+git clone https://github.com/Nireus79/Socrates.git
+cd Socrates
 
-# Create environment
-cp .env.production.example .env.local
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
-npm install  # For frontend
+pip install -r requirements-test.txt
 
-# Run tests
-pytest tests/ --cov=socratic_system
+# Setup pre-commit hooks
+pre-commit install
 ```
 
-### Run Tests
+### Running Tests
 
 ```bash
-# All tests with coverage
+# All tests
 pytest tests/ -v --cov=socratic_system
 
-# Specific test category
+# Specific categories
 pytest tests/unit/ -v
 pytest tests/integration/ -v
-pytest tests/e2e/ -v
 
 # With coverage report
 pytest --cov=socratic_system --cov-report=html
@@ -251,72 +341,62 @@ pytest --cov=socratic_system --cov-report=html
 
 ```bash
 # Format code
-black socrates_api/ socratic_system/
-isort socrates_api/ socratic_system/
+black socratic_system/ socrates-api/ socrates-cli/
 
 # Lint
-ruff check socrates_api/ socratic_system/
+ruff check socratic_system/ socrates-api/ socrates-cli/
 
-# Type check
-mypy socrates_api/ socratic_system/
+# Type checking
+mypy socratic_system/ --ignore-missing-imports
 
 # Security scan
-bandit -r socrates_api/ socratic_system/
+bandit -r socratic_system/ socrates-api/
 ```
 
-## ☕ Support Socrates Development
+## Documentation
 
-Socrates is free and open-source. If you find it useful, consider supporting development through GitHub Sponsors:
+- **[Installation Guide](INSTALL.md)** - Complete setup instructions
+- **[Quick Start Guide](QUICKSTART.md)** - 5-minute tutorial
+- **[Architecture Documentation](ARCHITECTURE.md)** - System design and components
+- **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
+- **[CLI Reference](socrates-cli/README.md)** - Command-line tool guide
+- **[Configuration Guide](docs/CONFIGURATION.md)** - Configuration options
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Development guidelines
+- **[Contributing](docs/CONTRIBUTING.md)** - Contribution guidelines
 
-### 🎁 GitHub Sponsors - Premium Tiers
+## Technology Stack
 
-Become a sponsor to unlock premium features and support active development. **Your sponsorship is automatically applied to your Socrates account!**
+- **Language**: Python 3.11+
+- **LLM**: Claude (via Anthropic API)
+- **API Framework**: FastAPI
+- **Databases**: PostgreSQL, SQLite
+- **Vector Store**: ChromaDB
+- **Caching**: Redis
+- **Frontend**: React (if included)
+- **Deployment**: Docker, Kubernetes, Helm
+- **Testing**: pytest, pytest-cov
+- **Code Quality**: ruff, mypy, black, bandit
 
-| Tier | Price | Features | Link |
-|------|-------|----------|------|
-| **Supporter** | $5/month | 10 projects, 5 team members, 100GB storage | [Sponsor Now](https://github.com/sponsors/Nireus79) |
-| **Contributor** | $15/month | Unlimited projects, unlimited members, unlimited storage | [Sponsor Now](https://github.com/sponsors/Nireus79) |
-| **Custom** | $25+/month | All Enterprise + priority support | [Sponsor Now](https://github.com/sponsors/Nireus79) |
+## Community & Support
 
-**How It Works:**
-1. Sponsor on [GitHub Sponsors](https://github.com/sponsors/Nireus79)
-2. Your Socrates account is **automatically upgraded** (usually within seconds)
-3. Start using premium features immediately
-4. View payment history and tier details in Socrates Settings
+- **GitHub Issues**: [Report bugs or request features](https://github.com/Nireus79/Socrates/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/Nireus79/Socrates/discussions)
+- **Documentation**: [Full docs](docs/)
+- **Contributing**: [Contribution guide](docs/CONTRIBUTING.md)
 
-👉 **[Full Sponsorship Guide](SPONSORS.md)** - Learn about sponsorship tiers and benefits for the Socratic Ecosystem.
+## Sponsorship
 
-### Other Ways to Support
-- **Star the repository** ⭐
-- **Fork and contribute** code improvements
-- **Share feedback** and feature requests
-- **Report bugs** to help us improve
-- **Write documentation** for new features
-- **Spread the word** about Socrates
+Socrates is free and open-source. Support development through GitHub Sponsors:
 
----
+- **Supporter ($5/month)**: 10 projects, 5 team members
+- **Contributor ($15/month)**: Unlimited projects, members, storage
+- **Custom ($25+/month)**: Enterprise features + priority support
 
-## Contributing
-
-
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature/my-feature`
-5. Submit pull request
-
-## Support
-
-- **Bugs & Issues**: [GitHub Issues](https://github.com/Nireus79/Socrates/issues)
-- **Documentation**: [Docs Directory](./docs)
-- **Sponsorship**: [Sponsorship Guide](SPONSORS.md)
-- **GitHub Sponsors**: [Become a Sponsor](https://github.com/sponsors/Nireus79)
-- **Email**: support@socrates-ai.dev
+[Become a Sponsor](https://github.com/sponsors/Nireus79)
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details
+MIT License - see [LICENSE](LICENSE) for details
 
 ## Acknowledgments
 
@@ -326,8 +406,8 @@ Built with:
 - [PostgreSQL](https://www.postgresql.org/) for data persistence
 - [ChromaDB](https://www.trychroma.com/) for vector storage
 - [Redis](https://redis.io/) for caching
-- [Kubernetes](https://kubernetes.io/) for orchestration
+- And the open-source community
 
 ---
 
-**Made with ❤️ for teams who believe in collaborative development**
+**Made with ❤️ for teams who believe in thoughtful, collaborative development**
