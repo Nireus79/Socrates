@@ -87,7 +87,7 @@ class SkillAnalytics(BaseService):
                 return None
 
             metrics = self.metrics_cache[skill_id]
-            analysis = {
+            analysis: Dict[str, Any] = {
                 "skill_id": skill_id,
                 "agents_using": len(metrics["agents_using"]),
                 "metric_summaries": {},
