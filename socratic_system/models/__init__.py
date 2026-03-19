@@ -6,6 +6,17 @@ from .conflict import ConflictInfo
 from .knowledge import KnowledgeEntry
 
 # Learning models moved to modules/foundation/models/learning.py
+try:
+    from modules.foundation.models.learning import (
+        QuestionEffectiveness,
+        UserBehaviorPattern,
+        KnowledgeBaseDocument,
+    )
+except ImportError:
+    QuestionEffectiveness = None  # type: ignore
+    UserBehaviorPattern = None  # type: ignore
+    KnowledgeBaseDocument = None  # type: ignore
+
 from .llm_provider import (
     APIKeyRecord,
     LLMProviderConfig,
@@ -31,7 +42,10 @@ __all__ = [
     "CategoryScore",
     "PhaseMaturity",
     "MaturityEvent",
-    # Learning models moved to modules/foundation/models/learning.py
+    # Learning models (re-exported from modules/foundation/models/learning)
+    "QuestionEffectiveness",
+    "UserBehaviorPattern",
+    "KnowledgeBaseDocument",
     "LLMProviderConfig",
     "APIKeyRecord",
     "LLMUsageRecord",
