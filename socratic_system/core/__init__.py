@@ -3,10 +3,13 @@ Core calculation and utility modules for Socratic system
 """
 
 try:
-    from socratic_learning.analytics.analytics_calculator import AnalyticsCalculator
-    from socratic_learning.analytics.maturity_calculator import MaturityCalculator
+    from modules.analytics.calculator import AnalyticsCalculator
 except ImportError:
     AnalyticsCalculator = None  # type: ignore
+
+try:
+    from socratic_learning.analytics.maturity_calculator import MaturityCalculator
+except ImportError:
     MaturityCalculator = None  # type: ignore
 
 from .analyzer_integration import AnalyzerIntegration
