@@ -8,7 +8,12 @@ and performance recommendations using socratic-analyzer's AnalyzerClient.
 import logging
 from typing import Any, Dict, List, Optional
 
-from socratic_analyzer import AnalyzerClient, AnalyzerConfig
+try:
+    from socratic_analyzer import AnalyzerClient, AnalyzerConfig
+except ImportError:
+    # socratic_analyzer is optional - provide graceful fallback
+    AnalyzerClient = None  # type: ignore
+    AnalyzerConfig = None  # type: ignore
 
 
 class AnalyzerIntegration:

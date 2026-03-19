@@ -27,7 +27,12 @@ from typing import Any
 from socratic_core.utils import deserialize_datetime, serialize_datetime
 
 # Import learning models from modules/foundation (moved from socratic_system.models)
-from modules.foundation.models.learning import QuestionEffectiveness, UserBehaviorPattern
+try:
+    from modules.foundation.models.learning import QuestionEffectiveness, UserBehaviorPattern
+except ImportError:
+    # modules package is optional - provide graceful fallback
+    QuestionEffectiveness = None  # type: ignore
+    UserBehaviorPattern = None  # type: ignore
 from socratic_system.database.migration_runner import MigrationRunner
 from socratic_system.models.llm_provider import LLMUsageRecord
 from socratic_system.models.note import ProjectNote
