@@ -4,19 +4,6 @@ Data models for Socrates AI
 
 from .conflict import ConflictInfo
 from .knowledge import KnowledgeEntry
-
-# Learning models moved to modules/foundation/models/learning.py
-try:
-    from modules.foundation.models.learning import (
-        QuestionEffectiveness,
-        UserBehaviorPattern,
-        KnowledgeBaseDocument,
-    )
-except ImportError:
-    QuestionEffectiveness = None  # type: ignore
-    UserBehaviorPattern = None  # type: ignore
-    KnowledgeBaseDocument = None  # type: ignore
-
 from .llm_provider import (
     APIKeyRecord,
     LLMProviderConfig,
@@ -31,6 +18,18 @@ from .note import ProjectNote
 from .project import ProjectContext
 from .role import ROLE_FOCUS_AREAS, VALID_ROLES, TeamMemberRole
 from .user import User
+
+# Learning models moved to modules/foundation/models/learning.py
+try:
+    from modules.foundation.models.learning import (
+        QuestionEffectiveness,
+        UserBehaviorPattern,
+        KnowledgeBaseDocument,
+    )
+except ImportError:
+    QuestionEffectiveness = None  # type: ignore
+    UserBehaviorPattern = None  # type: ignore
+    KnowledgeBaseDocument = None  # type: ignore
 
 __all__ = [
     "User",

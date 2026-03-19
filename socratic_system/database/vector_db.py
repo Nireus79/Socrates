@@ -7,7 +7,11 @@ Uses socratic-rag for RAG capabilities and vector search.
 import logging
 from typing import Dict, List, Optional
 
-from socratic_rag import RAGClient, RAGConfig
+try:
+    from socratic_rag import RAGClient, RAGConfig
+except ImportError:
+    RAGClient = None  # type: ignore
+    RAGConfig = None  # type: ignore
 
 from socratic_system.models import KnowledgeEntry
 
