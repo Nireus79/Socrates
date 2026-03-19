@@ -19,54 +19,44 @@ try:
     from socrates_nexus import LLMClient
 except ImportError:
     LLMClient = None  # type: ignore
-from socratic_agents import (
-    CodeGenerator as CodeGeneratorAgent,
-)
-from socratic_agents import (
-    CodeValidator as CodeValidationAgent,
-)
-from socratic_agents import (
-    ConflictDetector as ConflictDetectorAgent,
-)
-from socratic_agents import (
-    ContextAnalyzer as ContextAnalyzerAgent,
-)
-from socratic_agents import (
-    DocumentProcessor as DocumentProcessorAgent,
-)
-from socratic_agents import (
-    KnowledgeAnalysis as KnowledgeAnalysisAgent,
-)
-from socratic_agents import (
-    KnowledgeManager as KnowledgeManagerAgent,
-)
-from socratic_agents import (
-    LearningAgent as UserLearningAgent,
-)
-from socratic_agents import (
-    MultiLlmAgent as MultiLLMAgent,
-)
-from socratic_agents import (
-    NoteManager as NoteManagerAgent,
-)
-from socratic_agents import (
-    ProjectManager as ProjectManagerAgent,
-)
-from socratic_agents import (
-    QualityController as QualityControllerAgent,
-)
-from socratic_agents import (
-    QuestionQueueAgent,
-)
-from socratic_agents import (
-    SocraticCounselor as SocraticCounselorAgent,
-)
-from socratic_agents import (
-    SystemMonitor as SystemMonitorAgent,
-)
-from socratic_agents import (
-    UserManager as UserManagerAgent,
-)
+
+try:
+    from socratic_agents import (
+        CodeGenerator as CodeGeneratorAgent,
+        CodeValidator as CodeValidationAgent,
+        ConflictDetector as ConflictDetectorAgent,
+        ContextAnalyzer as ContextAnalyzerAgent,
+        DocumentProcessor as DocumentProcessorAgent,
+        KnowledgeAnalysis as KnowledgeAnalysisAgent,
+        KnowledgeManager as KnowledgeManagerAgent,
+        LearningAgent as UserLearningAgent,
+        MultiLlmAgent as MultiLLMAgent,
+        NoteManager as NoteManagerAgent,
+        ProjectManager as ProjectManagerAgent,
+        QualityController as QualityControllerAgent,
+        QuestionQueueAgent,
+        SocraticCounselor as SocraticCounselorAgent,
+        SystemMonitor as SystemMonitorAgent,
+        UserManager as UserManagerAgent,
+    )
+except ImportError:
+    # Fallback if socratic_agents is not installed
+    CodeGeneratorAgent = None  # type: ignore
+    CodeValidationAgent = None  # type: ignore
+    ConflictDetectorAgent = None  # type: ignore
+    ContextAnalyzerAgent = None  # type: ignore
+    DocumentProcessorAgent = None  # type: ignore
+    KnowledgeAnalysisAgent = None  # type: ignore
+    KnowledgeManagerAgent = None  # type: ignore
+    UserLearningAgent = None  # type: ignore
+    MultiLLMAgent = None  # type: ignore
+    NoteManagerAgent = None  # type: ignore
+    ProjectManagerAgent = None  # type: ignore
+    QualityControllerAgent = None  # type: ignore
+    QuestionQueueAgent = None  # type: ignore
+    SocraticCounselorAgent = None  # type: ignore
+    SystemMonitorAgent = None  # type: ignore
+    UserManagerAgent = None  # type: ignore
 from socratic_core import EventEmitter, EventType, SocratesConfig
 
 from socratic_system.database import VectorDatabase
