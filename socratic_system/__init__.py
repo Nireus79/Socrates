@@ -56,7 +56,7 @@ Documentation: https://github.com/socrates-ai/socrates-ai (placeholder)
 GitHub: https://github.com/socrates-ai/socrates-ai (placeholder)
 """
 
-__version__ = "1.3.3"
+__version__ = "1.3.4"
 __author__ = "Socrates AI Contributors"
 __license__ = "MIT"
 
