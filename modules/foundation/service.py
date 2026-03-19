@@ -21,9 +21,9 @@ class FoundationService(BaseService):
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize foundation service."""
         super().__init__("foundation", config)
-        self.llm_service = None
-        self.database_service = None
-        self.cache_service = None
+        self.llm_service: Any = None
+        self.database_service: Any = None
+        self.cache_service: Dict[str, Any] = {}
         self.event_bus: Optional[EventBus] = None
         self.logger = logging.getLogger(f"socrates.{self.service_name}")
 
