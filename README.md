@@ -2,8 +2,6 @@
 
 **Self-hosted platform for AI-guided collaborative projects development using the Socratic method with multi-agent orchestration, RAG, and knowledge management.**
 
-![SocratesSS](https://github.com/user-attachments/assets/7ab5d1ec-4eff-4827-acb7-a3fc64570568)
-
 
 ## What is Socrates?
 
