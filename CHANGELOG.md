@@ -9,11 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Package Naming** - Standardized package names to follow AI naming convention
-  - `socrates-ai-cli` - Command-line interface package
-  - `socrates-ai-api` - REST API server package
-  - Previous generic naming has been deprecated
-  - This change ensures consistency with AI-focused branding
+- **Package Structure** - Reorganized modular package architecture
+  - Removed monolithic `socrates-ai`, `socrates-ai-cli`, `socrates-ai-api` packages
+  - Replaced with focused modules: `socrates-api`, `socrates-cli`, `socratic-core`
+  - Each module can be installed independently based on use case
 
 ### Fixed
 

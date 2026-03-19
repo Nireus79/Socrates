@@ -928,7 +928,7 @@ rm -rf .venv
 rm -rf ~/.socrates
 
 # Remove from system (if installed via pip)
-pip uninstall socrates-ai-cli socrates-ai-api
+pip uninstall socrates-cli socrates-api
 
 # Remove repository
 rm -rf socrates
