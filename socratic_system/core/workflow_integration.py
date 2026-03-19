@@ -13,6 +13,9 @@ from socratic_workflow import Task, Workflow, WorkflowEngine
 from socratic_system.models.workflow import WorkflowExecutionState
 
 
+logger = logging.getLogger("socrates.workflow")
+
+
 class WorkflowIntegration:
     """
     Integrated workflow system combining:
@@ -21,7 +24,11 @@ class WorkflowIntegration:
     - Workflow execution with progress monitoring
     """
 
-    def __init__(self, executor_type: str = "sequential"):
+    engine: WorkflowEngine
+    active_workflows: Dict[str, Workflow]
+    workflow_tasks: Dict[str, List[Task]]
+
+    def __init__(self, executor_type: str = "sequential") -> None:
         """
         Initialize workflow integration.
 
@@ -30,7 +37,7 @@ class WorkflowIntegration:
         """
         self.executor_type = executor_type
         self.logger = logging.getLogger("socrates.workflow")
-        self.engine = None
+        self.engine: WorkflowEngine | None = None
 
         try:
             # Initialize workflow engine
@@ -149,8 +156,11 @@ class WorkflowIntegration:
             if workflow_id not in self.active_workflows:
                 raise ValueError(f"Workflow {workflow_id} not found")
 
+            if self.engine is None:
+                raise RuntimeError("Workflow engine not initialized")
+
             workflow = self.active_workflows[workflow_id]
-            result = self.executor.execute(
+            result = self.engine.execute(
                 workflow=workflow,
                 context=context or {},
                 timeout=timeout
@@ -268,7 +278,10 @@ class WorkflowIntegration:
             if workflow_id not in self.active_workflows:
                 return False
 
-            self.executor.cancel(workflow_id)
+            if self.engine is None:
+                return False
+
+            self.engine.cancel(workflow_id)
             self.logger.info(f"Cancelled workflow {workflow_id}")
             return True
 
@@ -293,15 +306,22 @@ class WorkflowIntegration:
             workflow = self.active_workflows[workflow_id]
             progress = self.get_workflow_progress(workflow_id)
 
+            # Get execution state from workflow
+            execution_id = getattr(workflow, "execution_id", f"exec_{workflow_id}")
+            approved_path_id = getattr(workflow, "approved_path_id", workflow_id)
+            current_node_id = getattr(workflow, "current_task_id", "")
+
             return WorkflowExecutionState(
+                execution_id=execution_id,
                 workflow_id=workflow_id,
-                current_task_id=getattr(workflow, "current_task_id", None),
-                completed_tasks=progress.get("completed_tasks", 0),
-                total_tasks=progress.get("total_tasks", 0),
-                progress_percentage=progress.get("progress_percentage", 0.0),
-                status=getattr(workflow, "status", "running"),
-                started_at=getattr(workflow, "started_at", None),
-                metadata=getattr(workflow, "metadata", {})
+                approved_path_id=approved_path_id,
+                current_node_id=current_node_id,
+                completed_nodes=[],
+                remaining_nodes=[],
+                actual_tokens_used=0,
+                estimated_tokens_remaining=0,
+                started_at=getattr(workflow, "started_at", ""),
+                status=getattr(workflow, "status", "active")
             )
 
         except Exception as e:
@@ -348,7 +368,7 @@ class WorkflowIntegration:
     def close(self):
         """Close workflow integration"""
         try:
-            self.executor.shutdown()
+            self.engine.shutdown()
             self.active_workflows.clear()
             self.workflow_tasks.clear()
             self.logger.info("Workflow integration closed")
