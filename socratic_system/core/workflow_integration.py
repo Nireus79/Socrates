@@ -12,7 +12,6 @@ from socratic_workflow import Task, Workflow, WorkflowEngine
 
 from socratic_system.models.workflow import WorkflowExecutionState
 
-
 logger = logging.getLogger("socrates.workflow")
 
 

@@ -17,7 +17,7 @@ class TestSocraticCoreImports:
 
     def test_import_config(self):
         """Test importing SocratesConfig from socratic-core."""
-        from socratic_core import SocratesConfig, ConfigBuilder
+        from socratic_core import ConfigBuilder, SocratesConfig
 
         assert SocratesConfig is not None
         assert ConfigBuilder is not None
@@ -36,9 +36,9 @@ class TestSocraticCoreImports:
     def test_import_exceptions(self):
         """Test importing exceptions from socratic-core."""
         from socratic_core import (
-            SocratesError,
             ConfigurationError,
             DatabaseError,
+            SocratesError,
             ValidationError,
         )
 
@@ -78,9 +78,9 @@ class TestSocraticLearningImports:
     def test_import_learning_models_from_models(self):
         """Test importing learning data models."""
         from socratic_learning.models import (
+            KnowledgeBaseDocument,
             QuestionEffectiveness,
             UserBehaviorPattern,
-            KnowledgeBaseDocument,
         )
 
         assert QuestionEffectiveness is not None

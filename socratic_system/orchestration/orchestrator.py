@@ -15,7 +15,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from socrates_nexus import LLMClient
+try:
+    from socrates_nexus import LLMClient
+except ImportError:
+    LLMClient = None  # type: ignore
 from socratic_agents import (
     CodeGenerator as CodeGeneratorAgent,
 )

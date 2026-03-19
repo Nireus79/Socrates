@@ -131,6 +131,7 @@ class TestConflictDetectionAndResolution:
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
             from socratic_system.agents.project_manager import ProjectManagerAgent
+
             from socratic_system.models import ConflictInfo
 
             proj_mgr = ProjectManagerAgent(orchestrator)

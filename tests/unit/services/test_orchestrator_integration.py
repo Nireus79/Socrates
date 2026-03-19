@@ -5,8 +5,8 @@ Integration tests for Socrates orchestrator
 from unittest.mock import Mock, patch
 
 import pytest
-
 from socratic_core import EventEmitter, EventType
+
 from socratic_system.orchestration import AgentOrchestrator
 
 

@@ -14,12 +14,17 @@ NOTE: Knowledge Analysis Agent was extracted to socratic-agents library
 from unittest.mock import Mock
 
 import pytest
-
 from socratic_core import EventEmitter, EventType
+
 from socratic_system.models.role import ROLE_EXAMPLES, ROLE_FOCUS_AREAS, VALID_ROLES
 
 # Knowledge Analysis Agent extracted to socratic-agents library
 pytestmark = pytest.mark.skip(reason="KnowledgeAnalysisAgent extracted to socratic-agents library")
+
+
+class KnowledgeAnalysisAgent:  # type: ignore
+    """Stub for skipped test - actual implementation extracted to socratic-agents"""
+    pass
 
 
 class TestKnowledgeAnalysisAgent:

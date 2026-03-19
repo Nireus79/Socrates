@@ -13,6 +13,7 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 from socratic_system.agents.quality_controller import QualityControllerAgent
+
 from socratic_system.core.question_selector import QuestionSelector
 from socratic_system.core.workflow_builder import create_discovery_workflow_comprehensive
 from socratic_system.models.project import ProjectContext

@@ -14,8 +14,8 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
 from socratic_core import SocratesConfig
+
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
