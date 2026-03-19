@@ -8,11 +8,19 @@ using socratic-learning's InteractionLogger and recommendation engine.
 import logging
 from typing import Any, Dict, List, Optional
 
-from socratic_learning import InteractionLogger
-from socratic_learning.recommendations.engine import RecommendationEngine
+try:
+    from socratic_learning import InteractionLogger
+    from socratic_learning.recommendations.engine import RecommendationEngine
+except ImportError:
+    # socratic_learning is optional - provide graceful fallback
+    InteractionLogger = None  # type: ignore
+    RecommendationEngine = None  # type: ignore
 
-# Import learning models from modules/foundation (moved from socratic_system.models)
-from modules.foundation.models.learning import UserBehaviorPattern
+try:
+    from modules.foundation.models.learning import UserBehaviorPattern
+except ImportError:
+    # modules.foundation is optional - provide graceful fallback
+    UserBehaviorPattern = None  # type: ignore
 
 
 class LearningIntegration:
@@ -34,6 +42,12 @@ class LearningIntegration:
         self.log_path = log_path
         self.llm_client = llm_client
         self.logger = logging.getLogger("socrates.learning")
+        self.interaction_logger = None
+        self.recommendation_engine = None
+
+        if InteractionLogger is None:
+            self.logger.warning("socratic_learning not available - learning features disabled")
+            return
 
         try:
             # Initialize interaction logger for tracking user behavior
@@ -45,16 +59,17 @@ class LearningIntegration:
             self.logger.info("InteractionLogger initialized (socratic-learning)")
 
             # Initialize recommendation engine
-            self.recommendation_engine = RecommendationEngine(
-                interaction_logger=self.interaction_logger,
-                use_llm=bool(llm_client),
-                llm_client=llm_client if llm_client else None
-            )
-            self.logger.info("RecommendationEngine initialized")
+            if RecommendationEngine is not None:
+                self.recommendation_engine = RecommendationEngine(
+                    interaction_logger=self.interaction_logger,
+                    use_llm=bool(llm_client),
+                    llm_client=llm_client if llm_client else None
+                )
+                self.logger.info("RecommendationEngine initialized")
 
         except Exception as e:
             self.logger.error(f"Failed to initialize learning integration: {e}")
-            raise
+            # Don't raise - allow graceful degradation
 
     def log_interaction(
         self,
@@ -75,6 +90,9 @@ class LearningIntegration:
         Returns:
             True if logging successful
         """
+        if self.interaction_logger is None:
+            return False
+
         try:
             self.interaction_logger.log_interaction(
                 user_id=user_id,
@@ -156,7 +174,7 @@ class LearningIntegration:
         self,
         user_id: str,
         window_size: int = 10
-    ) -> Optional[UserBehaviorPattern]:
+    ) -> Optional[Any]:
         """
         Detect learning patterns for a user.
 
@@ -167,6 +185,10 @@ class LearningIntegration:
         Returns:
             UserBehaviorPattern object or None
         """
+        if self.interaction_logger is None or UserBehaviorPattern is None:
+            self.logger.debug("Pattern detection unavailable - learning features disabled")
+            return None
+
         try:
             patterns = self.interaction_logger.detect_patterns(
                 user_id=user_id,
@@ -208,6 +230,9 @@ class LearningIntegration:
         Returns:
             List of recommendations with descriptions and rationale
         """
+        if self.recommendation_engine is None:
+            return []
+
         try:
             recommendations = self.recommendation_engine.generate_recommendations(
                 user_id=user_id,
@@ -242,6 +267,9 @@ class LearningIntegration:
         Returns:
             Dictionary with engagement, velocity, experience level, and other metrics
         """
+        if self.interaction_logger is None:
+            return {}
+
         try:
             metrics = self.interaction_logger.get_user_metrics(user_id)
 
@@ -270,6 +298,9 @@ class LearningIntegration:
         Returns:
             Dictionary containing interactions, patterns, and metrics
         """
+        if self.interaction_logger is None:
+            return {}
+
         try:
             data = self.interaction_logger.export_user_data(user_id)
             return {
@@ -292,6 +323,9 @@ class LearningIntegration:
         Returns:
             True if cleared successfully
         """
+        if self.interaction_logger is None:
+            return False
+
         try:
             self.interaction_logger.clear_user_data(user_id)
             self.logger.info(f"Cleared learning data for user {user_id}")
@@ -302,11 +336,12 @@ class LearningIntegration:
 
     def close(self):
         """Close learning integration and flush logs"""
-        try:
-            self.interaction_logger.flush()
-            self.logger.info("Learning integration closed")
-        except Exception as e:
-            self.logger.error(f"Error closing learning integration: {e}")
+        if self.interaction_logger is not None:
+            try:
+                self.interaction_logger.flush()
+                self.logger.info("Learning integration closed")
+            except Exception as e:
+                self.logger.error(f"Error closing learning integration: {e}")
 
     def __del__(self):
         """Cleanup on object deletion"""
