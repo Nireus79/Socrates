@@ -455,7 +455,7 @@ class ProjectDatabase:
                         )
                         global_order += 1
 
-                    except (json.JSONEncodeError, TypeError) as e:
+                    except (ValueError, TypeError) as e:
                         self.logger.error(f"Failed to serialize spec: {e}")
                         continue
 
@@ -1898,7 +1898,7 @@ class ProjectDatabase:
 
     def get_question_effectiveness(
         self, user_id: str, question_template_id: str
-    ) -> dict[str, any] | None:
+    ) -> dict[str, Any] | None:
         """Get question effectiveness record for a user-question pair"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1939,7 +1939,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_user_effectiveness_all(self, user_id: str) -> list[dict[str, any]]:
+    def get_user_effectiveness_all(self, user_id: str) -> list[dict[str, Any]]:
         """Get all question effectiveness records for a user"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2028,7 +2028,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_behavior_pattern(self, user_id: str, pattern_type: str) -> dict[str, any] | None:
+    def get_behavior_pattern(self, user_id: str, pattern_type: str) -> dict[str, Any] | None:
         """Get behavior pattern for a user-pattern_type pair"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2065,7 +2065,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_user_behavior_patterns(self, user_id: str) -> list[dict[str, any]]:
+    def get_user_behavior_patterns(self, user_id: str) -> list[dict[str, Any]]:
         """Get all behavior patterns for a user"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2177,7 +2177,7 @@ class ProjectDatabase:
     # KNOWLEDGE DOCUMENT METHODS
     # ========================================================================
 
-    def get_knowledge_document(self, doc_id: str) -> dict[str, any] | None:
+    def get_knowledge_document(self, doc_id: str) -> dict[str, Any] | None:
         """Get a single knowledge document"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2240,7 +2240,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_project_knowledge_documents(self, project_id: str) -> list[dict[str, any]]:
+    def get_project_knowledge_documents(self, project_id: str) -> list[dict[str, Any]]:
         """Get all knowledge documents for a project (includes file_size for storage tracking)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2441,7 +2441,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_usage_records(self, user_id: str, days: int, provider: str) -> list[dict[str, any]]:
+    def get_usage_records(self, user_id: str, days: int, provider: str) -> list[dict[str, Any]]:
         """Get usage records for a user within specified days"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2487,7 +2487,7 @@ class ProjectDatabase:
     # ARCHIVED ITEMS & UTILITY METHODS
     # ========================================================================
 
-    def get_archived_items(self, item_type: str) -> list[dict[str, any]]:
+    def get_archived_items(self, item_type: str) -> list[dict[str, Any]]:
         """Get archived items (projects or users)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2576,7 +2576,7 @@ class ProjectDatabase:
     # ========================================================================
 
     def _save_llm_config_impl(
-        self, user_id: str, provider: str, config_data: dict[str, any]
+        self, user_id: str, provider: str, config_data: dict[str, Any]
     ) -> bool:
         """Internal implementation for saving LLM config"""
         conn = sqlite3.connect(self.db_path)
@@ -2801,7 +2801,7 @@ class ProjectDatabase:
             (project_id,),
         )
 
-        scores = {}
+        scores: dict[str, dict[str, float]] = {}
         for phase, category, score in cursor.fetchall():
             if phase not in scores:
                 scores[phase] = {}
@@ -2850,7 +2850,7 @@ class ProjectDatabase:
             if not rows:
                 return None
 
-            specs_by_phase = {}
+            specs_by_phase: dict[str, list[Any]] = {}
 
             for phase, spec_json in rows:
                 if phase not in specs_by_phase:
@@ -3574,7 +3574,7 @@ class ProjectDatabase:
     # GitHub Sponsors / Sponsorship Methods
     # ========================================================================
 
-    def create_sponsorship(self, sponsorship_data: dict) -> int:
+    def create_sponsorship(self, sponsorship_data: dict) -> int | None:
         """Create or update a sponsorship record"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -3734,7 +3734,7 @@ class ProjectDatabase:
     # Payment History & Tracking Methods
     # ========================================================================
 
-    def record_payment(self, payment_data: dict) -> int:
+    def record_payment(self, payment_data: dict) -> int | None:
         """Record a sponsorship payment"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -3797,7 +3797,7 @@ class ProjectDatabase:
     # Refund Tracking Methods
     # ========================================================================
 
-    def record_refund(self, refund_data: dict) -> int:
+    def record_refund(self, refund_data: dict) -> int | None:
         """Record a sponsorship refund"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -3861,7 +3861,7 @@ class ProjectDatabase:
     # Payment Method Tracking Methods
     # ========================================================================
 
-    def add_payment_method(self, method_data: dict) -> int:
+    def add_payment_method(self, method_data: dict) -> int | None:
         """Add a payment method for a sponsorship"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -3923,7 +3923,7 @@ class ProjectDatabase:
     # Tier Change Tracking Methods
     # ========================================================================
 
-    def record_tier_change(self, change_data: dict) -> int:
+    def record_tier_change(self, change_data: dict) -> int | None:
         """Record a sponsorship tier change (upgrade, downgrade, renewal, etc.)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
