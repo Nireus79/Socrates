@@ -19,12 +19,11 @@ from .project import ProjectContext
 from .role import ROLE_FOCUS_AREAS, VALID_ROLES, TeamMemberRole
 from .user import User
 
-# Learning models moved to modules/foundation/models/learning.py
 try:
     from modules.foundation.models.learning import (
+        KnowledgeBaseDocument,
         QuestionEffectiveness,
         UserBehaviorPattern,
-        KnowledgeBaseDocument,
     )
 except ImportError:
     QuestionEffectiveness = None  # type: ignore
