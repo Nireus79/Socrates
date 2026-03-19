@@ -10,6 +10,24 @@ For new projects, use:
 
 **See [MIGRATION_GUIDE_PACKAGE_UPDATES.md](MIGRATION_GUIDE_PACKAGE_UPDATES.md) for step-by-step migration instructions.**
 
+### What Changed?
+
+The monolithic `socrates-ai` package (v1.3.4) has been split into focused, modular libraries:
+
+- ✅ **Better**: Install only what you need
+- ✅ **Faster**: Reduced dependencies and smaller downloads
+- ✅ **Cleaner**: Simpler to maintain and update
+- ✅ **Flexible**: Mix and match components
+
+### Deprecated Packages
+
+| Package | Status | Replacement |
+|---------|--------|-------------|
+| **socrates-ai** | ⚠️ DEPRECATED | Use `socratic-core` + `socratic-learning` + others as needed |
+| **socrates-ai-openclaw** | ❌ BROKEN | Use `socratic-openclaw-skill>=0.1.0` |
+
+Both old packages are still available on PyPI for backward compatibility, but won't receive new features or updates (critical security fixes only).
+
 ---
 
 # Socrates AI - Socratic Method Tutoring System
@@ -124,6 +142,71 @@ Socrates is built on a modular library architecture:
 **socrates-api**: REST API server built with FastAPI
 
 **Socrates**: Main application integrating all components with orchestration layer
+
+---
+
+## Published Libraries on PyPI
+
+All Socrates components are available as standalone PyPI packages. You can install only what you need.
+
+### Core & Framework
+
+| Package | Version | PyPI | Purpose |
+|---------|---------|------|---------|
+| **socratic-core** | 0.1.1+ | [socratic-core](https://pypi.org/project/socratic-core/) | Foundation: config, events, exceptions, logging, utils |
+| **socratic-learning** | 0.1.1+ | [socratic-learning](https://pypi.org/project/socratic-learning/) | Learning engine, interaction tracking, maturity calculation |
+
+### Agent & RAG
+
+| Package | Version | PyPI | Purpose |
+|---------|---------|------|---------|
+| **socratic-agents** | 0.1.0+ | [socratic-agents](https://pypi.org/project/socratic-agents/) | Multi-agent orchestration with specialized agents |
+| **socratic-rag** | 0.1.0+ | [socratic-rag](https://pypi.org/project/socratic-rag/) | Retrieval-Augmented Generation with vector search |
+| **socratic-analyzer** | 0.1.0+ | [socratic-analyzer](https://pypi.org/project/socratic-analyzer/) | Code analysis with LLM-powered insights |
+
+### Specialized & Utilities
+
+| Package | Version | PyPI | Purpose |
+|---------|---------|------|---------|
+| **socratic-knowledge** | 0.1.0+ | [socratic-knowledge](https://pypi.org/project/socratic-knowledge/) | Knowledge base management with versioning |
+| **socratic-workflow** | 0.1.0+ | [socratic-workflow](https://pypi.org/project/socratic-workflow/) | Workflow orchestration with cost tracking |
+| **socratic-conflict** | 0.1.0+ | [socratic-conflict](https://pypi.org/project/socratic-conflict/) | Conflict detection and resolution |
+
+### Integration & Tools
+
+| Package | Version | PyPI | Purpose |
+|---------|---------|------|---------|
+| **socratic-openclaw-skill** | 0.1.0+ | [socratic-openclaw-skill](https://pypi.org/project/socratic-openclaw-skill/) | OpenClaw skill for Socratic discovery |
+| **socrates-ai-langraph** | 0.1.0+ | [socrates-ai-langraph](https://pypi.org/project/socrates-ai-langraph/) | LangGraph integration framework |
+| **socrates-cli** | 0.1.0+ | [socrates-cli](https://pypi.org/project/socrates-cli/) | Command-line interface tools |
+| **socrates-core-api** | 0.1.0+ | [socrates-core-api](https://pypi.org/project/socrates-core-api/) | REST API base framework |
+
+### Installation by Use Case
+
+```bash
+# Minimal installation (just the framework)
+pip install socratic-core>=0.1.1
+
+# Learning system (recommended for most users)
+pip install socratic-core>=0.1.1 socratic-learning>=0.1.1
+
+# Full RAG capabilities
+pip install socratic-core>=0.1.1 socratic-rag>=0.1.0
+
+# Multi-agent orchestration
+pip install socratic-core>=0.1.1 socratic-agents>=0.1.0
+
+# OpenClaw integration
+pip install socratic-openclaw-skill>=0.1.0
+
+# LangGraph integration
+pip install socrates-ai-langraph>=0.1.0
+
+# Everything (kitchen sink)
+pip install socratic-core socratic-learning socratic-agents socratic-rag socratic-analyzer socratic-knowledge socratic-workflow socratic-conflict socrates-cli socrates-core-api
+```
+
+---
 
 ## Quick Start
 
