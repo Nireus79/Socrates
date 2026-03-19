@@ -1,8 +1,9 @@
 # Socrates AI - Socratic Method Tutoring System
 
-**Self-hosted platform for AI-guided collaborative development using the Socratic method with multi-agent orchestration, RAG, and knowledge management.**
+**Self-hosted platform for AI-guided collaborative projects development using the Socratic method with multi-agent orchestration, RAG, and knowledge management.**
 
-**⚠️ Note**: This monolithic package is no longer actively maintained. Use modular libraries for new projects.
+![SocratesSS](https://github.com/user-attachments/assets/7ab5d1ec-4eff-4827-acb7-a3fc64570568)
+
 
 ## What is Socrates?
 
