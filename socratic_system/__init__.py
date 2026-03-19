@@ -61,11 +61,19 @@ __author__ = "Socrates AI Contributors"
 __license__ = "MIT"
 
 # ============================================================================
-# RE-EXPORTS FROM socratic-core (NEW: Foundation Library)
+# RE-EXPORTS FROM socratic-core (Foundation Library)
 # ============================================================================
-# These components are now provided by the socratic-core library for
+# These components are now provided by the socratic-core PyPI library for
 # use by CLI, API, and other components. We re-export them here for
 # backward compatibility with existing code.
+#
+# MIGRATION COMPLETED: Library integration v1.3.4
+# Removed duplicate code in favor of PyPI library imports:
+# - Deleted: socratic_system/config.py (now: socratic-core)
+# - Deleted: socratic_system/exceptions/ (now: socratic-core)
+# - Deleted: socratic_system/events/ (now: socratic-core)
+# - Deleted: socratic_system/logging_config.py (now: socratic-core)
+# - Deleted: socratic_system/utils/{id_generator,datetime_helpers,ttl_cache}.py (now: socratic-core)
 
 # Core Configuration API (from socratic-core)
 from socratic_core import ConfigBuilder, SocratesConfig
