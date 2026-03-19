@@ -213,22 +213,25 @@ class GitHubSyncHandler:
                 )
 
             # Resolve each conflict
-            resolution_report = {
-                "status": "partial",
-                "conflicts_found": len(conflicted_files),
-                "resolved": [],
-                "manual_required": [],
-            }
+            resolved: list = []
+            manual_required: list = []
 
             for file_path in conflicted_files:
                 try:
                     if self.resolve_merge_conflict(repo_path, file_path, default_strategy):
-                        resolution_report["resolved"].append(file_path)
+                        resolved.append(file_path)
                     else:
-                        resolution_report["manual_required"].append(file_path)
+                        manual_required.append(file_path)
                 except Exception as e:
                     logger.error(f"Error resolving {file_path}: {e}")
-                    resolution_report["manual_required"].append(file_path)
+                    manual_required.append(file_path)
+
+            resolution_report = {
+                "status": "partial",
+                "conflicts_found": len(conflicted_files),
+                "resolved": resolved,
+                "manual_required": manual_required,
+            }
 
             # Determine final status
             if not resolution_report["manual_required"]:
@@ -540,6 +543,9 @@ class GitHubSyncHandler:
                 else:
                     logger.error(f"Sync failed after {max_retries} attempts: {e}")
                     raise NetworkSyncFailedError(f"Sync failed after {max_retries} attempts: {e}")
+
+        # Should not reach here, but satisfy mypy
+        raise NetworkSyncFailedError(f"Sync exhausted all {max_retries} retry attempts")
 
     def _call_with_timeout(self, func: Any, args: tuple = (), timeout_seconds: int = 30) -> Any:
         """Call function with timeout"""
