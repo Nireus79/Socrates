@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
+from socratic_system.constants import ErrorMessages, ProjectStatus
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
@@ -111,11 +112,11 @@ class ProjectProgressCommand(BaseCommand):
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project progress command"""
         if not self.require_project(context):
-            return self.error("No project loaded")
+            return self.error(ErrorMessages.NO_PROJECT_LOADED)
 
         project = context.get("project")
         if not project:
-            return self.error("No project loaded")
+            return self.error(ErrorMessages.NO_PROJECT_LOADED)
 
         # Get progress value
         if args:
@@ -157,7 +158,7 @@ class ProjectProgressCommand(BaseCommand):
             except ValueError as e:
                 return self.error(str(e))
         else:
-            return self.error("Orchestrator not available")
+            return self.error(ErrorMessages.ORCHESTRATOR_NOT_AVAILABLE)
 
 
 class ProjectStatusCommand(BaseCommand):
@@ -173,13 +174,13 @@ class ProjectStatusCommand(BaseCommand):
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project status command"""
         if not self.require_project(context):
-            return self.error("No project loaded")
+            return self.error(ErrorMessages.NO_PROJECT_LOADED)
 
         project = context.get("project")
         if not project:
-            return self.error("No project loaded")
+            return self.error(ErrorMessages.NO_PROJECT_LOADED)
 
-        valid_statuses = ["active", "completed", "on-hold"]
+        valid_statuses = ProjectStatus.ALL
 
         # Get status
         if args:
@@ -221,4 +222,4 @@ class ProjectStatusCommand(BaseCommand):
             except ValueError as e:
                 return self.error(str(e))
         else:
-            return self.error("Orchestrator not available")
+            return self.error(ErrorMessages.ORCHESTRATOR_NOT_AVAILABLE)
