@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 from colorama import Fore, Style
 
 from socratic_system.core import get_all_project_types, get_project_type_description
+from socratic_system.models.project import ProjectContext
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
@@ -126,18 +127,36 @@ class ProjectCreateCommand(BaseCommand):
                 operation_name="create_project",
             )
 
-            # ProjectManager returns project_id and project_name, fetch full project from database
+            # ProjectManager returns project_id, so we create a ProjectContext and save it
             project = None
             if result.get("status") == "success":
                 project_id = result.get("project_id")
                 if project_id:
-                    project = orchestrator.database.get_project(project_id)
+                    # Create ProjectContext from the information we have
+                    now = datetime.datetime.now()
+                    project = ProjectContext(
+                        project_id=project_id,
+                        name=project_name,
+                        owner=user.username,
+                        phase="planning",
+                        created_at=now,
+                        updated_at=now,
+                        project_type=project_type,
+                        status="active",
+                    )
+
+                    # Save the project to the database
+                    try:
+                        orchestrator.database.save_project(project)
+                    except Exception as e:
+                        self.logger.error(f"Failed to save project to database: {e}")
+                        return self.error(f"Project created but could not be saved to database: {str(e)}")
 
             if project:
                 app.current_project = project
                 app.context_display.set_context(project=project)
             else:
-                return self.error("Project created but could not be retrieved from database")
+                return self.error("Failed to create project")
 
             self.print_success(f"Project '{project_name}' created successfully!")
             print(
