@@ -249,7 +249,7 @@ class TestProjectEndpoints:
         """Test getting project details."""
         # Create project
         create_response = self._create_project()
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # Get project
         response = client.get(
@@ -257,7 +257,8 @@ class TestProjectEndpoints:
             headers=self.headers,
         )
         assert response.status_code == 200
-        data = response.json()
+        result = response.json()
+        data = result.get("data", result)
         assert data["project_id"] == project_id
         assert data["owner"] == self.username
 
@@ -278,7 +279,7 @@ class TestProjectEndpoints:
         """Test updating project."""
         # Create project
         create_response = self._create_project()
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # Update project - send as JSON body, not query params
         response = client.put(
@@ -295,7 +296,7 @@ class TestProjectEndpoints:
         """Test deleting (archiving) project."""
         # Create project
         create_response = self._create_project()
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # Delete project
         response = client.delete(
@@ -309,7 +310,7 @@ class TestProjectEndpoints:
         """Test restoring archived project."""
         # Create project
         create_response = self._create_project()
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # Archive project
         client.delete(f"/projects/{project_id}", headers=self.headers)
@@ -327,7 +328,7 @@ class TestProjectEndpoints:
         """Test getting project statistics."""
         # Create project
         create_response = self._create_project()
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # Get stats
         response = client.get(
@@ -344,7 +345,7 @@ class TestProjectEndpoints:
         """Test getting project maturity."""
         # Create project
         create_response = self._create_project()
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # Get maturity
         response = client.get(
@@ -359,7 +360,7 @@ class TestProjectEndpoints:
         """Test advancing project phase."""
         # Create project
         create_response = self._create_project()
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # Advance phase
         response = client.put(
@@ -375,7 +376,7 @@ class TestProjectEndpoints:
         """Test advancing to invalid phase."""
         # Create project
         create_response = self._create_project()
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # Try invalid phase
         response = client.put(
@@ -424,7 +425,7 @@ class TestAccessControl:
             },
             headers=self.user1_headers,
         )
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # User 2 tries to access User 1's project
         response = client.get(
@@ -446,7 +447,7 @@ class TestAccessControl:
             },
             headers=self.user1_headers,
         )
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # User 2 tries to update User 1's project
         response = client.put(
@@ -468,7 +469,7 @@ class TestAccessControl:
             },
             headers=self.user1_headers,
         )
-        project_id = create_response.json()["project_id"]
+        project_id = create_response.json().get("data", {}).get("project_id") or create_response.json()["project_id"]
 
         # User 2 tries to delete User 1's project
         response = client.delete(
