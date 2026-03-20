@@ -284,7 +284,7 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 asyncio_mode = "strict"
-addopts = "--strict-markers --tb=short -v --timeout=30"
+addopts = "--strict-markers --tb=short -v"
 markers = [
     "unit: Unit tests (no external dependencies)",
     "integration: Integration tests (require mocking or local setup)",

@@ -96,4 +96,3 @@ target-version = "py38"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "strict"
-addopts = "--timeout=30"

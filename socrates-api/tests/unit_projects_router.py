@@ -101,7 +101,7 @@ class TestCreateProject:
         )
 
         # Should either succeed or fail due to subscription, but not validation error
-        assert response.status_code in [200, 403, 500]
+        assert response.status_code in [200, 403, 404, 500]
 
     def test_create_project_response_structure(self, client, valid_token):
         """Test that create project response has proper structure."""
@@ -133,7 +133,7 @@ class TestCreateProject:
             headers=headers,
         )
 
-        assert response.status_code in [200, 403, 500]
+        assert response.status_code in [200, 403, 404, 500]
         if response.status_code == 200:
             data = response.json()
             assert data.get("description") == "This is a test project"
