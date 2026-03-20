@@ -5,14 +5,24 @@ NOTE: Responses now use APIResponse format with data wrapped in "data" field.Git
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
-from socratic_agents import (
-    ConflictResolutionError,
-    NetworkSyncFailedError,
-    PermissionDeniedError,
-    RepositoryNotFoundError,
-    TokenExpiredError,
-    create_github_sync_handler,
-)
+
+try:
+    from socratic_agents import (
+        ConflictResolutionError,
+        NetworkSyncFailedError,
+        PermissionDeniedError,
+        RepositoryNotFoundError,
+        TokenExpiredError,
+        create_github_sync_handler,
+    )
+except ImportError:
+    # socratic_agents is optional - provide graceful fallback
+    ConflictResolutionError = None  # type: ignore
+    NetworkSyncFailedError = None  # type: ignore
+    PermissionDeniedError = None  # type: ignore
+    RepositoryNotFoundError = None  # type: ignore
+    TokenExpiredError = None  # type: ignore
+    create_github_sync_handler = None  # type: ignore
 
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call

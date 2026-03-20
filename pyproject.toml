@@ -67,7 +67,7 @@ dependencies = [
     # Other libraries are optional and can be added per use case
 
     # External dependencies (kept for orchestrator functionality)
-    "anthropic>=0.86.0",                 # Required by: socratic-agents, socrates-nexus (updated for latest features)
+    "anthropic>=0.72.0",                 # Required by: socratic-agents, socrates-nexus
     "chromadb>=1.5.5",                   # Required by: socratic-rag (vector database, performance improvements)
     "sentence-transformers>=5.3.0",      # Required by: socratic-rag (embeddings, model updates)
     "pypdf>=4.0.0",                      # Document processing for RAG systems

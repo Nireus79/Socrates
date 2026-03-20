@@ -7,13 +7,12 @@ Provides decorators and utilities for:
 - Development-mode detailed logging
 """
 
-
 # ============================================================================
 # PERFORMANCE OPTIMIZATION NOTES
 # ============================================================================
-# 
+#
 # This module provides query profiling with minimal overhead:
-# 
+#
 # 1. Lazy Statistics Collection:
 #    - Only tracks queries when profiling enabled
 #    - Zero overhead when disabled (decorator is no-op)

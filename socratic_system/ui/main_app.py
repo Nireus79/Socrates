@@ -233,14 +233,14 @@ ANALYTICS_COMMANDS = [
 ]
 
 
-
 # ============================================================================
 # UI STATE MANAGEMENT
 # ============================================================================
 
+
 class UIState:
     """Manages UI state and display context for the application.
-    
+
     Handles:
     - Current user and project context
     - Display elements (analytics, maturity, context info)
@@ -280,9 +280,10 @@ class UIState:
 # AUTHENTICATION MANAGER
 # ============================================================================
 
+
 class AuthenticationManager:
     """Manages user authentication and API key handling.
-    
+
     Responsibilities:
     - Prompting for authentication credentials
     - Managing Claude API keys
@@ -302,7 +303,7 @@ class AuthenticationManager:
 
     def authenticate_user(self) -> bool:
         """Authenticate user with credentials.
-        
+
         Returns:
             True if authentication successful, False otherwise
         """
@@ -314,9 +315,10 @@ class AuthenticationManager:
 # COMMAND REGISTRATION MANAGER
 # ============================================================================
 
+
 class CommandRegistrationManager:
     """Manages command registration and command handler setup.
-    
+
     Responsibilities:
     - Registering all available commands
     - Organizing commands by category
@@ -327,7 +329,7 @@ class CommandRegistrationManager:
     @staticmethod
     def register_all_commands(command_handler: CommandHandler) -> None:
         """Register all available commands with the command handler.
-        
+
         Organizes commands into logical groups:
         - Project management commands
         - Document handling commands
@@ -335,7 +337,7 @@ class CommandRegistrationManager:
         - Analytics and monitoring
         - User and collaboration management
         - System and navigation commands
-        
+
         Args:
             command_handler: CommandHandler instance to register commands with
         """
@@ -347,9 +349,10 @@ class CommandRegistrationManager:
 # RESULT HANDLER
 # ============================================================================
 
+
 class CommandResultHandler:
     """Handles command execution results and their consequences.
-    
+
     Responsibilities:
     - Processing command results
     - Updating application state based on results
@@ -360,7 +363,7 @@ class CommandResultHandler:
 
     def __init__(self, ui_state: UIState):
         """Initialize result handler with UI state reference.
-        
+
         Args:
             ui_state: UIState instance to update
         """
@@ -368,10 +371,10 @@ class CommandResultHandler:
 
     def handle_result(self, result: Dict[str, Any]) -> bool:
         """Process a command result.
-        
+
         Args:
             result: Command execution result
-            
+
         Returns:
             True if application should continue, False to exit
         """
@@ -383,9 +386,10 @@ class CommandResultHandler:
 # FRONTEND MANAGER
 # ============================================================================
 
+
 class FrontendManager:
     """Manages optional frontend application lifecycle.
-    
+
     Responsibilities:
     - Starting and stopping web frontend
     - Managing frontend process
@@ -398,7 +402,7 @@ class FrontendManager:
 
     def start_frontend(self) -> bool:
         """Start the web frontend application.
-        
+
         Returns:
             True if frontend started successfully, False otherwise
         """
