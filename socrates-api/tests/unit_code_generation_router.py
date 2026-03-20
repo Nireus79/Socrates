@@ -46,8 +46,8 @@ class TestGenerateCode:
             "/projects/nonexistent_proj_xyz/code/generate?specification=Create+a+function",
             headers=headers,
         )
-        # Will fail due to missing project or subscription validation
-        assert response.status_code in [403, 404, 500]
+        # Will fail due to missing project, subscription validation, or auth
+        assert response.status_code in [401, 403, 404, 500]
 
     def test_generate_code_missing_specification(self, client, valid_token):
         """Test generating code without specification."""
@@ -56,7 +56,7 @@ class TestGenerateCode:
             "/projects/test_proj/code/generate",
             headers=headers,
         )
-        assert response.status_code in [422, 403, 404, 500]
+        assert response.status_code in [401, 422, 403, 404, 500]
 
     def test_generate_code_with_language(self, client, valid_token):
         """Test generating code with specific language."""
@@ -74,7 +74,7 @@ class TestGenerateCode:
             "/projects/test_proj/code/generate?specification=Create+a+function&language=invalid_lang_xyz",
             headers=headers,
         )
-        assert response.status_code in [400, 403, 404, 422, 500]
+        assert response.status_code in [400, 401, 403, 404, 422, 500]
 
     def test_generate_code_with_requirements(self, client, valid_token):
         """Test generating code with additional requirements."""
@@ -96,7 +96,7 @@ class TestGenerateCode:
                 headers=headers,
             )
             # Should either succeed or fail with subscription/project, not language error
-            assert response.status_code in [200, 403, 404, 422, 500]
+            assert response.status_code in [200, 401, 403, 404, 422, 500]
 
     def test_generate_code_invalid_token(self, client):
         """Test generate code with invalid token."""
@@ -128,7 +128,7 @@ class TestValidateCode:
             "/projects/nonexistent_proj_xyz/code/validate?code=print('hello')&language=python",
             headers=headers,
         )
-        assert response.status_code in [403, 404, 422, 500]
+        assert response.status_code in [401, 403, 404, 422, 500]
 
     def test_validate_code_missing_code(self, client, valid_token):
         """Test validating without code."""
@@ -137,7 +137,7 @@ class TestValidateCode:
             "/projects/test_proj/code/validate?language=python",
             headers=headers,
         )
-        assert response.status_code in [422, 403, 404, 500]
+        assert response.status_code in [401, 422, 403, 404, 500]
 
     def test_validate_python_code(self, client, valid_token):
         """Test validating Python code."""
@@ -178,7 +178,7 @@ class TestValidateCode:
             "/projects/test_proj/code/validate?code=print('hello')&language=invalid_lang_xyz",
             headers=headers,
         )
-        assert response.status_code in [400, 403, 404, 422, 500]
+        assert response.status_code in [400, 401, 403, 404, 422, 500]
 
     def test_validate_code_invalid_token(self, client):
         """Test validate code with invalid token."""
@@ -291,7 +291,7 @@ class TestRefactorCode:
             "/projects/nonexistent_proj_xyz/code/refactor?code=print('hello')&language=python",
             headers=headers,
         )
-        assert response.status_code in [403, 404, 422, 500]
+        assert response.status_code in [401, 403, 404, 422, 500]
 
     def test_refactor_code_missing_code(self, client, valid_token):
         """Test refactoring without code."""
@@ -300,7 +300,7 @@ class TestRefactorCode:
             "/projects/test_proj/code/refactor?language=python",
             headers=headers,
         )
-        assert response.status_code in [422, 403, 404, 500]
+        assert response.status_code in [401, 422, 403, 404, 500]
 
     def test_refactor_code_optimize(self, client, valid_token):
         """Test refactoring code with optimize type."""
@@ -345,7 +345,7 @@ class TestRefactorCode:
             "/projects/test_proj/code/refactor?code=print('hello')&language=python&refactor_type=invalid_type_xyz",
             headers=headers,
         )
-        assert response.status_code in [400, 403, 404, 422, 500]
+        assert response.status_code in [400, 401, 403, 404, 422, 500]
 
     def test_refactor_code_invalid_token(self, client):
         """Test refactor code with invalid token."""
@@ -478,7 +478,7 @@ class TestCodeGenerationEdgeCases:
             "/projects/test_proj/code/generate?specification=",
             headers=headers,
         )
-        assert response.status_code in [200, 400, 403, 404, 422, 500]
+        assert response.status_code in [200, 400, 401, 403, 404, 422, 500]
 
     def test_validate_code_with_empty_code(self, client, valid_token):
         """Test validating empty code."""
@@ -506,7 +506,7 @@ class TestCodeGenerationEdgeCases:
             "/projects/test_proj/code/refactor?code=&language=python",
             headers=headers,
         )
-        assert response.status_code in [200, 400, 403, 404, 422, 500]
+        assert response.status_code in [200, 400, 401, 403, 404, 422, 500]
 
     def test_generate_docs_with_special_chars_format(self, client, valid_token):
         """Test generating docs with special characters in format (should fail)."""

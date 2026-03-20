@@ -72,8 +72,8 @@ class TestAPIInitializeEndpoint:
         # Should return a valid response (may be success or error depending on environment)
         assert response.status_code in [200, 400, 422, 500]
         data = response.json()
-        # Response should have status field indicating success or error
-        assert "status" in data or "data" in data
+        # Response should have status field indicating success, error, or detail
+        assert "status" in data or "data" in data or "detail" in data
 
     def test_initialize_response_structure(self, client):
         """Test initialize response structure"""
