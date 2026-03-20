@@ -41,12 +41,13 @@ class JWTHandler:
         if expires_delta is None:
             expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-        expire = datetime.now(timezone.utc) + expires_delta
+        now = datetime.now(timezone.utc)
+        expire = now + expires_delta
 
         claims: Dict[str, Any] = {
             "sub": subject,
-            "exp": expire,
-            "iat": datetime.now(timezone.utc),
+            "exp": int(expire.timestamp()),
+            "iat": int(now.timestamp()),
             "type": "access",
         }
 
@@ -67,12 +68,13 @@ class JWTHandler:
         Returns:
             JWT refresh token
         """
-        expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        now = datetime.now(timezone.utc)
+        expire = now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
         claims = {
             "sub": subject,
-            "exp": expire,
-            "iat": datetime.now(timezone.utc),
+            "exp": int(expire.timestamp()),
+            "iat": int(now.timestamp()),
             "type": "refresh",
         }
 
