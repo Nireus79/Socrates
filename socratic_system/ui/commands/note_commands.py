@@ -8,7 +8,6 @@ from colorama import Fore, Style
 
 from socratic_system.models.note import ProjectNote
 from socratic_system.ui.commands.base import BaseCommand
-from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class NoteAddCommand(BaseCommand):

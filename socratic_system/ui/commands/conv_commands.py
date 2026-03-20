@@ -7,7 +7,6 @@ from typing import Any, Dict, List
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
-from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class ConvSearchCommand(BaseCommand):
@@ -40,16 +39,17 @@ class ConvSearchCommand(BaseCommand):
             return self.error("Required context not available")
 
         try:
-            # Search conversations
-            result = safe_orchestrator_call(
-                orchestrator,
-                "context_analyzer",
-                {"action": "search_conversations", "project": project, "query": query},
-                operation_name="search conversations",
-            )
+            # Search conversations in project history
+            conversation_history = getattr(project, "conversation_history", []) or []
+            query_lower = query.lower()
 
-            results = result.get("results", [])
-            count = result.get("count", 0)
+            # Filter messages matching query
+            results = [
+                msg
+                for msg in conversation_history
+                if query_lower in msg.get("content", "").lower()
+            ]
+            count = len(results)
 
             if count == 0:
                 self.print_info(f"No messages found matching '{query}'")
@@ -117,15 +117,21 @@ class ConvSummaryCommand(BaseCommand):
         )
 
         try:
-            # Generate summary
-            result = safe_orchestrator_call(
-                orchestrator,
-                "context_analyzer",
-                {"action": "generate_summary", "project": project, "limit": limit},
-                operation_name="generate conversation summary",
-            )
+            # Generate summary from recent conversations
+            conversation_history = getattr(project, "conversation_history", []) or []
 
-            summary = result.get("summary", "")
+            # Get the last 'limit' messages
+            recent_messages = conversation_history[-limit:] if len(conversation_history) > limit else conversation_history
+
+            # Generate summary text
+            summary = "Conversation Summary:\n"
+            if recent_messages:
+                for msg in recent_messages:
+                    role = msg.get("role", "unknown").capitalize()
+                    content = msg.get("content", "")[:100]  # First 100 chars
+                    summary += f"- {role}: {content}\n"
+            else:
+                summary = "No conversation history available."
 
             self.print_header("Conversation Summary")
             print(f"{Fore.WHITE}{summary}{Style.RESET_ALL}\n")
