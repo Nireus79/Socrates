@@ -7,14 +7,14 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
-from modules.foundation.models import VALID_ROLES, ProjectContext, TeamMemberRole
-from modules.foundation.utils.id_generator import ProjectIDGenerator
-from modules.foundation.utils.orchestrator_helper import safe_orchestrator_call
+from socratic_system.models import VALID_ROLES, ProjectContext, TeamMemberRole
+from socratic_core.utils.id_generator import ProjectIDGenerator
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 from .base import Agent
 
 if TYPE_CHECKING:
-    from modules.foundation.orchestration import AgentOrchestrator
+    from socratic_system.orchestration import AgentOrchestrator
 
 
 class ProjectManagerAgent(Agent):
@@ -77,13 +77,13 @@ class ProjectManagerAgent(Agent):
             }
 
         # NEW: Check project limit
-        from modules.foundation.subscription.checker import SubscriptionChecker
+        from socratic_system.subscription.checker import SubscriptionChecker
 
         user = self.orchestrator.database.load_user(owner)
 
         # Create user if they don't exist (for automation/testing)
         if user is None:
-            from modules.foundation.models.user import User
+            from socratic_system.models import User
 
             # Generate unique email for auto-created user
             unique_email = self._generate_auto_user_email(owner)

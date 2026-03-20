@@ -3,59 +3,61 @@
 
 BEGIN TRANSACTION;
 
--- GitHub import metadata table
-CREATE TABLE IF NOT EXISTS github_imports (
+-- Project files table - stores project files from GitHub imports
+CREATE TABLE IF NOT EXISTS project_files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id TEXT NOT NULL,
-    github_repo_url TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size INTEGER,
+    content_hash TEXT,
+    last_modified TIMESTAMP,
+    tracked BOOLEAN DEFAULT 1,
+
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    UNIQUE(project_id, file_path)
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_files_project ON project_files(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_files_tracked ON project_files(tracked);
+
+-- Repository metadata table - stores GitHub repository information
+CREATE TABLE IF NOT EXISTS repository_metadata (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT NOT NULL,
+    repo_url TEXT NOT NULL,
     repo_owner TEXT NOT NULL,
     repo_name TEXT NOT NULL,
+    default_branch TEXT DEFAULT 'main',
+    description TEXT,
+    is_private BOOLEAN DEFAULT 0,
     imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_synced_at TIMESTAMP,
     sync_status TEXT DEFAULT 'pending',  -- 'pending', 'syncing', 'completed', 'failed'
     metadata TEXT,  -- JSON for extensibility
 
     FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
-    UNIQUE(project_id, github_repo_url)
+    UNIQUE(project_id, repo_url)
 );
 
-CREATE INDEX IF NOT EXISTS idx_github_imports_project ON github_imports(project_id);
-CREATE INDEX IF NOT EXISTS idx_github_imports_sync_status ON github_imports(sync_status);
-CREATE INDEX IF NOT EXISTS idx_github_imports_last_synced ON github_imports(last_synced_at DESC);
+CREATE INDEX IF NOT EXISTS idx_repository_metadata_project ON repository_metadata(project_id);
+CREATE INDEX IF NOT EXISTS idx_repository_metadata_sync_status ON repository_metadata(sync_status);
 
--- GitHub file tracking table
-CREATE TABLE IF NOT EXISTS github_files (
+-- Code validation results table - stores code validation history
+CREATE TABLE IF NOT EXISTS code_validation_results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    import_id INTEGER NOT NULL,
+    project_id TEXT NOT NULL,
     file_path TEXT NOT NULL,
-    file_size INTEGER,
-    last_modified TIMESTAMP,
-    content_hash TEXT,
-    tracked BOOLEAN DEFAULT 1,
-
-    FOREIGN KEY (import_id) REFERENCES github_imports(id) ON DELETE CASCADE,
-    UNIQUE(import_id, file_path)
-);
-
-CREATE INDEX IF NOT EXISTS idx_github_files_import ON github_files(import_id);
-CREATE INDEX IF NOT EXISTS idx_github_files_tracked ON github_files(tracked);
-
--- GitHub sync log table
-CREATE TABLE IF NOT EXISTS github_sync_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    import_id INTEGER NOT NULL,
-    sync_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status TEXT NOT NULL,  -- 'success', 'error', 'partial'
-    files_added INTEGER DEFAULT 0,
-    files_modified INTEGER DEFAULT 0,
-    files_deleted INTEGER DEFAULT 0,
+    validation_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status TEXT NOT NULL,  -- 'success', 'error', 'warning'
+    error_count INTEGER DEFAULT 0,
+    warning_count INTEGER DEFAULT 0,
     error_message TEXT,
     details TEXT,  -- JSON for extensibility
 
-    FOREIGN KEY (import_id) REFERENCES github_imports(id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_github_sync_logs_import ON github_sync_logs(import_id);
-CREATE INDEX IF NOT EXISTS idx_github_sync_logs_timestamp ON github_sync_logs(sync_timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_code_validation_project ON code_validation_results(project_id);
+CREATE INDEX IF NOT EXISTS idx_code_validation_status ON code_validation_results(status);
 
 COMMIT;
