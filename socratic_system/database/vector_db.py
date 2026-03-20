@@ -40,6 +40,13 @@ class VectorDatabase:
 
         self.logger.info(f"Initializing vector database: {self.db_path}")
 
+        # Check if RAG dependencies are available
+        if RAGClient is None or RAGConfig is None:
+            raise ImportError(
+                "RAG functionality is not available. Please install 'socratic-rag' package "
+                "or use the system without vector database capabilities."
+            )
+
         try:
             # Configure RAG client with ChromaDB backend
             config = RAGConfig(
