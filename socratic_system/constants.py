@@ -8,6 +8,7 @@ to avoid duplication and enable easy refactoring.
 # Project Status Constants
 class ProjectStatus:
     """Project lifecycle status values."""
+
     ACTIVE = "active"
     COMPLETED = "completed"
     ON_HOLD = "on-hold"
@@ -20,6 +21,7 @@ class ProjectStatus:
 # API Response Constants
 class APIResponse:
     """Standard API response statuses."""
+
     SUCCESS = "success"
     ERROR = "error"
     WARNING = "warning"
@@ -29,6 +31,7 @@ class APIResponse:
 # Database Role Constants
 class DatabaseRole:
     """Database replication role designations."""
+
     PRIMARY = "primary"
     REPLICA = "replica"
     STANDBY = "standby"
@@ -37,6 +40,7 @@ class DatabaseRole:
 # Project Phase Constants
 class ProjectPhase:
     """Project development phases."""
+
     DISCOVERY = "discovery"
     PLANNING = "planning"
     DESIGN = "design"
@@ -51,6 +55,7 @@ class ProjectPhase:
 # User Roles and Permissions
 class UserRole:
     """User role designations in the system."""
+
     ADMIN = "admin"
     DEVELOPER = "developer"
     REVIEWER = "reviewer"
@@ -62,6 +67,7 @@ class UserRole:
 # Team Member Roles
 class TeamMemberRole:
     """Roles for team members on projects."""
+
     PRIMARY = "primary"
     SECONDARY = "secondary"
     REVIEWER = "reviewer"
@@ -71,6 +77,7 @@ class TeamMemberRole:
 # Knowledge Base Categories
 class KnowledgeCategory:
     """Categories for knowledge base entries."""
+
     BEST_PRACTICE = "best_practice"
     PITFALL = "pitfall"
     PATTERN = "pattern"
@@ -81,6 +88,7 @@ class KnowledgeCategory:
 # Timeout Constants (in seconds)
 class Timeouts:
     """Standard timeout values for various operations."""
+
     GIT_OPERATION = 30
     API_CALL = 30
     SUBPROCESS_DEFAULT = 60
@@ -92,6 +100,7 @@ class Timeouts:
 # Performance Constants
 class Performance:
     """Performance and tuning constants."""
+
     CONNECTION_POOL_SIZE = 10
     QUERY_CACHE_SIZE = 1000
     EMBEDDING_CACHE_SIZE = 5000
@@ -102,6 +111,7 @@ class Performance:
 # File and Path Constants
 class FilePaths:
     """Standard file and directory paths."""
+
     LEARNING_LOGS = "./learning_logs"
     CACHE_DIR = "./.cache"
     TEMP_DIR = "./.tmp"
@@ -111,6 +121,7 @@ class FilePaths:
 # Error Message Constants
 class ErrorMessages:
     """Standard error messages."""
+
     NO_PROJECT_LOADED = "No project loaded"
     ORCHESTRATOR_NOT_AVAILABLE = "Orchestrator not available"
     INVALID_INPUT = "Invalid input"

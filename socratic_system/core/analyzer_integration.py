@@ -6,7 +6,6 @@ and performance recommendations using socratic-analyzer's AnalyzerClient.
 """
 
 import logging
-logger = logging.getLogger(__name__)
 from typing import Any, Dict, List, Optional
 
 try:
@@ -15,6 +14,8 @@ except ImportError:
     # socratic_analyzer is optional - provide graceful fallback
     AnalyzerClient = None  # type: ignore
     AnalyzerConfig = None  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 class AnalyzerIntegration:

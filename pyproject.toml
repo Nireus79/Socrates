@@ -255,7 +255,7 @@ line_length = 100
 skip_gitignore = true
 
 [tool.mypy]
-python_version = "3.8"  # Match requires-python = ">=3.8" for accurate type checking across all supported versions
+python_version = "3.9"  # MyPy requires 3.9+; type checking covers all Python 3.8+ code
 warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false

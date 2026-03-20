@@ -185,7 +185,7 @@ class GitInitializer:
             logger.error(msg)
             return False, msg
         except subprocess.CalledProcessError as e:
-            msg = f"Git command failed: {e.stderr.decode('utf-8') if e.stderr else str(e)}" {e.stderr.decode('utf-8') if e.stderr else str(e)}"
+            msg = f"Git command failed: {e.stderr.decode('utf-8') if e.stderr else str(e)}"
             logger.error(msg)
             return False, msg
         except Exception as e:
@@ -385,7 +385,7 @@ class GitInitializer:
             logger.error(msg)
             return False, msg
         except subprocess.CalledProcessError as e:
-            msg = f"Git command failed: {e.stderr.decode('utf-8') if e.stderr else str(e)}" {e.stderr.decode('utf-8') if e.stderr else str(e)}"
+            msg = f"Git command failed: {e.stderr.decode('utf-8') if e.stderr else str(e)}"
             logger.error(msg)
             return False, msg
         except Exception as e:

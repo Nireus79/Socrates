@@ -389,6 +389,3 @@ NAV_STACK_ERROR = NAV_STACK_ERROR
 STATUS_SUCCESS = "success"
 STATUS_ERROR = "error"
 STATUS_EXIT = EXIT_CODE
-
-
-        return self.success(message=message)

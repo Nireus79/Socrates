@@ -6,10 +6,9 @@ getting recommendations, and viewing progression trends.
 """
 
 import logging
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List
 
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
-from socratic_system.models.project import ProjectContext
 
 try:
     from socratic_learning import AnalyticsCalculator

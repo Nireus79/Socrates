@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import json
 import logging
-logger = logging.getLogger(__name__)
 import os
 import sqlite3
 from dataclasses import asdict
@@ -34,6 +33,7 @@ except ImportError:
     # socratic_learning is optional - provide graceful fallback
     QuestionEffectiveness = None  # type: ignore
     UserBehaviorPattern = None  # type: ignore
+
 from socratic_system.database.migration_runner import MigrationRunner
 from socratic_system.models.llm_provider import LLMUsageRecord
 from socratic_system.models.note import ProjectNote
