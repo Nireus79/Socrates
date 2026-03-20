@@ -301,14 +301,14 @@ class TestTestingMode:
 
     def test_testing_mode_requires_auth(self, client):
         """Test that testing mode endpoint requires authentication."""
-        response = client.put("/testing-mode?enabled=true")
+        response = client.put("/subscription/testing-mode?enabled=true")
 
         assert response.status_code == 401
 
     def test_enable_testing_mode(self, client, valid_token):
         """Test enabling testing mode."""
         headers = {"Authorization": f"Bearer {valid_token}"}
-        response = client.put("/testing-mode?enabled=true", headers=headers)
+        response = client.put("/subscription/testing-mode?enabled=true", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -319,7 +319,7 @@ class TestTestingMode:
     def test_disable_testing_mode(self, client, valid_token):
         """Test disabling testing mode."""
         headers = {"Authorization": f"Bearer {valid_token}"}
-        response = client.put("/testing-mode?enabled=false", headers=headers)
+        response = client.put("/subscription/testing-mode?enabled=false", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -329,7 +329,7 @@ class TestTestingMode:
     def test_testing_mode_enabled_lists_restrictions(self, client, valid_token):
         """Test that enabled testing mode lists all bypassed restrictions."""
         headers = {"Authorization": f"Bearer {valid_token}"}
-        response = client.put("/testing-mode?enabled=true", headers=headers)
+        response = client.put("/subscription/testing-mode?enabled=true", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -345,7 +345,7 @@ class TestTestingMode:
     def test_testing_mode_disabled_no_restrictions(self, client, valid_token):
         """Test that disabled testing mode has no restrictions bypassed."""
         headers = {"Authorization": f"Bearer {valid_token}"}
-        response = client.put("/testing-mode?enabled=false", headers=headers)
+        response = client.put("/subscription/testing-mode?enabled=false", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -356,7 +356,7 @@ class TestTestingMode:
     def test_testing_mode_enabled_includes_warning(self, client, valid_token):
         """Test that enabled testing mode includes warning message."""
         headers = {"Authorization": f"Bearer {valid_token}"}
-        response = client.put("/testing-mode?enabled=true", headers=headers)
+        response = client.put("/subscription/testing-mode?enabled=true", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -366,7 +366,7 @@ class TestTestingMode:
     def test_testing_mode_disabled_no_warning(self, client, valid_token):
         """Test that disabled testing mode has no warning."""
         headers = {"Authorization": f"Bearer {valid_token}"}
-        response = client.put("/testing-mode?enabled=false", headers=headers)
+        response = client.put("/subscription/testing-mode?enabled=false", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -375,6 +375,6 @@ class TestTestingMode:
     def test_testing_mode_missing_enabled_parameter(self, client, valid_token):
         """Test testing mode endpoint without required enabled parameter."""
         headers = {"Authorization": f"Bearer {valid_token}"}
-        response = client.put("/testing-mode", headers=headers)
+        response = client.put("/subscription/testing-mode", headers=headers)
 
         assert response.status_code == 422  # Validation error
