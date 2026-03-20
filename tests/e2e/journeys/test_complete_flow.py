@@ -15,9 +15,9 @@ from socratic_core import SocratesConfig
 
 # Check if optional socratic-agents package is available
 try:
-    import socratic_agents
-    HAS_SOCRATIC_AGENTS = True
-except ImportError:
+    import importlib.util
+    HAS_SOCRATIC_AGENTS = importlib.util.find_spec("socratic_agents") is not None
+except (ImportError, ModuleNotFoundError):
     HAS_SOCRATIC_AGENTS = False
 
 from socratic_system.models import ProjectContext, ProjectNote, User
@@ -343,6 +343,7 @@ class TestNotesSystemWorkflow:
 
         return user, project
 
+    @pytest.mark.skipif(not HAS_SOCRATIC_AGENTS, reason="Requires optional socratic-agents package")
     def test_note_add_command(self, app):
         """Test adding a note"""
         user, project = self.setup_project_with_user(app)

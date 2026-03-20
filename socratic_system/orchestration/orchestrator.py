@@ -142,6 +142,7 @@ class AgentOrchestrator:
         self.database = DatabaseSingleton.get_instance()
 
         # Initialize vector database (optional - continue if RAG dependencies missing)
+        self.vector_db: VectorDatabase | None
         try:
             self.vector_db = VectorDatabase(
                 str(self.config.vector_db_path), embedding_model=self.config.embedding_model
@@ -382,6 +383,10 @@ class AgentOrchestrator:
 
     def _load_knowledge_base(self) -> None:
         """Load default knowledge base from config file if not already loaded"""
+        if self.vector_db is None:
+            self.logger.debug("Vector database not available, skipping knowledge base loading")
+            return
+
         if self.vector_db.knowledge_loaded:
             self.logger.debug("Knowledge base already loaded, skipping initialization")
             return
@@ -400,7 +405,8 @@ class AgentOrchestrator:
         loaded_count, error_count = self._process_knowledge_entries(knowledge_data)
 
         # Mark knowledge base as loaded
-        self.vector_db.knowledge_loaded = True
+        if self.vector_db is not None:
+            self.vector_db.knowledge_loaded = True
         self.knowledge_loaded = True
 
         # Emit completion event
@@ -467,7 +473,8 @@ class AgentOrchestrator:
         """Add single knowledge entry to both vector and SQL databases"""
         try:
             entry = KnowledgeEntry(**entry_data)
-            self.vector_db.add_knowledge(entry)
+            if self.vector_db is not None:
+                self.vector_db.add_knowledge(entry)
 
             # Also store in SQL database for persistence and querying
             self.database.save_knowledge_document(
