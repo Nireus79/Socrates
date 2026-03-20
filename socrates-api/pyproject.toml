@@ -54,9 +54,10 @@ full = [
     "socratic-knowledge>=0.1.0",    # Knowledge management
 ]
 dev = [
-    "pytest>=7.0",
+    "pytest>=8.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0",
+    "pytest-timeout>=2.1.0",
     "httpx>=0.24.0",
     "black>=23.0",
     "ruff>=0.1.0",
@@ -94,4 +95,5 @@ target-version = "py38"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-asyncio_mode = "auto"
+asyncio_mode = "strict"
+addopts = "--timeout=30"

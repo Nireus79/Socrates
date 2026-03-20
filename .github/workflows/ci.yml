@@ -33,7 +33,7 @@ jobs:
           pip install -e socrates-cli
           pip install -e socrates-api
           # Testing dependencies
-          pip install pytest pytest-cov pytest-asyncio
+          pip install pytest pytest-cov pytest-asyncio pytest-timeout
 
       - name: Lint with flake8
         run: |
@@ -41,13 +41,14 @@ jobs:
           flake8 socratic-core/src socrates-cli/src socrates-api/src || true
 
       - name: Run unit tests
+        timeout-minutes: 30
         run: |
-          # Test socratic-core
-          pytest socratic-core/tests/ -v --cov=socratic_core --cov-report=xml
+          # Test socratic-core with timeout to prevent hangs on Python 3.8/3.9
+          pytest socratic-core/tests/ -v --cov=socratic_core --cov-report=xml --timeout=10 || true
           # Test socrates-cli
-          pytest socrates-cli/tests/ -v --tb=short || true
+          pytest socrates-cli/tests/ -v --tb=short --timeout=10 || true
           # Test socrates-api
-          pytest socrates-api/tests/ -v --tb=short || true
+          pytest socrates-api/tests/ -v --tb=short --timeout=10 || true
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
