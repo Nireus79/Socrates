@@ -180,7 +180,7 @@ class GitInitializer:
 
             return True, "Git repository initialized successfully"
 
-        except subprocess.TimeoutExpired as e:
+        except subprocess.TimeoutExpired:
             msg = f"Git command timed out after {GIT_OPERATION_TIMEOUT_SECONDS} seconds"
             logger.error(msg)
             return False, msg
@@ -380,7 +380,7 @@ class GitInitializer:
                 logger.error(msg)
                 return False, msg
 
-        except subprocess.TimeoutExpired as e:
+        except subprocess.TimeoutExpired:
             msg = f"Git command timed out after {GIT_OPERATION_TIMEOUT_SECONDS} seconds"
             logger.error(msg)
             return False, msg

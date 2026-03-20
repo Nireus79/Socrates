@@ -80,8 +80,13 @@ class AnalyticsAnalyzeCommand(BaseCommand):
 
             # Calculate analysis
             if AnalyticsCalculator is None:
-                logger.warning("AnalyticsCalculator not available - socratic_learning not installed")
-                return {"status": "error", "message": "Analytics feature requires: pip install socrates-ai[learning]"}
+                logger.warning(
+                    "AnalyticsCalculator not available - socratic_learning not installed"
+                )
+                return {
+                    "status": "error",
+                    "message": "Analytics feature requires: pip install socrates-ai[learning]",
+                }
 
             logger.debug(f"Creating AnalyticsCalculator for project type: {project.project_type}")
             calculator = AnalyticsCalculator(project.project_type)
@@ -104,7 +109,7 @@ class AnalyticsAnalyzeCommand(BaseCommand):
 
 class AnalyticsRecommendCommand(BaseCommand):
     """Get AI-powered recommendations based on analytics.
-    
+
     Leverages orchestrator agents to suggest:
     - Code optimization opportunities
     - Documentation gaps to fill
@@ -130,8 +135,13 @@ class AnalyticsRecommendCommand(BaseCommand):
 
             # Generate recommendations using both analytics and learning insights
             if AnalyticsCalculator is None:
-                logger.warning("AnalyticsCalculator not available - socratic_learning not installed")
-                return {"status": "error", "message": "Analytics feature requires: pip install socrates-ai[learning]"}
+                logger.warning(
+                    "AnalyticsCalculator not available - socratic_learning not installed"
+                )
+                return {
+                    "status": "error",
+                    "message": "Analytics feature requires: pip install socrates-ai[learning]",
+                }
 
             logger.debug(f"Generating recommendations for project type: {project.project_type}")
             calculator = AnalyticsCalculator(project.project_type)
@@ -146,9 +156,9 @@ class AnalyticsRecommendCommand(BaseCommand):
                     context={
                         "project_id": project.id,
                         "phase": project.phase,
-                        "project_type": project.project_type
+                        "project_type": project.project_type,
                     },
-                    top_k=3
+                    top_k=3,
                 )
                 logger.debug(f"Retrieved {len(learning_recs)} learning-based recommendations")
             except Exception as e:
@@ -176,7 +186,7 @@ class AnalyticsRecommendCommand(BaseCommand):
 
 class AnalyticsTrendsCommand(BaseCommand):
     """Analyze analytics trends over time.
-    
+
     Shows how metrics have changed:
     - Quality trend direction (improving/declining)
     - Engagement trend analysis
@@ -202,8 +212,13 @@ class AnalyticsTrendsCommand(BaseCommand):
 
             # Analyze trends
             if AnalyticsCalculator is None:
-                logger.warning("AnalyticsCalculator not available - socratic_learning not installed")
-                return {"status": "error", "message": "Analytics feature requires: pip install socrates-ai[learning]"}
+                logger.warning(
+                    "AnalyticsCalculator not available - socratic_learning not installed"
+                )
+                return {
+                    "status": "error",
+                    "message": "Analytics feature requires: pip install socrates-ai[learning]",
+                }
 
             logger.debug(f"Analyzing progression trends for project type: {project.project_type}")
             calculator = AnalyticsCalculator(project.project_type)
@@ -212,8 +227,12 @@ class AnalyticsTrendsCommand(BaseCommand):
             # Enhance with learning metrics
             learning_metrics = {}
             try:
-                learning_metrics = self.orchestrator.learning_integration.get_learning_metrics(user_id)
-                logger.debug(f"Retrieved learning metrics: engagement={learning_metrics.get('engagement_score', 0)}")
+                learning_metrics = self.orchestrator.learning_integration.get_learning_metrics(
+                    user_id
+                )
+                logger.debug(
+                    f"Retrieved learning metrics: engagement={learning_metrics.get('engagement_score', 0)}"
+                )
             except Exception as e:
                 logger.debug(f"Learning metrics unavailable: {e}")
 
@@ -225,11 +244,7 @@ class AnalyticsTrendsCommand(BaseCommand):
             logger.debug("Displaying trends")
             _safe_display(AnalyticsDisplay.display_trends, trends, project.maturity_history)
 
-            return {
-                "status": "success",
-                "trends": trends,
-                "learning_metrics": learning_metrics
-            }
+            return {"status": "success", "trends": trends, "learning_metrics": learning_metrics}
 
         except Exception as e:
             logger.error(f"Trend analysis failed: {type(e).__name__}: {e}")
@@ -238,7 +253,7 @@ class AnalyticsTrendsCommand(BaseCommand):
 
 class AnalyticsSummaryCommand(BaseCommand):
     """Provide comprehensive analytics summary.
-    
+
     Generates a detailed report covering:
     - Code quality metrics
     - Documentation completeness
@@ -281,7 +296,7 @@ class AnalyticsSummaryCommand(BaseCommand):
 
 class AnalyticsBreakdownCommand(BaseCommand):
     """Break down metrics by component.
-    
+
     Provides granular analysis:
     - Per-module metrics
     - Per-function metrics
@@ -318,10 +333,10 @@ class AnalyticsBreakdownCommand(BaseCommand):
 
 class AnalyticsStatusCommand(BaseCommand):
     """Display current analytics status for the project.
-    
+
     Shows high-level analytics metrics including:
     - Overall project health score
-    - Quality metrics summary  
+    - Quality metrics summary
     - Engagement trends
     - Key performance indicators
     """

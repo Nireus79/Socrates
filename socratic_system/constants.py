@@ -5,6 +5,7 @@ This module defines all magic strings and configuration constants
 to avoid duplication and enable easy refactoring.
 """
 
+
 # Project Status Constants
 class ProjectStatus:
     """Project lifecycle status values."""

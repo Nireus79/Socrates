@@ -12,7 +12,7 @@ format responses with data wrapped in a "data" field.
 
 Shell Command Note:
 This module uses subprocess for executing system commands when needed.
-Consider alternatives or security implications when adding new shell 
+Consider alternatives or security implications when adding new shell
 command execution capabilities.
 
 Exception Handling:
@@ -28,12 +28,6 @@ import os
 import subprocess
 from typing import Any, Dict, List
 
-
-
-import os
-import subprocess
-from typing import Any, Dict, List
-
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
@@ -42,7 +36,7 @@ from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 class HelpCommand(BaseCommand):
     """Display help information for available commands.
-    
+
     Provides comprehensive help documentation for all registered commands.
     Can display global help or specific help for a named command.
     Includes usage patterns, arguments, and descriptions.
@@ -68,7 +62,7 @@ class HelpCommand(BaseCommand):
 
 class ExitCommand(BaseCommand):
     """Exit the Socrates AI application gracefully.
-    
+
     Cleanly terminates the application, performing any necessary
     cleanup operations. Displays exit message and thanks for usage.
     """
@@ -86,15 +80,13 @@ class ExitCommand(BaseCommand):
 
 class BackCommand(BaseCommand):
     """Navigate back to previous context or menu level.
-    
+
     Returns to the previously visited context, maintaining navigation
     history. Updates UI state and application context accordingly.
     """
 
     def __init__(self):
-        super().__init__(
-            name="back", description=BACK_DESCRIPTION, usage="back"
-        )
+        super().__init__(name="back", description=BACK_DESCRIPTION, usage="back")
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute back command"""
@@ -120,7 +112,7 @@ class BackCommand(BaseCommand):
 
 class MenuCommand(BaseCommand):
     """Return to the main menu from any sub-context.
-    
+
     Clears navigation stack and returns to the root menu level.
     Resets application state to default main menu configuration.
     """
@@ -356,25 +348,27 @@ class NLUStatusCommand(BaseCommand):
             message += "\nYou can type plain English commands (e.g., 'create a project') or use slash commands"
         else:
             message += "\nYou must use slash commands (e.g., /project create)"
+
+
 # ============================================================================
 # COMMAND MESSAGES AND STRINGS
 # ============================================================================
 
 # Help command descriptions
-HELP_DESCRIPTION = HELP_DESCRIPTION
-HELP_USAGE = HELP_USAGE
+HELP_DESCRIPTION = "Display information about available commands"
+HELP_USAGE = "help [command_name]"
 
 # Exit command messages
-EXIT_MESSAGE_HEADER = EXIT_MESSAGE_HEADER
-EXIT_MESSAGE_FOOTER = EXIT_MESSAGE_FOOTER
-EXIT_CODE = EXIT_CODE
+EXIT_MESSAGE_HEADER = "Exiting Socrates AI System"
+EXIT_MESSAGE_FOOTER = "Thank you for using Socrates!"
+EXIT_CODE = 0
 
 # Navigation messages
-BACK_DESCRIPTION = BACK_DESCRIPTION
+BACK_DESCRIPTION = "Go back to previous context"
 BACK_MESSAGE = "Going back to {}"
 BACK_START_MESSAGE = "Already at the beginning"
 
-MENU_DESCRIPTION = MENU_DESCRIPTION
+MENU_DESCRIPTION = "Return to main menu"
 MENU_MESSAGE = "Returning to main menu"
 
 # Navigation context names
@@ -383,7 +377,7 @@ NAVIGATION_CONTEXT_KEY = "nav_context"
 SESSION_ENDED_KEY = "session_ended"
 
 # Error messages
-NAV_STACK_ERROR = NAV_STACK_ERROR
+NAV_STACK_ERROR = "Navigation stack error"
 
 # Status codes
 STATUS_SUCCESS = "success"

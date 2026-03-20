@@ -77,9 +77,9 @@ DEFAULT_AUTHOR_EMAIL = "noreply@socrates.ai"
 
 class ProjectCreateCommand(BaseCommand):
     """Create a new project with specified type and configuration.
-    
+
     This command initializes a new project in the Socrates system,
-    allowing users to select from different project types (research, 
+    allowing users to select from different project types (research,
     development, analysis, etc.). Each project is configured with
     appropriate workflows and initial settings based on its type.
     """
@@ -163,7 +163,7 @@ class ProjectCreateCommand(BaseCommand):
 
 class ProjectLoadCommand(BaseCommand):
     """Load an existing project into the current session.
-    
+
     Displays a list of user's projects (both active and archived),
     allowing selection and loading of a specific project. Updates
     application context with selected project's data and workflows.
@@ -295,7 +295,7 @@ class ProjectLoadCommand(BaseCommand):
 
 class ProjectListCommand(BaseCommand):
     """Display all projects belonging to the current user.
-    
+
     Lists all user projects with their current status, phase, and
     metadata. Supports filtering by status (active/archived) and
     sorting options.
@@ -342,7 +342,7 @@ class ProjectListCommand(BaseCommand):
 
 class ProjectArchiveCommand(BaseCommand):
     """Archive a project to remove it from active view.
-    
+
     Archives the current or specified project, preserving all data
     while removing it from active project listings. Archived projects
     can be restored later.
@@ -402,7 +402,7 @@ class ProjectArchiveCommand(BaseCommand):
 
 class ProjectRestoreCommand(BaseCommand):
     """Restore a previously archived project to active status.
-    
+
     Reactivates an archived project, restoring it to the active
     projects list. All project data and history are preserved.
     """
@@ -523,7 +523,7 @@ class ProjectRestoreCommand(BaseCommand):
 
 class ProjectDeleteCommand(BaseCommand):
     """Permanently delete a project and all associated data.
-    
+
     Completely removes a project from the system. This is a destructive
     operation that cannot be undone. User confirmation is required.
     """
@@ -711,7 +711,7 @@ class ProjectDeleteCommand(BaseCommand):
 
 class ProjectAnalyzeCommand(BaseCommand):
     """Analyze a project's code, structure, and quality metrics.
-    
+
     Runs comprehensive analysis on the current project including
     code structure parsing, quality metrics, dependency analysis,
     and maturity assessment.
@@ -924,7 +924,7 @@ class ProjectAnalyzeCommand(BaseCommand):
 
 class ProjectTestCommand(BaseCommand):
     """Execute tests for the current project.
-    
+
     Runs the project's test suite, collecting results and metrics.
     Supports different test frameworks and provides detailed reporting.
     """
@@ -1053,7 +1053,7 @@ class ProjectTestCommand(BaseCommand):
 
 class ProjectFixCommand(BaseCommand):
     """Apply automated fixes to identified issues in project.
-    
+
     Uses AI-powered analysis to identify and apply fixes for common
     issues such as style violations, documentation gaps, and code
     quality problems.
@@ -1254,7 +1254,7 @@ class ProjectFixCommand(BaseCommand):
 
 class ProjectValidateCommand(BaseCommand):
     """Validate project structure and configuration.
-    
+
     Checks that all required project files are present, configuration
     is valid, and dependencies are properly specified. Reports any
     structural issues.
