@@ -74,7 +74,9 @@ class TestAuthenticationEndpoints:
         }
         response = client.post("/auth/register", json=new_user)
         assert response.status_code == 201
-        data = response.json()
+        data_raw = response.json()
+
+        data = data_raw.get("data", data_raw)
         assert data["user"]["username"] == new_user["username"]
         assert data["user"]["subscription_tier"] == "free"
         assert "access_token" in data
@@ -107,7 +109,9 @@ class TestAuthenticationEndpoints:
         # Login
         response = client.post("/auth/login", json=TEST_USER_2)
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+
+        data = data_raw.get("data", data_raw)
         assert data["user"]["username"] == TEST_USER_2["username"]
         assert "access_token" in data
         assert "refresh_token" in data
@@ -141,7 +145,9 @@ class TestAuthenticationEndpoints:
             headers={"Authorization": f"Bearer {self.access_token}"},
         )
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+
+        data = data_raw.get("data", data_raw)
         assert data["username"] == self.test_user["username"]
         assert data["subscription_tier"] == "free"
 
@@ -209,7 +215,9 @@ class TestProjectEndpoints:
             headers=self.headers,
         )
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+
+        data = data_raw.get("data", data_raw)
         assert data["total"] == 0
         assert data["projects"] == []
 
@@ -242,7 +250,9 @@ class TestProjectEndpoints:
             headers=self.headers,
         )
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+
+        data = data_raw.get("data", data_raw)
         assert data["total"] >= 1
 
     def test_get_project_details(self):
@@ -288,7 +298,9 @@ class TestProjectEndpoints:
             headers=self.headers,
         )
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+
+        data = data_raw.get("data", data_raw)
         assert data["name"] == "Updated Name"
         assert data["phase"] == "analysis"
 
@@ -321,7 +333,9 @@ class TestProjectEndpoints:
             headers=self.headers,
         )
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+
+        data = data_raw.get("data", data_raw)
         assert data["is_archived"] is False
 
     def test_get_project_stats(self):
@@ -336,7 +350,8 @@ class TestProjectEndpoints:
             headers=self.headers,
         )
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+        data = data_raw.get('data', data_raw)
         assert "project_id" in data
         assert "phase" in data
         assert "progress" in data
@@ -353,7 +368,8 @@ class TestProjectEndpoints:
             headers=self.headers,
         )
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+        data = data_raw.get('data', data_raw)
         assert "project_id" in data
 
     def test_advance_project_phase(self):
@@ -369,7 +385,9 @@ class TestProjectEndpoints:
             headers=self.headers,
         )
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+
+        data = data_raw.get("data", data_raw)
         assert data["phase"] == "analysis"
 
     def test_advance_project_invalid_phase(self):
@@ -507,7 +525,8 @@ class TestErrorHandling:
         # List projects
         response = client.get("/projects", headers=headers)
         assert response.status_code == 200
-        data = response.json()
+        data_raw = response.json()
+        data = data_raw.get('data', data_raw)
         assert isinstance(data["projects"], list)
         assert isinstance(data["total"], int)
 
