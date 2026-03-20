@@ -13,7 +13,6 @@ Tests cover:
 import datetime
 import os
 import tempfile
-from decimal import Decimal
 
 import pytest
 
