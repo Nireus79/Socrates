@@ -83,28 +83,27 @@ def orchestrator(temp_data_dir, monkeypatch):
     with patch.dict(
         os.environ, {"ANTHROPIC_API_KEY": "sk-test-key", "SOCRATES_DATA_DIR": temp_data_dir}
     ):
-        with patch("socratic_system.orchestration.orchestrator.ClaudeClient"):
-            with patch("socratic_system.orchestration.orchestrator.VectorDatabase"):
-                try:
-                    config = SocratesConfig.from_env()
-                except Exception as e:
-                    pytest.fail(f"Failed to initialize SocratesConfig: {e}")
+        with patch("socratic_system.orchestration.orchestrator.VectorDatabase"):
+            try:
+                config = SocratesConfig.from_env()
+            except Exception as e:
+                pytest.fail(f"Failed to initialize SocratesConfig: {e}")
 
-                try:
-                    orch = AgentOrchestrator(config)
-                except Exception as e:
-                    pytest.fail(f"Failed to initialize AgentOrchestrator: {e}")
+            try:
+                orch = AgentOrchestrator(config)
+            except Exception as e:
+                pytest.fail(f"Failed to initialize AgentOrchestrator: {e}")
 
-                orch.claude_client = MagicMock()
-                orch.claude_client.generate_response = MagicMock(return_value="Test response")
-                orch.claude_client.generate_suggestions = MagicMock(return_value="Test suggestions")
+            orch.claude_client = MagicMock()
+            orch.claude_client.generate_response = MagicMock(return_value="Test response")
+            orch.claude_client.generate_suggestions = MagicMock(return_value="Test suggestions")
 
-                # Clear all data before test
-                orch.database.users = {}
-                orch.database.projects = {}
-                orch.database.notes = {}
+            # Clear all data before test
+            orch.database.users = {}
+            orch.database.projects = {}
+            orch.database.notes = {}
 
-                yield orch
+            yield orch
 
 
 @pytest.fixture

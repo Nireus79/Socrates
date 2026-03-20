@@ -19,9 +19,12 @@ from socrates_api.models import (
 )
 from socratic_system.database import ProjectDatabase
 from socrates_api.auth.project_access import check_project_access
-from socratic_agents import (
-    GithubSyncHandler,
-)
+
+try:
+    from socratic_agents import GithubSyncHandler
+except ImportError:
+    # socratic_agents is optional
+    GithubSyncHandler = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/github", tags=["github"])
