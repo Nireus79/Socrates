@@ -33,15 +33,20 @@ def temp_data_dir():
 def orchestrator(temp_data_dir):
     """Initialize orchestrator with mocked LLM client"""
     with patch.dict(os.environ, {"API_KEY_CLAUDE": "test-key"}):
-        with patch("socrates_nexus.LLMClient"):
-            orch = AgentOrchestrator("test-key")
+        # Patch the actual module where LLMClient import happens, or use a direct mock
+        orch = AgentOrchestrator("test-key")
+        # Mock the LLM client if it wasn't properly initialized
+        if not hasattr(orch, 'claude_client') or orch.claude_client is None:
             orch.llm_client = MagicMock()
             orch.llm_client.generate_response = MagicMock(return_value="Test response")
-            # Keep alias for backward compatibility
             orch.claude_client = orch.llm_client
-            orch.database.users = {}
-            orch.database.projects = {}
-            return orch
+        else:
+            # If it was initialized, just mock the methods
+            orch.claude_client.generate_response = MagicMock(return_value="Test response")
+
+        orch.database.users = {}
+        orch.database.projects = {}
+        return orch
 
 
 @pytest.fixture
