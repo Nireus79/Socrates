@@ -240,13 +240,17 @@ jobs:
 
       - name: Load API image from ghcr.io
         run: |
-          docker pull ${{ needs.build-api.outputs.api-image }}
-          docker tag ${{ needs.build-api.outputs.api-image }} socrates-api:test
+          # Extract first tag only (in case multiple tags are returned)
+          API_IMAGE=$(echo "${{ needs.build-api.outputs.api-image }}" | head -n 1)
+          docker pull "$API_IMAGE"
+          docker tag "$API_IMAGE" socrates-api:test
 
       - name: Load frontend image from ghcr.io
         run: |
-          docker pull ${{ needs.build-frontend.outputs.frontend-image }}
-          docker tag ${{ needs.build-frontend.outputs.frontend-image }} socrates-frontend:test
+          # Extract first tag only (in case multiple tags are returned)
+          FRONTEND_IMAGE=$(echo "${{ needs.build-frontend.outputs.frontend-image }}" | head -n 1)
+          docker pull "$FRONTEND_IMAGE"
+          docker tag "$FRONTEND_IMAGE" socrates-frontend:test
 
       - name: Test API image
         run: |

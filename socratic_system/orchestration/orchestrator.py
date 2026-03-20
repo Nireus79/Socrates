@@ -232,150 +232,113 @@ class AgentOrchestrator:
             self._knowledge_thread.join(timeout=timeout)
         return self.knowledge_loaded
 
+    def _get_agent(self, agent_name: str, agent_class: Any, fallback_class: Any = None) -> Any:
+        """
+        Safely get or instantiate an agent with proper error handling.
+
+        Args:
+            agent_name: Name of the agent for caching
+            agent_class: The agent class (might be None if import failed)
+            fallback_class: Optional fallback class to use if primary is unavailable
+
+        Returns:
+            Instantiated agent
+
+        Raises:
+            ImportError: If agent class is unavailable and no fallback provided
+        """
+        if agent_name not in self._agents_cache:
+            if agent_class is None:
+                if fallback_class is not None:
+                    agent_class = fallback_class
+                else:
+                    raise ImportError(
+                        f"Agent {agent_name} is not available. "
+                        "Please install 'socratic-agents' package."
+                    )
+            self._agents_cache[agent_name] = agent_class(self)
+        return self._agents_cache[agent_name]
+
     # Lazy-loaded agent properties
     @property
     def project_manager(self) -> ProjectManagerAgent:
         """Lazy-load project manager agent"""
-        if "project_manager" not in self._agents_cache:
-            from socratic_agents import ProjectManager
-
-            self._agents_cache["project_manager"] = ProjectManager(self)
-        return self._agents_cache["project_manager"]
+        return self._get_agent("project_manager", ProjectManagerAgent)
 
     @property
     def socratic_counselor(self) -> SocraticCounselorAgent:
         """Lazy-load socratic counselor agent"""
-        if "socratic_counselor" not in self._agents_cache:
-            from socratic_agents import SocraticCounselor
-
-            self._agents_cache["socratic_counselor"] = SocraticCounselor(self)
-        return self._agents_cache["socratic_counselor"]
+        return self._get_agent("socratic_counselor", SocraticCounselorAgent)
 
     @property
     def context_analyzer(self) -> ContextAnalyzerAgent:
         """Lazy-load context analyzer agent"""
-        if "context_analyzer" not in self._agents_cache:
-            from socratic_agents import ContextAnalyzer
-
-            self._agents_cache["context_analyzer"] = ContextAnalyzer(self)
-        return self._agents_cache["context_analyzer"]
+        return self._get_agent("context_analyzer", ContextAnalyzerAgent)
 
     @property
     def code_generator(self) -> CodeGeneratorAgent:
         """Lazy-load code generator agent"""
-        if "code_generator" not in self._agents_cache:
-            from socratic_agents import CodeGenerator
-
-            self._agents_cache["code_generator"] = CodeGenerator(self)
-        return self._agents_cache["code_generator"]
+        return self._get_agent("code_generator", CodeGeneratorAgent)
 
     @property
     def system_monitor(self) -> SystemMonitorAgent:
         """Lazy-load system monitor agent"""
-        if "system_monitor" not in self._agents_cache:
-            from socratic_agents import SystemMonitor
-
-            self._agents_cache["system_monitor"] = SystemMonitor(self)
-        return self._agents_cache["system_monitor"]
+        return self._get_agent("system_monitor", SystemMonitorAgent)
 
     @property
     def conflict_detector(self) -> ConflictDetectorAgent:
         """Lazy-load conflict detector agent"""
-        if "conflict_detector" not in self._agents_cache:
-            from socratic_agents import ConflictDetector
-
-            self._agents_cache["conflict_detector"] = ConflictDetector(self)
-        return self._agents_cache["conflict_detector"]
+        return self._get_agent("conflict_detector", ConflictDetectorAgent)
 
     @property
     def document_processor(self) -> DocumentProcessorAgent:
         """Lazy-load document processor agent"""
-        if "document_processor" not in self._agents_cache:
-            from socratic_agents import DocumentProcessor
-
-            self._agents_cache["document_processor"] = DocumentProcessor(self)
-        return self._agents_cache["document_processor"]
+        return self._get_agent("document_processor", DocumentProcessorAgent)
 
     @property
     def user_manager(self) -> UserManagerAgent:
         """Lazy-load user manager agent"""
-        if "user_manager" not in self._agents_cache:
-            from socratic_agents import UserManager
-
-            self._agents_cache["user_manager"] = UserManager(self)
-        return self._agents_cache["user_manager"]
+        return self._get_agent("user_manager", UserManagerAgent)
 
     @property
     def note_manager(self) -> NoteManagerAgent:
         """Lazy-load note manager agent"""
-        if "note_manager" not in self._agents_cache:
-            from socratic_agents import NoteManager
-
-            self._agents_cache["note_manager"] = NoteManager(self)
-        return self._agents_cache["note_manager"]
+        return self._get_agent("note_manager", NoteManagerAgent)
 
     @property
     def knowledge_manager(self) -> KnowledgeManagerAgent:
         """Lazy-load knowledge manager agent"""
-        if "knowledge_manager" not in self._agents_cache:
-            from socratic_agents import KnowledgeManager
-
-            self._agents_cache["knowledge_manager"] = KnowledgeManager(self)
-        return self._agents_cache["knowledge_manager"]
+        return self._get_agent("knowledge_manager", KnowledgeManagerAgent)
 
     @property
     def knowledge_analysis(self) -> KnowledgeAnalysisAgent:
         """Lazy-load knowledge analysis agent"""
-        if "knowledge_analysis" not in self._agents_cache:
-            from socratic_agents import KnowledgeAnalysis
-
-            self._agents_cache["knowledge_analysis"] = KnowledgeAnalysis(self)
-        return self._agents_cache["knowledge_analysis"]
+        return self._get_agent("knowledge_analysis", KnowledgeAnalysisAgent)
 
     @property
     def quality_controller(self) -> QualityControllerAgent:
         """Lazy-load quality controller agent"""
-        if "quality_controller" not in self._agents_cache:
-            from socratic_agents import QualityController
-
-            self._agents_cache["quality_controller"] = QualityController(self)
-        return self._agents_cache["quality_controller"]
+        return self._get_agent("quality_controller", QualityControllerAgent)
 
     @property
     def learning_agent(self) -> UserLearningAgent:
         """Lazy-load user learning agent"""
-        if "learning_agent" not in self._agents_cache:
-            from socratic_agents import LearningAgent
-
-            self._agents_cache["learning_agent"] = LearningAgent(self)
-        return self._agents_cache["learning_agent"]
+        return self._get_agent("learning_agent", UserLearningAgent)
 
     @property
     def multi_llm_agent(self) -> MultiLLMAgent:
         """Lazy-load multi-LLM agent"""
-        if "multi_llm_agent" not in self._agents_cache:
-            from socratic_agents import MultiLlmAgent
-
-            self._agents_cache["multi_llm_agent"] = MultiLlmAgent(self)
-        return self._agents_cache["multi_llm_agent"]
+        return self._get_agent("multi_llm_agent", MultiLLMAgent)
 
     @property
     def question_queue(self) -> QuestionQueueAgent:
         """Lazy-load question queue agent"""
-        if "question_queue" not in self._agents_cache:
-            from socratic_agents import QuestionQueueAgent
-
-            self._agents_cache["question_queue"] = QuestionQueueAgent(self)
-        return self._agents_cache["question_queue"]
+        return self._get_agent("question_queue", QuestionQueueAgent)
 
     @property
     def code_validation_agent(self) -> CodeValidationAgent:
         """Lazy-load code validation agent"""
-        if "code_validation_agent" not in self._agents_cache:
-            from socratic_agents import CodeValidator
-
-            self._agents_cache["code_validation_agent"] = CodeValidator(self)
-        return self._agents_cache["code_validation_agent"]
+        return self._get_agent("code_validation_agent", CodeValidationAgent)
 
     @property
     def learning_integration(self) -> Any:
