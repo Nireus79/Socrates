@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import logging
+logger = logging.getLogger(__name__)
 import os
 import sqlite3
 from dataclasses import asdict

@@ -6,6 +6,7 @@ and performance recommendations using socratic-analyzer's AnalyzerClient.
 """
 
 import logging
+logger = logging.getLogger(__name__)
 from typing import Any, Dict, List, Optional
 
 try:

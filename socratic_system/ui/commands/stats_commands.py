@@ -2,6 +2,7 @@
 NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project statistics and progress commands
 """
 
+from datetime import datetime
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
@@ -134,7 +135,7 @@ class ProjectProgressCommand(BaseCommand):
 
         # Update project
         project.progress = progress
-        project.updated_at = __import__("datetime").datetime.now()
+        project.updated_at = datetime.now()
 
         # Save project
         orchestrator = context.get("orchestrator")
@@ -202,7 +203,7 @@ class ProjectStatusCommand(BaseCommand):
 
         # Update project
         project.status = status
-        project.updated_at = __import__("datetime").datetime.now()
+        project.updated_at = datetime.now()
 
         # Save project
         orchestrator = context.get("orchestrator")
