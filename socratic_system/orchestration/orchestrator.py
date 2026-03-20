@@ -542,6 +542,35 @@ class AgentOrchestrator:
             self.logger.error(f"Error updating model: {e}")
             return False
 
+    def _translate_request(self, agent_name: str, request: dict[str, Any]) -> dict[str, Any]:
+        """
+        Translate request action names to match socratic_agents expected format.
+
+        socratic_agents uses different action names than our CLI.
+        This adapter translates between them.
+        """
+        action = request.get("action", "")
+
+        # Translate ProjectManager actions
+        if agent_name == "project_manager":
+            if action == "create_project":
+                request["action"] = "create"
+            elif action == "list_projects":
+                request["action"] = "list"
+            # load_project, save_project, etc. not supported by socratic_agents
+
+        # Translate NoteManager actions
+        elif agent_name == "note_manager":
+            if action == "add_note":
+                request["action"] = "create"
+            elif action == "list_notes":
+                request["action"] = "list"
+            elif action == "delete_note":
+                request["action"] = "update"  # Map to update since delete not supported
+            # search_notes not directly supported
+
+        return request
+
     def process_request(self, agent_name: str, request: dict[str, Any]) -> dict[str, Any]:
         """
         Route a request to the appropriate agent (synchronous).
@@ -586,7 +615,9 @@ class AgentOrchestrator:
             )
 
             try:
-                result = agent.process(request)
+                # Translate action names for socratic_agents compatibility
+                translated_request = self._translate_request(agent_name, request.copy())
+                result = agent.process(translated_request)
 
                 self.event_emitter.emit(
                     EventType.AGENT_COMPLETE,

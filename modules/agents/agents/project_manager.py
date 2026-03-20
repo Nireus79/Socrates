@@ -11,7 +11,7 @@ from socratic_system.models import VALID_ROLES, ProjectContext, TeamMemberRole
 from socratic_core.utils.id_generator import ProjectIDGenerator
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
-from .base import Agent
+from modules.agents.base import Agent
 
 if TYPE_CHECKING:
     from socratic_system.orchestration import AgentOrchestrator
