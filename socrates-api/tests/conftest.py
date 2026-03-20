@@ -88,6 +88,12 @@ def auth_headers(mock_auth):
 
 
 @pytest.fixture
+def valid_token(mock_auth):
+    """Fixture to provide a valid authentication token."""
+    return mock_auth['access_token']
+
+
+@pytest.fixture
 def mock_database(monkeypatch):
     """Fixture to provide mock database for testing."""
     mock_db = MagicMock()
