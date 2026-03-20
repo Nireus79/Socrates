@@ -13,7 +13,14 @@ from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class CodeGenerateCommand(BaseCommand):
-    """Generate code for the current project"""
+    """Generate code based on specifications.
+    
+    Uses Claude AI to generate:
+    - New feature implementations
+    - Refactored code
+    - Test code
+    - Documentation and docstrings
+    """
 
     def __init__(self):
         super().__init__(
@@ -179,7 +186,15 @@ class CodeGenerateCommand(BaseCommand):
 
 
 class CodeDocsCommand(BaseCommand):
-    """Generate documentation for code"""
+    """Generate or update code documentation.
+    
+    Automatically creates:
+    - Module docstrings
+    - Class docstrings
+    - Function/method docstrings
+    - Usage examples
+    - API documentation
+    """
 
     def __init__(self):
         super().__init__(

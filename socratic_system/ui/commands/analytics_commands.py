@@ -104,11 +104,13 @@ class AnalyticsAnalyzeCommand(BaseCommand):
 
 
 class AnalyticsRecommendCommand(BaseCommand):
-    """
-    /analytics recommend
-
-    Generate AI-powered recommendations for improving maturity.
-    Shows weak categories, missing areas, and suggested questions.
+    """Get AI-powered recommendations based on analytics.
+    
+    Leverages orchestrator agents to suggest:
+    - Code optimization opportunities
+    - Documentation gaps to fill
+    - Test coverage improvements
+    - Refactoring suggestions
     """
 
     def __init__(self, orchestrator: AgentOrchestrator):
@@ -174,11 +176,13 @@ class AnalyticsRecommendCommand(BaseCommand):
 
 
 class AnalyticsTrendsCommand(BaseCommand):
-    """
-    /analytics trends
-
-    Show maturity progression trends over time.
-    Displays velocity, progression chart, and insights about patterns.
+    """Analyze analytics trends over time.
+    
+    Shows how metrics have changed:
+    - Quality trend direction (improving/declining)
+    - Engagement trend analysis
+    - Historical comparisons
+    - Predictive insights
     """
 
     def __init__(self, orchestrator: AgentOrchestrator):
@@ -234,11 +238,14 @@ class AnalyticsTrendsCommand(BaseCommand):
 
 
 class AnalyticsSummaryCommand(BaseCommand):
-    """
-    /analytics summary
-
-    Quick overview of all analytics metrics.
-    Shows velocity, weak/strong categories, and phase status.
+    """Provide comprehensive analytics summary.
+    
+    Generates a detailed report covering:
+    - Code quality metrics
+    - Documentation completeness
+    - Test coverage
+    - Performance benchmarks
+    - Recommendations for improvement
     """
 
     def __init__(self, orchestrator: AgentOrchestrator):
@@ -274,11 +281,13 @@ class AnalyticsSummaryCommand(BaseCommand):
 
 
 class AnalyticsBreakdownCommand(BaseCommand):
-    """
-    /analytics breakdown
-
-    Display detailed breakdown of all categories across all phases.
-    Useful for comprehensive assessment of project maturity.
+    """Break down metrics by component.
+    
+    Provides granular analysis:
+    - Per-module metrics
+    - Per-function metrics
+    - Dependency impact analysis
+    - Component-level recommendations
     """
 
     def __init__(self, orchestrator: AgentOrchestrator):
@@ -309,11 +318,13 @@ class AnalyticsBreakdownCommand(BaseCommand):
 
 
 class AnalyticsStatusCommand(BaseCommand):
-    """
-    /analytics status
-
-    Display phase completion status and readiness.
-    Shows progress toward goals and next recommended actions.
+    """Display current analytics status for the project.
+    
+    Shows high-level analytics metrics including:
+    - Overall project health score
+    - Quality metrics summary  
+    - Engagement trends
+    - Key performance indicators
     """
 
     def __init__(self, orchestrator: AgentOrchestrator):
