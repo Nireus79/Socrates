@@ -8,11 +8,37 @@ Tests subscription management endpoints including:
 - Toggling testing mode
 """
 
+import datetime
+
 import pytest
 from fastapi.testclient import TestClient
 
 from socrates_api.auth.jwt_handler import create_access_token
+from socrates_api.database import DatabaseSingleton
 from socrates_api.main import app
+from socratic_system.models import User
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_users():
+    """Set up test users in the database for all subscription tests."""
+    db = DatabaseSingleton.get_instance()
+
+    # Create test user if it doesn't exist
+    try:
+        existing_user = db.load_user("testuser")
+        if existing_user is None:
+            test_user = User(
+                username="testuser",
+                email="testuser@example.com",
+                passcode_hash="test_hash",
+                created_at=datetime.datetime.now(),
+                projects=[],
+                subscription_tier="free"
+            )
+            db.save_user(test_user)
+    except Exception:
+        pass  # User might already exist or DB might not be ready
 
 
 @pytest.fixture(scope="session")
