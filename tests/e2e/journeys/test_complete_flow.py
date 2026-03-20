@@ -13,13 +13,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from socratic_core import SocratesConfig
 
-# Check if optional socratic-agents package is available
-try:
-    import importlib.util
-    HAS_SOCRATIC_AGENTS = importlib.util.find_spec("socratic_agents") is not None
-except (ImportError, ModuleNotFoundError):
-    HAS_SOCRATIC_AGENTS = False
-
 from socratic_system.models import ProjectContext, ProjectNote, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
@@ -217,7 +210,6 @@ class TestProjectManagementWorkflow:
         app.context_display.set_context(user=user)
         return user
 
-    @pytest.mark.skipif(not HAS_SOCRATIC_AGENTS, reason="Requires optional socratic-agents package")
     def test_project_create_command(self, app):
         """Test creating a new project"""
         self.setup_authenticated_user(app)
@@ -235,7 +227,6 @@ class TestProjectManagementWorkflow:
         assert app.current_project.name == "Test Project"
         print("✓ Project creation works")
 
-    @pytest.mark.skipif(not HAS_SOCRATIC_AGENTS, reason="Requires optional socratic-agents package")
     def test_project_list_command(self, app):
         """Test listing projects"""
         user = self.setup_authenticated_user(app)
@@ -253,7 +244,6 @@ class TestProjectManagementWorkflow:
         assert result["status"] == "success"
         print("✓ Project listing works")
 
-    @pytest.mark.skipif(not HAS_SOCRATIC_AGENTS, reason="Requires optional socratic-agents package")
     def test_project_load_command(self, app):
         """Test loading a project"""
         user = self.setup_authenticated_user(app)
@@ -343,7 +333,6 @@ class TestNotesSystemWorkflow:
 
         return user, project
 
-    @pytest.mark.skipif(not HAS_SOCRATIC_AGENTS, reason="Requires optional socratic-agents package")
     def test_note_add_command(self, app):
         """Test adding a note"""
         user, project = self.setup_project_with_user(app)

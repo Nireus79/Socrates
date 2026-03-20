@@ -63,11 +63,13 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
-    # Minimal core only - allow modular installation
-    # Other libraries are optional and can be added per use case
+    # Core dependencies required for Socrates to function
+    # Multi-agent system requires socratic-agents for core project management, code generation, etc.
 
     # External dependencies (kept for orchestrator functionality)
     "anthropic>=0.72.0",                 # Required by: socratic-agents, socrates-nexus
+    "socratic-core>=0.1.1",              # Core framework (config, events, exceptions)
+    "socratic-agents>=0.1.0",            # Multi-agent orchestration (core functionality)
     "chromadb>=0.5.0",                   # Required by: socratic-rag (vector database, performance improvements)
     "sentence-transformers>=3.0.0",      # Required by: socratic-rag (embeddings)
     "pypdf>=4.0.0",                      # Document processing for RAG systems
@@ -96,18 +98,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Modular library installation options - install as: pip install socrates-ai[agents,rag]
-# These are all optional. You can use main package without any of these.
-
-# Foundation layer
-core = [
-    "socratic-core>=0.1.1",                # Core framework (config, events, exceptions)
-]
+# Additional feature libraries beyond core requirements
+# Install as: pip install socrates-ai[rag,learning] to add optional features
 
 # Individual feature libraries (can be combined)
-agents = [
-    "socratic-agents>=0.1.0",              # Multi-agent orchestration (v0.1.3+ includes GitHub sync error classes)
-]
 rag = [
     "socratic-rag>=0.1.0",                 # RAG/retrieval capabilities with vector database
 ]
@@ -138,14 +132,13 @@ api = [
     "socrates-core-api>=0.1.0",            # REST API server
 ]
 full = [
-    "socratic-core>=0.1.1",
-    "socratic-agents>=0.1.0",
+    # Note: socratic-core and socratic-agents are already in base dependencies
     "socratic-rag>=0.1.0",
     "socratic-learning>=0.1.1",
     "socratic-analyzer>=0.1.0",
     "socratic-conflict>=0.1.0",
     "socratic-knowledge>=0.1.0",
-    "socratic-workflow>=0.1.1",          # Updated to v0.1.1 (supports socratic-agents v0.1.3)
+    "socratic-workflow>=0.1.1",          # Supports socratic-agents v0.1.3+
     "socrates-nexus>=0.1.0",
     "socrates-cli>=0.1.0",
     "socrates-core-api>=0.1.0",
