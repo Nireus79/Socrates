@@ -346,6 +346,10 @@ class TestProjectNotes:
         assert len(results) >= 0
 
 
+@pytest.mark.skipif(
+    QuestionEffectiveness is None or UserBehaviorPattern is None,
+    reason="socratic_learning not installed"
+)
 class TestLearningTracking:
     """Test question effectiveness and behavior patterns"""
 

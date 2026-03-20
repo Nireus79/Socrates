@@ -18,7 +18,12 @@ from socrates_api.database import get_database
 from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 from socrates_api.services.report_generator import get_report_generator
 from socratic_system.database import ProjectDatabase
-from socratic_learning.analytics.maturity_calculator import MaturityCalculator
+
+try:
+    from socratic_learning.analytics.maturity_calculator import MaturityCalculator
+except ImportError:
+    # socratic_learning is optional
+    MaturityCalculator = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -243,6 +248,12 @@ async def get_project_analytics(
     Returns:
         SuccessResponse with project analytics
     """
+    if MaturityCalculator is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Analytics service requires: pip install socrates-ai[learning]"
+        )
+
     try:
         project = db.load_project(project_id)
 
@@ -1203,6 +1214,12 @@ async def get_dashboard_analytics(
     Returns:
         SuccessResponse with dashboard metrics
     """
+    if MaturityCalculator is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Dashboard service requires: pip install socrates-ai[learning]"
+        )
+
     try:
         logger.info(f"Getting dashboard analytics for project: {project_id}")
 
