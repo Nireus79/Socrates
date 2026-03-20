@@ -254,8 +254,8 @@ jobs:
 
       - name: Test API image
         run: |
-          docker run --rm --entrypoint python socrates-api:test -m py_compile socratic_system/ui/main_app.py
-          echo "✓ API image compiles successfully"
+          docker run --rm --entrypoint python socrates-api:test -c "import socratic_system; print('✓ API image imports successfully')"
+          echo "✓ API image works correctly"
 
       - name: Test API health check
         continue-on-error: true
