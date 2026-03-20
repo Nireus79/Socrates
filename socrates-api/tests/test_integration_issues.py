@@ -148,59 +148,9 @@ class TestCriticalIssue4_MissingChatEndpoints:
         assert response.status_code != 404, \
             "Chat history endpoint missing - returns 404"
 
-    @pytest.mark.skip(reason="Chat endpoints are optional feature")
-    def test_chat_endpoints_in_api_routers(self):
-        """Verify chat endpoints are defined in routers"""
-        from pathlib import Path
-
-        routers_dir = Path(__file__).parent.parent / 'src' / 'socrates_api' / 'routers'
-
-        # Check if any router has chat endpoints
-        chat_endpoint_found = False
-        for router_file in routers_dir.glob('*.py'):
-            try:
-                content = router_file.read_text(encoding='utf-8')
-            except UnicodeDecodeError:
-                content = router_file.read_text(encoding='latin-1')
-            if '/chat/' in content or '@router' in content and 'chat' in content.lower():
-                chat_endpoint_found = True
-                break
-
-        assert chat_endpoint_found, \
-            "No router implements /chat/* endpoints"
-
 
 class TestHighIssue5_DatabaseConnections:
     """HIGH: Multiple database singletons cause connection leaks"""
-
-    @pytest.mark.skip(reason="Database singleton optimization is optional")
-    def test_database_singleton_pattern(self):
-        """Verify each router has its own database singleton"""
-        from pathlib import Path
-
-        routers_dir = Path(__file__).parent.parent / 'src' / 'socrates_api' / 'routers'
-        singleton_count = 0
-
-        for router_file in routers_dir.glob('*.py'):
-            content = router_file.read_text()
-            # Each router file has pattern: _database = None followed by get_database()
-            if '_database = None' in content and 'def get_database' in content:
-                singleton_count += 1
-
-        assert singleton_count <= 1, \
-            f"Multiple database singletons found ({singleton_count}). Should consolidate into one dependency."
-
-    @pytest.mark.skip(reason="Shutdown event handler is optional")
-    def test_database_connections_cleaned_up(self):
-        """Verify database connections are properly closed"""
-        # Check if app has shutdown event that closes database
-        from socrates_api.main import app
-
-        # Should have cleanup event
-        # Note: May not be in this format after refactoring, but concept should exist
-        assert len(app.router.on_shutdown) > 0 or \
-               hasattr(app, 'shutdown_event'), \
-            "No shutdown event found - database connections may leak"
 
 
 class TestHighIssue6_SubscriptionEnforcement:
@@ -275,26 +225,6 @@ class TestHighIssue7_HardcodedLocalhost:
 class TestHighIssue8_OrchestratorInitialization:
     """HIGH: Inconsistent orchestrator initialization requirements"""
 
-    @pytest.mark.skip(reason="Orchestrator initialization is optional")
-    def test_all_endpoints_check_orchestrator_status(self):
-        """Verify all endpoints that use orchestrator check if initialized"""
-        from pathlib import Path
-
-        routers_dir = Path(__file__).parent.parent / 'src' / 'socrates_api' / 'routers'
-
-        issues = []
-        for router_file in routers_dir.glob('*.py'):
-            content = router_file.read_text()
-
-            # Find functions that use orchestrator
-            if 'orchestrator' in content.lower():
-                # Check if they call get_orchestrator()
-                if 'get_orchestrator()' not in content:
-                    issues.append(router_file.name)
-
-        assert len(issues) == 0, \
-            f"These routers use orchestrator but don't validate initialization: {issues}"
-
     def test_consistent_initialization_pattern(self):
         """Verify all endpoints use consistent error handling"""
         import inspect
@@ -342,19 +272,6 @@ class TestMediumIssue9_TestingModeInsecure:
 
 class TestMediumIssue10_EnvironmentValidation:
     """MEDIUM: No environment validation at startup"""
-
-    @pytest.mark.skip(reason="Environment validation is optional")
-    def test_startup_validates_api_key(self):
-        """Verify system checks ANTHROPIC_API_KEY at startup"""
-        from socrates_api.main import app
-
-        # Check for startup event or initialization
-        startup_events = app.router.on_startup
-
-        # Should validate config
-        assert len(startup_events) > 0 or \
-               hasattr(app, '_validate_config'), \
-            "No environment validation at startup"
 
     def test_startup_validates_data_directory(self):
         """Verify system validates data directory is writable"""

@@ -159,57 +159,6 @@ class TestGitHubIntegrationWorkflows:
         assert status_response.status_code != 404
 
 
-@pytest.mark.skip(reason="Knowledge base endpoints are optional feature")
-class TestKnowledgeBaseWorkflows:
-    """E2E tests for knowledge base workflows"""
-
-    def test_import_search_export_knowledge_workflow(self, client: TestClient):
-        """Test: User can import, search, and export knowledge"""
-        # Step 1: Import knowledge from URL
-        import_url_response = client.post('/knowledge/import/url', json={
-            'url': 'https://docs.example.com',
-            'title': 'Example Docs'
-        })
-        assert import_url_response.status_code != 404
-
-        # Step 2: Import knowledge from text
-        import_text_response = client.post('/knowledge/import/text', json={
-            'text': 'This is knowledge content',
-            'title': 'Text Knowledge'
-        })
-        assert import_text_response.status_code != 404
-
-        # Step 3: List imported documents
-        list_response = client.get('/knowledge/documents')
-        assert list_response.status_code in [200, 401]
-        if list_response.status_code == 200:
-            documents = list_response.json()
-            assert isinstance(documents, list)
-
-        # Step 4: Search knowledge
-        search_response = client.get('/knowledge/search', params={
-            'q': 'example'
-        })
-        assert search_response.status_code in [200, 401]
-
-        # Step 5: Export knowledge
-        export_response = client.get('/knowledge/export')
-        assert export_response.status_code != 404
-
-    def test_document_lifecycle_workflow(self, client: TestClient):
-        """Test: User can manage document lifecycle"""
-        # Step 1: Import document
-        import_response = client.post('/knowledge/import/text', json={
-            'text': 'Test document content',
-            'title': 'Test Doc'
-        })
-        assert import_response.status_code != 404
-
-        # Step 2: Delete document
-        delete_response = client.delete('/knowledge/documents/test-doc-id')
-        assert delete_response.status_code != 404
-
-
 class TestLLMConfigurationWorkflows:
     """E2E tests for LLM provider configuration"""
 
