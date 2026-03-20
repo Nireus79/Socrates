@@ -67,13 +67,13 @@ dependencies = [
     # Other libraries are optional and can be added per use case
 
     # External dependencies (kept for orchestrator functionality)
-    "anthropic>=0.40.0",                  # Required by: socratic-agents, socrates-nexus
-    "chromadb>=0.5.0",                   # Required by: socratic-rag (vector database)
-    "sentence-transformers>=3.0.0",      # Required by: socratic-rag (embeddings)
+    "anthropic>=0.86.0",                 # Required by: socratic-agents, socrates-nexus (updated for latest features)
+    "chromadb>=1.5.5",                   # Required by: socratic-rag (vector database, performance improvements)
+    "sentence-transformers>=5.3.0",      # Required by: socratic-rag (embeddings, model updates)
     "pypdf>=4.0.0",                      # Document processing for RAG systems
     "python-dateutil>=2.8.0",            # Date/time utilities (stdlib extension)
     "aiosqlite>=0.19.0",                 # Async database operations
-    "fastapi>=0.100.0",                  # API framework (examples/API server)
+    "fastapi>=0.135.1",                  # API framework (examples/API server, performance boost)
     "uvicorn[standard]>=0.23.0",         # ASGI server (examples/API server)
     "pydantic>=2.0.0",                   # Data validation (core)
     "python-dotenv>=1.0.0",              # Configuration from .env files
@@ -83,16 +83,16 @@ dependencies = [
     "passlib>=1.7.4",                    # Password utilities (auth)
     "httpx>=0.24.0",                     # Async HTTP client
     "sqlalchemy>=2.0.0",                 # ORM (database operations)
-    "redis>=5.0.0",                      # Caching and session storage
+    "redis>=7.3.0",                      # Caching and session storage (improved connection pooling)
     "slowapi>=0.1.9",                    # Rate limiting
     "prometheus-client>=0.19.0",         # Metrics and monitoring
-    "alembic>=1.12.0",                   # Database migrations
+    "alembic>=1.18.4",                   # Database migrations (latest patches)
     "gitpython>=3.1.0",                  # Git operations (GitHub sync)
     "requests>=2.31.0",                  # HTTP client library
-    "cryptography>=41.0.0",              # Cryptographic operations
+    "cryptography>=46.0.5",              # Cryptographic operations (security patches)
     "gunicorn>=21.0.0",                  # WSGI server (production)
-    "psycopg2-binary>=2.9.0",           # PostgreSQL database driver
-    "pillow>=10.0.0",                    # Image processing (build_exe.py icon conversion)
+    "psycopg2-binary>=2.9.0",            # PostgreSQL database driver
+    "pillow>=12.1.1",                    # Image processing (build_exe.py icon conversion, security patches)
 ]
 
 [project.optional-dependencies]
@@ -157,10 +157,11 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0.0",
     "black>=24.0",
-    "ruff>=0.4.0",
+    "ruff>=0.15.7",                      # Updated for latest linting rules and performance
     "mypy>=1.8.0",
     "types-requests>=2.31.0",
     "isort>=5.13.0",
+    # Note: black>=26.3.1 and isort>=8.0.1 available but have formatting changes - test after update
 ]
 async = [
     "asyncio>=3.4.3",
