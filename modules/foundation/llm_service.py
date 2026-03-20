@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 import anthropic
 
 from modules.foundation.events import EventType
-from modules.foundation.exceptions import APIError
+from socratic_core.exceptions import APIError
 from socratic_system.models import ConflictInfo, ProjectContext
 
 if TYPE_CHECKING:

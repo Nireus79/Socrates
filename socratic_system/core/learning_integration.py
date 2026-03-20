@@ -6,6 +6,7 @@ using socratic-learning's InteractionLogger and recommendation engine.
 """
 
 import logging
+import uuid
 from typing import Any, Dict, List, Optional
 
 try:
@@ -200,6 +201,7 @@ class LearningIntegration:
 
             # Convert to Socrates UserBehaviorPattern
             return UserBehaviorPattern(
+                id=str(uuid.uuid4()),
                 user_id=user_id,
                 communication_style=patterns.get("communication_style", "analytical"),
                 detail_level=patterns.get("detail_level", "medium"),

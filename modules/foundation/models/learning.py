@@ -5,13 +5,17 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-# Try to import from socratic-learning, fall back to stub implementations
+# Try to import real implementations from socratic-learning if available
 try:
-    from socratic_learning import QuestionEffectiveness, UserBehaviorPattern, KnowledgeBaseDocument
+    from socratic_learning import (
+        QuestionEffectiveness,
+        UserBehaviorPattern,
+        KnowledgeBaseDocument
+    )
 except ImportError:
     # Stub implementations for when socratic_learning is not available
     @dataclass
-    class QuestionEffectiveness:
+    class QuestionEffectiveness:  # type: ignore[no-redef]
         """Stub: Tracks effectiveness of questions asked to users."""
         id: str
         user_id: str
@@ -26,19 +30,24 @@ except ImportError:
         metadata: Dict[str, Any] = field(default_factory=dict)
 
     @dataclass
-    class UserBehaviorPattern:
+    class UserBehaviorPattern:  # type: ignore[no-redef]
         """Stub: Tracks user learning behavior patterns."""
+        id: str
         user_id: str
+        pattern_type: str = "general"
         communication_style: str = "analytical"
         detail_level: str = "medium"
         learning_pace: str = "steady"
         preferred_topics: List[str] = field(default_factory=list)
         strength_areas: List[str] = field(default_factory=list)
         improvement_areas: List[str] = field(default_factory=list)
+        learned_at: datetime = field(default_factory=datetime.now)
+        updated_at: datetime = field(default_factory=datetime.now)
+        frequency: int = 1
         metadata: Dict[str, Any] = field(default_factory=dict)
 
     @dataclass
-    class KnowledgeBaseDocument:
+    class KnowledgeBaseDocument:  # type: ignore[no-redef]
         """Stub: Represents a document in the knowledge base."""
         id: str
         title: str
