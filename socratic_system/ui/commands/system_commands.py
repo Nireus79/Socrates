@@ -75,7 +75,7 @@ class ExitCommand(BaseCommand):
         print(f"\n{Fore.GREEN}Thank you for using Socrates AI")
         print(f"..τῷ Ἀσκληπιῷ ὀφείλομεν ἀλεκτρυόνα, ἀπόδοτε καὶ μὴ ἀμελήσετε...{Style.RESET_ALL}\n")
 
-        return {"status": EXIT_CODE, "message": "Exiting application"}
+        return {"status": "exit", "message": "Exiting application"}
 
 
 class BackCommand(BaseCommand):

@@ -408,23 +408,19 @@ class ProjectArchiveCommand(BaseCommand):
             return self.success()
 
         try:
-            result = safe_orchestrator_call(
-                orchestrator,
-                "project_manager",
-                {
-                    "action": "archive_project",
-                    "project_id": project.project_id,
-                    "requester": user.username,
-                },
-                operation_name="archive_project",
-            )
+            # Archive project by setting is_archived flag and archived_at timestamp
+            project.is_archived = True
+            project.archived_at = datetime.datetime.now()
 
-            self.print_success(result.get("message", "Project archived successfully"))
+            # Save to database
+            orchestrator.database.save_project(project)
+
+            self.print_success(f"Project '{project.name}' archived successfully")
             app.current_project = None
             app.context_display.set_context(project=None)
 
             return self.success()
-        except ValueError as e:
+        except Exception as e:
             return self.error(str(e))
 
 
@@ -488,22 +484,24 @@ class ProjectRestoreCommand(BaseCommand):
             self.print_info("Restoration cancelled")
             return self.success()
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {
-                "action": "restore_project",
-                "project_id": project["project_id"],
-                "requester": user.username,
-            },
-            operation_name="restore_project",
-        )
+        try:
+            # Restore project by removing archived flags
+            project_id = project.get("project_id")
+            project_obj = orchestrator.database.load_project(project_id)
 
-        if result.get("data", {}).get("status") == "success":
+            if not project_obj:
+                return self.error(f"Project not found: {project_id}")
+
+            project_obj.is_archived = False
+            project_obj.archived_at = None
+
+            # Save to database
+            orchestrator.database.save_project(project_obj)
+
             self.print_success(f"Project '{project['name']}' restored successfully!")
             return self.success()
-        else:
-            return self.error(result.get("message", "Failed to restore project"))
+        except Exception as e:
+            return self.error(f"Failed to restore project: {str(e)}")
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project restore command"""
@@ -516,21 +514,28 @@ class ProjectRestoreCommand(BaseCommand):
         if not orchestrator or not user:
             return self.error("Required context not available")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {"action": "get_archived_projects"},
-            operation_name="get_archived_projects",
-        )
-
-        if result.get("data", {}).get("status") != "success" or not result.get("archived_projects"):
-            self.print_info("No archived projects found")
-            return self.success()
-
-        archived_projects = result.get("data", {}).get("archived_projects")
-        self._display_archived_projects(archived_projects)
-
         try:
+            # Get archived projects from database
+            all_projects = orchestrator.database.get_user_projects(user.username)
+
+            # Filter archived projects
+            archived_projects = [
+                {
+                    "project_id": p.project_id,
+                    "name": p.name,
+                    "owner": p.owner,
+                    "archived_at": p.archived_at.isoformat() if hasattr(p.archived_at, "isoformat") else str(p.archived_at)
+                }
+                for p in all_projects
+                if getattr(p, "is_archived", False)
+            ]
+
+            if not archived_projects:
+                self.print_info("No archived projects found")
+                return self.success()
+
+            self._display_archived_projects(archived_projects)
+
             choice = input(
                 f"\n{Fore.WHITE}Select project to restore (1-{len(archived_projects)}, or 0 to cancel): "
             ).strip()

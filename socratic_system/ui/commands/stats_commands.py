@@ -138,16 +138,17 @@ class ProjectProgressCommand(BaseCommand):
         project.progress = progress
         project.updated_at = datetime.now()
 
-        # Save project
+        # Save project to database
         orchestrator = context.get("orchestrator")
+        app = context.get("app")
         if orchestrator:
             try:
-                safe_orchestrator_call(
-                    orchestrator,
-                    "project_manager",
-                    {"action": "save_project", "project": project},
-                    operation_name="save project",
-                )
+                orchestrator.database.save_project(project)
+
+                # Update app context if available
+                if app:
+                    app.current_project = project
+                    app.context_display.set_context(project=project)
 
                 print(f"{Fore.GREEN}Progress bar:{Style.RESET_ALL}")
                 filled = int(20 * progress / 100)
@@ -155,7 +156,7 @@ class ProjectProgressCommand(BaseCommand):
                 print(f"  {Fore.GREEN}{bar}{Style.RESET_ALL} {progress}%")
                 self.print_success(f"Project progress updated to {progress}%")
                 return self.success(data={"progress": progress})
-            except ValueError as e:
+            except Exception as e:
                 return self.error(str(e))
         else:
             return self.error(ErrorMessages.ORCHESTRATOR_NOT_AVAILABLE)
@@ -208,18 +209,19 @@ class ProjectStatusCommand(BaseCommand):
 
         # Save project
         orchestrator = context.get("orchestrator")
+        app = context.get("app")
         if orchestrator:
             try:
-                safe_orchestrator_call(
-                    orchestrator,
-                    "project_manager",
-                    {"action": "save_project", "project": project},
-                    operation_name="save project",
-                )
+                orchestrator.database.save_project(project)
+
+                # Update app context if available
+                if app:
+                    app.current_project = project
+                    app.context_display.set_context(project=project)
 
                 self.print_success(f"Project status updated to '{status}'")
                 return self.success(data={"status": status})
-            except ValueError as e:
+            except Exception as e:
                 return self.error(str(e))
         else:
             return self.error(ErrorMessages.ORCHESTRATOR_NOT_AVAILABLE)

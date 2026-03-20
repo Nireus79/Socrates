@@ -237,6 +237,10 @@ class CommandHandler:
         print(f"{Fore.CYAN}{'-' * 68}{Style.RESET_ALL}")
 
         for command_name in sorted(commands_in_category):
+            # Skip if command doesn't exist in registry
+            if command_name not in self.commands:
+                continue
+
             cmd = self.commands[command_name]
             description = cmd.description or "(no description)"
             usage = cmd.usage or command_name
@@ -271,18 +275,20 @@ class CommandHandler:
             "debug",
         ]
 
-        for name in sorted(self.commands.keys()):
+        for name in sorted(self.commands.keys(), key=str):
             cmd = self.commands[name]
             # Skip hidden commands from help display
             if hasattr(cmd, "hidden") and cmd.hidden:
                 continue
 
-            parts = name.split()
+            # Convert name to string for processing
+            name_str = str(name)
+            parts = name_str.split()
             category = parts[0] if parts else "system"
 
             if category not in categories:
                 categories[category] = []
-            categories[category].append(name)
+            categories[category].append(name_str)
 
         # Print commands organized by category
         for category in category_order:
@@ -291,7 +297,7 @@ class CommandHandler:
             self._print_help_category(category, categories[category])
 
         # Print any remaining categories not in the predefined order
-        for category in sorted(categories.keys()):
+        for category in sorted(categories.keys(), key=str):
             if category in category_order:
                 continue
             self._print_help_category(category, categories[category])

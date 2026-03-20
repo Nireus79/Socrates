@@ -45,27 +45,24 @@ class CollabAddCommand(BaseCommand):
             return self.error(error_msg)
 
         try:
-            safe_orchestrator_call(
-                orchestrator,
-                "project_manager",
-                {
-                    "action": "add_collaborator",
-                    "project": project,
-                    "username": username,
-                    "role": role,
-                },
-                operation_name="add collaborator",
-            )
+            # Add collaborator to project directly
+            if not project.collaborators:
+                project.collaborators = []
+            if username not in project.collaborators:
+                project.collaborators.append(username)
+
+            # Save project to database
+            orchestrator.database.save_project(project)
+
+            # Update app context if available
+            app = context.get("app")
+            if app:
+                app.current_project = project
+                app.context_display.set_context(project=project)
 
             self.print_success(f"Added '{username}' as {role}!")
-            safe_orchestrator_call(
-                orchestrator,
-                "project_manager",
-                {"action": "save_project", "project": project},
-                operation_name="save project",
-            )
             return self.success(data={"collaborator": username, "role": role})
-        except ValueError as e:
+        except Exception as e:
             return self.error(str(e))
 
     def _get_collaborator_inputs(self, args: List[str]) -> tuple:
@@ -156,33 +153,17 @@ class CollabRemoveCommand(BaseCommand):
             return self.success()
 
         try:
-            safe_orchestrator_call(
-                orchestrator,
-                "project_manager",
-                {
-                    "action": "remove_collaborator",
-                    "project": project,
-                    "username": username,
-                    "requester": user.username,
-                },
-                operation_name="remove collaborator",
-            )
-
-            self.print_success(f"Removed '{username}' from project!")
-            # Only remove from local list if still present
+            # Remove from project collaborators list
             if username in project.collaborators:
                 project.collaborators.remove(username)
 
-                # Save project
-                safe_orchestrator_call(
-                    orchestrator,
-                    "project_manager",
-                    {"action": "save_project", "project": project},
-                    operation_name="save project",
-                )
+                # Save project to database
+                orchestrator.database.save_project(project)
+
+                self.print_success(f"Removed '{username}' from project!")
 
             return self.success(data={"removed_user": username})
-        except ValueError as e:
+        except Exception as e:
             return self.error(str(e))
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -235,58 +216,41 @@ class CollabListCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        orchestrator = context.get("orchestrator")
         project = context.get("project")
 
-        if not orchestrator or not project:
+        if not project:
             return self.error("Required context not available")
 
-        # Get collaborators
-        try:
-            result = safe_orchestrator_call(
-                orchestrator,
-                "project_manager",
-                {"action": "list_collaborators", "project": project},
-                operation_name="list collaborators",
+        # Get collaborators from project
+        print(f"\n{Fore.CYAN}Team Members for '{project.name}':{Style.RESET_ALL}\n")
+
+        collaborators = project.collaborators or []
+
+        if not collaborators:
+            self.print_info("No collaborators")
+            # Return success with empty list
+            return self.success(data={"collaborators": []})
+
+        # Display header
+        print(f"{Fore.WHITE}{'Username':<20} {'Status':<15}{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}{'-'*35}{Style.RESET_ALL}")
+
+        members = []
+        for username in collaborators:
+            is_owner = username == project.owner
+
+            # Format status
+            status = (
+                f"{Fore.YELLOW}OWNER{Style.RESET_ALL}"
+                if is_owner
+                else f"{Fore.WHITE}Collaborator{Style.RESET_ALL}"
             )
 
-            print(f"\n{Fore.CYAN}Team Members for '{project.name}':{Style.RESET_ALL}\n")
+            print(f"{username:<20} {status}")
+            members.append({"username": username, "is_owner": is_owner, "role": "owner" if is_owner else "contributor"})
 
-            members = result.get("collaborators", [])
-
-            if not members:
-                self.print_info("No team members")
-                return self.success()
-
-            # Display header
-            print(f"{Fore.WHITE}{'Username':<20} {'Role':<15} {'Status':<15}{Style.RESET_ALL}")
-            print(f"{Fore.WHITE}{'-'*50}{Style.RESET_ALL}")
-
-            for member in members:
-                username = member["username"]
-                role = member["role"]
-                is_owner = member.get("is_owner", False)
-
-                # Format role with color
-                role_display = (
-                    f"{Fore.GREEN}{role}{Style.RESET_ALL}"
-                    if role == "lead"
-                    else f"{Fore.CYAN}{role}{Style.RESET_ALL}"
-                )
-
-                # Format status
-                status = (
-                    f"{Fore.YELLOW}OWNER{Style.RESET_ALL}"
-                    if is_owner
-                    else f"{Fore.WHITE}Member{Style.RESET_ALL}"
-                )
-
-                print(f"{username:<20} {role_display:<30} {status}")
-
-            print()
-            return self.success(data={"collaborators": members})
-        except ValueError as e:
-            return self.error(str(e))
+        print()
+        return self.success(data={"collaborators": members})
 
 
 class CollabRoleCommand(BaseCommand):
