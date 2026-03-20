@@ -5,7 +5,6 @@ NOTE: Responses now use APIResponse format with data wrapped in "data" field.Git
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
-
 from socratic_agents import (
     ConflictResolutionError,
     NetworkSyncFailedError,
@@ -14,6 +13,7 @@ from socratic_agents import (
     TokenExpiredError,
     create_github_sync_handler,
 )
+
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 

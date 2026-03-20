@@ -8,7 +8,11 @@ getting recommendations, and viewing progression trends.
 import logging
 from typing import Any, Callable, Dict, List
 
-from socratic_learning import AnalyticsCalculator
+try:
+    from socratic_learning import AnalyticsCalculator
+except ImportError:
+    AnalyticsCalculator = None  # type: ignore
+
 from socratic_system.ui.analytics_display import AnalyticsDisplay
 from socratic_system.ui.commands.base import BaseCommand
 
@@ -73,6 +77,10 @@ class AnalyticsAnalyzeCommand(BaseCommand):
                 }
 
             # Calculate analysis
+            if AnalyticsCalculator is None:
+                logger.warning("AnalyticsCalculator not available - socratic_learning not installed")
+                return {"status": "error", "message": "Analytics feature requires: pip install socrates-ai[learning]"}
+
             logger.debug(f"Creating AnalyticsCalculator for project type: {project.project_type}")
             calculator = AnalyticsCalculator(project.project_type)
             analysis = calculator.analyze_category_performance(project)
@@ -117,6 +125,10 @@ class AnalyticsRecommendCommand(BaseCommand):
             user_id = context.get("user_id", "default_user")
 
             # Generate recommendations using both analytics and learning insights
+            if AnalyticsCalculator is None:
+                logger.warning("AnalyticsCalculator not available - socratic_learning not installed")
+                return {"status": "error", "message": "Analytics feature requires: pip install socrates-ai[learning]"}
+
             logger.debug(f"Generating recommendations for project type: {project.project_type}")
             calculator = AnalyticsCalculator(project.project_type)
             recommendations = calculator.generate_recommendations(project)
@@ -183,6 +195,10 @@ class AnalyticsTrendsCommand(BaseCommand):
             user_id = context.get("user_id", "default_user")
 
             # Analyze trends
+            if AnalyticsCalculator is None:
+                logger.warning("AnalyticsCalculator not available - socratic_learning not installed")
+                return {"status": "error", "message": "Analytics feature requires: pip install socrates-ai[learning]"}
+
             logger.debug(f"Analyzing progression trends for project type: {project.project_type}")
             calculator = AnalyticsCalculator(project.project_type)
             trends = calculator.analyze_progression_trends(project)
