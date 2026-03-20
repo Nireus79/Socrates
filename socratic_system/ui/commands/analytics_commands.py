@@ -6,7 +6,10 @@ getting recommendations, and viewing progression trends.
 """
 
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Callable, Dict, List
+
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
+from socratic_system.models.project import ProjectContext
 
 try:
     from socratic_learning import AnalyticsCalculator
@@ -49,7 +52,7 @@ class AnalyticsAnalyzeCommand(BaseCommand):
         /analytics analyze discovery # Analyze specific phase
     """
 
-    def __init__(self, orchestrator: Any):
+    def __init__(self, orchestrator: AgentOrchestrator):
         super().__init__("analytics analyze")
         self.orchestrator = orchestrator
         logger.debug("AnalyticsAnalyzeCommand initialized")
@@ -108,7 +111,7 @@ class AnalyticsRecommendCommand(BaseCommand):
     Shows weak categories, missing areas, and suggested questions.
     """
 
-    def __init__(self, orchestrator: Any):
+    def __init__(self, orchestrator: AgentOrchestrator):
         super().__init__("analytics recommend")
         self.orchestrator = orchestrator
         logger.debug("AnalyticsRecommendCommand initialized")
@@ -178,7 +181,7 @@ class AnalyticsTrendsCommand(BaseCommand):
     Displays velocity, progression chart, and insights about patterns.
     """
 
-    def __init__(self, orchestrator: Any):
+    def __init__(self, orchestrator: AgentOrchestrator):
         super().__init__("analytics trends")
         self.orchestrator = orchestrator
         logger.debug("AnalyticsTrendsCommand initialized")
@@ -238,7 +241,7 @@ class AnalyticsSummaryCommand(BaseCommand):
     Shows velocity, weak/strong categories, and phase status.
     """
 
-    def __init__(self, orchestrator: Any):
+    def __init__(self, orchestrator: AgentOrchestrator):
         super().__init__("analytics summary")
         self.orchestrator = orchestrator
         logger.debug("AnalyticsSummaryCommand initialized")
@@ -278,7 +281,7 @@ class AnalyticsBreakdownCommand(BaseCommand):
     Useful for comprehensive assessment of project maturity.
     """
 
-    def __init__(self, orchestrator: Any):
+    def __init__(self, orchestrator: AgentOrchestrator):
         super().__init__("analytics breakdown")
         self.orchestrator = orchestrator
         logger.debug("AnalyticsBreakdownCommand initialized")
@@ -313,7 +316,7 @@ class AnalyticsStatusCommand(BaseCommand):
     Shows progress toward goals and next recommended actions.
     """
 
-    def __init__(self, orchestrator: Any):
+    def __init__(self, orchestrator: AgentOrchestrator):
         super().__init__("analytics status")
         self.orchestrator = orchestrator
         logger.debug("AnalyticsStatusCommand initialized")
