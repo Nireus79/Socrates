@@ -86,13 +86,13 @@ dependencies = [
     "redis>=5.0.0",                      # Caching and session storage (improved connection pooling)
     "slowapi>=0.1.9",                    # Rate limiting
     "prometheus-client>=0.19.0",         # Metrics and monitoring
-    "alembic>=1.18.4",                   # Database migrations (latest patches)
+    "alembic>=1.12.0",                   # Database migrations (latest patches)
     "gitpython>=3.1.0",                  # Git operations (GitHub sync)
     "requests>=2.31.0",                  # HTTP client library
     "cryptography>=46.0.5",              # Cryptographic operations (security patches)
     "gunicorn>=21.0.0",                  # WSGI server (production)
     "psycopg2-binary>=2.9.0",            # PostgreSQL database driver
-    "pillow>=12.1.1",                    # Image processing (build_exe.py icon conversion, security patches)
+    "pillow>=10.0.0",                    # Image processing (build_exe.py icon conversion, security patches)
 ]
 
 [project.optional-dependencies]
