@@ -15,6 +15,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from socratic_system.config.constants import (
+    GIT_OPERATION_TIMEOUT_SECONDS,
+    GIT_VERSION_CHECK_TIMEOUT_SECONDS,
+)
+
 logger = logging.getLogger("socrates.utils.git_initializer")
 
 
@@ -35,6 +40,30 @@ class GitHubError(Exception):
 
     pass
 
+class GitConfigError(Exception):
+    """Raised when git configuration fails"""
+
+    pass
+
+
+class RepositoryInitializationError(Exception):
+    """Raised when repository initialization fails"""
+
+    pass
+
+
+class CommitError(Exception):
+    """Raised when commit operation fails"""
+
+    pass
+
+
+class RepositoryRemoteError(Exception):
+    """Raised when remote repository operations fail"""
+
+    pass
+
+
 
 class GitInitializer:
     """Initialize git repositories and manage GitHub integration"""
@@ -47,7 +76,7 @@ class GitInitializer:
                 ["git", "--version"],
                 capture_output=True,
                 check=True,
-                timeout=5,
+                timeout=GIT_VERSION_CHECK_TIMEOUT_SECONDS,
             )
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -101,7 +130,7 @@ class GitInitializer:
                 cwd=project_root,
                 capture_output=True,
                 check=True,
-                timeout=10,
+                timeout=GIT_OPERATION_TIMEOUT_SECONDS,
             )
             logger.info("Git repository initialized")
 
@@ -111,7 +140,7 @@ class GitInitializer:
                 cwd=project_root,
                 capture_output=True,
                 check=True,
-                timeout=10,
+                timeout=GIT_OPERATION_TIMEOUT_SECONDS,
             )
             logger.info(f"Git user configured: {author_name}")
 
@@ -120,7 +149,7 @@ class GitInitializer:
                 cwd=project_root,
                 capture_output=True,
                 check=True,
-                timeout=10,
+                timeout=GIT_OPERATION_TIMEOUT_SECONDS,
             )
             logger.info(f"Git email configured: {author_email}")
 
@@ -130,7 +159,7 @@ class GitInitializer:
                 cwd=project_root,
                 capture_output=True,
                 check=True,
-                timeout=10,
+                timeout=GIT_OPERATION_TIMEOUT_SECONDS,
             )
             logger.info("All files staged")
 
@@ -145,14 +174,18 @@ class GitInitializer:
                 cwd=project_root,
                 capture_output=True,
                 check=True,
-                timeout=10,
+                timeout=GIT_OPERATION_TIMEOUT_SECONDS,
             )
             logger.info(f"Initial commit created: {initial_commit_message}")
 
             return True, "Git repository initialized successfully"
 
+        except subprocess.TimeoutExpired as e:
+            msg = f"Git command timed out after {GIT_OPERATION_TIMEOUT_SECONDS} seconds"
+            logger.error(msg)
+            return False, msg
         except subprocess.CalledProcessError as e:
-            msg = f"Git command failed: {e.stderr.decode('utf-8') if e.stderr else str(e)}"
+            msg = f"Git command failed: {e.stderr.decode('utf-8') if e.stderr else str(e)}" {e.stderr.decode('utf-8') if e.stderr else str(e)}"
             logger.error(msg)
             return False, msg
         except Exception as e:
@@ -201,7 +234,7 @@ class GitInitializer:
                 "https://api.github.com/user/repos",
                 headers=headers,
                 json=payload,
-                timeout=10,
+                timeout=GIT_OPERATION_TIMEOUT_SECONDS,
             )
 
             if response.status_code == 201:
@@ -269,7 +302,7 @@ class GitInitializer:
                     cwd=project_root,
                     capture_output=True,
                     check=False,
-                    timeout=10,
+                    timeout=GIT_OPERATION_TIMEOUT_SECONDS,
                 )
             except subprocess.CalledProcessError:
                 # Remote may already exist, try to update it
@@ -278,7 +311,7 @@ class GitInitializer:
                     cwd=project_root,
                     capture_output=True,
                     check=True,
-                    timeout=10,
+                    timeout=GIT_OPERATION_TIMEOUT_SECONDS,
                 )
 
             logger.info(f"Remote 'origin' configured: {remote_url}")
@@ -291,7 +324,7 @@ class GitInitializer:
                     cwd=project_root,
                     capture_output=True,
                     check=True,
-                    timeout=10,
+                    timeout=GIT_OPERATION_TIMEOUT_SECONDS,
                     text=True,
                 )
                 current_branch = result.stdout.strip()
@@ -303,7 +336,7 @@ class GitInitializer:
                         cwd=project_root,
                         capture_output=True,
                         check=True,
-                        timeout=10,
+                        timeout=GIT_OPERATION_TIMEOUT_SECONDS,
                     )
                     logger.info(f"Branch renamed to: {branch}")
             except subprocess.CalledProcessError:
@@ -313,7 +346,7 @@ class GitInitializer:
                     cwd=project_root,
                     capture_output=True,
                     check=False,
-                    timeout=10,
+                    timeout=GIT_OPERATION_TIMEOUT_SECONDS,
                 )
 
             # Push to remote
@@ -347,8 +380,12 @@ class GitInitializer:
                 logger.error(msg)
                 return False, msg
 
+        except subprocess.TimeoutExpired as e:
+            msg = f"Git command timed out after {GIT_OPERATION_TIMEOUT_SECONDS} seconds"
+            logger.error(msg)
+            return False, msg
         except subprocess.CalledProcessError as e:
-            msg = f"Git command failed: {e.stderr.decode('utf-8') if e.stderr else str(e)}"
+            msg = f"Git command failed: {e.stderr.decode('utf-8') if e.stderr else str(e)}" {e.stderr.decode('utf-8') if e.stderr else str(e)}"
             logger.error(msg)
             return False, msg
         except Exception as e:
@@ -392,7 +429,7 @@ class GitInitializer:
                     cwd=project_root,
                     capture_output=True,
                     check=True,
-                    timeout=5,
+                    timeout=GIT_VERSION_CHECK_TIMEOUT_SECONDS,
                     text=True,
                 )
                 status["branch"] = result.stdout.strip()
@@ -406,7 +443,7 @@ class GitInitializer:
                     cwd=project_root,
                     capture_output=True,
                     check=True,
-                    timeout=5,
+                    timeout=GIT_VERSION_CHECK_TIMEOUT_SECONDS,
                     text=True,
                 )
                 remote_lines = [
@@ -423,7 +460,7 @@ class GitInitializer:
                     cwd=project_root,
                     capture_output=True,
                     check=True,
-                    timeout=5,
+                    timeout=GIT_VERSION_CHECK_TIMEOUT_SECONDS,
                     text=True,
                 )
                 changes = result.stdout.strip()
@@ -464,7 +501,7 @@ class GitInitializer:
             response = requests.get(
                 "https://api.github.com/user",
                 headers=headers,
-                timeout=10,
+                timeout=GIT_OPERATION_TIMEOUT_SECONDS,
             )
 
             if response.status_code == 200:

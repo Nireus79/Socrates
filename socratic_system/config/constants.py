@@ -118,6 +118,22 @@ MAX_DB_CONNECTIONS = 10
 DB_QUERY_TIMEOUT_SECONDS = 30
 
 # ============================================================================
+# TIMEOUT CONFIGURATION
+# ============================================================================
+
+# Git operation timeout (seconds) - for subprocess calls
+GIT_OPERATION_TIMEOUT_SECONDS = 10
+
+# Git version check timeout (seconds) - faster check for git availability
+GIT_VERSION_CHECK_TIMEOUT_SECONDS = 5
+
+# Shell command execution timeout (seconds) - for system commands
+SHELL_COMMAND_TIMEOUT_SECONDS = 30
+
+# API request timeout (seconds) - general purpose
+API_REQUEST_TIMEOUT_SECONDS = 30
+
+# ============================================================================
 # API CONFIGURATION
 # ============================================================================
 
@@ -165,3 +181,16 @@ MAX_LOG_FILE_SIZE_MB = 10
 
 # Number of backup log files to keep
 LOG_BACKUP_COUNT = 5
+
+# ============================================================================
+# COMMAND AND UI CONFIGURATION
+# ============================================================================
+
+# Default items per page in list displays
+DEFAULT_PAGE_SIZE = 10
+
+# Maximum command history to retain
+MAX_COMMAND_HISTORY = 100
+
+# Response timeout for interactive prompts (seconds)
+INTERACTIVE_PROMPT_TIMEOUT_SECONDS = 300

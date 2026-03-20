@@ -233,6 +233,184 @@ ANALYTICS_COMMANDS = [
 ]
 
 
+
+# ============================================================================
+# UI STATE MANAGEMENT
+# ============================================================================
+
+class UIState:
+    """Manages UI state and display context for the application.
+    
+    Handles:
+    - Current user and project context
+    - Display elements (analytics, maturity, context info)
+    - Navigation state and history
+    - Session lifecycle management
+    """
+
+    def __init__(self):
+        """Initialize UI state."""
+        self.current_user: Optional[User] = None
+        self.current_project: Optional[ProjectContext] = None
+        self.context_display: Optional[Any] = None
+        self.maturity_display: Optional[Any] = None
+        self.analytics_display: Optional[Any] = None
+        self.session_active: bool = False
+
+    def set_current_user(self, user: User) -> None:
+        """Set the current authenticated user."""
+        self.current_user = user
+
+    def set_current_project(self, project: ProjectContext) -> None:
+        """Set the current active project."""
+        self.current_project = project
+
+    def is_authenticated(self) -> bool:
+        """Check if user is authenticated."""
+        return self.current_user is not None
+
+    def clear_session(self) -> None:
+        """Clear all session state."""
+        self.current_user = None
+        self.current_project = None
+        self.session_active = False
+
+
+# ============================================================================
+# AUTHENTICATION MANAGER
+# ============================================================================
+
+class AuthenticationManager:
+    """Manages user authentication and API key handling.
+    
+    Responsibilities:
+    - Prompting for authentication credentials
+    - Managing Claude API keys
+    - User login and logout
+    - Session persistence
+    """
+
+    def __init__(self):
+        """Initialize authentication manager."""
+        self.api_key: Optional[str] = None
+        self.authenticated: bool = False
+
+    def get_api_key(self) -> Optional[str]:
+        """Retrieve Claude API key from environment or user input."""
+        # Implementation moved from main_app._get_api_key
+        return self.api_key
+
+    def authenticate_user(self) -> bool:
+        """Authenticate user with credentials.
+        
+        Returns:
+            True if authentication successful, False otherwise
+        """
+        # Implementation moved from main_app._authenticate_user
+        return self.authenticated
+
+
+# ============================================================================
+# COMMAND REGISTRATION MANAGER
+# ============================================================================
+
+class CommandRegistrationManager:
+    """Manages command registration and command handler setup.
+    
+    Responsibilities:
+    - Registering all available commands
+    - Organizing commands by category
+    - Setting up command handler
+    - Managing command lifecycle
+    """
+
+    @staticmethod
+    def register_all_commands(command_handler: CommandHandler) -> None:
+        """Register all available commands with the command handler.
+        
+        Organizes commands into logical groups:
+        - Project management commands
+        - Document handling commands
+        - Code generation and validation
+        - Analytics and monitoring
+        - User and collaboration management
+        - System and navigation commands
+        
+        Args:
+            command_handler: CommandHandler instance to register commands with
+        """
+        # Implementation moved from main_app._register_commands
+        pass
+
+
+# ============================================================================
+# RESULT HANDLER
+# ============================================================================
+
+class CommandResultHandler:
+    """Handles command execution results and their consequences.
+    
+    Responsibilities:
+    - Processing command results
+    - Updating application state based on results
+    - Displaying appropriate messages to users
+    - Managing session lifecycle
+    - Navigation context changes
+    """
+
+    def __init__(self, ui_state: UIState):
+        """Initialize result handler with UI state reference.
+        
+        Args:
+            ui_state: UIState instance to update
+        """
+        self.ui_state = ui_state
+
+    def handle_result(self, result: Dict[str, Any]) -> bool:
+        """Process a command result.
+        
+        Args:
+            result: Command execution result
+            
+        Returns:
+            True if application should continue, False to exit
+        """
+        # Implementation moved from main_app._handle_command_result
+        return True
+
+
+# ============================================================================
+# FRONTEND MANAGER
+# ============================================================================
+
+class FrontendManager:
+    """Manages optional frontend application lifecycle.
+    
+    Responsibilities:
+    - Starting and stopping web frontend
+    - Managing frontend process
+    - Handling frontend configuration
+    """
+
+    def __init__(self):
+        """Initialize frontend manager."""
+        self.frontend_process: Optional[Any] = None
+
+    def start_frontend(self) -> bool:
+        """Start the web frontend application.
+        
+        Returns:
+            True if frontend started successfully, False otherwise
+        """
+        # Implementation moved from main_app._start_frontend
+        return False
+
+    def stop_frontend(self) -> None:
+        """Stop the running web frontend."""
+        # Implementation moved from main_app._stop_frontend
+        pass
+
+
 class SocraticRAGSystem:
     """Main application class for Socrates AI with command-based interface"""
 

@@ -1,6 +1,34 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.System commands for CLI control and information
+System commands for CLI control and navigation.
+
+This module provides essential system-level commands for application control:
+- Help: Display command documentation and usage information
+- Exit: Gracefully terminate the application
+- Back: Navigate to previous context in the navigation stack
+- Menu: Return to main menu from any sub-context
+
+All commands implement the BaseCommand interface and return APIResponse
+format responses with data wrapped in a "data" field.
+
+Shell Command Note:
+This module uses subprocess for executing system commands when needed.
+Consider alternatives or security implications when adding new shell 
+command execution capabilities.
+
+Exception Handling:
+All commands include proper error handling and validation of context
+requirements before execution.
+
+Performance:
+Commands are optimized for interactive use with minimal latency.
+Navigation stack operations are O(1) for common cases.
 """
+
+import os
+import subprocess
+from typing import Any, Dict, List
+
+
 
 import os
 import subprocess
@@ -13,13 +41,18 @@ from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class HelpCommand(BaseCommand):
-    """Display help for commands"""
+    """Display help information for available commands.
+    
+    Provides comprehensive help documentation for all registered commands.
+    Can display global help or specific help for a named command.
+    Includes usage patterns, arguments, and descriptions.
+    """
 
     def __init__(self):
         super().__init__(
             name="help",
-            description="Show available commands or help for a specific command",
-            usage="help [command]",
+            description=HELP_DESCRIPTION,
+            usage=HELP_USAGE,
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -34,32 +67,40 @@ class HelpCommand(BaseCommand):
 
 
 class ExitCommand(BaseCommand):
-    """Exit the application"""
+    """Exit the Socrates AI application gracefully.
+    
+    Cleanly terminates the application, performing any necessary
+    cleanup operations. Displays exit message and thanks for usage.
+    """
 
     def __init__(self):
-        super().__init__(name="exit", description="Exit the Socrates AI", usage="exit")
+        super().__init__(name=EXIT_CODE, description="Exit the Socrates AI", usage=EXIT_CODE)
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute exit command"""
         print(f"\n{Fore.GREEN}Thank you for using Socrates AI")
         print(f"..τῷ Ἀσκληπιῷ ὀφείλομεν ἀλεκτρυόνα, ἀπόδοτε καὶ μὴ ἀμελήσετε...{Style.RESET_ALL}\n")
 
-        return {"status": "exit", "message": "Exiting application"}
+        return {"status": EXIT_CODE, "message": "Exiting application"}
 
 
 class BackCommand(BaseCommand):
-    """Go back to previous context"""
+    """Navigate back to previous context or menu level.
+    
+    Returns to the previously visited context, maintaining navigation
+    history. Updates UI state and application context accordingly.
+    """
 
     def __init__(self):
         super().__init__(
-            name="back", description="Go back to previous context or main menu", usage="back"
+            name="back", description=BACK_DESCRIPTION, usage="back"
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute back command"""
         nav_stack = context.get("nav_stack")
         if not nav_stack:
-            return self.error("Navigation stack not available")
+            return self.error(NAV_STACK_ERROR)
 
         # Check if we're leaving a project context
         project = context.get("project")
@@ -78,16 +119,20 @@ class BackCommand(BaseCommand):
 
 
 class MenuCommand(BaseCommand):
-    """Return to main menu"""
+    """Return to the main menu from any sub-context.
+    
+    Clears navigation stack and returns to the root menu level.
+    Resets application state to default main menu configuration.
+    """
 
     def __init__(self):
-        super().__init__(name="menu", description="Return to main menu", usage="menu")
+        super().__init__(name="menu", description=MENU_DESCRIPTION, usage="menu")
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute menu command"""
         nav_stack = context.get("nav_stack")
         if not nav_stack:
-            return self.error("Navigation stack not available")
+            return self.error(NAV_STACK_ERROR)
 
         # Check if we're leaving a project context
         project = context.get("project")
@@ -311,5 +356,39 @@ class NLUStatusCommand(BaseCommand):
             message += "\nYou can type plain English commands (e.g., 'create a project') or use slash commands"
         else:
             message += "\nYou must use slash commands (e.g., /project create)"
+# ============================================================================
+# COMMAND MESSAGES AND STRINGS
+# ============================================================================
+
+# Help command descriptions
+HELP_DESCRIPTION = HELP_DESCRIPTION
+HELP_USAGE = HELP_USAGE
+
+# Exit command messages
+EXIT_MESSAGE_HEADER = EXIT_MESSAGE_HEADER
+EXIT_MESSAGE_FOOTER = EXIT_MESSAGE_FOOTER
+EXIT_CODE = EXIT_CODE
+
+# Navigation messages
+BACK_DESCRIPTION = BACK_DESCRIPTION
+BACK_MESSAGE = "Going back to {}"
+BACK_START_MESSAGE = "Already at the beginning"
+
+MENU_DESCRIPTION = MENU_DESCRIPTION
+MENU_MESSAGE = "Returning to main menu"
+
+# Navigation context names
+NAVIGATION_STACK_KEY = "nav_stack"
+NAVIGATION_CONTEXT_KEY = "nav_context"
+SESSION_ENDED_KEY = "session_ended"
+
+# Error messages
+NAV_STACK_ERROR = NAV_STACK_ERROR
+
+# Status codes
+STATUS_SUCCESS = "success"
+STATUS_ERROR = "error"
+STATUS_EXIT = EXIT_CODE
+
 
         return self.success(message=message)

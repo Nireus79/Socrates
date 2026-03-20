@@ -11,9 +11,78 @@ from socratic_system.core import get_all_project_types, get_project_type_descrip
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
+# ============================================================================
+# COMMAND MESSAGES AND UI STRINGS
+# ============================================================================
+
+# Validation messages
+ERROR_NOT_LOGGED_IN = "Must be logged in to {}"
+ERROR_EMPTY_PROJECT_NAME = "Project name cannot be empty"
+ERROR_REQUIRED_CONTEXT = "Required context not available"
+ERROR_INVALID_CHOICE = "Invalid choice. Please enter a number between 1 and {}."
+
+# Prompts
+PROMPT_PROJECT_NAME = "Project name: "
+PROMPT_SELECT_PROJECT_TYPE = "What type of project are you building?"
+PROMPT_SELECT_PROJECT = "Select project type (1-{}): "
+PROMPT_FILTER = "Filter by status (active/archived/all) [all]: "
+PROMPT_PROJECT_PATH = "Path to project [.]: "
+
+# Success messages
+SUCCESS_PROJECT_CREATED = "Project '{}' created successfully!"
+SUCCESS_PROJECT_LOADED = "Project '{}' loaded successfully!"
+SUCCESS_PROJECT_ARCHIVED = "Project '{}' archived successfully!"
+SUCCESS_PROJECT_RESTORED = "Project '{}' restored successfully!"
+SUCCESS_PROJECT_DELETED = "Project '{}' deleted permanently!"
+
+# Info messages
+INFO_PROJECT_TYPE = "Project Type: {}"
+INFO_NEXT_STEPS = "Next steps:"
+STEP_START_SESSION = "• Use /chat to start the Socratic session"
+STEP_ADD_COLLABORATORS = "• Use /collab add <username> to invite collaborators"
+STEP_IMPORT_DOCS = "• Use /docs import <path> to import documents"
+
+# Project status labels
+STATUS_ACTIVE = "Active Projects:"
+STATUS_ARCHIVED = "Archived Projects:"
+LABEL_PROJECT_LIST_HEADER = "Your Projects:"
+
+# UI Elements
+PROJECT_ICON_ACTIVE = "📁"
+PROJECT_ICON_ARCHIVED = "🗄️"
+
+# Orchestrator action names
+ACTION_CREATE_PROJECT = "create_project"
+ACTION_LIST_PROJECTS = "list_projects"
+ACTION_LOAD_PROJECT = "load_project"
+ACTION_ARCHIVE_PROJECT = "archive_project"
+ACTION_RESTORE_PROJECT = "restore_project"
+ACTION_DELETE_PROJECT = "delete_project"
+ACTION_ANALYZE_PROJECT = "analyze_project"
+ACTION_TEST_PROJECT = "test_project"
+ACTION_FIX_PROJECT = "fix_project"
+ACTION_VALIDATE_PROJECT = "validate_project"
+
+# Context and state keys
+CONTEXT_ORCHESTRATOR = "orchestrator"
+CONTEXT_APP = "app"
+CONTEXT_USER = "user"
+CONTEXT_PROJECT = "project"
+CONTEXT_PROJECT_MANAGER = "project_manager"
+
+# Default values
+DEFAULT_AUTHOR = "Socrates AI"
+DEFAULT_AUTHOR_EMAIL = "noreply@socrates.ai"
+
 
 class ProjectCreateCommand(BaseCommand):
-    """Create a new project"""
+    """Create a new project with specified type and configuration.
+    
+    This command initializes a new project in the Socrates system,
+    allowing users to select from different project types (research, 
+    development, analysis, etc.). Each project is configured with
+    appropriate workflows and initial settings based on its type.
+    """
 
     def __init__(self):
         super().__init__(
@@ -93,7 +162,12 @@ class ProjectCreateCommand(BaseCommand):
 
 
 class ProjectLoadCommand(BaseCommand):
-    """Load an existing project"""
+    """Load an existing project into the current session.
+    
+    Displays a list of user's projects (both active and archived),
+    allowing selection and loading of a specific project. Updates
+    application context with selected project's data and workflows.
+    """
 
     def __init__(self):
         super().__init__(
@@ -220,7 +294,12 @@ class ProjectLoadCommand(BaseCommand):
 
 
 class ProjectListCommand(BaseCommand):
-    """List all projects"""
+    """Display all projects belonging to the current user.
+    
+    Lists all user projects with their current status, phase, and
+    metadata. Supports filtering by status (active/archived) and
+    sorting options.
+    """
 
     def __init__(self):
         super().__init__(
@@ -262,7 +341,12 @@ class ProjectListCommand(BaseCommand):
 
 
 class ProjectArchiveCommand(BaseCommand):
-    """Archive the current project"""
+    """Archive a project to remove it from active view.
+    
+    Archives the current or specified project, preserving all data
+    while removing it from active project listings. Archived projects
+    can be restored later.
+    """
 
     def __init__(self):
         super().__init__(
@@ -317,7 +401,11 @@ class ProjectArchiveCommand(BaseCommand):
 
 
 class ProjectRestoreCommand(BaseCommand):
-    """Restore an archived project"""
+    """Restore a previously archived project to active status.
+    
+    Reactivates an archived project, restoring it to the active
+    projects list. All project data and history are preserved.
+    """
 
     def __init__(self):
         super().__init__(
@@ -434,7 +522,11 @@ class ProjectRestoreCommand(BaseCommand):
 
 
 class ProjectDeleteCommand(BaseCommand):
-    """Permanently delete a project"""
+    """Permanently delete a project and all associated data.
+    
+    Completely removes a project from the system. This is a destructive
+    operation that cannot be undone. User confirmation is required.
+    """
 
     def __init__(self):
         super().__init__(
@@ -618,7 +710,12 @@ class ProjectDeleteCommand(BaseCommand):
 
 
 class ProjectAnalyzeCommand(BaseCommand):
-    """Analyze the current project code"""
+    """Analyze a project's code, structure, and quality metrics.
+    
+    Runs comprehensive analysis on the current project including
+    code structure parsing, quality metrics, dependency analysis,
+    and maturity assessment.
+    """
 
     def __init__(self):
         super().__init__(
@@ -826,7 +923,11 @@ class ProjectAnalyzeCommand(BaseCommand):
 
 
 class ProjectTestCommand(BaseCommand):
-    """Run tests on the current project"""
+    """Execute tests for the current project.
+    
+    Runs the project's test suite, collecting results and metrics.
+    Supports different test frameworks and provides detailed reporting.
+    """
 
     def __init__(self):
         super().__init__(
@@ -951,7 +1052,12 @@ class ProjectTestCommand(BaseCommand):
 
 
 class ProjectFixCommand(BaseCommand):
-    """Apply automated fixes to the project"""
+    """Apply automated fixes to identified issues in project.
+    
+    Uses AI-powered analysis to identify and apply fixes for common
+    issues such as style violations, documentation gaps, and code
+    quality problems.
+    """
 
     def __init__(self):
         super().__init__(
@@ -1147,7 +1253,12 @@ class ProjectFixCommand(BaseCommand):
 
 
 class ProjectValidateCommand(BaseCommand):
-    """Validate the current project"""
+    """Validate project structure and configuration.
+    
+    Checks that all required project files are present, configuration
+    is valid, and dependencies are properly specified. Reports any
+    structural issues.
+    """
 
     def __init__(self):
         super().__init__(

@@ -42,6 +42,15 @@ class DatabaseConnectionPool:
         ```
     """
 
+    
+    # ASYNC/AWAIT PATTERN: This class uses Python's async/await syntax extensively.
+    # All database operations are non-blocking and don't freeze the event loop.
+    # Usage pattern:
+    #   async with pool.get_session() as session:
+    #       result = await session.execute(query)
+    # This allows multiple concurrent database operations without threads.
+    
+
     def __init__(
         self,
         database_url: str,
