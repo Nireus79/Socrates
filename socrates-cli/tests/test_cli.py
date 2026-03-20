@@ -4,6 +4,7 @@ Tests for Socrates CLI commands
 
 # Import CLI commands
 import sys
+import threading
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -20,6 +21,27 @@ from socrates_cli.cli import main
 def cli_runner():
     """Create a Click CLI runner for testing"""
     return CliRunner()
+
+
+@pytest.fixture(autouse=True)
+def cleanup_threads():
+    """Ensure background threads are cleaned up properly.
+
+    Prevents hanging issues on Python 3.8/3.9 with background daemon threads.
+    """
+    # Get count of daemon threads before test
+    daemon_count_before = sum(1 for t in threading.enumerate() if t.daemon)
+
+    yield
+
+    # Count daemon threads after test
+    daemon_count_after = sum(1 for t in threading.enumerate() if t.daemon)
+
+    # If new daemon threads were created, wait for them to finish
+    # with a reasonable timeout
+    if daemon_count_after > daemon_count_before:
+        import time
+        time.sleep(0.5)  # Give threads time to finish
 
 
 @pytest.fixture
