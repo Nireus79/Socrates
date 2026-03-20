@@ -149,7 +149,6 @@ class ProjectCreateCommand(BaseCommand):
                     try:
                         orchestrator.database.save_project(project)
                     except Exception as e:
-                        self.logger.error(f"Failed to save project to database: {e}")
                         return self.error(f"Project created but could not be saved to database: {str(e)}")
 
             if project:
@@ -256,15 +255,11 @@ class ProjectLoadCommand(BaseCommand):
         try:
             project_id = project_info["project_id"]
 
-            # Load project
-            result = safe_orchestrator_call(
-                orchestrator,
-                "project_manager",
-                {"action": "load_project", "project_id": project_id},
-                operation_name="load_project",
-            )
+            # Load project from database
+            project = orchestrator.database.load_project(project_id)
+            if not project:
+                return self.error(f"Project {project_id} not found")
 
-            project = result.get("project")
             app.current_project = project
             app.context_display.set_context(project=project)
 
@@ -293,21 +288,26 @@ class ProjectLoadCommand(BaseCommand):
             return self.error("Required context not available")
 
         try:
-            # Get user's projects
-            result = safe_orchestrator_call(
-                orchestrator,
-                "project_manager",
-                {"action": "list_projects", "username": user.username},
-                operation_name="list_projects",
-            )
-
-            projects = result.get("projects", [])
+            # Get user's projects from database
+            projects = orchestrator.database.get_user_projects(user.username)
             if not projects:
                 self.print_info("No projects found")
                 return self.success()
 
+            # Convert ProjectContext objects to dicts for display
+            projects_data = [
+                {
+                    "project_id": p.project_id,
+                    "name": p.name,
+                    "phase": p.phase,
+                    "updated_at": p.updated_at.strftime("%Y-%m-%d %H:%M:%S") if hasattr(p.updated_at, 'strftime') else str(p.updated_at),
+                    "status": p.status,
+                }
+                for p in projects
+            ]
+
             # Display projects and get selection
-            all_projects = self._display_projects(result)
+            all_projects = self._display_projects({"projects": projects_data})
 
             choice = int(input(f"\n{Fore.WHITE}Select project (1-{len(all_projects)}): ")) - 1
             if 0 <= choice < len(all_projects):

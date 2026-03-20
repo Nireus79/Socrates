@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
+from socratic_system.models.note import ProjectNote
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
@@ -72,27 +73,40 @@ class NoteAddCommand(BaseCommand):
             return self.error("Note content cannot be empty")
 
         try:
-            # Add note via orchestrator
-            result = safe_orchestrator_call(
-                orchestrator,
-                "note_manager",
-                {
-                    "action": "add_note",
-                    "project_id": project.project_id,
-                    "note_type": note_type,
-                    "title": title,
-                    "content": content,
-                    "created_by": user.username,
-                    "tags": tags,
-                },
-                operation_name="add note",
+            # Create a ProjectNote and save it to the database
+            note = ProjectNote.create(
+                project_id=project.project_id,
+                note_type=note_type,
+                title=title,
+                content=content,
+                created_by=user.username,
+                tags=tags,
             )
 
-            note_data = result.get("note", {})
-            self.print_success(f"Note '{title}' added")
-            print(f"{Fore.CYAN}Note ID: {note_data.get('note_id', 'unknown')}")
+            # Save note to database
+            try:
+                orchestrator.database.save_note(note)
+            except Exception as e:
+                return self.error(f"Failed to save note: {str(e)}")
 
-            return self.success(data={"note": note_data})
+            self.print_success(f"Note '{title}' added")
+            print(f"{Fore.CYAN}Note ID: {note.note_id}")
+
+            # Return note as dict
+            return self.success(
+                data={
+                    "note": {
+                        "note_id": note.note_id,
+                        "project_id": note.project_id,
+                        "title": note.title,
+                        "content": note.content,
+                        "note_type": note.note_type,
+                        "created_by": note.created_by,
+                        "created_at": note.created_at.isoformat() if hasattr(note.created_at, 'isoformat') else str(note.created_at),
+                        "tags": note.tags,
+                    }
+                }
+            )
         except ValueError as e:
             return self.error(str(e))
 
@@ -128,18 +142,10 @@ class NoteListCommand(BaseCommand):
                 return self.error(f"Invalid note type. Must be one of: {', '.join(valid_types)}")
 
         try:
-            # List notes via orchestrator
-            result = safe_orchestrator_call(
-                orchestrator,
-                "note_manager",
-                {"action": "list_notes", "project_id": project.project_id, "note_type": note_type},
-                operation_name="list notes",
-            )
+            # Get notes from database
+            notes_list = orchestrator.database.get_project_notes(project.project_id, note_type)
 
-            notes = result.get("notes", [])
-            count = result.get("count", 0)
-
-            if count == 0:
+            if not notes_list:
                 self.print_info("No notes found")
                 return self.success(data={"notes": [], "count": 0})
 
@@ -149,25 +155,43 @@ class NoteListCommand(BaseCommand):
 
             self.print_header(title)
 
-            for note in notes:
+            # Convert ProjectNote objects to dicts
+            notes_data = []
+            for note in notes_list:
+                preview = note.content[:100] + "..." if len(note.content) > 100 else note.content
+                note_dict = {
+                    "note_id": note.note_id,
+                    "project_id": note.project_id,
+                    "title": note.title,
+                    "content": note.content,
+                    "type": note.note_type,
+                    "note_type": note.note_type,
+                    "created_by": note.created_by,
+                    "created_at": note.created_at.isoformat() if hasattr(note.created_at, 'isoformat') else str(note.created_at),
+                    "tags": note.tags,
+                    "preview": preview,
+                }
+                notes_data.append(note_dict)
+
                 type_label = {
                     "design": "[DESIGN]",
                     "bug": "[BUG]",
                     "idea": "[IDEA]",
                     "task": "[TASK]",
                     "general": "[NOTE]",
-                }.get(note["type"], "[NOTE]")
+                }.get(note.note_type, "[NOTE]")
 
-                print(f"{Fore.CYAN}{type_label} {note['title']}{Style.RESET_ALL}")
-                print(f"   Created by: {note['created_by']} on {note['created_at']}")
-                if note.get("tags"):
-                    print(f"   Tags: {', '.join(note['tags'])}")
-                print(f"   {note['preview']}")
-                print(f"   ID: {Fore.YELLOW}{note['note_id']}{Style.RESET_ALL}")
+                print(f"{Fore.CYAN}{type_label} {note.title}{Style.RESET_ALL}")
+                print(f"   Created by: {note.created_by} on {note_dict['created_at']}")
+                if note.tags:
+                    print(f"   Tags: {', '.join(note.tags)}")
+                print(f"   {preview}")
+                print(f"   ID: {Fore.YELLOW}{note.note_id}{Style.RESET_ALL}")
                 print()
 
+            count = len(notes_list)
             print(f"Total: {count} note(s)")
-            return self.success(data={"notes": notes, "count": count})
+            return self.success(data={"notes": notes_data, "count": count})
         except ValueError as e:
             return self.error(str(e))
 
@@ -202,41 +226,54 @@ class NoteSearchCommand(BaseCommand):
             return self.error("Required context not available")
 
         try:
-            # Search notes via orchestrator
-            result = safe_orchestrator_call(
-                orchestrator,
-                "note_manager",
-                {"action": "search_notes", "project_id": project.project_id, "query": query},
-                operation_name="search notes",
-            )
+            # Get all notes and search in memory
+            all_notes = orchestrator.database.get_project_notes(project.project_id)
 
-            results = result.get("results", [])
-            count = result.get("count", 0)
+            # Filter notes matching the query
+            results = [note for note in all_notes if note.matches_query(query)]
 
-            if count == 0:
+            if not results:
                 self.print_info(f"No notes found matching '{query}'")
                 return self.success(data={"results": [], "count": 0})
 
             self.print_header(f"Search Results for '{query}'")
 
+            # Convert to dicts and display
+            results_data = []
             for note in results:
+                preview = note.content[:100] + "..." if len(note.content) > 100 else note.content
+                note_dict = {
+                    "note_id": note.note_id,
+                    "project_id": note.project_id,
+                    "title": note.title,
+                    "content": note.content,
+                    "type": note.note_type,
+                    "note_type": note.note_type,
+                    "created_by": note.created_by,
+                    "created_at": note.created_at.isoformat() if hasattr(note.created_at, 'isoformat') else str(note.created_at),
+                    "tags": note.tags,
+                    "preview": preview,
+                }
+                results_data.append(note_dict)
+
                 type_label = {
                     "design": "[DESIGN]",
                     "bug": "[BUG]",
                     "idea": "[IDEA]",
                     "task": "[TASK]",
                     "general": "[NOTE]",
-                }.get(note["type"], "[NOTE]")
+                }.get(note.note_type, "[NOTE]")
 
-                print(f"{Fore.CYAN}{type_label} {note['title']}{Style.RESET_ALL}")
-                print(f"   Type: {note['type']} | Created by: {note['created_by']}")
-                if note.get("tags"):
-                    print(f"   Tags: {', '.join(note['tags'])}")
-                print(f"   {note['preview']}")
+                print(f"{Fore.CYAN}{type_label} {note.title}{Style.RESET_ALL}")
+                print(f"   Type: {note.note_type} | Created by: {note.created_by}")
+                if note.tags:
+                    print(f"   Tags: {', '.join(note.tags)}")
+                print(f"   {preview}")
                 print()
 
+            count = len(results)
             print(f"Found: {count} note(s)")
-            return self.success(data={"results": results, "count": count})
+            return self.success(data={"results": results_data, "count": count})
         except ValueError as e:
             return self.error(str(e))
 
@@ -277,15 +314,12 @@ class NoteDeleteCommand(BaseCommand):
             return self.success()
 
         try:
-            # Delete note via orchestrator
-            safe_orchestrator_call(
-                orchestrator,
-                "note_manager",
-                {"action": "delete_note", "note_id": note_id, "project_id": project.project_id},
-                operation_name="delete note",
-            )
+            # Delete note from database
+            success = orchestrator.database.delete_note(note_id)
+            if not success:
+                return self.error(f"Failed to delete note {note_id}")
 
             self.print_success("Note deleted successfully")
             return self.success(data={"deleted_note_id": note_id})
-        except ValueError as e:
-            return self.error(str(e))
+        except Exception as e:
+            return self.error(f"Failed to delete note: {str(e)}")
