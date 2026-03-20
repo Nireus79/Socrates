@@ -262,7 +262,13 @@ async def create_project(
         # CRITICAL: Validate subscription before creating project in fallback path
         logger.info("Validating subscription for fallback project creation...")
         try:
-            user_object = get_current_user_object(current_user)
+            # Use the user_object that was injected via dependency injection
+            if user_object is None:
+                logger.warning(f"User {current_user} not found in database")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found",
+                )
 
             # Check if user has active subscription
             if user_object.subscription_status != "active":
@@ -304,8 +310,8 @@ async def create_project(
             owner=current_user,
             description=request.description or "",
             phase="discovery",
-            created_at=datetime.now(timezone.utc).isoformat(),
-            updated_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             is_archived=False,
             conversation_history=[],
             overall_maturity=0.0,

@@ -222,7 +222,9 @@ class TestProjectEndpoints:
         """Test creating a project."""
         response = self._create_project()
         assert response.status_code == 200
-        data = response.json()
+        result = response.json()
+        # Response is wrapped in APIResponse format with data field
+        data = result.get("data", result)
         assert data["name"] == "Test Project"
         # Owner is inferred from authenticated user, not returned in request
         assert "project_id" in data
