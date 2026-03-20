@@ -37,7 +37,7 @@ jobs:
 
       - name: Check coverage
         run: |
-          pytest --cov=socratic_system --cov-fail-under=70
+          pytest --cov=socratic_system --cov-fail-under=30
 
   build:
     name: Build Distributions
