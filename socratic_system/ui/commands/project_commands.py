@@ -126,9 +126,18 @@ class ProjectCreateCommand(BaseCommand):
                 operation_name="create_project",
             )
 
-            project = result.get("project")
-            app.current_project = project
-            app.context_display.set_context(project=project)
+            # ProjectManager returns project_id and project_name, fetch full project from database
+            project = None
+            if result.get("status") == "success":
+                project_id = result.get("project_id")
+                if project_id:
+                    project = orchestrator.database.get_project(project_id)
+
+            if project:
+                app.current_project = project
+                app.context_display.set_context(project=project)
+            else:
+                return self.error("Project created but could not be retrieved from database")
 
             self.print_success(f"Project '{project_name}' created successfully!")
             print(

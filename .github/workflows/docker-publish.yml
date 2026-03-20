@@ -193,10 +193,24 @@ jobs:
     if: github.event_name != 'pull_request' && needs.build-api.result == 'success' && needs.build-frontend.result == 'success'
 
     steps:
+      - name: Extract API image tag
+        id: api-image
+        run: |
+          # Extract first tag only (build outputs multiple tags)
+          API_IMAGE=$(echo "${{ needs.build-api.outputs.api-image }}" | head -n 1)
+          echo "tag=$API_IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Extract Frontend image tag
+        id: frontend-image
+        run: |
+          # Extract first tag only (build outputs multiple tags)
+          FRONTEND_IMAGE=$(echo "${{ needs.build-frontend.outputs.frontend-image }}" | head -n 1)
+          echo "tag=$FRONTEND_IMAGE" >> $GITHUB_OUTPUT
+
       - name: Run Trivy vulnerability scanner (API)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-api.outputs.api-image }}
+          image-ref: ${{ steps.api-image.outputs.tag }}
           format: 'sarif'
           output: 'trivy-api-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -205,7 +219,7 @@ jobs:
       - name: Run Trivy vulnerability scanner (Frontend)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-frontend.outputs.frontend-image }}
+          image-ref: ${{ steps.frontend-image.outputs.tag }}
           format: 'sarif'
           output: 'trivy-frontend-results.sarif'
           severity: 'CRITICAL,HIGH'
