@@ -67,82 +67,86 @@ dependencies = [
     # Other libraries are optional and can be added per use case
 
     # External dependencies (kept for orchestrator functionality)
-    "anthropic>=0.40.0",
-    "chromadb>=0.5.0",
-    "sentence-transformers>=3.0.0",
-    "pypdf>=4.0.0",
-    "python-dateutil>=2.8.0",
-    "aiosqlite>=0.19.0",
-    "fastapi>=0.100.0",
-    "uvicorn[standard]>=0.23.0",
-    "pydantic>=2.0.0",
-    "python-dotenv>=1.0.0",
-    "PyJWT>=2.8.0",
-    "python-jose>=3.3.0",
-    "bcrypt>=4.0.0",
-    "passlib>=1.7.4",
-    "httpx>=0.24.0",
-    "sqlalchemy>=2.0.0",
-    "redis>=5.0.0",
-    "slowapi>=0.1.9",
-    "prometheus-client>=0.19.0",
-    "alembic>=1.12.0",
-    "gitpython>=3.1.0",
-    "requests>=2.31.0",
-    "cryptography>=41.0.0",
-    "gunicorn>=21.0.0",
-    "psycopg2-binary>=2.9.0",
+    "anthropic>=0.40.0",                  # Required by: socratic-agents, socrates-nexus
+    "chromadb>=0.5.0",                   # Required by: socratic-rag (vector database)
+    "sentence-transformers>=3.0.0",      # Required by: socratic-rag (embeddings)
+    "pypdf>=4.0.0",                      # Document processing for RAG systems
+    "python-dateutil>=2.8.0",            # Date/time utilities (stdlib extension)
+    "aiosqlite>=0.19.0",                 # Async database operations
+    "fastapi>=0.100.0",                  # API framework (examples/API server)
+    "uvicorn[standard]>=0.23.0",         # ASGI server (examples/API server)
+    "pydantic>=2.0.0",                   # Data validation (core)
+    "python-dotenv>=1.0.0",              # Configuration from .env files
+    "PyJWT>=2.8.0",                      # JWT authentication (API)
+    "python-jose>=3.3.0",                # JWT/JWS handling (API)
+    "bcrypt>=4.0.0",                     # Password hashing (auth)
+    "passlib>=1.7.4",                    # Password utilities (auth)
+    "httpx>=0.24.0",                     # Async HTTP client
+    "sqlalchemy>=2.0.0",                 # ORM (database operations)
+    "redis>=5.0.0",                      # Caching and session storage
+    "slowapi>=0.1.9",                    # Rate limiting
+    "prometheus-client>=0.19.0",         # Metrics and monitoring
+    "alembic>=1.12.0",                   # Database migrations
+    "gitpython>=3.1.0",                  # Git operations (GitHub sync)
+    "requests>=2.31.0",                  # HTTP client library
+    "cryptography>=41.0.0",              # Cryptographic operations
+    "gunicorn>=21.0.0",                  # WSGI server (production)
+    "psycopg2-binary>=2.9.0",           # PostgreSQL database driver
+    "pillow>=10.0.0",                    # Image processing (build_exe.py icon conversion)
 ]
 
 [project.optional-dependencies]
-# Modular library installation options
+# Modular library installation options - install as: pip install socrates-ai[agents,rag]
+# These are all optional. You can use main package without any of these.
+
+# Foundation layer
 core = [
-    "socratic-core>=0.1.1",         # Core framework only (config, events, exceptions)
+    "socratic-core>=0.1.1",                # Core framework (config, events, exceptions)
 ]
 
-# Individual libraries (can be combined)
-rag = [
-    "socratic-rag>=0.1.0",          # RAG/retrieval capabilities
-]
+# Individual feature libraries (can be combined)
 agents = [
-    "socratic-agents>=0.1.0",       # Multi-agent orchestration
+    "socratic-agents>=0.1.0",              # Multi-agent orchestration (v0.1.3+ includes GitHub sync error classes)
 ]
-analyzer = [
-    "socratic-analyzer>=0.1.0",     # Code analysis capabilities
-]
-conflict = [
-    "socratic-conflict>=0.1.0",     # Conflict detection
-]
-knowledge = [
-    "socratic-knowledge>=0.1.0",    # Knowledge management
+rag = [
+    "socratic-rag>=0.1.0",                 # RAG/retrieval capabilities with vector database
 ]
 learning = [
-    "socratic-learning>=0.1.1",     # Learning system
+    "socratic-learning>=0.1.1",            # Learning system with interaction tracking and recommendations
+]
+analyzer = [
+    "socratic-analyzer>=0.1.0",            # Code analysis capabilities
+]
+conflict = [
+    "socratic-conflict>=0.1.0",            # Conflict detection and resolution
+]
+knowledge = [
+    "socratic-knowledge>=0.1.0",           # Knowledge management and persistence
 ]
 workflow = [
-    "socratic-workflow>=0.1.0",     # Workflow orchestration
+    "socratic-workflow>=0.1.0",            # Workflow engine and orchestration
 ]
 nexus = [
-    "socrates-nexus>=0.1.0",        # Universal LLM client
-]
-cli = [
-    "socrates-cli>=0.1.0",          # Command-line interface tools
-]
-api = [
-    "socrates-core-api>=0.1.0",     # REST API base framework
+    "socrates-nexus>=0.1.0",               # LLM provider abstraction (Claude, GPT-4, Gemini, etc.)
 ]
 
 # Convenience bundles
+cli = [
+    "socrates-cli>=0.1.0",                 # Command-line interface
+]
+api = [
+    "socrates-core-api>=0.1.0",            # REST API server
+]
 full = [
     "socratic-core>=0.1.1",
-    "socratic-learning>=0.1.1",
-    "socrates-nexus>=0.1.0",
     "socratic-agents>=0.1.0",
+    "socratic-rag>=0.1.0",
+    "socratic-learning>=0.1.1",
     "socratic-analyzer>=0.1.0",
     "socratic-conflict>=0.1.0",
     "socratic-knowledge>=0.1.0",
-    "socratic-rag>=0.1.0",
     "socratic-workflow>=0.1.0",
+    "socrates-nexus>=0.1.0",
     "socrates-cli>=0.1.0",
     "socrates-core-api>=0.1.0",
 ]
@@ -250,7 +254,7 @@ line_length = 100
 skip_gitignore = true
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.8"  # Match requires-python = ">=3.8" for accurate type checking across all supported versions
 warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
