@@ -141,10 +141,18 @@ class AgentOrchestrator:
         DatabaseSingleton.initialize(str(self.config.projects_db_path))
         self.database = DatabaseSingleton.get_instance()
 
-        self.vector_db = VectorDatabase(
-            str(self.config.vector_db_path), embedding_model=self.config.embedding_model
-        )
-        self.logger.info("Database components initialized successfully")
+        # Initialize vector database (optional - continue if RAG dependencies missing)
+        try:
+            self.vector_db = VectorDatabase(
+                str(self.config.vector_db_path), embedding_model=self.config.embedding_model
+            )
+            self.logger.info("Database components initialized successfully")
+        except ImportError as e:
+            self.logger.warning(f"Vector database initialization skipped: {e}")
+            self.vector_db = None  # Mark as unavailable but don't fail
+        except Exception as e:
+            self.logger.error(f"Vector database initialization failed: {e}")
+            raise  # Re-raise other exceptions
 
         # Initialize LLM client (using socrates-nexus for multi-provider support)
         if LLMClient is None:
