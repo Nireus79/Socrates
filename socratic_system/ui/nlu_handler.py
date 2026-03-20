@@ -315,7 +315,13 @@ class NLUHandler:
 
         categories: dict[str, list[dict[str, Any]]] = {}
         for name, cmd in commands.items():
-            parts = name.split()
+            # Convert name to string and skip invalid names
+            name_str = str(name)
+            # Skip numeric command names that might be invalid
+            if name_str.isdigit():
+                continue
+
+            parts = name_str.split()
             category = parts[0] if parts else "system"
 
             if category not in categories:
@@ -323,15 +329,15 @@ class NLUHandler:
 
             categories[category].append(
                 {
-                    "name": name,
-                    "usage": cmd.usage or name,
+                    "name": name_str,
+                    "usage": cmd.usage or name_str,
                     "description": cmd.description or "No description",
                 }
             )
 
         # Format as text
         metadata_parts = []
-        for category in sorted(categories.keys()):
+        for category in sorted(categories.keys(), key=str):
             cmds: list[dict[str, Any]] = categories[category]
             metadata_parts.append(f"\n{category.upper()} COMMANDS:")
             for cmd in cmds:
