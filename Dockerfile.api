@@ -12,44 +12,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Upgrade pip, setuptools, and wheel
 RUN pip install --upgrade pip setuptools wheel
 
-# Copy requirements for faster layer caching
-# Install core dependencies separately to leverage Docker cache
-COPY requirements.txt ./
-
-# Install dependencies without heavy ML libraries
-# sentence-transformers and its dependencies (torch, etc.) are excluded for API-only builds
-RUN pip install --no-cache-dir \
-    anthropic>=0.40.0 \
-    chromadb>=0.5.0 \
-    pypdf>=4.0.0 \
-    python-dateutil>=2.8.0 \
-    aiosqlite>=0.19.0 \
-    fastapi>=0.100.0 \
-    uvicorn[standard]>=0.23.0 \
-    pydantic>=2.0.0 \
-    python-dotenv>=1.0.0 \
-    PyJWT>=2.8.0 \
-    python-jose>=3.3.0 \
-    bcrypt>=4.0.0 \
-    passlib>=1.7.4 \
-    httpx>=0.24.0 \
-    requests>=2.31.0 \
-    sqlalchemy>=2.0.0 \
-    alembic>=1.12.0 \
-    psycopg2-binary>=2.9.0 \
-    redis>=5.0.0 \
-    slowapi>=0.1.9 \
-    prometheus-client>=0.19.0 \
-    cryptography>=41.0.0 \
-    gitpython>=3.1.0 \
-    gunicorn>=21.0.0
-
-# Copy project files
+# Copy project structure
 COPY pyproject.toml README.md ./
+COPY socratic-core ./socratic-core
+COPY socrates-api ./socrates-api
 COPY socratic_system ./socratic_system
 
-# Install socratic_system package (without dependencies since we installed them above)
-RUN pip install --no-cache-dir --no-deps -e .
+# Install socratic-core first (required dependency)
+RUN cd socratic-core && pip install --no-cache-dir -e . && cd ..
+
+# Install socrates-api and its dependencies
+RUN cd socrates-api && pip install --no-cache-dir -e . && cd ..
+
+# Install socratic_system package
+RUN pip install --no-cache-dir -e .
 
 # Production stage
 FROM python:3.11-slim
@@ -92,5 +68,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-# Run API (check which main app exists and use it)
-CMD ["uvicorn", "socratic_system.ui.main_app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run API server
+CMD ["uvicorn", "socrates_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
