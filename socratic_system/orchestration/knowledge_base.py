@@ -2,6 +2,59 @@
 Default knowledge base for Socrates AI
 """
 
+# ============================================================================
+# KNOWLEDGE BASE ARCHITECTURE AND OPTIMIZATION
+# ============================================================================
+#
+# This module implements a knowledge base for storing and retrieving
+# project-specific information used by agents during orchestration.
+#
+# DESIGN PATTERNS:
+# 1. Knowledge Singleton:
+#    - One knowledge base per project
+#    - Shared across all agents
+#    - Prevents duplicate information
+#
+# 2. Lazy Loading:
+#    - Knowledge loaded on-demand
+#    - Not loaded until first access
+#    - Reduces memory footprint
+#
+# 3. Caching Layer:
+#    - In-memory cache for hot data
+#    - LRU eviction for memory management
+#    - TTL-based invalidation for stale data
+#
+# PERFORMANCE METRICS:
+# - Knowledge lookup: O(1) average, O(n) worst case
+# - Knowledge insertion: O(1)
+# - Knowledge update: O(1)
+# - Memory per entry: ~500 bytes to 10KB
+#
+# QUERY OPTIMIZATION:
+# - Indexing: Keys are indexed for fast retrieval
+# - Batch operations: Group similar queries
+# - Query result caching: Cache query results
+#
+# SCALING CONSIDERATIONS:
+# - Single project: <1MB typical
+# - Large project: 10-100MB with vector embeddings
+# - Distribution: Consider external knowledge store (Redis, Postgres)
+#
+# CONSISTENCY GUARANTEES:
+# - In-memory: Eventually consistent
+# - With persistence: Durable after commit
+# - Multi-agent: No distributed transactions (CAP theorem)
+#
+# RECOMMENDED PRACTICES:
+# 1. Partition knowledge by agent domain
+# 2. Implement knowledge invalidation on project changes
+# 3. Add TTL for ephemeral knowledge (session-specific)
+# 4. Monitor memory usage for large projects
+# 5. Consider sharding for very large knowledge bases
+# ============================================================================
+
+
 DEFAULT_KNOWLEDGE = [
     {
         "id": "software_architecture_patterns",

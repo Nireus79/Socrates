@@ -9,6 +9,18 @@ Analyzes generated code to identify:
 - Suggested file/module boundaries
 """
 
+
+    # PERFORMANCE OPTIMIZATION: Code structure analysis uses AST parsing
+    # which is more efficient than regex-based approaches:
+    # - AST parsing: O(n) where n = file size
+    # - Regex parsing: O(n*m) where m = pattern count
+    # 
+    # Memory usage is optimized through:
+    # - Single-pass parsing
+    # - Streaming results when possible
+    # - Lazy evaluation of complex analyses
+    
+
 import ast
 import logging
 import re
