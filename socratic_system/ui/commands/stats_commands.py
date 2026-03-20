@@ -9,7 +9,6 @@ from colorama import Fore, Style
 
 from socratic_system.constants import ErrorMessages, ProjectStatus
 from socratic_system.ui.commands.base import BaseCommand
-from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class ProjectStatsCommand(BaseCommand):
@@ -34,15 +33,62 @@ class ProjectStatsCommand(BaseCommand):
             return self.error("Required context not available")
 
         try:
-            # Get statistics
-            result = safe_orchestrator_call(
-                orchestrator,
-                "context_analyzer",
-                {"action": "get_statistics", "project": project},
-                operation_name="get statistics",
-            )
+            # Calculate statistics directly from project
+            from datetime import datetime, timezone
 
-            stats = result.get("statistics")
+            # Calculate days active
+            created_at = getattr(project, "created_at", datetime.now(timezone.utc))
+            if isinstance(created_at, str):
+                try:
+                    created_at = datetime.fromisoformat(created_at)
+                except (ValueError, TypeError):
+                    created_at = datetime.now(timezone.utc)
+
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+
+            now = datetime.now(timezone.utc)
+            days_active = (now - created_at).days
+
+            # Count conversations
+            conversation_history = getattr(project, "conversation_history", []) or []
+            questions_asked = sum(1 for msg in conversation_history if msg.get("role") == "assistant")
+            responses_given = sum(1 for msg in conversation_history if msg.get("role") == "user")
+
+            # Count collaborators
+            collaborators = getattr(project, "collaborators", []) or []
+            num_collaborators = len(collaborators) if isinstance(collaborators, list) else 0
+
+            # Count tech stack
+            tech_stack = getattr(project, "tech_stack", []) or []
+            num_tech_stack = len(tech_stack) if isinstance(tech_stack, list) else 0
+
+            # Count requirements
+            requirements = getattr(project, "requirements", []) or []
+            num_requirements = len(requirements) if isinstance(requirements, list) else 0
+
+            # Count constraints
+            constraints = getattr(project, "constraints", []) or []
+            num_constraints = len(constraints) if isinstance(constraints, list) else 0
+
+            stats = {
+                "project_name": getattr(project, "name", "Unknown"),
+                "owner": getattr(project, "owner", "Unknown"),
+                "current_phase": getattr(project, "phase", "planning"),
+                "status": getattr(project, "status", "active"),
+                "progress": getattr(project, "progress", 0),
+                "created_at": created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at),
+                "updated_at": (getattr(project, "updated_at", datetime.now(timezone.utc))).isoformat() if hasattr(getattr(project, "updated_at", None), "isoformat") else str(getattr(project, "updated_at", "")),
+                "days_active": max(0, days_active),
+                "collaborators": num_collaborators,
+                "requirements": num_requirements,
+                "tech_stack": num_tech_stack,
+                "constraints": num_constraints,
+                "total_conversations": len(conversation_history),
+                "questions_asked": questions_asked,
+                "responses_given": responses_given,
+                "notes": 0,
+            }
 
             self.print_header(f"Project Statistics: {stats['project_name']}")
 
