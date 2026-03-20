@@ -3,7 +3,7 @@ Core calculation and utility modules for Socratic system
 """
 
 try:
-    from modules.analytics.calculator import AnalyticsCalculator
+    from socratic_learning import AnalyticsCalculator
 except ImportError:
     AnalyticsCalculator = None  # type: ignore
 

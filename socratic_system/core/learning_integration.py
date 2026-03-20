@@ -18,7 +18,7 @@ except ImportError:
     RecommendationEngine = None  # type: ignore
 
 try:
-    from modules.foundation.models.learning import UserBehaviorPattern
+    from socratic_learning import UserBehaviorPattern
 except ImportError:
     # modules.foundation is optional - provide graceful fallback
     UserBehaviorPattern = None  # type: ignore

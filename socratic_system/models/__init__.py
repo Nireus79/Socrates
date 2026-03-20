@@ -20,12 +20,13 @@ from .role import ROLE_FOCUS_AREAS, VALID_ROLES, TeamMemberRole
 from .user import User
 
 try:
-    from modules.foundation.models.learning import (
+    from socratic_learning import (
         KnowledgeBaseDocument,
         QuestionEffectiveness,
         UserBehaviorPattern,
     )
 except ImportError:
+    # socratic_learning is optional - provide graceful fallback
     QuestionEffectiveness = None  # type: ignore
     UserBehaviorPattern = None  # type: ignore
     KnowledgeBaseDocument = None  # type: ignore

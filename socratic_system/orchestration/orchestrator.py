@@ -89,7 +89,7 @@ except ImportError:
     UserManagerAgent = None  # type: ignore
 from socratic_core import EventEmitter, EventType, SocratesConfig
 
-from modules.foundation.llm_service import ClaudeClient
+from socratic_system.clients import ClaudeClient
 from socratic_system.database import VectorDatabase
 from socratic_system.models import KnowledgeEntry
 
