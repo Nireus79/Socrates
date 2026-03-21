@@ -10,6 +10,9 @@ Tests metrics collection including:
 """
 
 import pytest
+
+pytest.importorskip("socrates_api", minversion=None)
+
 from fastapi import FastAPI
 from socrates_api.middleware.metrics import MetricsMiddleware
 from starlette.testclient import TestClient

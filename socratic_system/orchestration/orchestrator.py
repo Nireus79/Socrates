@@ -136,7 +136,7 @@ class AgentOrchestrator:
         self.logger.info("Initializing database components...")
 
         # Use unified DatabaseSingleton for both CLI and API
-        from socrates_api.database import DatabaseSingleton
+        from socratic_system.database import DatabaseSingleton
 
         DatabaseSingleton.initialize(str(self.config.projects_db_path))
         self.database = DatabaseSingleton.get_instance()

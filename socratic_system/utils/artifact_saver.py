@@ -13,7 +13,8 @@ from pathlib import Path
 
 # Security utilities for path traversal prevention
 try:
-    from socratic_security.filesystem import PathValidator, PathTraversalError
+    from socratic_security.filesystem import PathTraversalError, PathValidator
+
     SECURITY_AVAILABLE = True
 except ImportError:
     SECURITY_AVAILABLE = False

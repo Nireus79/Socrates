@@ -88,7 +88,7 @@ def check_api():
     print("\nChecking API...")
     try:
         result = subprocess.run(
-            ["python", "-c", "from socrates_api.main import app; print('OK')"],
+            ["python", "-c", "from socrates_core_api.main import app; print('OK')"],
             capture_output=True,
             text=True,
             timeout=5

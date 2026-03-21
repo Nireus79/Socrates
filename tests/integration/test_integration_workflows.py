@@ -7,7 +7,6 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, ".")
-sys.path.insert(0, "socrates-api/src")
 
 
 def test_project_creation_workflow():
@@ -17,8 +16,8 @@ def test_project_creation_workflow():
     print("=" * 70 + "\n")
 
     try:
-        from socrates_api.auth.password import hash_password, verify_password
-        from socrates_api.database import DatabaseSingleton
+        from socratic_system.utils.password import hash_password, verify_password
+        from socratic_system.database import DatabaseSingleton
         from socratic_core.utils import ProjectIDGenerator
 
         from socratic_system.models import User
@@ -124,7 +123,7 @@ def test_orchestrator_integration():
 
     try:
 
-        from socrates_api.database import DatabaseSingleton
+        from socratic_system.database import DatabaseSingleton
         from socratic_core import SocratesConfig
 
         from socratic_system.orchestration.orchestrator import AgentOrchestrator
@@ -151,7 +150,7 @@ def test_orchestrator_integration():
         test_user = f"orch_test_{int(datetime.now().timestamp() * 1000)}"
 
         # Create test user first
-        from socrates_api.auth.password import hash_password
+        from socratic_system.utils.password import hash_password
 
         from socratic_system.models import User
 

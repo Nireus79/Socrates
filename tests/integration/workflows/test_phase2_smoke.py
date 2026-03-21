@@ -10,6 +10,9 @@ These are lightweight integration tests that verify:
 from datetime import timedelta
 
 import pytest
+
+pytest.importorskip("socrates_api", minversion=None)
+
 from fastapi.testclient import TestClient
 from socrates_api.auth.jwt_handler import JWTHandler
 
