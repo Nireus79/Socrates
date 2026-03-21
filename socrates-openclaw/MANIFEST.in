@@ -1,6 +1,0 @@
-include README.md
-include LICENSE
-include requirements.txt
-recursive-include socrates_openclaw *
-recursive-include tests *
-recursive-include docs *
