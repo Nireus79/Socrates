@@ -504,6 +504,59 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., description="New password")
 
 
+class MFASetupResponse(BaseModel):
+    """Response for MFA setup endpoint"""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "secret": "JBSWY3DPEBLW64TMMQ======",
+                "qr_code_uri": "otpauth://totp/Socrates:user@example.com?secret=...",
+                "backup_codes": ["XXXX-XXXX-XXXX", "YYYY-YYYY-YYYY"],
+                "recovery_codes_display": "XXXX-XXXX-XXXX\nYYYY-YYYY-YYYY",
+            }
+        }
+    )
+
+    secret: str = Field(..., description="TOTP secret (base32 encoded)")
+    qr_code_uri: str = Field(..., description="QR code URI for authenticator app")
+    backup_codes: list[str] = Field(..., description="List of backup recovery codes")
+    recovery_codes_display: str = Field(..., description="Recovery codes formatted for display")
+
+
+class MFAVerifyRequest(BaseModel):
+    """Request body for MFA verification"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "totp_code": "123456",
+            }
+        },
+    )
+
+    totp_code: str = Field(..., description="6-digit TOTP code from authenticator app", min_length=6, max_length=6)
+
+
+class MFAStatusResponse(BaseModel):
+    """Response for MFA status endpoint"""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "mfa_enabled": True,
+                "created_at": "2026-03-21T10:00:00Z",
+                "recovery_codes_remaining": 8,
+            }
+        }
+    )
+
+    mfa_enabled: bool = Field(..., description="Whether MFA is enabled")
+    created_at: Optional[str] = Field(None, description="When MFA was enabled")
+    recovery_codes_remaining: int = Field(default=0, description="Number of unused recovery codes")
+
+
 class SuccessResponse(BaseModel):
     """Generic success response"""
 

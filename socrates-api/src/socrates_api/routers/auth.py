@@ -23,7 +23,7 @@ from socrates_api.auth import (
     verify_password,
     verify_refresh_token,
 )
-from socratic_security.auth import get_lockout_manager
+from socratic_security.auth import get_lockout_manager, get_mfa_manager
 from socrates_api.database import get_database
 from socrates_api.models import (
     APIResponse,
@@ -67,6 +67,13 @@ _lockout_manager = get_lockout_manager(
     lockout_window_minutes=int(os.environ.get("LOCKOUT_WINDOW_MINUTES", "15")),
     initial_lockout_minutes=int(os.environ.get("LOCKOUT_DURATION_MINUTES", "30")),
     progressive_lockout=os.environ.get("PROGRESSIVE_LOCKOUT", "true").lower() == "true",
+)
+
+# Initialize MFA manager
+_mfa_manager = get_mfa_manager(
+    issuer=os.environ.get("MFA_ISSUER", "Socrates"),
+    totp_window=int(os.environ.get("MFA_TOTP_WINDOW", "1")),
+    backup_code_count=int(os.environ.get("MFA_BACKUP_CODE_COUNT", "10")),
 )
 
 
@@ -1158,3 +1165,220 @@ def _revoke_refresh_token(db: ProjectDatabase, username: str) -> None:
 
     except Exception as e:
         logger.error(f"Error revoking refresh tokens for user {username}: {str(e)}")
+
+
+# ============================================================================
+# MFA ENDPOINTS - Multi-Factor Authentication (TOTP)
+# ============================================================================
+
+
+@router.post(
+    "/mfa/enable",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Start MFA setup",
+    responses={
+        200: {"description": "MFA setup started, return secret and QR code"},
+        401: {"description": "User not authenticated", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
+    },
+)
+async def mfa_enable(
+    current_user: str = Depends(get_current_user),
+) -> dict:
+    """
+    Start MFA setup process.
+
+    Returns TOTP secret and QR code URI for scanning with authenticator app.
+    User must verify with verify_enable endpoint.
+
+    Args:
+        current_user: Currently authenticated user
+
+    Returns:
+        Dict with secret, QR code URI, and backup codes
+    """
+    try:
+        logger.info(f"Starting MFA setup for user {current_user}")
+
+        # Generate MFA secret
+        setup = _mfa_manager.generate_secret(current_user)
+
+        return {
+            "secret": setup.secret,
+            "qr_code_uri": setup.qr_code_uri,
+            "backup_codes": setup.backup_codes,
+            "recovery_codes_display": setup.recovery_codes_display,
+        }
+
+    except Exception as e:
+        logger.error(f"Error starting MFA setup for {current_user}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error starting MFA setup",
+        )
+
+
+@router.post(
+    "/mfa/verify-enable",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Verify and enable MFA",
+    responses={
+        200: {"description": "MFA enabled successfully"},
+        400: {"description": "Invalid TOTP code", "model": ErrorResponse},
+        401: {"description": "User not authenticated", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
+    },
+)
+async def mfa_verify_enable(
+    request: dict,
+    current_user: str = Depends(get_current_user),
+) -> dict:
+    """
+    Verify TOTP code and enable MFA.
+
+    Args:
+        request: Dict with {totp_code}
+        current_user: Currently authenticated user
+
+    Returns:
+        {success, message}
+    """
+    try:
+        totp_code = request.get("totp_code")
+        if not totp_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="TOTP code required",
+            )
+
+        # Get the secret from the manager
+        secret = _mfa_manager.get_totp_secret(current_user)
+        if not secret:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No MFA setup in progress. Start with /mfa/enable",
+            )
+
+        # Enable MFA
+        success, message = _mfa_manager.enable_mfa(current_user, secret, totp_code)
+
+        if not success:
+            logger.warning(f"Failed to enable MFA for {current_user}: {message}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=message,
+            )
+
+        logger.info(f"MFA enabled for user {current_user}")
+        return {"success": True, "message": message}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error enabling MFA for {current_user}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error enabling MFA",
+        )
+
+
+@router.get(
+    "/mfa/status",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Get MFA status",
+    responses={
+        200: {"description": "MFA status returned"},
+        401: {"description": "User not authenticated", "model": ErrorResponse},
+    },
+)
+async def mfa_status(
+    current_user: str = Depends(get_current_user),
+) -> dict:
+    """
+    Get current MFA status for authenticated user.
+
+    Args:
+        current_user: Currently authenticated user
+
+    Returns:
+        {mfa_enabled, created_at, recovery_codes_remaining}
+    """
+    try:
+        is_enabled = _mfa_manager.is_mfa_enabled(current_user)
+
+        return {
+            "mfa_enabled": is_enabled,
+            "created_at": None,  # Would come from database in production
+            "recovery_codes_remaining": 0,  # Would count from database
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting MFA status for {current_user}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error getting MFA status",
+        )
+
+
+@router.post(
+    "/mfa/disable",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Disable MFA",
+    responses={
+        200: {"description": "MFA disabled successfully"},
+        400: {"description": "Invalid password", "model": ErrorResponse},
+        401: {"description": "User not authenticated", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
+    },
+)
+async def mfa_disable(
+    request: dict,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+) -> dict:
+    """
+    Disable MFA (requires password verification).
+
+    Args:
+        request: Dict with {password}
+        current_user: Currently authenticated user
+        db: Database connection
+
+    Returns:
+        {success, message}
+    """
+    try:
+        password = request.get("password")
+        if not password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password required to disable MFA",
+            )
+
+        # Load user and verify password
+        user = db.load_user(current_user)
+        if not user or not verify_password(password, user.passcode_hash):
+            logger.warning(f"Failed MFA disable attempt for {current_user} - invalid password")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid password",
+            )
+
+        # Disable MFA
+        _mfa_manager.disable_mfa(current_user)
+
+        logger.info(f"MFA disabled for user {current_user}")
+        return {"success": True, "message": "MFA disabled successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error disabling MFA for {current_user}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error disabling MFA",
+        )
