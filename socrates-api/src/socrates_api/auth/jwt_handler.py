@@ -6,18 +6,17 @@ Uses short-lived access tokens (15 minutes) and long-lived refresh tokens (7 day
 """
 
 import os
+import warnings
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import jwt
 
-# Configuration
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 if not SECRET_KEY:
-    import warnings
     warnings.warn(
         "JWT_SECRET_KEY not set! Using insecure default. Set JWT_SECRET_KEY environment variable.",
-        SecurityWarning,
+        UserWarning,
         stacklevel=2
     )
     SECRET_KEY = "your-secret-key-change-in-production"  # Fallback with warning
