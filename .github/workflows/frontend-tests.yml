@@ -111,13 +111,13 @@ jobs:
           pip install -e . -e ./socrates-cli -e ./socrates-api
 
       - name: Start backend server
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
+          CLAUDE_API_KEY: "test-key"
         run: |
           cd socrates-api
           uvicorn socrates_api.main:app --host 127.0.0.1 --port 8000 &
           sleep 5
-        env:
-          DATABASE_URL: sqlite:///:memory:
-          CLAUDE_API_KEY: test-key
 
       - name: Start frontend dev server
         run: |
