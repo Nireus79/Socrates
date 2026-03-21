@@ -26,6 +26,7 @@ jobs:
       - name: Lint with ruff
         run: |
           ruff check socratic_system tests --output-format=github
+        continue-on-error: false
 
   black:
     name: Black Code Formatter
@@ -91,11 +92,12 @@ jobs:
 
       - name: Run bandit security check
         run: |
-          bandit -r socratic_system socrates-cli socrates-api -lll || true
+          bandit -r socratic_system socrates-cli socrates-api -lll
 
       - name: Check dependencies with safety
         run: |
           safety check --json
+        continue-on-error: true
 
   dependencies:
     name: Dependency Check

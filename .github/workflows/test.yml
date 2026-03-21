@@ -33,18 +33,17 @@ jobs:
       - name: Lint with ruff
         run: |
           pip install ruff
-          ruff check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api || true
+          ruff check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api
 
       - name: Format check with black
         run: |
           pip install black
-          black --check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api || true
+          black --check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api
 
       - name: Type check with mypy
         run: |
           pip install mypy
-          mypy socratic_system --ignore-missing-imports || true
-        continue-on-error: true
+          mypy socratic_system --ignore-missing-imports
 
   test-batch-1:
     name: Test Batch 1 - Core Units
