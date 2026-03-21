@@ -4,8 +4,6 @@ Comprehensive tests for CodeStructureAnalyzer utility module.
 Tests code structure analysis for identifying classes, functions, imports, and patterns.
 """
 
-import pytest
-
 from socratic_system.utils.code_structure_analyzer import CodeStructureAnalyzer
 
 

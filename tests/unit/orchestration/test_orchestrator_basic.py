@@ -4,8 +4,9 @@ Comprehensive tests for Orchestrator basic functionality.
 Tests orchestrator initialization, request routing, and status checking.
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import MagicMock, patch
 
 try:
     from socratic_system.orchestration.orchestrator import Orchestrator
@@ -19,7 +20,7 @@ def orchestrator():
     if Orchestrator is None:
         pytest.skip("Orchestrator not available")
 
-    with patch('socratic_system.orchestration.orchestrator.LLMClient'):
+    with patch("socratic_system.orchestration.orchestrator.LLMClient"):
         return Orchestrator()
 
 
@@ -34,12 +35,12 @@ class TestOrchestratorInitialization:
     @pytest.mark.skipif(Orchestrator is None, reason="Orchestrator not available")
     def test_orchestrator_has_logger(self, orchestrator):
         """Test that orchestrator has logger."""
-        assert hasattr(orchestrator, 'logger') or hasattr(orchestrator, 'log')
+        assert hasattr(orchestrator, "logger") or hasattr(orchestrator, "log")
 
     @pytest.mark.skipif(Orchestrator is None, reason="Orchestrator not available")
     def test_orchestrator_initialization_graceful(self):
         """Test graceful initialization even with missing dependencies."""
-        with patch('socratic_system.orchestration.orchestrator.LLMClient', None):
+        with patch("socratic_system.orchestration.orchestrator.LLMClient", None):
             try:
                 orchestrator = Orchestrator()
                 assert orchestrator is not None
@@ -54,9 +55,11 @@ class TestOrchestratorBasicFunctionality:
     @pytest.mark.skipif(Orchestrator is None, reason="Orchestrator not available")
     def test_orchestrator_has_methods(self, orchestrator):
         """Test that orchestrator has expected methods."""
-        assert callable(getattr(orchestrator, 'process_request', None)) or \
-               callable(getattr(orchestrator, 'handle_request', None)) or \
-               callable(getattr(orchestrator, 'execute', None))
+        assert (
+            callable(getattr(orchestrator, "process_request", None))
+            or callable(getattr(orchestrator, "handle_request", None))
+            or callable(getattr(orchestrator, "execute", None))
+        )
 
     @pytest.mark.skipif(Orchestrator is None, reason="Orchestrator not available")
     def test_orchestrator_handles_empty_request(self, orchestrator):
@@ -90,7 +93,7 @@ class TestOrchestratorConfiguration:
         assert orchestrator is not None
 
 
-class TestOrchestratorAgent Management:
+class TestOrchestratorAgentManagement:
     """Tests for agent management in orchestrator."""
 
     @pytest.mark.skipif(Orchestrator is None, reason="Orchestrator not available")

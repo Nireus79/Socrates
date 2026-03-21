@@ -11,7 +11,6 @@ Tests end-to-end scenarios combining multiple modules:
 
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -171,9 +170,6 @@ class TestFileChangeTrackingWorkflow:
         (code_dir / "file1.py").write_text("x = 1")
         (code_dir / "file2.py").write_text("y = 2")
 
-        # Create tracker
-        tracker = FileChangeTracker()
-
         # Verify files exist
         assert (code_dir / "file1.py").exists()
         assert (code_dir / "file2.py").exists()
@@ -270,9 +266,6 @@ class MainApp:
         for i in range(3):
             f = code_dir / f"module{i}.py"
             f.write_text(f"# Module {i}\ndef func_{i}(): pass\n")
-
-        # Track changes
-        tracker = FileChangeTracker()
 
         files = list(code_dir.glob("*.py"))
         assert len(files) == 3

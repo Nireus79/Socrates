@@ -4,9 +4,6 @@ Integration tests for API endpoint workflows.
 Tests complete request/response cycles and multi-endpoint workflows.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
-import json
 
 
 class TestProjectAPIWorkflows:
@@ -27,8 +24,6 @@ class TestProjectAPIWorkflows:
 
     def test_list_user_projects(self):
         """Test listing all user projects."""
-        user_id = "user123"
-
         # Mock API response
         projects = [
             {"project_id": "proj-1", "name": "Project 1"},
@@ -40,21 +35,17 @@ class TestProjectAPIWorkflows:
 
     def test_update_project(self):
         """Test updating project details."""
-        project_id = "proj-123"
         updates = {
             "name": "Updated Name",
             "phase": "design",
         }
 
-        assert project_id is not None
         assert "phase" in updates
 
     def test_delete_project(self):
         """Test deleting a project."""
-        project_id = "proj-123"
-
         # Mock delete response
-        assert project_id is not None
+        assert True
 
 
 class TestUserAPIWorkflows:
@@ -73,11 +64,6 @@ class TestUserAPIWorkflows:
 
     def test_user_login_workflow(self):
         """Test user login flow."""
-        credentials = {
-            "username": "testuser",
-            "password": "password123",
-        }
-
         # Mock login response
         response = {
             "token": "jwt_token_here",
@@ -88,21 +74,17 @@ class TestUserAPIWorkflows:
 
     def test_user_profile_update(self):
         """Test updating user profile."""
-        user_id = "user123"
         profile_data = {
             "email": "newemail@example.com",
             "preferences": {"theme": "dark"},
         }
 
-        assert user_id is not None
         assert "email" in profile_data
 
     def test_user_password_reset(self):
         """Test password reset workflow."""
-        email = "user@example.com"
-
         # Mock reset token response
-        assert email is not None
+        assert True
 
 
 class TestChatSessionWorkflows:
@@ -110,23 +92,15 @@ class TestChatSessionWorkflows:
 
     def test_create_chat_session(self):
         """Test creating new chat session."""
-        project_id = "proj-123"
         session_data = {
             "title": "Discussion",
             "mode": "socratic",
         }
 
-        assert project_id is not None
         assert "title" in session_data
 
     def test_send_message_workflow(self):
         """Test sending message in session."""
-        session_id = "sess-123"
-        message = {
-            "content": "What is your approach?",
-            "role": "user",
-        }
-
         # Mock response
         response = {
             "message_id": "msg-1",
@@ -134,13 +108,10 @@ class TestChatSessionWorkflows:
             "role": "assistant",
         }
 
-        assert "content" in message
         assert "content" in response
 
     def test_retrieve_session_history(self):
         """Test retrieving chat history."""
-        session_id = "sess-123"
-
         # Mock history response
         history = [
             {"role": "user", "content": "Question 1"},
@@ -153,10 +124,8 @@ class TestChatSessionWorkflows:
 
     def test_update_session_title(self):
         """Test updating session title."""
-        session_id = "sess-123"
         new_title = "Updated Discussion"
 
-        assert session_id is not None
         assert len(new_title) > 0
 
 
@@ -165,12 +134,6 @@ class TestCodeGenerationWorkflows:
 
     def test_generate_code_endpoint(self):
         """Test code generation request."""
-        request = {
-            "project_id": "proj-123",
-            "specification": "Create a user authentication system",
-            "language": "python",
-        }
-
         # Mock generation response
         response = {
             "code": "class Auth:\n    def __init__(self):\n        pass",
@@ -181,9 +144,6 @@ class TestCodeGenerationWorkflows:
 
     def test_validate_generated_code(self):
         """Test code validation workflow."""
-        code = "def hello():\n    return 'world'\n"
-        language = "python"
-
         # Mock validation response
         validation = {
             "valid": True,
@@ -195,12 +155,9 @@ class TestCodeGenerationWorkflows:
 
     def test_refactor_code_endpoint(self):
         """Test code refactoring."""
-        code = "x=1;y=2;z=x+y"
-        target_style = "google"
-
         # Mock refactored response
         response = {
-            "original": code,
+            "original": "x=1;y=2;z=x+y",
             "refactored": "x = 1\ny = 2\nz = x + y\n",
         }
 
@@ -208,11 +165,8 @@ class TestCodeGenerationWorkflows:
 
     def test_export_code(self):
         """Test exporting generated code."""
-        project_id = "proj-123"
-        export_format = "zip"
-
         # Mock export response
-        assert project_id is not None
+        assert True
 
 
 class TestMultiEndpointWorkflows:
@@ -260,43 +214,27 @@ class TestMultiEndpointWorkflows:
     def test_project_development_workflow(self):
         """Test complete project development cycle."""
         # Step 1: Create project
-        project_id = "proj-dev"
-
         # Step 2: Create chat session
-        session_id = "sess-dev"
-
         # Step 3: Send questions/chat
         messages = [
             "What architecture should I use?",
             "Which libraries are best for this?",
         ]
 
-        # Step 4: Generate code
-        code_gen = "Generate backend API"
-
-        # Step 5: Validate code
-        validation = "Validate Python syntax"
-
-        assert project_id is not None
+        assert len(messages) > 0
 
     def test_collaboration_workflow(self):
         """Test collaborative project workflow."""
-        project_id = "proj-collab"
-
         # Step 1: Owner creates project
-        owner = "user123"
-
         # Step 2: Owner invites collaborator
         invite = {
-            "project_id": project_id,
+            "project_id": "proj-collab",
             "email": "collab@example.com",
         }
 
         # Step 3: Collaborator accepts
-        acceptance = "invite_token_123"
-
         # Step 4: Both work on code
-        assert owner is not None
+        assert "email" in invite
 
 
 class TestErrorScenarios:
@@ -304,9 +242,6 @@ class TestErrorScenarios:
 
     def test_unauthorized_access(self):
         """Test unauthorized access to project."""
-        project_id = "proj-123"
-        user_id = "other_user"
-
         # Mock 403 response
         error = {
             "status": 403,
@@ -317,8 +252,6 @@ class TestErrorScenarios:
 
     def test_resource_not_found(self):
         """Test accessing nonexistent resource."""
-        project_id = "nonexistent"
-
         # Mock 404 response
         error = {
             "status": 404,
@@ -329,11 +262,6 @@ class TestErrorScenarios:
 
     def test_invalid_input(self):
         """Test invalid input data."""
-        project_data = {
-            "name": "",  # Empty name
-            "owner": None,
-        }
-
         # Mock validation error
         error = {
             "status": 400,
@@ -372,23 +300,16 @@ class TestAsyncWorkflows:
 
     def test_long_running_code_generation(self):
         """Test async code generation."""
-        request_id = "req-123"
-
         # Step 1: Submit request
         submission = {
-            "request_id": request_id,
+            "request_id": "req-123",
             "status": "queued",
         }
 
         # Step 2: Poll status
-        status = {
-            "request_id": request_id,
-            "status": "processing",
-        }
-
         # Step 3: Get result
         result = {
-            "request_id": request_id,
+            "request_id": "req-123",
             "status": "complete",
             "code": "generated code here",
         }
@@ -398,7 +319,6 @@ class TestAsyncWorkflows:
 
     def test_webhook_notification(self):
         """Test webhook-based notifications."""
-        webhook_url = "https://example.com/webhook"
         event = {
             "event_type": "code_generated",
             "project_id": "proj-123",
@@ -413,14 +333,10 @@ class TestDataConsistency:
 
     def test_project_state_consistency(self):
         """Test project state consistency."""
-        project_id = "proj-123"
-
         # Get project details
         project1 = {"name": "Test", "phase": "discovery"}
 
         # Update project
-        updates = {"phase": "design"}
-
         # Get project again
         project2 = {"name": "Test", "phase": "design"}
 
@@ -429,28 +345,23 @@ class TestDataConsistency:
 
     def test_user_project_relationship(self):
         """Test user-project relationship consistency."""
-        user_id = "user123"
-        project_id = "proj-123"
-
         # Create project
         project = {
-            "id": project_id,
-            "owner": user_id,
+            "id": "proj-123",
+            "owner": "user123",
         }
 
         # List user projects
-        user_projects = [project_id]
+        user_projects = ["proj-123"]
 
-        assert user_id in str(project)
-        assert project_id in user_projects
+        assert "user123" in str(project)
+        assert "proj-123" in user_projects
 
     def test_chat_message_consistency(self):
         """Test chat message consistency."""
-        session_id = "sess-123"
-
         # Send message
         message = {
-            "session_id": session_id,
+            "session_id": "sess-123",
             "content": "Hello",
         }
 
@@ -459,4 +370,4 @@ class TestDataConsistency:
 
         # Verify consistency
         assert message in history
-        assert history[0]["session_id"] == session_id
+        assert history[0]["session_id"] == "sess-123"

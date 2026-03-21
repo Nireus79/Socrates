@@ -8,9 +8,6 @@ Tests real-world scenarios involving multiple systems:
 - Repository management
 """
 
-import pytest
-import tempfile
-from pathlib import Path
 from datetime import datetime
 
 
@@ -46,14 +43,6 @@ class TestWebApplicationDevelopment:
 
         # Phase 3: Design phase
         project["phase"] = "design"
-
-        design_docs = {
-            "architecture": "Microservices",
-            "database": "PostgreSQL",
-            "cache": "Redis",
-            "frontend": "React",
-            "backend": "FastAPI",
-        }
 
         assert project["phase"] == "design"
 
@@ -119,22 +108,7 @@ class TestDataScienceProject:
         # Phase 2: Exploratory Data Analysis
         project["phase"] = "design"
 
-        analysis = {
-            "total_records": 50000,
-            "features": 25,
-            "target_class": "churn",
-            "class_distribution": "imbalanced",
-        }
-
         # Phase 3: Model Development
-        models_tested = [
-            "LogisticRegression",
-            "RandomForest",
-            "GradientBoosting",
-            "XGBoost",
-            "NeuralNetwork",
-        ]
-
         best_model = {
             "name": "XGBoost",
             "accuracy": 0.89,
@@ -145,20 +119,8 @@ class TestDataScienceProject:
         assert best_model["accuracy"] > 0.85
 
         # Phase 4: Model Validation
-        validation = {
-            "cross_validation": "5-fold",
-            "test_accuracy": 0.88,
-            "auc_roc": 0.92,
-        }
-
         # Phase 5: Deployment
         project["phase"] = "deployment"
-
-        deployment = {
-            "model_format": "onnx",
-            "serving_framework": "FastAPI",
-            "prediction_latency_ms": 45,
-        }
 
         assert project["phase"] == "deployment"
 
@@ -188,20 +150,8 @@ class TestMultiTeamCollaboration:
         # Sprint 1: Architecture planning
         project["phase"] = "design"
 
-        architecture_review = {
-            "approved_by": ["dev1", "ops1"],
-            "comments_resolved": 12,
-            "status": "approved",
-        }
-
         # Sprint 2-4: Development
         project["phase"] = "implementation"
-
-        sprint_deliverables = {
-            "sprint_2": 15,  # story points
-            "sprint_3": 18,
-            "sprint_4": 16,
-        }
 
         # Code reviews
         code_reviews = {
@@ -241,16 +191,7 @@ class TestAgileSprintCycle:
 
     def test_two_week_sprint(self):
         """Test complete 2-week sprint."""
-        sprint = {
-            "number": 1,
-            "duration_days": 14,
-            "team_size": 5,
-        }
-
         # Sprint Planning
-        backlog_items = 25
-        sprint_items = 12
-
         # Story points
         story_points = [3, 5, 8, 5, 3, 5, 8, 3, 5, 3, 8, 5]
         total_points = sum(story_points)
@@ -258,20 +199,7 @@ class TestAgileSprintCycle:
         assert total_points > 60
 
         # Daily standups (10 days)
-        standups = 10
-        blockers = {
-            "day_3": "Waiting for API spec",
-            "day_7": "Database migration issue",
-        }
-
         # Code reviews
-        pull_requests = [
-            {"id": 1, "status": "merged"},
-            {"id": 2, "status": "merged"},
-            {"id": 3, "status": "merged"},
-            {"id": 4, "status": "merged"},
-        ]
-
         # Testing
         qa_testing = {
             "test_cases_run": 150,
@@ -282,9 +210,6 @@ class TestAgileSprintCycle:
         assert qa_testing["passed"] > 95
 
         # Sprint Review
-        completed_items = 11
-        not_completed = 1
-
         # Sprint Retrospective
         improvements = [
             "Better API documentation needed",
@@ -300,12 +225,6 @@ class TestRealTimeCollaboration:
 
     def test_live_code_review(self):
         """Test live code review session."""
-        session = {
-            "participants": ["dev1", "dev2", "reviewer1"],
-            "code_file": "service.py",
-            "duration_minutes": 30,
-        }
-
         # Comments and discussions
         comments = [
             {
@@ -327,13 +246,6 @@ class TestRealTimeCollaboration:
 
     def test_live_pair_programming(self):
         """Test pair programming session."""
-        session = {
-            "driver": "dev1",
-            "navigator": "dev2",
-            "task": "Implement authentication module",
-            "duration_minutes": 120,
-        }
-
         # Code produced
         code_metrics = {
             "lines_written": 450,
@@ -342,12 +254,6 @@ class TestRealTimeCollaboration:
         }
 
         assert code_metrics["functions_created"] == 8
-
-        # Real-time chat
-        chat = [
-            {"author": "dev1", "text": "Let me start with the base class"},
-            {"author": "dev2", "text": "Good, then we can add error handling"},
-        ]
 
 
 class TestIncidentResponse:
@@ -365,50 +271,12 @@ class TestIncidentResponse:
         }
 
         # Alert triggered
-        alert_data = {
-            "error_rate": 0.15,
-            "response_time_ms": 5000,
-            "affected_users": 500,
-        }
-
         # Incident commander assigned
-        response_team = {
-            "commander": "ops1",
-            "developer": "dev2",
-            "support": "support1",
-        }
-
         # Investigation
-        findings = {
-            "root_cause": "Database connection pool exhausted",
-            "affected_versions": ["v2.1.0", "v2.1.1"],
-        }
-
         # Hotfix deployed
-        fix = {
-            "pr_number": 1234,
-            "reviewed_by": "dev1",
-            "deployed_to": "staging",
-        }
-
         # Validation
-        validation = {
-            "error_rate": 0.01,
-            "response_time_ms": 200,
-        }
-
         # Promotion to production
         incident["status"] = "resolved"
-
-        # Post-incident review
-        post_incident = {
-            "conducted_by": "ops1",
-            "preventive_measures": [
-                "Add connection pool monitoring",
-                "Implement auto-scaling",
-                "Add load testing to CI/CD",
-            ],
-        }
 
         assert incident["status"] == "resolved"
 
@@ -418,32 +286,6 @@ class TestSecurityAudit:
 
     def test_security_vulnerability_remediation(self):
         """Test handling security vulnerabilities."""
-        # Vulnerability scan
-        scan = {
-            "tool": "Snyk",
-            "timestamp": datetime.now(),
-            "vulnerabilities": [
-                {
-                    "id": "CVE-2023-1234",
-                    "severity": "high",
-                    "package": "requests",
-                    "version": "2.25.0",
-                },
-                {
-                    "id": "CVE-2023-5678",
-                    "severity": "medium",
-                    "package": "numpy",
-                    "version": "1.20.0",
-                },
-            ],
-        }
-
-        # Remediation plan
-        fixes = {
-            "requests": "2.31.0",
-            "numpy": "1.24.0",
-        }
-
         # Testing after update
         regression_tests = {
             "passed": 1250,
@@ -472,20 +314,6 @@ class TestPerformanceOptimization:
             "p95_latency_ms": 800,
             "p99_latency_ms": 1500,
             "throughput_rps": 500,
-        }
-
-        # Profiling
-        bottlenecks = [
-            "Database queries taking 60% of time",
-            "JSON serialization taking 20% of time",
-            "Authentication taking 15% of time",
-        ]
-
-        # Optimizations
-        optimizations = {
-            "add_query_caching": True,
-            "implement_connection_pooling": True,
-            "optimize_json_library": True,
         }
 
         # Improved metrics
