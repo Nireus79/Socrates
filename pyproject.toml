@@ -69,7 +69,7 @@ dependencies = [
     # External dependencies (kept for orchestrator functionality)
     "anthropic>=0.72.0",                 # Required by: socratic-agents, socrates-nexus
     "socratic-core>=0.1.1",              # Core framework (config, events, exceptions)
-    "socratic-agents>=0.1.3",            # Multi-agent orchestration (core functionality)
+    "socratic-agents>=0.1.2",            # Multi-agent orchestration (core functionality)
     "socratic-rag>=0.1.0",               # Retrieval-Augmented Generation (core functionality)
     "socratic-workflow>=0.1.1",          # Workflow orchestration and cost tracking
     "socratic-security==0.4.0",          # Security utilities (prompt injection, path validation, sandboxing)
@@ -121,7 +121,7 @@ knowledge = [
     "socratic-knowledge>=0.1.0",           # Knowledge management and persistence
 ]
 workflow = [
-    "socratic-workflow>=0.1.1",            # Workflow engine and orchestration (v0.1.1+ supports socratic-agents v0.1.3)
+    "socratic-workflow>=0.1.1",            # Workflow engine and orchestration
 ]
 nexus = [
     "socrates-nexus>=0.1.0",               # LLM provider abstraction (Claude, GPT-4, Gemini, etc.)
@@ -141,7 +141,7 @@ full = [
     "socratic-analyzer>=0.1.0",
     "socratic-conflict>=0.1.0",
     "socratic-knowledge>=0.1.0",
-    "socratic-workflow>=0.1.1",          # Supports socratic-agents v0.1.3+
+    "socratic-workflow>=0.1.1",          # Workflow orchestration
     "socrates-nexus>=0.1.0",
     "socrates-cli>=0.1.0",
     "socrates-core-api>=0.1.1",
