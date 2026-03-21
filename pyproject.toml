@@ -132,7 +132,7 @@ cli = [
     "socrates-cli>=0.1.0",                 # Command-line interface
 ]
 api = [
-    "socrates-core-api>=0.1.0",            # REST API server
+    "socrates-core-api>=0.1.1",            # REST API server
 ]
 full = [
     # Note: socratic-core and socratic-agents are already in base dependencies
@@ -144,7 +144,7 @@ full = [
     "socratic-workflow>=0.1.1",          # Supports socratic-agents v0.1.3+
     "socrates-nexus>=0.1.0",
     "socrates-cli>=0.1.0",
-    "socrates-core-api>=0.1.0",
+    "socrates-core-api>=0.1.1",
 ]
 
 # Development
