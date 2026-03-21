@@ -28,8 +28,8 @@ from socrates_api.middleware.rate_limit import (
     initialize_limiter,
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware
-from socratic_core import EventType
-from socratic_core import SocratesError
+from socratic_system.events import EventType
+from socratic_system.exceptions import SocratesError
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 # Phase 4 Service Integration
@@ -220,6 +220,15 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Socrates API server...")
 
+    # Initialize audit logger with database connection
+    try:
+        from socrates_api.database import get_database
+        db = get_database()
+        initialize_audit_logger(db)
+        logger.info("Audit logger initialized successfully")
+    except Exception as e:
+        logger.warning(f"Failed to initialize audit logger: {e}")
+
     # Rate limiter initialized at module load time
     if app_state.get("limiter"):
         logger.info("Rate limiter is active")
@@ -373,6 +382,11 @@ add_metrics_middleware(app)
 from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
 
 app.add_middleware(ActivityTrackerMiddleware)
+
+# Add audit logging middleware
+from socrates_api.middleware.audit import AuditMiddleware, initialize_audit_logger
+
+app.add_middleware(AuditMiddleware)
 
 # Configure CORS based on environment
 if environment == "production":

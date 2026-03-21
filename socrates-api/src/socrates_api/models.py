@@ -5,7 +5,22 @@ Pydantic models for API request/response bodies
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# Import input validation utilities if available
+try:
+    from socratic_security.input_validation import (
+        SanitizedStr,
+        validate_no_sql_injection,
+        validate_no_xss,
+    )
+    SECURITY_VALIDATION_AVAILABLE = True
+except ImportError:
+    # Fallback to regular strings if security module unavailable
+    SanitizedStr = str
+    validate_no_sql_injection = None
+    validate_no_xss = None
+    SECURITY_VALIDATION_AVAILABLE = False
 
 
 # ============================================================================
@@ -79,11 +94,21 @@ class CreateProjectRequest(BaseModel):
         },
     )
 
-    name: str = Field(..., min_length=1, max_length=200, description="Project name")
-    description: Optional[str] = Field(None, max_length=1000, description="Project description")
-    knowledge_base_content: Optional[str] = Field(
+    name: SanitizedStr = Field(..., min_length=1, max_length=200, description="Project name")
+    description: Optional[SanitizedStr] = Field(None, max_length=1000, description="Project description")
+    knowledge_base_content: Optional[SanitizedStr] = Field(
         None, description="Initial knowledge base content"
     )
+
+    @field_validator("name", "description")
+    @classmethod
+    def validate_no_injection(cls, v):
+        """Validate input for SQL injection and XSS attacks"""
+        if v is None:
+            return v
+        if validate_no_sql_injection:
+            validate_no_sql_injection(v)
+        return v
 
 
 class UpdateProjectRequest(BaseModel):
@@ -99,8 +124,18 @@ class UpdateProjectRequest(BaseModel):
         },
     )
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200, description="Project name")
-    phase: Optional[str] = Field(None, description="Project phase")
+    name: Optional[SanitizedStr] = Field(None, min_length=1, max_length=200, description="Project name")
+    phase: Optional[SanitizedStr] = Field(None, description="Project phase")
+
+    @field_validator("name", "phase")
+    @classmethod
+    def validate_no_injection(cls, v):
+        """Validate input for SQL injection and XSS attacks"""
+        if v is None:
+            return v
+        if validate_no_sql_injection:
+            validate_no_sql_injection(v)
+        return v
 
 
 class ProjectResponse(BaseModel):
@@ -364,13 +399,26 @@ class RegisterRequest(BaseModel):
         },
     )
 
-    username: str = Field(
-        ..., min_length=3, max_length=100, description="Username (3-100 characters)"
+    username: SanitizedStr = Field(
+        ..., min_length=3, max_length=100, description="Username (3-100 characters, alphanumeric + underscore)"
     )
     email: Optional[str] = Field(None, description="User email address (optional)")
     password: str = Field(
         ..., min_length=8, max_length=200, description="Password (min 8 characters)"
     )
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v):
+        """Validate username format and content"""
+        if v is None:
+            return v
+        # Check for valid characters (alphanumeric + underscore)
+        if not all(c.isalnum() or c == '_' for c in v):
+            raise ValueError("Username must contain only alphanumeric characters and underscores")
+        if validate_no_sql_injection:
+            validate_no_sql_injection(v)
+        return v
 
 
 class LoginRequest(BaseModel):
@@ -386,8 +434,18 @@ class LoginRequest(BaseModel):
         },
     )
 
-    username: str = Field(..., description="Username")
+    username: SanitizedStr = Field(..., description="Username")
     password: str = Field(..., description="Password")
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v):
+        """Validate username for injection attacks"""
+        if v is None:
+            return v
+        if validate_no_sql_injection:
+            validate_no_sql_injection(v)
+        return v
 
 
 class UserResponse(BaseModel):
@@ -502,59 +560,6 @@ class ChangePasswordRequest(BaseModel):
 
     old_password: str = Field(..., description="Current password")
     new_password: str = Field(..., description="New password")
-
-
-class MFASetupResponse(BaseModel):
-    """Response for MFA setup endpoint"""
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "secret": "JBSWY3DPEBLW64TMMQ======",
-                "qr_code_uri": "otpauth://totp/Socrates:user@example.com?secret=...",
-                "backup_codes": ["XXXX-XXXX-XXXX", "YYYY-YYYY-YYYY"],
-                "recovery_codes_display": "XXXX-XXXX-XXXX\nYYYY-YYYY-YYYY",
-            }
-        }
-    )
-
-    secret: str = Field(..., description="TOTP secret (base32 encoded)")
-    qr_code_uri: str = Field(..., description="QR code URI for authenticator app")
-    backup_codes: list[str] = Field(..., description="List of backup recovery codes")
-    recovery_codes_display: str = Field(..., description="Recovery codes formatted for display")
-
-
-class MFAVerifyRequest(BaseModel):
-    """Request body for MFA verification"""
-
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={
-            "example": {
-                "totp_code": "123456",
-            }
-        },
-    )
-
-    totp_code: str = Field(..., description="6-digit TOTP code from authenticator app", min_length=6, max_length=6)
-
-
-class MFAStatusResponse(BaseModel):
-    """Response for MFA status endpoint"""
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "mfa_enabled": True,
-                "created_at": "2026-03-21T10:00:00Z",
-                "recovery_codes_remaining": 8,
-            }
-        }
-    )
-
-    mfa_enabled: bool = Field(..., description="Whether MFA is enabled")
-    created_at: Optional[str] = Field(None, description="When MFA was enabled")
-    recovery_codes_remaining: int = Field(default=0, description="Number of unused recovery codes")
 
 
 class SuccessResponse(BaseModel):
@@ -1181,3 +1186,44 @@ class EcosystemHealthResponse(BaseModel):
     total_agents: int = Field(..., description="Total agents")
     average_effectiveness: float = Field(..., description="Average effectiveness")
     ecosystem_health: str = Field(..., description="Health status: excellent, good, fair, poor, no_data")
+
+
+# ============================================================================
+# Multi-Factor Authentication (MFA) Models
+# ============================================================================
+
+
+class MFASetupResponse(BaseModel):
+    """Response for MFA setup initialization"""
+
+    secret: str = Field(..., description="TOTP secret (base32 encoded)")
+    qr_code_uri: str = Field(..., description="QR code URI for authenticator app")
+    backup_codes: List[str] = Field(..., description="List of backup recovery codes")
+    recovery_codes_display: str = Field(..., description="Formatted backup codes for display")
+
+
+class MFAVerifyEnableRequest(BaseModel):
+    """Request to verify TOTP code and enable MFA"""
+
+    totp_code: str = Field(..., min_length=6, max_length=6, description="6-digit TOTP code")
+
+
+class MFAVerifyRequest(BaseModel):
+    """Request to verify MFA during login"""
+
+    username: str = Field(..., description="Username")
+    totp_code: Optional[str] = Field(None, description="6-digit TOTP code")
+    recovery_code: Optional[str] = Field(None, description="Recovery code (if TOTP unavailable)")
+
+
+class MFADisableRequest(BaseModel):
+    """Request to disable MFA"""
+
+    password: str = Field(..., description="User password for authentication")
+
+
+class MFAStatusResponse(BaseModel):
+    """Response showing MFA status"""
+
+    mfa_enabled: bool = Field(..., description="Whether MFA is enabled")
+    mfa_methods: List[str] = Field(default_factory=lambda: ["totp"], description="Enabled MFA methods")
