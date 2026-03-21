@@ -8,7 +8,7 @@ authenticated user information from requests.
 import logging
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from socrates_api.auth.jwt_handler import verify_access_token
@@ -26,6 +26,7 @@ security_optional = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> str:
     """
@@ -34,6 +35,7 @@ async def get_current_user(
     Expected header format: Authorization: Bearer <jwt_token>
 
     Args:
+        request: FastAPI request object for extracting IP and User-Agent
         credentials: HTTP Bearer credentials from request (None if missing)
 
     Returns:
@@ -54,9 +56,14 @@ async def get_current_user(
 
     token = credentials.credentials
 
+    # Extract client IP and User-Agent for token fingerprinting
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+
     # 401 when token is invalid/expired
-    payload = verify_access_token(token)
+    payload = verify_access_token(token, ip_address=client_ip, user_agent=user_agent)
     if payload is None:
+        logger.warning(f"Invalid or expired token for IP {client_ip}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",

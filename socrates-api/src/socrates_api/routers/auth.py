@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from socrates_api.auth import (
     create_access_token,
@@ -84,7 +84,11 @@ def _user_to_response(user: User) -> UserResponse:
     },
 )
 @_auth_limit
-async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_database)):
+async def register(
+    register_request: RegisterRequest,
+    http_request: Request,
+    db: ProjectDatabase = Depends(get_database),
+):
     """
     Register a new user account.
 
@@ -103,36 +107,36 @@ async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_d
     """
     try:
         # Validate input
-        if not request.username or not request.password:
+        if not register_request.username or not register_request.password:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username and password are required",
             )
 
         # Generate email if not provided (use UUID to ensure uniqueness)
-        if request.email:
+        if register_request.email:
             # Basic email format validation if email was provided
-            if "@" not in request.email or "." not in request.email:
+            if "@" not in register_request.email or "." not in register_request.email:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid email format",
                 )
-            email = request.email
+            email = register_request.email
         else:
             # Generate unique email using UUID (not hardcoded localhost)
-            email = f"{request.username}+{str(uuid.uuid4())[:8]}@socrates.local"
+            email = f"{register_request.username}+{str(uuid.uuid4())[:8]}@socrates.local"
 
         # Check if user already exists
-        existing_user = db.load_user(request.username)
+        existing_user = db.load_user(register_request.username)
         if existing_user is not None:
-            logger.warning(f"Registration attempt for existing username: {request.username}")
+            logger.warning(f"Registration attempt for existing username: {register_request.username}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already exists",
             )
 
         # Check if email already exists (only if email was explicitly provided)
-        if request.email:
+        if register_request.email:
             existing_email_user = db.load_user_by_email(email)
             if existing_email_user is not None:
                 logger.warning(f"Registration attempt with existing email: {email}")
@@ -142,11 +146,11 @@ async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_d
                 )
 
         # Hash password
-        password_hash = hash_password(request.password)
+        password_hash = hash_password(register_request.password)
 
         # Create user
         user = User(
-            username=request.username,
+            username=register_request.username,
             email=email,
             passcode_hash=password_hash,
             subscription_tier="free",  # Default to free tier
@@ -157,11 +161,17 @@ async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_d
 
         # Save user to database
         db.save_user(user)
-        logger.info(f"User registered successfully: {request.username}")
+        logger.info(f"User registered successfully: {register_request.username}")
+
+        # Extract client context for token fingerprinting
+        client_ip = http_request.client.host if http_request.client else "unknown"
+        user_agent = http_request.headers.get("user-agent", "unknown")
 
         # Create tokens
-        access_token = create_access_token(request.username)
-        refresh_token = create_refresh_token(request.username)
+        access_token = create_access_token(
+            register_request.username, ip_address=client_ip, user_agent=user_agent
+        )
+        refresh_token = create_refresh_token(register_request.username)
 
         # Store refresh token in database
         _store_refresh_token(db, request.username, refresh_token)
@@ -204,7 +214,11 @@ async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_d
     },
 )
 @_auth_limit
-async def login(request: LoginRequest, db: ProjectDatabase = Depends(get_database)):
+async def login(
+    login_request: LoginRequest,
+    http_request: Request,
+    db: ProjectDatabase = Depends(get_database),
+):
     """
     Login with username and password.
 
@@ -222,60 +236,66 @@ async def login(request: LoginRequest, db: ProjectDatabase = Depends(get_databas
     """
     try:
         # Validate input
-        if not request.username or not request.password:
+        if not login_request.username or not login_request.password:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username and password are required",
             )
 
         # Strip whitespace and check if still empty
-        if not request.username.strip() or not request.password.strip():
+        if not login_request.username.strip() or not login_request.password.strip():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username and password cannot be empty",
             )
 
         # Load user from database
-        user = db.load_user(request.username)
+        user = db.load_user(login_request.username)
         if user is None:
-            logger.warning(f"Login attempt for non-existent user: {request.username}")
+            logger.warning(f"Login attempt for non-existent user: {login_request.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or access code",
             )
 
         # Verify password
-        if not verify_password(request.password, user.passcode_hash):
-            logger.warning(f"Failed login attempt for user: {request.username}")
+        if not verify_password(login_request.password, user.passcode_hash):
+            logger.warning(f"Failed login attempt for user: {login_request.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or access code",
             )
 
-        logger.info(f"User logged in successfully: {request.username}")
+        logger.info(f"User logged in successfully: {login_request.username}")
+
+        # Extract client context for token fingerprinting
+        client_ip = http_request.client.host if http_request.client else "unknown"
+        user_agent = http_request.headers.get("user-agent", "unknown")
 
         # Create tokens
-        access_token = create_access_token(request.username)
-        refresh_token = create_refresh_token(request.username)
+        access_token = create_access_token(
+            login_request.username, ip_address=client_ip, user_agent=user_agent
+        )
+        refresh_token = create_refresh_token(login_request.username)
 
         # Store refresh token in database
-        _store_refresh_token(db, request.username, refresh_token)
+        _store_refresh_token(db, login_request.username, refresh_token)
 
         # Check if user has API key configured (check all providers)
         api_key_configured = True
         api_key_message = None
         try:
             # Check for API keys from any provider (claude, openai, etc.)
-            stored_api_key = db.get_api_key(request.username, "claude")
+            stored_api_key = db.get_api_key(login_request.username, "claude")
             if not stored_api_key:
                 api_key_configured = False
                 api_key_message = (
                     "No API key configured. "
                     "Please save your API key in Settings > LLM > Anthropic to use AI features."
                 )
-                logger.info(f"User {request.username} has no API key configured")
+                logger.info(f"User {login_request.username} has no API key configured")
         except Exception as e:
-            logger.warning(f"Error checking API key for user {request.username}: {e}")
+            logger.warning(f"Error checking API key for user {login_request.username}: {e}")
             # Don't fail login, just proceed with warning
 
         return AuthResponse(

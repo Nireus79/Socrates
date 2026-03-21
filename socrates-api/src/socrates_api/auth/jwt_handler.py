@@ -5,6 +5,7 @@ Manages creation, validation, and refresh of JWT tokens for API authentication.
 Uses short-lived access tokens (15 minutes) and long-lived refresh tokens (7 days).
 """
 
+import hashlib
 import os
 import warnings
 from datetime import datetime, timedelta, timezone
@@ -24,6 +25,27 @@ if not SECRET_KEY:
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
+ENABLE_TOKEN_FINGERPRINTING = os.getenv("SECURITY_TOKEN_FINGERPRINTING", "true").lower() == "true"
+
+
+def _generate_fingerprint(ip_address: Optional[str] = None, user_agent: Optional[str] = None) -> str:
+    """
+    Generate a fingerprint from IP address and User-Agent.
+
+    Args:
+        ip_address: Client IP address
+        user_agent: Client User-Agent header
+
+    Returns:
+        SHA256 hash of IP + User-Agent
+    """
+    if not ip_address:
+        ip_address = "unknown"
+    if not user_agent:
+        user_agent = "unknown"
+
+    fingerprint_data = f"{ip_address}:{user_agent}"
+    return hashlib.sha256(fingerprint_data.encode()).hexdigest()[:16]  # Use first 16 chars
 
 
 class JWTHandler:
@@ -34,6 +56,8 @@ class JWTHandler:
         subject: str,
         expires_delta: Optional[timedelta] = None,
         additional_claims: Optional[Dict[str, Any]] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
     ) -> str:
         """
         Create a short-lived access token.
@@ -42,6 +66,8 @@ class JWTHandler:
             subject: User ID or username to encode in token
             expires_delta: Optional custom expiration time
             additional_claims: Optional additional claims to include
+            ip_address: Client IP address for fingerprinting
+            user_agent: Client User-Agent for fingerprinting
 
         Returns:
             JWT access token
@@ -58,6 +84,10 @@ class JWTHandler:
             "iat": int(now.timestamp()),
             "type": "access",
         }
+
+        # Add token fingerprint if enabled
+        if ENABLE_TOKEN_FINGERPRINTING:
+            claims["fingerprint"] = _generate_fingerprint(ip_address, user_agent)
 
         if additional_claims:
             claims.update(additional_claims)
@@ -106,13 +136,20 @@ class JWTHandler:
         }
 
     @staticmethod
-    def verify_token(token: str, token_type: str = "access") -> Optional[Dict[str, Any]]:
+    def verify_token(
+        token: str,
+        token_type: str = "access",
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
         """
         Verify and decode a JWT token.
 
         Args:
             token: JWT token to verify
             token_type: Expected token type ("access" or "refresh")
+            ip_address: Current client IP for fingerprint validation
+            user_agent: Current client User-Agent for fingerprint validation
 
         Returns:
             Decoded token claims if valid, None otherwise
@@ -123,6 +160,13 @@ class JWTHandler:
             # Verify token type
             if payload.get("type") != token_type:
                 return None
+
+            # Verify token fingerprint if enabled and present
+            if ENABLE_TOKEN_FINGERPRINTING and "fingerprint" in payload:
+                current_fingerprint = _generate_fingerprint(ip_address, user_agent)
+                if payload["fingerprint"] != current_fingerprint:
+                    # Fingerprint mismatch - possible token theft
+                    return None
 
             return payload
 
@@ -157,9 +201,25 @@ class JWTHandler:
 
 
 # Convenience functions
-def create_access_token(subject: str) -> str:
-    """Create an access token."""
-    return JWTHandler.create_access_token(subject)
+def create_access_token(
+    subject: str,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> str:
+    """
+    Create an access token.
+
+    Args:
+        subject: User ID or username
+        ip_address: Client IP for fingerprinting
+        user_agent: Client User-Agent for fingerprinting
+
+    Returns:
+        JWT access token
+    """
+    return JWTHandler.create_access_token(
+        subject, ip_address=ip_address, user_agent=user_agent
+    )
 
 
 def create_refresh_token(subject: str) -> str:
@@ -167,9 +227,15 @@ def create_refresh_token(subject: str) -> str:
     return JWTHandler.create_refresh_token(subject)
 
 
-def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
+def verify_access_token(
+    token: str,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
     """Verify an access token."""
-    return JWTHandler.verify_token(token, token_type="access")
+    return JWTHandler.verify_token(
+        token, token_type="access", ip_address=ip_address, user_agent=user_agent
+    )
 
 
 def verify_refresh_token(token: str) -> Optional[Dict[str, Any]]:
