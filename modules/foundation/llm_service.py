@@ -17,6 +17,18 @@ from modules.foundation.events import EventType
 from socratic_core.exceptions import APIError
 from socratic_system.models import ConflictInfo, ProjectContext
 
+# Security utilities
+try:
+    from socratic_security.prompt_injection import (
+        PromptInjectionDetector,
+        PromptSanitizer,
+    )
+    SECURITY_AVAILABLE = True
+except ImportError:
+    SECURITY_AVAILABLE = False
+    PromptInjectionDetector = None
+    PromptSanitizer = None
+
 if TYPE_CHECKING:
     from modules.foundation.orchestrator import AgentOrchestrator
 
@@ -45,6 +57,17 @@ class ClaudeClient:
         self.orchestrator: Optional["AgentOrchestrator"] = orchestrator
         self.model = orchestrator.config.claude_model if orchestrator else "claude-haiku-4-5-20251001"
         self.logger = logging.getLogger("socrates.clients.claude")
+
+        # Initialize security modules if available
+        self.prompt_detector = None
+        self.prompt_sanitizer = None
+        if SECURITY_AVAILABLE:
+            try:
+                self.prompt_detector = PromptInjectionDetector()
+                self.prompt_sanitizer = PromptSanitizer()
+                self.logger.info("Prompt injection protection enabled")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize security modules: {e}")
 
         # Initialize clients for both authentication methods
         # Lazy initialization - only create if api_key is valid

@@ -12,7 +12,16 @@ from typing import Any, Dict, Optional
 import jwt
 
 # Configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    import warnings
+    warnings.warn(
+        "JWT_SECRET_KEY not set! Using insecure default. Set JWT_SECRET_KEY environment variable.",
+        SecurityWarning,
+        stacklevel=2
+    )
+    SECRET_KEY = "your-secret-key-change-in-production"  # Fallback with warning
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7

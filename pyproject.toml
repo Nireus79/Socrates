@@ -70,6 +70,7 @@ dependencies = [
     "anthropic>=0.72.0",                 # Required by: socratic-agents, socrates-nexus
     "socratic-core>=0.1.1",              # Core framework (config, events, exceptions)
     "socratic-agents>=0.1.0",            # Multi-agent orchestration (core functionality)
+    "socratic-security>=0.1.0",          # Security utilities (prompt injection, path validation, sandboxing)
     "chromadb>=0.5.0",                   # Required by: socratic-rag (vector database, performance improvements)
     "sentence-transformers>=3.0.0",      # Required by: socratic-rag (embeddings)
     "pypdf>=4.0.0",                      # Document processing for RAG systems

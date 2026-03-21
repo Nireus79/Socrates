@@ -11,6 +11,15 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
+# Security utilities for path traversal prevention
+try:
+    from socratic_security.filesystem import PathValidator, PathTraversalError
+    SECURITY_AVAILABLE = True
+except ImportError:
+    SECURITY_AVAILABLE = False
+    PathValidator = None
+    PathTraversalError = None
+
 logger = logging.getLogger("socrates.utils.artifact_saver")
 
 
