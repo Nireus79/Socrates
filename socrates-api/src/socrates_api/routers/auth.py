@@ -7,6 +7,7 @@ using JWT-based authentication.
 
 import hashlib
 import logging
+import os
 import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -22,6 +23,7 @@ from socrates_api.auth import (
     verify_password,
     verify_refresh_token,
 )
+from socratic_security.auth import get_lockout_manager
 from socrates_api.database import get_database
 from socrates_api.models import (
     APIResponse,
@@ -58,6 +60,14 @@ def _get_rate_limit_decorator(limit_str: str):
 
 # Create rate limit decorators for auth endpoints
 _auth_limit = _get_rate_limit_decorator("5/minute")  # AUTH_LIMIT: 5 per minute
+
+# Initialize account lockout manager
+_lockout_manager = get_lockout_manager(
+    max_attempts=int(os.environ.get("MAX_LOGIN_ATTEMPTS", "5")),
+    lockout_window_minutes=int(os.environ.get("LOCKOUT_WINDOW_MINUTES", "15")),
+    initial_lockout_minutes=int(os.environ.get("LOCKOUT_DURATION_MINUTES", "30")),
+    progressive_lockout=os.environ.get("PROGRESSIVE_LOCKOUT", "true").lower() == "true",
+)
 
 
 def _user_to_response(user: User) -> UserResponse:
@@ -249,6 +259,21 @@ async def login(
                 detail="Username and password cannot be empty",
             )
 
+        # Extract client IP for lockout tracking
+        client_ip = http_request.client.host if http_request.client else "unknown"
+
+        # Check if account is locked out
+        if _lockout_manager.is_locked_out(login_request.username):
+            lockout_info = _lockout_manager.get_lockout_info(login_request.username)
+            logger.warning(
+                f"Login attempt for locked account: {login_request.username} from {client_ip}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Account locked due to too many failed login attempts. "
+                f"Please try again in {lockout_info.remaining_minutes} minutes.",
+            )
+
         # Load user from database
         user = db.load_user(login_request.username)
         if user is None:
@@ -260,16 +285,24 @@ async def login(
 
         # Verify password
         if not verify_password(login_request.password, user.passcode_hash):
-            logger.warning(f"Failed login attempt for user: {login_request.username}")
+            logger.warning(f"Failed login attempt for user: {login_request.username} from {client_ip}")
+            # Record failed attempt and check if we should lock the account
+            _lockout_manager.record_attempt(login_request.username, client_ip, False)
+            lockout_info = _lockout_manager.check_and_lock(login_request.username, client_ip)
+            if lockout_info:
+                logger.warning(
+                    f"Account locked: {login_request.username} after {lockout_info.lockout_count} lockout(s)"
+                )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or access code",
             )
 
+        # Record successful login (clears failed attempts)
+        _lockout_manager.record_attempt(login_request.username, client_ip, True)
         logger.info(f"User logged in successfully: {login_request.username}")
 
         # Extract client context for token fingerprinting
-        client_ip = http_request.client.host if http_request.client else "unknown"
         user_agent = http_request.headers.get("user-agent", "unknown")
 
         # Create tokens
