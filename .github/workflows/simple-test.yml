@@ -1,0 +1,21 @@
+name: Simple Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Simple Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Simple test
+        run: |
+          echo "Workflow is running!"
+          exit 0
