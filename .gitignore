@@ -97,3 +97,12 @@ tmpclaude-*
 # Marketing & Implementation (Local Only)
 PHASE2_*.md
 docs/marketing/PHASE2_*.md
+
+# Removed redundant directories (kept locally but removed from git)
+# Use standalone repositories instead:
+# - socrates-api -> C:\Users\themi\PycharmProjects\Socrates-api
+# - socrates-cli -> C:\Users\themi\PycharmProjects\Socrates-cli
+socrates-api/
+socrates-cli/
+Socrates_oldbroken/
+Socrates8.0broken/
