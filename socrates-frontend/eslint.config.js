@@ -10,7 +10,7 @@ export default [
   },
   ...tsPlugin.configs.recommended,
   {
-    files: ['**/*.{cy,e2e}.{js,ts}'],
+    files: ['cypress/**/*.{js,ts}', '**/*.{cy,e2e}.{js,ts}'],
     languageOptions: {
       globals: {
         cy: 'readonly',
