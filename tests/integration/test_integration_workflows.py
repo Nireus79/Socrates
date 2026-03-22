@@ -16,12 +16,11 @@ def test_project_creation_workflow():
     print("=" * 70 + "\n")
 
     try:
-        from socratic_system.utils.password import hash_password, verify_password
-        from socratic_system.database import DatabaseSingleton
         from socratic_core.utils import ProjectIDGenerator
-
+        from socratic_system.database import DatabaseSingleton
         from socratic_system.models import User
         from socratic_system.subscription.checker import SubscriptionChecker
+        from socratic_system.utils.password import hash_password, verify_password
 
         # Step 1: Initialize database singleton
         print("[1/7] Initializing DatabaseSingleton...")
@@ -122,10 +121,9 @@ def test_orchestrator_integration():
     print("=" * 70 + "\n")
 
     try:
-
-        from socratic_system.database import DatabaseSingleton
         from socratic_core import SocratesConfig
 
+        from socratic_system.database import DatabaseSingleton
         from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
         # Initialize config from environment
@@ -150,9 +148,8 @@ def test_orchestrator_integration():
         test_user = f"orch_test_{int(datetime.now().timestamp() * 1000)}"
 
         # Create test user first
-        from socratic_system.utils.password import hash_password
-
         from socratic_system.models import User
+        from socratic_system.utils.password import hash_password
 
         user = User(
             username=test_user,

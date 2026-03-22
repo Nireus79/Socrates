@@ -140,9 +140,6 @@ class TestUserAuthenticationWorkflow:
     def test_user_login_command(self, app):
         """Test user login"""
         # First create a user with unique username
-        import os
-        import sys
-
         try:
             from socratic_system.utils.password import hash_password
         except ImportError:

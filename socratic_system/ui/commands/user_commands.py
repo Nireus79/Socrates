@@ -7,12 +7,10 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
-# Import password hashing utilities
-from socratic_system.utils.password import hash_password, verify_password
-
 from socratic_system.models import User
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
+from socratic_system.utils.password import hash_password, verify_password
 
 
 class UserLoginCommand(BaseCommand):
