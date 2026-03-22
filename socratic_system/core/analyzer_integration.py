@@ -43,7 +43,7 @@ class AnalyzerIntegration:
                     analyze_security=True,
                     analyze_performance=True,
                     analyze_types=True,
-                    analyze_patterns=True
+                    analyze_patterns=True,
                 )
 
             self.analyzer = AnalyzerClient(config=config)
@@ -54,10 +54,7 @@ class AnalyzerIntegration:
             raise
 
     def analyze_code(
-        self,
-        code: str,
-        language: str = "python",
-        file_path: Optional[str] = None
+        self, code: str, language: str = "python", file_path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Perform comprehensive analysis on code.
@@ -71,11 +68,7 @@ class AnalyzerIntegration:
             Analysis result with quality, security, and performance metrics
         """
         try:
-            result = self.analyzer.analyze(
-                code=code,
-                language=language,
-                file_path=file_path
-            )
+            result = self.analyzer.analyze(code=code, language=language, file_path=file_path)
 
             return {
                 "language": language,
@@ -85,22 +78,14 @@ class AnalyzerIntegration:
                 "performance": self._extract_performance_issues(result),
                 "architecture": self._extract_architecture_insights(result),
                 "overall_score": getattr(result, "overall_score", 0.0),
-                "recommendations": self._extract_recommendations(result)
+                "recommendations": self._extract_recommendations(result),
             }
 
         except Exception as e:
             self.logger.error(f"Failed to analyze code: {e}")
-            return {
-                "error": str(e),
-                "language": language,
-                "file_path": file_path
-            }
+            return {"error": str(e), "language": language, "file_path": file_path}
 
-    def analyze_quality(
-        self,
-        code: str,
-        language: str = "python"
-    ) -> Dict[str, Any]:
+    def analyze_quality(self, code: str, language: str = "python") -> Dict[str, Any]:
         """
         Analyze code quality metrics.
 
@@ -112,10 +97,7 @@ class AnalyzerIntegration:
             Quality metrics and issues
         """
         try:
-            result = self.analyzer.analyze_quality(
-                code=code,
-                language=language
-            )
+            result = self.analyzer.analyze_quality(code=code, language=language)
 
             return self._extract_quality_metrics(result)
 
@@ -123,11 +105,7 @@ class AnalyzerIntegration:
             self.logger.error(f"Failed to analyze quality: {e}")
             return {"error": str(e)}
 
-    def analyze_security(
-        self,
-        code: str,
-        language: str = "python"
-    ) -> Dict[str, Any]:
+    def analyze_security(self, code: str, language: str = "python") -> Dict[str, Any]:
         """
         Analyze code for security vulnerabilities.
 
@@ -139,10 +117,7 @@ class AnalyzerIntegration:
             Security issues and recommendations
         """
         try:
-            result = self.analyzer.analyze_security(
-                code=code,
-                language=language
-            )
+            result = self.analyzer.analyze_security(code=code, language=language)
 
             return self._extract_security_issues(result)
 
@@ -150,11 +125,7 @@ class AnalyzerIntegration:
             self.logger.error(f"Failed to analyze security: {e}")
             return {"error": str(e), "issues": []}
 
-    def analyze_performance(
-        self,
-        code: str,
-        language: str = "python"
-    ) -> Dict[str, Any]:
+    def analyze_performance(self, code: str, language: str = "python") -> Dict[str, Any]:
         """
         Analyze code for performance issues.
 
@@ -166,10 +137,7 @@ class AnalyzerIntegration:
             Performance issues and optimization suggestions
         """
         try:
-            result = self.analyzer.analyze_performance(
-                code=code,
-                language=language
-            )
+            result = self.analyzer.analyze_performance(code=code, language=language)
 
             return self._extract_performance_issues(result)
 
@@ -178,10 +146,7 @@ class AnalyzerIntegration:
             return {"error": str(e), "issues": []}
 
     def get_recommendations(
-        self,
-        code: str,
-        language: str = "python",
-        priority: str = "high"
+        self, code: str, language: str = "python", priority: str = "high"
     ) -> List[Dict[str, Any]]:
         """
         Get actionable recommendations for code improvement.
@@ -196,21 +161,21 @@ class AnalyzerIntegration:
         """
         try:
             result = self.analyzer.get_recommendations(
-                code=code,
-                language=language,
-                min_priority=priority
+                code=code, language=language, min_priority=priority
             )
 
             recommendations = []
             for rec in getattr(result, "recommendations", []):
-                recommendations.append({
-                    "type": getattr(rec, "type", "improvement"),
-                    "priority": getattr(rec, "priority", "medium"),
-                    "description": getattr(rec, "description", ""),
-                    "affected_lines": getattr(rec, "affected_lines", []),
-                    "suggested_fix": getattr(rec, "suggested_fix", ""),
-                    "impact": getattr(rec, "impact", "unknown")
-                })
+                recommendations.append(
+                    {
+                        "type": getattr(rec, "type", "improvement"),
+                        "priority": getattr(rec, "priority", "medium"),
+                        "description": getattr(rec, "description", ""),
+                        "affected_lines": getattr(rec, "affected_lines", []),
+                        "suggested_fix": getattr(rec, "suggested_fix", ""),
+                        "impact": getattr(rec, "impact", "unknown"),
+                    }
+                )
 
             return recommendations
 
@@ -218,11 +183,7 @@ class AnalyzerIntegration:
             self.logger.error(f"Failed to get recommendations: {e}")
             return []
 
-    def check_design_patterns(
-        self,
-        code: str,
-        language: str = "python"
-    ) -> Dict[str, Any]:
+    def check_design_patterns(self, code: str, language: str = "python") -> Dict[str, Any]:
         """
         Detect and analyze design patterns in code.
 
@@ -234,10 +195,7 @@ class AnalyzerIntegration:
             Detected patterns and architectural insights
         """
         try:
-            result = self.analyzer.check_design_patterns(
-                code=code,
-                language=language
-            )
+            result = self.analyzer.check_design_patterns(code=code, language=language)
 
             return self._extract_architecture_insights(result)
 
@@ -245,12 +203,7 @@ class AnalyzerIntegration:
             self.logger.error(f"Failed to check design patterns: {e}")
             return {"error": str(e), "patterns": []}
 
-    def compare_code(
-        self,
-        code1: str,
-        code2: str,
-        language: str = "python"
-    ) -> Dict[str, Any]:
+    def compare_code(self, code1: str, code2: str, language: str = "python") -> Dict[str, Any]:
         """
         Compare two code samples for quality improvements.
 
@@ -263,11 +216,7 @@ class AnalyzerIntegration:
             Comparison results and improvement metrics
         """
         try:
-            result = self.analyzer.compare(
-                code_before=code1,
-                code_after=code2,
-                language=language
-            )
+            result = self.analyzer.compare(code_before=code1, code_after=code2, language=language)
 
             return {
                 "quality_change": getattr(result, "quality_delta", 0.0),
@@ -275,18 +224,14 @@ class AnalyzerIntegration:
                 "performance_improvement": getattr(result, "performance_delta", 0.0),
                 "complexity_change": getattr(result, "complexity_delta", 0.0),
                 "summary": getattr(result, "summary", ""),
-                "detailed_changes": self._extract_changes(result)
+                "detailed_changes": self._extract_changes(result),
             }
 
         except Exception as e:
             self.logger.error(f"Failed to compare code: {e}")
             return {"error": str(e)}
 
-    def estimate_complexity(
-        self,
-        code: str,
-        language: str = "python"
-    ) -> Dict[str, Any]:
+    def estimate_complexity(self, code: str, language: str = "python") -> Dict[str, Any]:
         """
         Estimate code complexity metrics.
 
@@ -298,10 +243,7 @@ class AnalyzerIntegration:
             Complexity metrics (cyclomatic, cognitive, etc.)
         """
         try:
-            result = self.analyzer.estimate_complexity(
-                code=code,
-                language=language
-            )
+            result = self.analyzer.estimate_complexity(code=code, language=language)
 
             return {
                 "cyclomatic_complexity": getattr(result, "cyclomatic", 0),
@@ -309,7 +251,7 @@ class AnalyzerIntegration:
                 "maintainability_index": getattr(result, "maintainability", 0.0),
                 "lines_of_code": getattr(result, "loc", 0),
                 "comment_ratio": getattr(result, "comment_ratio", 0.0),
-                "assessment": getattr(result, "assessment", "unknown")
+                "assessment": getattr(result, "assessment", "unknown"),
             }
 
         except Exception as e:
@@ -331,22 +273,24 @@ class AnalyzerIntegration:
             "metrics": {
                 "cyclomatic_complexity": getattr(result, "cyclomatic_complexity", 0),
                 "cognitive_complexity": getattr(result, "cognitive_complexity", 0),
-                "lines_of_code": getattr(result, "loc", 0)
-            }
+                "lines_of_code": getattr(result, "loc", 0),
+            },
         }
 
     def _extract_security_issues(self, result: Any) -> Dict[str, Any]:
         """Extract security issues from analysis result."""
         issues = []
         for issue in getattr(result, "security_issues", []):
-            issues.append({
-                "severity": getattr(issue, "severity", "unknown"),
-                "type": getattr(issue, "type", ""),
-                "description": getattr(issue, "description", ""),
-                "cwe": getattr(issue, "cwe", None),
-                "line": getattr(issue, "line", -1),
-                "fix_suggestion": getattr(issue, "fix", "")
-            })
+            issues.append(
+                {
+                    "severity": getattr(issue, "severity", "unknown"),
+                    "type": getattr(issue, "type", ""),
+                    "description": getattr(issue, "description", ""),
+                    "cwe": getattr(issue, "cwe", None),
+                    "line": getattr(issue, "line", -1),
+                    "fix_suggestion": getattr(issue, "fix", ""),
+                }
+            )
 
         return {
             "security_score": getattr(result, "security_score", 0.0),
@@ -355,59 +299,65 @@ class AnalyzerIntegration:
             "high": sum(1 for i in issues if i.get("severity") == "high"),
             "medium": sum(1 for i in issues if i.get("severity") == "medium"),
             "low": sum(1 for i in issues if i.get("severity") == "low"),
-            "issues": issues
+            "issues": issues,
         }
 
     def _extract_performance_issues(self, result: Any) -> Dict[str, Any]:
         """Extract performance issues from analysis result."""
         issues = []
         for issue in getattr(result, "performance_issues", []):
-            issues.append({
-                "type": getattr(issue, "type", ""),
-                "description": getattr(issue, "description", ""),
-                "impact": getattr(issue, "impact", "unknown"),
-                "line": getattr(issue, "line", -1),
-                "optimization_suggestion": getattr(issue, "suggestion", "")
-            })
+            issues.append(
+                {
+                    "type": getattr(issue, "type", ""),
+                    "description": getattr(issue, "description", ""),
+                    "impact": getattr(issue, "impact", "unknown"),
+                    "line": getattr(issue, "line", -1),
+                    "optimization_suggestion": getattr(issue, "suggestion", ""),
+                }
+            )
 
         return {
             "performance_score": getattr(result, "performance_score", 0.0),
             "total_issues": len(issues),
             "critical": sum(1 for i in issues if i.get("impact") == "critical"),
             "high": sum(1 for i in issues if i.get("impact") == "high"),
-            "issues": issues
+            "issues": issues,
         }
 
     def _extract_architecture_insights(self, result: Any) -> Dict[str, Any]:
         """Extract architecture and design pattern insights."""
         patterns = []
         for pattern in getattr(result, "patterns", []):
-            patterns.append({
-                "name": getattr(pattern, "name", ""),
-                "type": getattr(pattern, "type", ""),
-                "description": getattr(pattern, "description", ""),
-                "instances": getattr(pattern, "instances", [])
-            })
+            patterns.append(
+                {
+                    "name": getattr(pattern, "name", ""),
+                    "type": getattr(pattern, "type", ""),
+                    "description": getattr(pattern, "description", ""),
+                    "instances": getattr(pattern, "instances", []),
+                }
+            )
 
         return {
             "patterns_detected": patterns,
             "architecture_score": getattr(result, "architecture_score", 0.0),
             "style_consistency": getattr(result, "style_consistency", 0.0),
             "decoupling_score": getattr(result, "decoupling", 0.0),
-            "insights": getattr(result, "insights", [])
+            "insights": getattr(result, "insights", []),
         }
 
     def _extract_recommendations(self, result: Any) -> List[Dict[str, Any]]:
         """Extract actionable recommendations."""
         recommendations = []
         for rec in getattr(result, "recommendations", []):
-            recommendations.append({
-                "priority": getattr(rec, "priority", "medium"),
-                "category": getattr(rec, "category", ""),
-                "description": getattr(rec, "description", ""),
-                "expected_benefit": getattr(rec, "benefit", ""),
-                "effort": getattr(rec, "effort", "unknown")
-            })
+            recommendations.append(
+                {
+                    "priority": getattr(rec, "priority", "medium"),
+                    "category": getattr(rec, "category", ""),
+                    "description": getattr(rec, "description", ""),
+                    "expected_benefit": getattr(rec, "benefit", ""),
+                    "effort": getattr(rec, "effort", "unknown"),
+                }
+            )
 
         return recommendations
 
@@ -415,13 +365,15 @@ class AnalyzerIntegration:
         """Extract code quality issues."""
         issues = []
         for issue in getattr(result, "quality_issues", []):
-            issues.append({
-                "type": getattr(issue, "type", ""),
-                "description": getattr(issue, "description", ""),
-                "severity": getattr(issue, "severity", "medium"),
-                "line": getattr(issue, "line", -1),
-                "suggestion": getattr(issue, "suggestion", "")
-            })
+            issues.append(
+                {
+                    "type": getattr(issue, "type", ""),
+                    "description": getattr(issue, "description", ""),
+                    "severity": getattr(issue, "severity", "medium"),
+                    "line": getattr(issue, "line", -1),
+                    "suggestion": getattr(issue, "suggestion", ""),
+                }
+            )
 
         return issues
 
@@ -429,13 +381,15 @@ class AnalyzerIntegration:
         """Extract detailed changes from comparison."""
         changes = []
         for change in getattr(result, "changes", []):
-            changes.append({
-                "type": getattr(change, "type", ""),
-                "description": getattr(change, "description", ""),
-                "impact": getattr(change, "impact", ""),
-                "before": getattr(change, "before", ""),
-                "after": getattr(change, "after", "")
-            })
+            changes.append(
+                {
+                    "type": getattr(change, "type", ""),
+                    "description": getattr(change, "description", ""),
+                    "impact": getattr(change, "impact", ""),
+                    "before": getattr(change, "before", ""),
+                    "after": getattr(change, "after", ""),
+                }
+            )
 
         return changes
 

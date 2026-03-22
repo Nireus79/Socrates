@@ -24,6 +24,7 @@ pytestmark = pytest.mark.skip(reason="KnowledgeAnalysisAgent extracted to socrat
 
 class KnowledgeAnalysisAgent:  # type: ignore
     """Stub for skipped test - actual implementation extracted to socratic-agents"""
+
     pass
 
 

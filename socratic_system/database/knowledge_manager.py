@@ -63,10 +63,7 @@ class KnowledgeManager:
 
             # Initialize LLM-powered RAG if LLM client provided
             if llm_client:
-                self.llm_rag = LLMPoweredRAG(
-                    rag_client=self.rag_client,
-                    llm_client=llm_client
-                )
+                self.llm_rag = LLMPoweredRAG(rag_client=self.rag_client, llm_client=llm_client)
                 self.logger.info("LLM-powered RAG initialized")
             else:
                 self.llm_rag = None
@@ -75,8 +72,9 @@ class KnowledgeManager:
             self.logger.error(f"Failed to initialize knowledge manager: {e}")
             raise
 
-    def create_item(self, content: str, title: str, metadata: Optional[Dict] = None,
-                   user_id: str = "system") -> str:
+    def create_item(
+        self, content: str, title: str, metadata: Optional[Dict] = None, user_id: str = "system"
+    ) -> str:
         """
         Create a knowledge item with versioning.
 
@@ -102,14 +100,14 @@ class KnowledgeManager:
                 content=content,
                 source=title,
                 metadata={
-                    "item_id": item.id if hasattr(item, 'id') else str(item),
+                    "item_id": item.id if hasattr(item, "id") else str(item),
                     "title": title,
-                    **(metadata or {})
-                }
+                    **(metadata or {}),
+                },
             )
 
             self.logger.debug(f"Created knowledge item: {title}")
-            return item.id if hasattr(item, 'id') else str(item)
+            return item.id if hasattr(item, "id") else str(item)
 
         except Exception as e:
             self.logger.error(f"Failed to create item: {e}")
@@ -131,11 +129,13 @@ class KnowledgeManager:
 
             formatted = []
             for result in results:
-                formatted.append({
-                    "content": result.content if hasattr(result, 'content') else "",
-                    "metadata": result.metadata if hasattr(result, 'metadata') else {},
-                    "score": getattr(result, 'score', 0.0),
-                })
+                formatted.append(
+                    {
+                        "content": result.content if hasattr(result, "content") else "",
+                        "metadata": result.metadata if hasattr(result, "metadata") else {},
+                        "score": getattr(result, "score", 0.0),
+                    }
+                )
 
             return formatted
 
@@ -143,8 +143,9 @@ class KnowledgeManager:
             self.logger.error(f"Search failed: {e}")
             return []
 
-    def generate_answer(self, query: str, top_k: int = 5,
-                       context_prefix: str = "Context:\n") -> str:
+    def generate_answer(
+        self, query: str, top_k: int = 5, context_prefix: str = "Context:\n"
+    ) -> str:
         """
         Generate answer using LLM with retrieved context.
 
@@ -163,9 +164,7 @@ class KnowledgeManager:
 
         try:
             answer = self.llm_rag.generate_answer(
-                query=query,
-                top_k=top_k,
-                context_prefix=context_prefix
+                query=query, top_k=top_k, context_prefix=context_prefix
             )
             return answer
 
@@ -223,11 +222,7 @@ class KnowledgeManager:
             self.create_item(
                 content=entry.content,
                 title=entry.category,
-                metadata={
-                    "id": entry.id,
-                    "category": entry.category,
-                    **(entry.metadata or {})
-                }
+                metadata={"id": entry.id, "category": entry.category, **(entry.metadata or {})},
             )
             return True
         except Exception as e:

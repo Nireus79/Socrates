@@ -5,7 +5,6 @@ Tests complete request/response cycles and multi-endpoint workflows.
 """
 
 
-
 class TestProjectAPIWorkflows:
     """Tests for complete project API workflows."""
 
@@ -268,7 +267,7 @@ class TestErrorScenarios:
             "errors": {
                 "name": "Name is required",
                 "owner": "Owner is required",
-            }
+            },
         }
 
         assert error["status"] == 400

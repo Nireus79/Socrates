@@ -103,12 +103,15 @@ class TestOrchestratorProjectManagement:
 
             # Project should be saved to database
             if project_result.get("status") == "success":
-                project = project_result.get("project") or project_result.get("data", {}).get("project")
+                project = project_result.get("project") or project_result.get("data", {}).get(
+                    "project"
+                )
 
                 if project:
                     # Load the project
                     load_result = orchestrator.process_request(
-                        "project_manager", {"action": "load_project", "project_id": project.project_id}
+                        "project_manager",
+                        {"action": "load_project", "project_id": project.project_id},
                     )
 
                     assert load_result.get("status") == "success"

@@ -88,7 +88,7 @@ class VectorDatabase:
             self.rag_client.add_document(
                 content=entry.content,
                 source=getattr(entry, "source", "knowledge_entry"),
-                metadata=metadata
+                metadata=metadata,
             )
             self.logger.debug(f"Added knowledge entry: {entry.id}")
 
@@ -120,21 +120,19 @@ class VectorDatabase:
             if project_id:
                 filters = {"project_id": project_id}
 
-            results = self.rag_client.search(
-                query=query,
-                top_k=top_k,
-                filters=filters
-            )
+            results = self.rag_client.search(query=query, top_k=top_k, filters=filters)
 
             # Convert SearchResult objects to dictionaries
             formatted_results = []
             for result in results:
-                formatted_results.append({
-                    "id": result.id if hasattr(result, 'id') else str(result),
-                    "content": result.content if hasattr(result, 'content') else "",
-                    "metadata": result.metadata if hasattr(result, 'metadata') else {},
-                    "similarity": getattr(result, 'score', 0.0),
-                })
+                formatted_results.append(
+                    {
+                        "id": result.id if hasattr(result, "id") else str(result),
+                        "content": result.content if hasattr(result, "content") else "",
+                        "metadata": result.metadata if hasattr(result, "metadata") else {},
+                        "similarity": getattr(result, "score", 0.0),
+                    }
+                )
 
             return formatted_results
 
@@ -177,9 +175,7 @@ class VectorDatabase:
                 metadata = {}
 
             self.rag_client.add_document(
-                content=content,
-                source=metadata.get("source", "text"),
-                metadata=metadata
+                content=content, source=metadata.get("source", "text"), metadata=metadata
             )
             self.logger.debug(f"Added text content: {len(content)} characters")
 
@@ -222,7 +218,7 @@ class VectorDatabase:
             self.rag_client.add_document(
                 content=entry.content,
                 source=getattr(entry, "source", "project_knowledge"),
-                metadata=metadata
+                metadata=metadata,
             )
             self.logger.debug(f"Added project knowledge: {entry.id} for project {project_id}")
             return True
@@ -244,18 +240,18 @@ class VectorDatabase:
         try:
             # Search with project_id filter
             results = self.rag_client.search(
-                query="",  # Empty query to get all
-                filters={"project_id": project_id},
-                top_k=100
+                query="", filters={"project_id": project_id}, top_k=100  # Empty query to get all
             )
 
             formatted_results = []
             for result in results:
-                formatted_results.append({
-                    "id": result.id if hasattr(result, 'id') else str(result),
-                    "content": result.content if hasattr(result, 'content') else "",
-                    "metadata": result.metadata if hasattr(result, 'metadata') else {},
-                })
+                formatted_results.append(
+                    {
+                        "id": result.id if hasattr(result, "id") else str(result),
+                        "content": result.content if hasattr(result, "content") else "",
+                        "metadata": result.metadata if hasattr(result, "metadata") else {},
+                    }
+                )
 
             return formatted_results
 
@@ -295,7 +291,7 @@ class VectorDatabase:
                 self.rag_client.add_document(
                     content=entry_data.get("content", ""),
                     source=metadata.get("source", "import"),
-                    metadata=metadata
+                    metadata=metadata,
                 )
                 count += 1
             except Exception as e:
@@ -335,11 +331,7 @@ class VectorDatabase:
             if project_id:
                 filters["project_id"] = project_id
 
-            results = self.rag_client.search(
-                query="",
-                filters=filters,
-                top_k=1000
-            )
+            results = self.rag_client.search(query="", filters=filters, top_k=1000)
             return len(results)
 
         except Exception as e:

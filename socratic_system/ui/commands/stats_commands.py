@@ -52,7 +52,9 @@ class ProjectStatsCommand(BaseCommand):
 
             # Count conversations
             conversation_history = getattr(project, "conversation_history", []) or []
-            questions_asked = sum(1 for msg in conversation_history if msg.get("role") == "assistant")
+            questions_asked = sum(
+                1 for msg in conversation_history if msg.get("role") == "assistant"
+            )
             responses_given = sum(1 for msg in conversation_history if msg.get("role") == "user")
 
             # Count collaborators
@@ -77,8 +79,14 @@ class ProjectStatsCommand(BaseCommand):
                 "current_phase": getattr(project, "phase", "planning"),
                 "status": getattr(project, "status", "active"),
                 "progress": getattr(project, "progress", 0),
-                "created_at": created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at),
-                "updated_at": (getattr(project, "updated_at", datetime.now(timezone.utc))).isoformat() if hasattr(getattr(project, "updated_at", None), "isoformat") else str(getattr(project, "updated_at", "")),
+                "created_at": (
+                    created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
+                ),
+                "updated_at": (
+                    (getattr(project, "updated_at", datetime.now(timezone.utc))).isoformat()
+                    if hasattr(getattr(project, "updated_at", None), "isoformat")
+                    else str(getattr(project, "updated_at", ""))
+                ),
                 "days_active": max(0, days_active),
                 "collaborators": num_collaborators,
                 "requirements": num_requirements,

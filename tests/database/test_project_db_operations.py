@@ -29,7 +29,7 @@ from socratic_system.models import (
 # Skip learning tests if socratic_learning is not available
 pytestmark_learning = pytest.mark.skipif(
     QuestionEffectiveness is None or UserBehaviorPattern is None,
-    reason="socratic_learning not installed"
+    reason="socratic_learning not installed",
 )
 
 

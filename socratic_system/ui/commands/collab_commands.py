@@ -247,7 +247,13 @@ class CollabListCommand(BaseCommand):
             )
 
             print(f"{username:<20} {status}")
-            members.append({"username": username, "is_owner": is_owner, "role": "owner" if is_owner else "contributor"})
+            members.append(
+                {
+                    "username": username,
+                    "is_owner": is_owner,
+                    "role": "owner" if is_owner else "contributor",
+                }
+            )
 
         print()
         return self.success(data={"collaborators": members})

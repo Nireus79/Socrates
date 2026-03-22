@@ -36,7 +36,7 @@ def orchestrator(temp_data_dir):
         # Patch the actual module where LLMClient import happens, or use a direct mock
         orch = AgentOrchestrator("test-key")
         # Mock the LLM client if it wasn't properly initialized
-        if not hasattr(orch, 'claude_client') or orch.claude_client is None:
+        if not hasattr(orch, "claude_client") or orch.claude_client is None:
             orch.llm_client = MagicMock()
             orch.llm_client.generate_response = MagicMock(return_value="Test response")
             orch.claude_client = orch.llm_client

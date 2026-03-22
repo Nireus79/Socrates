@@ -45,9 +45,7 @@ class DatabaseSingleton:
             RuntimeError: If not yet initialized
         """
         if cls._instance is None:
-            raise RuntimeError(
-                "DatabaseSingleton not initialized. Call initialize() first."
-            )
+            raise RuntimeError("DatabaseSingleton not initialized. Call initialize() first.")
         return cls._instance
 
     @classmethod

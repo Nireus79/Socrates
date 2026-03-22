@@ -116,8 +116,9 @@ class TestLibraryVersions:
         """Verify socratic-core is installed."""
         try:
             import socratic_core
+
             # Should be available
-            assert hasattr(socratic_core, '__version__') or True
+            assert hasattr(socratic_core, "__version__") or True
         except ImportError:
             pytest.fail("socratic-core not installed")
 
@@ -125,7 +126,8 @@ class TestLibraryVersions:
         """Verify socratic-learning is installed."""
         try:
             import socratic_learning
+
             # Should be available
-            assert hasattr(socratic_learning, '__version__') or True
+            assert hasattr(socratic_learning, "__version__") or True
         except ImportError:
             pytest.fail("socratic-learning not installed")

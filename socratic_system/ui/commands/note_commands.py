@@ -101,7 +101,11 @@ class NoteAddCommand(BaseCommand):
                         "content": note.content,
                         "note_type": note.note_type,
                         "created_by": note.created_by,
-                        "created_at": note.created_at.isoformat() if hasattr(note.created_at, 'isoformat') else str(note.created_at),
+                        "created_at": (
+                            note.created_at.isoformat()
+                            if hasattr(note.created_at, "isoformat")
+                            else str(note.created_at)
+                        ),
                         "tags": note.tags,
                     }
                 }
@@ -166,7 +170,11 @@ class NoteListCommand(BaseCommand):
                     "type": note.note_type,
                     "note_type": note.note_type,
                     "created_by": note.created_by,
-                    "created_at": note.created_at.isoformat() if hasattr(note.created_at, 'isoformat') else str(note.created_at),
+                    "created_at": (
+                        note.created_at.isoformat()
+                        if hasattr(note.created_at, "isoformat")
+                        else str(note.created_at)
+                    ),
                     "tags": note.tags,
                     "preview": preview,
                 }
@@ -249,7 +257,11 @@ class NoteSearchCommand(BaseCommand):
                     "type": note.note_type,
                     "note_type": note.note_type,
                     "created_by": note.created_by,
-                    "created_at": note.created_at.isoformat() if hasattr(note.created_at, 'isoformat') else str(note.created_at),
+                    "created_at": (
+                        note.created_at.isoformat()
+                        if hasattr(note.created_at, "isoformat")
+                        else str(note.created_at)
+                    ),
                     "tags": note.tags,
                     "preview": preview,
                 }

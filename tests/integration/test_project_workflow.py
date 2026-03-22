@@ -40,7 +40,7 @@ def sample_user():
         passcode_hash="hash123",
         created_at=__import__("datetime").datetime.now(),
         projects=["proj-001"],
-        subscription_tier="pro"
+        subscription_tier="pro",
     )
 
 
@@ -61,7 +61,7 @@ def sample_project():
         team_structure="individual",
         language_preferences="python",
         deployment_target="cloud",
-        code_style="standard"
+        code_style="standard",
     )
 
 
@@ -100,14 +100,16 @@ class TestCodeAnalysisWorkflow:
         code_dir.mkdir(parents=True, exist_ok=True)
 
         py_file = code_dir / "main.py"
-        py_file.write_text("""
+        py_file.write_text(
+            """
 class Application:
     def __init__(self):
         self.config = {}
 
     def start(self):
         print("Starting application")
-""")
+"""
+        )
 
         # Analyze structure
         analyzer = CodeStructureAnalyzer(py_file.read_text())
@@ -121,13 +123,15 @@ class Application:
         code_dir.mkdir(parents=True, exist_ok=True)
 
         py_file = code_dir / "app.py"
-        py_file.write_text("""
+        py_file.write_text(
+            """
 import os
 import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
-""")
+"""
+        )
 
         # Analyze code
         code = py_file.read_text()
@@ -139,7 +143,8 @@ import pandas as pd
         code_dir.mkdir(parents=True, exist_ok=True)
 
         py_file = code_dir / "models.py"
-        py_file.write_text("""
+        py_file.write_text(
+            """
 class User:
     def __init__(self, name):
         self.name = name
@@ -150,7 +155,8 @@ class Product:
 
 def validate_email(email):
     return "@" in email
-""")
+"""
+        )
 
         analyzer = CodeStructureAnalyzer(py_file.read_text())
         result = analyzer.analyze()
@@ -237,14 +243,16 @@ class TestMultiModuleIntegration:
 
         # Create project code
         main_file = code_dir / "main.py"
-        main_file.write_text("""
+        main_file.write_text(
+            """
 from pathlib import Path
 import logging
 
 class MainApp:
     def run(self):
         pass
-""")
+"""
+        )
 
         # Analyze project code
         code = main_file.read_text()
@@ -302,22 +310,26 @@ class TestCompleteProjectScenarios:
         code_dir.mkdir(parents=True, exist_ok=True)
 
         # Create web app structure
-        (code_dir / "app.py").write_text("""
+        (code_dir / "app.py").write_text(
+            """
 from fastapi import FastAPI
 app = FastAPI()
 
 @app.get("/")
 def read_root():
     return {"message": "Hello"}
-""")
+"""
+        )
 
-        (code_dir / "models.py").write_text("""
+        (code_dir / "models.py").write_text(
+            """
 from pydantic import BaseModel
 
 class User(BaseModel):
     name: str
     email: str
-""")
+"""
+        )
 
         # Analyze structure
         app_code = (code_dir / "app.py").read_text()
@@ -332,7 +344,8 @@ class User(BaseModel):
         code_dir.mkdir(parents=True, exist_ok=True)
 
         # Create data science structure
-        (code_dir / "analysis.py").write_text("""
+        (code_dir / "analysis.py").write_text(
+            """
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -340,7 +353,8 @@ from sklearn.preprocessing import StandardScaler
 data = pd.read_csv("data.csv")
 scaler = StandardScaler()
 scaled = scaler.fit_transform(data)
-""")
+"""
+        )
 
         # Verify code exists
         assert (code_dir / "analysis.py").exists()

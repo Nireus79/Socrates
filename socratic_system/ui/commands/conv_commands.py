@@ -45,9 +45,7 @@ class ConvSearchCommand(BaseCommand):
 
             # Filter messages matching query
             results = [
-                msg
-                for msg in conversation_history
-                if query_lower in msg.get("content", "").lower()
+                msg for msg in conversation_history if query_lower in msg.get("content", "").lower()
             ]
             count = len(results)
 
@@ -121,7 +119,11 @@ class ConvSummaryCommand(BaseCommand):
             conversation_history = getattr(project, "conversation_history", []) or []
 
             # Get the last 'limit' messages
-            recent_messages = conversation_history[-limit:] if len(conversation_history) > limit else conversation_history
+            recent_messages = (
+                conversation_history[-limit:]
+                if len(conversation_history) > limit
+                else conversation_history
+            )
 
             # Generate summary text
             summary = "Conversation Summary:\n"

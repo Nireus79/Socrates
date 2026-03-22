@@ -22,6 +22,7 @@ except ImportError:
     # Fallback to ClaudeClient if socrates_nexus is not available
     try:
         from modules.foundation.llm_service import ClaudeClient
+
         LLMClient = ClaudeClient  # type: ignore
     except ImportError:
         pass
@@ -164,7 +165,7 @@ class AgentOrchestrator:
             )
 
         # Check if using ClaudeClient (fallback) or LLMClient (primary)
-        if hasattr(LLMClient, '__name__') and LLMClient.__name__ == 'ClaudeClient':
+        if hasattr(LLMClient, "__name__") and LLMClient.__name__ == "ClaudeClient":
             # Using ClaudeClient fallback - it doesn't take provider parameter
             self.llm_client = LLMClient(api_key=self.config.api_key, orchestrator=self)
         else:
@@ -356,8 +357,7 @@ class AgentOrchestrator:
             from socratic_system.core import LearningIntegration
 
             self._agents_cache["learning_integration"] = LearningIntegration(
-                log_path=str(self.config.data_dir / "learning_logs"),
-                llm_client=self.llm_client
+                log_path=str(self.config.data_dir / "learning_logs"), llm_client=self.llm_client
             )
         return self._agents_cache["learning_integration"]
 

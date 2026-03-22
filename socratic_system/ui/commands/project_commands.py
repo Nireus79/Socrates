@@ -149,7 +149,9 @@ class ProjectCreateCommand(BaseCommand):
                     try:
                         orchestrator.database.save_project(project)
                     except Exception as e:
-                        return self.error(f"Project created but could not be saved to database: {str(e)}")
+                        return self.error(
+                            f"Project created but could not be saved to database: {str(e)}"
+                        )
 
             if project:
                 app.current_project = project
@@ -300,7 +302,11 @@ class ProjectLoadCommand(BaseCommand):
                     "project_id": p.project_id,
                     "name": p.name,
                     "phase": p.phase,
-                    "updated_at": p.updated_at.strftime("%Y-%m-%d %H:%M:%S") if hasattr(p.updated_at, 'strftime') else str(p.updated_at),
+                    "updated_at": (
+                        p.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+                        if hasattr(p.updated_at, "strftime")
+                        else str(p.updated_at)
+                    ),
                     "status": p.status,
                 }
                 for p in projects
@@ -524,7 +530,11 @@ class ProjectRestoreCommand(BaseCommand):
                     "project_id": p.project_id,
                     "name": p.name,
                     "owner": p.owner,
-                    "archived_at": p.archived_at.isoformat() if hasattr(p.archived_at, "isoformat") else str(p.archived_at)
+                    "archived_at": (
+                        p.archived_at.isoformat()
+                        if hasattr(p.archived_at, "isoformat")
+                        else str(p.archived_at)
+                    ),
                 }
                 for p in all_projects
                 if getattr(p, "is_archived", False)

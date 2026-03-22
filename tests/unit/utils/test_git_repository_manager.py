@@ -148,7 +148,7 @@ class TestValidateGitHubURL:
 class TestCloneRepository:
     """Tests for repository cloning."""
 
-    @patch('socratic_system.utils.git_repository_manager.subprocess.run')
+    @patch("socratic_system.utils.git_repository_manager.subprocess.run")
     def test_clone_valid_url(self, mock_run, manager):
         """Test cloning valid repository."""
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
@@ -202,7 +202,7 @@ class TestGetFileTree:
         # File tree is extracted from actual cloned repos
         # We test by validating the manager is initialized properly
         assert manager is not None
-        assert hasattr(manager, 'get_file_tree')
+        assert hasattr(manager, "get_file_tree")
 
 
 class TestCleanup:
@@ -236,7 +236,7 @@ class TestCleanup:
 class TestPullRepository:
     """Tests for pull operations."""
 
-    @patch('socratic_system.utils.git_repository_manager.subprocess.run')
+    @patch("socratic_system.utils.git_repository_manager.subprocess.run")
     def test_pull_repository_structure(self, mock_run, manager):
         """Test pull repository returns expected structure."""
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
@@ -247,7 +247,7 @@ class TestPullRepository:
 
     def test_pull_repository_no_branch(self, manager):
         """Test pulling without specifying branch."""
-        assert hasattr(manager, 'pull_repository')
+        assert hasattr(manager, "pull_repository")
 
 
 class TestPushRepository:
@@ -259,7 +259,7 @@ class TestPushRepository:
 
     def test_push_repository_requires_commit_message(self, manager):
         """Test push repository method signature."""
-        assert hasattr(manager, 'push_repository')
+        assert hasattr(manager, "push_repository")
 
 
 class TestGetGitDiff:

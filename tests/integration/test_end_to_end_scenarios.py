@@ -324,8 +324,16 @@ class TestPerformanceOptimization:
         }
 
         improvement_percent = {
-            "p95": ((baseline["p95_latency_ms"] - improved["p95_latency_ms"]) / baseline["p95_latency_ms"]) * 100,
-            "throughput": ((improved["throughput_rps"] - baseline["throughput_rps"]) / baseline["throughput_rps"]) * 100,
+            "p95": (
+                (baseline["p95_latency_ms"] - improved["p95_latency_ms"])
+                / baseline["p95_latency_ms"]
+            )
+            * 100,
+            "throughput": (
+                (improved["throughput_rps"] - baseline["throughput_rps"])
+                / baseline["throughput_rps"]
+            )
+            * 100,
         }
 
         assert improvement_percent["p95"] > 70

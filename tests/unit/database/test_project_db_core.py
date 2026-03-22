@@ -45,7 +45,7 @@ def sample_project():
         language_preferences="python",
         deployment_target="cloud",
         code_style="Google",
-        conversation_history=[]
+        conversation_history=[],
     )
 
 
@@ -58,7 +58,7 @@ def sample_user():
         passcode_hash="hashed_password_123",
         created_at=datetime.datetime.now(),
         projects=["proj1", "proj2"],
-        subscription_tier="pro"
+        subscription_tier="pro",
     )
 
 
@@ -117,7 +117,7 @@ class TestProjectSaveLoad:
             owner="user1",
             phase="planning",
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
         temp_db.save_project(project)
         loaded = temp_db.load_project("minimal-proj")
@@ -140,7 +140,7 @@ class TestProjectSaveLoad:
         """Test saving project with conversation history."""
         sample_project.conversation_history = [
             {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there!"}
+            {"role": "assistant", "content": "Hi there!"},
         ]
         temp_db.save_project(sample_project)
 
@@ -161,7 +161,7 @@ class TestProjectSaveLoad:
                 owner="owner1",
                 phase="planning",
                 created_at=now,
-                updated_at=now
+                updated_at=now,
             )
             temp_db.save_project(project)
             projects.append(project)
@@ -223,7 +223,7 @@ class TestGetUserProjects:
                 owner=owner,
                 phase="planning",
                 created_at=now,
-                updated_at=now
+                updated_at=now,
             )
             temp_db.save_project(project)
 
@@ -248,25 +248,29 @@ class TestGetUserProjects:
 
         # Create projects for user1
         for i in range(2):
-            temp_db.save_project(ProjectContext(
-                project_id=f"user1-proj-{i}",
-                name=f"User1 Project {i}",
-                owner=user1,
-                phase="planning",
-                created_at=now,
-                updated_at=now
-            ))
+            temp_db.save_project(
+                ProjectContext(
+                    project_id=f"user1-proj-{i}",
+                    name=f"User1 Project {i}",
+                    owner=user1,
+                    phase="planning",
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
 
         # Create projects for user2
         for i in range(3):
-            temp_db.save_project(ProjectContext(
-                project_id=f"user2-proj-{i}",
-                name=f"User2 Project {i}",
-                owner=user2,
-                phase="planning",
-                created_at=now,
-                updated_at=now
-            ))
+            temp_db.save_project(
+                ProjectContext(
+                    project_id=f"user2-proj-{i}",
+                    name=f"User2 Project {i}",
+                    owner=user2,
+                    phase="planning",
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
 
         user1_projects = temp_db.get_user_projects(user1)
         user2_projects = temp_db.get_user_projects(user2)
@@ -300,7 +304,7 @@ class TestUserSaveLoad:
             username="minimal",
             email="minimal@example.com",
             passcode_hash="hash",
-            created_at=datetime.datetime.now()
+            created_at=datetime.datetime.now(),
         )
         temp_db.save_user(user)
 
@@ -350,7 +354,7 @@ class TestConversationHistory:
         # Save conversation
         history = [
             {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there!"}
+            {"role": "assistant", "content": "Hi there!"},
         ]
         temp_db.save_conversation_history(sample_project.project_id, history)
 
@@ -383,7 +387,7 @@ class TestConversationHistory:
         # Overwrite with second history
         history2 = [
             {"role": "user", "content": "Second"},
-            {"role": "assistant", "content": "Response"}
+            {"role": "assistant", "content": "Response"},
         ]
         temp_db.save_conversation_history(sample_project.project_id, history2)
 
@@ -406,7 +410,7 @@ class TestDatabaseIntegration:
             owner=user,
             phase="design",
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
 
         # Create project
@@ -427,7 +431,7 @@ class TestDatabaseIntegration:
             email="owner@example.com",
             passcode_hash="hash",
             created_at=datetime.datetime.now(),
-            projects=["proj1", "proj2"]
+            projects=["proj1", "proj2"],
         )
 
         temp_db.save_user(user)
@@ -435,14 +439,16 @@ class TestDatabaseIntegration:
         # Create associated projects
         now = datetime.datetime.now()
         for proj_id in ["proj1", "proj2"]:
-            temp_db.save_project(ProjectContext(
-                project_id=proj_id,
-                name=proj_id,
-                owner="projowner",
-                phase="planning",
-                created_at=now,
-                updated_at=now
-            ))
+            temp_db.save_project(
+                ProjectContext(
+                    project_id=proj_id,
+                    name=proj_id,
+                    owner="projowner",
+                    phase="planning",
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
 
         # Verify user
         loaded_user = temp_db.load_user("projowner")

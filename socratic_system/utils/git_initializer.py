@@ -40,6 +40,7 @@ class GitHubError(Exception):
 
     pass
 
+
 class GitConfigError(Exception):
     """Raised when git configuration fails"""
 
@@ -62,7 +63,6 @@ class RepositoryRemoteError(Exception):
     """Raised when remote repository operations fail"""
 
     pass
-
 
 
 class GitInitializer:

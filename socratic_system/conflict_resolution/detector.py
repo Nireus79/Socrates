@@ -50,10 +50,7 @@ class ConflictDetector:
             # Allow graceful degradation
 
     def detect_project_conflicts(
-        self,
-        project: ProjectContext,
-        new_insights: Dict[str, Any],
-        current_user: str
+        self, project: ProjectContext, new_insights: Dict[str, Any], current_user: str
     ) -> List[ConflictInfo]:
         """
         Detect conflicts between new insights and existing project values.
@@ -78,13 +75,23 @@ class ConflictDetector:
                 conflict = self.detector.detect_decision_conflict(
                     decision_name="project_goals",
                     proposals={
-                        "existing": ", ".join(project.goals) if isinstance(project.goals, list) else str(project.goals),
-                        current_user: ", ".join(new_insights["goals"]) if isinstance(new_insights["goals"], list) else str(new_insights["goals"])
+                        "existing": (
+                            ", ".join(project.goals)
+                            if isinstance(project.goals, list)
+                            else str(project.goals)
+                        ),
+                        current_user: (
+                            ", ".join(new_insights["goals"])
+                            if isinstance(new_insights["goals"], list)
+                            else str(new_insights["goals"])
+                        ),
                     },
-                    agents=["existing", current_user]
+                    agents=["existing", current_user],
                 )
                 if conflict:
-                    conflicts.append(self._convert_to_conflict_info(conflict, "goals", project, current_user))
+                    conflicts.append(
+                        self._convert_to_conflict_info(conflict, "goals", project, current_user)
+                    )
             except Exception as e:
                 self.logger.debug(f"Goals conflict detection failed: {e}")
 
@@ -95,12 +102,16 @@ class ConflictDetector:
                     field_name="requirements",
                     values={
                         "existing": project.requirements,
-                        current_user: new_insights["requirements"]
+                        current_user: new_insights["requirements"],
                     },
-                    agents=["existing", current_user]
+                    agents=["existing", current_user],
                 )
                 if conflict:
-                    conflicts.append(self._convert_to_conflict_info(conflict, "requirements", project, current_user))
+                    conflicts.append(
+                        self._convert_to_conflict_info(
+                            conflict, "requirements", project, current_user
+                        )
+                    )
             except Exception as e:
                 self.logger.debug(f"Requirements conflict detection failed: {e}")
 
@@ -111,12 +122,16 @@ class ConflictDetector:
                     field_name="tech_stack",
                     values={
                         "existing": project.tech_stack,
-                        current_user: new_insights["tech_stack"]
+                        current_user: new_insights["tech_stack"],
                     },
-                    agents=["existing", current_user]
+                    agents=["existing", current_user],
                 )
                 if conflict:
-                    conflicts.append(self._convert_to_conflict_info(conflict, "tech_stack", project, current_user))
+                    conflicts.append(
+                        self._convert_to_conflict_info(
+                            conflict, "tech_stack", project, current_user
+                        )
+                    )
             except Exception as e:
                 self.logger.debug(f"Tech stack conflict detection failed: {e}")
 
@@ -127,22 +142,23 @@ class ConflictDetector:
                     field_name="constraints",
                     values={
                         "existing": project.constraints,
-                        current_user: new_insights["constraints"]
+                        current_user: new_insights["constraints"],
                     },
-                    agents=["existing", current_user]
+                    agents=["existing", current_user],
                 )
                 if conflict:
-                    conflicts.append(self._convert_to_conflict_info(conflict, "constraints", project, current_user))
+                    conflicts.append(
+                        self._convert_to_conflict_info(
+                            conflict, "constraints", project, current_user
+                        )
+                    )
             except Exception as e:
                 self.logger.debug(f"Constraints conflict detection failed: {e}")
 
         return conflicts
 
     def detect_workflow_conflicts(
-        self,
-        workflow_id: str,
-        steps: List[Dict[str, Any]],
-        context: Optional[Dict] = None
+        self, workflow_id: str, steps: List[Dict[str, Any]], context: Optional[Dict] = None
     ) -> Optional[Any]:
         """
         Detect conflicts in workflow execution.
@@ -160,9 +176,7 @@ class ConflictDetector:
 
         try:
             conflict = self.detector.detect_workflow_conflict(
-                workflow_id=workflow_id,
-                conflicting_steps=steps,
-                context=context or {}
+                workflow_id=workflow_id, conflicting_steps=steps, context=context or {}
             )
             return conflict
         except Exception as e:
@@ -173,7 +187,7 @@ class ConflictDetector:
         self,
         agents: List[str],
         proposals: Dict[str, str],
-        decision_name: str = "multi_agent_decision"
+        decision_name: str = "multi_agent_decision",
     ) -> Optional[Any]:
         """
         Detect conflicts between agent proposals.
@@ -191,9 +205,7 @@ class ConflictDetector:
 
         try:
             conflict = self.detector.detect_decision_conflict(
-                decision_name=decision_name,
-                proposals=proposals,
-                agents=agents
+                decision_name=decision_name, proposals=proposals, agents=agents
             )
             return conflict
         except Exception as e:
@@ -240,10 +252,7 @@ class ConflictDetector:
 
     @staticmethod
     def _convert_to_conflict_info(
-        conflict: Any,
-        field_name: str,
-        project: ProjectContext,
-        current_user: str
+        conflict: Any, field_name: str, project: ProjectContext, current_user: str
     ) -> ConflictInfo:
         """
         Convert socratic-conflict Conflict to Socrates ConflictInfo.
@@ -276,9 +285,9 @@ class ConflictDetector:
             new_author=current_user,
             old_timestamp=datetime.datetime.now().isoformat(),
             new_timestamp=datetime.datetime.now().isoformat(),
-            severity=conflict.severity if hasattr(conflict, 'severity') else "medium",
+            severity=conflict.severity if hasattr(conflict, "severity") else "medium",
             suggestions=[
                 f"Review {field_name} values",
-                f"Propose consensus between {project.owner} and {current_user}"
-            ]
+                f"Propose consensus between {project.owner} and {current_user}",
+            ],
         )

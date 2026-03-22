@@ -79,7 +79,9 @@ class TestValidateNonexistentPath:
         """Test error message for nonexistent path."""
         result = validator.validate("/fake/path.py")
 
-        assert any("does not exist" in issue.get("message", "").lower() for issue in result["issues"])
+        assert any(
+            "does not exist" in issue.get("message", "").lower() for issue in result["issues"]
+        )
 
 
 class TestValidatePythonFiles:

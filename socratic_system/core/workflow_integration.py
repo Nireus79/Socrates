@@ -60,11 +60,7 @@ class WorkflowIntegration:
             # Don't raise - allow graceful degradation
 
     def create_workflow(
-        self,
-        workflow_id: str,
-        name: str,
-        description: str,
-        phase: str = "discovery"
+        self, workflow_id: str, name: str, description: str, phase: str = "discovery"
     ) -> Any:
         """
         Create a new workflow.
@@ -87,7 +83,7 @@ class WorkflowIntegration:
                 workflow_id=workflow_id,
                 name=name,
                 description=description,
-                metadata={"phase": phase}
+                metadata={"phase": phase},
             )
             self.active_workflows[workflow_id] = workflow
             self.workflow_tasks[workflow_id] = []
@@ -106,7 +102,7 @@ class WorkflowIntegration:
         description: str,
         task_type: str = "question",
         dependencies: Optional[List[str]] = None,
-        metadata: Optional[Dict] = None
+        metadata: Optional[Dict] = None,
     ) -> Any:
         """
         Add a task to a workflow.
@@ -137,7 +133,7 @@ class WorkflowIntegration:
                 description=description,
                 task_type=task_type,
                 dependencies=dependencies or [],
-                metadata=metadata or {}
+                metadata=metadata or {},
             )
 
             workflow = self.active_workflows[workflow_id]
@@ -155,7 +151,7 @@ class WorkflowIntegration:
         self,
         workflow_id: str,
         context: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = None
+        timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Execute a workflow.
@@ -176,11 +172,7 @@ class WorkflowIntegration:
                 raise RuntimeError("Workflow engine not initialized")
 
             workflow = self.active_workflows[workflow_id]
-            result = self.engine.execute(
-                workflow=workflow,
-                context=context or {},
-                timeout=timeout
-            )
+            result = self.engine.execute(workflow=workflow, context=context or {}, timeout=timeout)
 
             self.logger.info(f"Executed workflow {workflow_id}: {result.status}")
 
@@ -190,17 +182,12 @@ class WorkflowIntegration:
                 "output": getattr(result, "output", {}),
                 "execution_time": getattr(result, "execution_time", 0.0),
                 "tasks_completed": getattr(result, "tasks_completed", 0),
-                "tasks_failed": getattr(result, "tasks_failed", 0)
+                "tasks_failed": getattr(result, "tasks_failed", 0),
             }
 
         except Exception as e:
             self.logger.error(f"Failed to execute workflow: {e}")
-            return {
-                "workflow_id": workflow_id,
-                "status": "error",
-                "error": str(e),
-                "output": {}
-            }
+            return {"workflow_id": workflow_id, "status": "error", "error": str(e), "output": {}}
 
     def get_task_status(self, workflow_id: str, task_id: str) -> Dict[str, Any]:
         """
@@ -230,7 +217,7 @@ class WorkflowIntegration:
                 "started_at": getattr(task, "started_at", None),
                 "completed_at": getattr(task, "completed_at", None),
                 "output": getattr(task, "output", {}),
-                "error": getattr(task, "error", None)
+                "error": getattr(task, "error", None),
             }
 
         except Exception as e:
@@ -260,7 +247,7 @@ class WorkflowIntegration:
                     "completed_tasks": 0,
                     "failed_tasks": 0,
                     "pending_tasks": 0,
-                    "progress_percentage": 0.0
+                    "progress_percentage": 0.0,
                 }
 
             completed = sum(1 for t in tasks if getattr(t, "status", None) == "completed")
@@ -273,7 +260,7 @@ class WorkflowIntegration:
                 "completed_tasks": completed,
                 "failed_tasks": failed,
                 "pending_tasks": pending,
-                "progress_percentage": (completed / len(tasks) * 100) if tasks else 0.0
+                "progress_percentage": (completed / len(tasks) * 100) if tasks else 0.0,
             }
 
         except Exception as e:
@@ -336,7 +323,7 @@ class WorkflowIntegration:
                 actual_tokens_used=0,
                 estimated_tokens_remaining=0,
                 started_at=getattr(workflow, "started_at", ""),
-                status=getattr(workflow, "status", "active")
+                status=getattr(workflow, "status", "active"),
             )
 
         except Exception as e:
@@ -370,10 +357,10 @@ class WorkflowIntegration:
                         "task_id": getattr(t, "task_id", ""),
                         "name": getattr(t, "name", ""),
                         "type": getattr(t, "task_type", ""),
-                        "dependencies": getattr(t, "dependencies", [])
+                        "dependencies": getattr(t, "dependencies", []),
                     }
                     for t in tasks
-                ]
+                ],
             }
 
         except Exception as e:
