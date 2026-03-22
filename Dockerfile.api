@@ -14,13 +14,10 @@ RUN pip install --upgrade pip setuptools wheel
 
 # Copy project structure
 COPY pyproject.toml README.md ./
-COPY socratic-core ./socratic-core
 COPY socratic_system ./socratic_system
 
-# Install socratic-core first (required dependency)
-RUN cd socratic-core && pip install --no-cache-dir -e . && cd ..
-
 # Install socratic_system package with API extras (includes socrates-core-api)
+# Note: socratic-core is installed as a dependency from PyPI
 RUN pip install --no-cache-dir -e ".[api]"
 
 # Production stage

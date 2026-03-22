@@ -35,14 +35,12 @@ ENV PATH=/root/.local/bin:$PATH \
     SOCRATES_API_PORT=8000
 
 # Copy application code
-COPY socratic-core/ /app/socratic-core/
 COPY socrates-api/ /app/socrates-api/
 COPY socratic_system/ /app/socratic_system/
 COPY modules/ /app/modules/
 
-# Install the applications in development mode
-RUN cd /app/socratic-core && pip install --no-cache-dir -e . && \
-    cd /app/socrates-api && pip install --no-cache-dir -e .
+# Install the API application in development mode
+RUN cd /app/socrates-api && pip install --no-cache-dir -e .
 
 # Create data directory
 RUN mkdir -p /app/data
