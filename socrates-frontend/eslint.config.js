@@ -40,9 +40,11 @@ export default [
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
         },
       ],
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': [
         'warn',
