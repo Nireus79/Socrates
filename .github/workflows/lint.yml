@@ -92,7 +92,7 @@ jobs:
 
       - name: Run bandit security check
         run: |
-          bandit -r socratic_system socrates-cli socrates-api -lll
+          bandit -r socratic_system -lll
 
       - name: Check dependencies with safety
         run: |
@@ -116,8 +116,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -d "./socrates-cli" ]; then pip install -e ./socrates-cli; fi
-          if [ -d "./socrates-api" ]; then pip install -e ./socrates-api; fi
           pip install -e .
 
       - name: Check for outdated packages
@@ -165,8 +163,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -d "./socrates-cli" ]; then pip install -e ./socrates-cli; fi
-          if [ -d "./socrates-api" ]; then pip install -e ./socrates-api; fi
           pip install -e . -e ".[dev]" pytest-cov
 
       - name: Run tests with coverage
