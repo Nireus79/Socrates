@@ -67,7 +67,8 @@ dependencies = [
     # Multi-agent system requires socratic-agents for core project management, code generation, etc.
 
     # External dependencies (kept for orchestrator functionality)
-    "anthropic>=0.72.0",                 # Required by: socratic-agents
+    "socrates-nexus>=0.3.0",             # Universal LLM client (multi-provider: Claude, GPT-4, Gemini, Ollama)
+    "anthropic>=0.72.0",                 # Required by: socratic-agents, socrates-nexus
     "socratic-core>=0.1.1",              # Core framework (config, events, exceptions)
     "socratic-agents>=0.1.2",            # Multi-agent orchestration (core functionality)
     "socratic-rag>=0.1.0",               # Retrieval-Augmented Generation (core functionality)

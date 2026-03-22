@@ -15,17 +15,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-try:
-    from socrates_nexus import LLMClient
-except ImportError:
-    LLMClient = None  # type: ignore
-    # Fallback to ClaudeClient if socrates_nexus is not available
-    try:
-        from modules.foundation.llm_service import ClaudeClient
-
-        LLMClient = ClaudeClient  # type: ignore
-    except ImportError:
-        pass
+# socrates-nexus provides universal LLM client for multi-provider support
+from socrates_nexus import LLMClient
 
 try:
     from socratic_agents import (
@@ -157,24 +148,12 @@ class AgentOrchestrator:
             raise  # Re-raise other exceptions
 
         # Initialize LLM client (using socrates-nexus for multi-provider support)
-        if LLMClient is None:
-            raise ImportError(
-                "Failed to initialize LLM client. Neither 'socrates-nexus' nor fallback "
-                "'ClaudeClient' could be imported. Please ensure at least one LLM client "
-                "library is installed."
-            )
-
-        # Check if using ClaudeClient (fallback) or LLMClient (primary)
-        if hasattr(LLMClient, "__name__") and LLMClient.__name__ == "ClaudeClient":
-            # Using ClaudeClient fallback - it doesn't take provider parameter
-            self.llm_client = LLMClient(api_key=self.config.api_key, orchestrator=self)
-        else:
-            # Using LLMClient from socrates-nexus
-            self.llm_client = LLMClient(
-                provider="anthropic",
-                model=self.config.claude_model,
-                api_key=self.config.api_key,
-            )
+        # socrates-nexus is now a required dependency providing universal LLM client
+        self.llm_client = LLMClient(
+            provider="anthropic",  # Default to Claude, configurable via environment
+            model=self.config.claude_model,
+            api_key=self.config.api_key,
+        )
         # Keep claude_client alias for backward compatibility
         self.claude_client = self.llm_client
 
