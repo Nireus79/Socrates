@@ -34,8 +34,11 @@ logger = logging.getLogger("socrates.utils.artifact_saver")
 audit_logger = None
 
 if AUDIT_AVAILABLE and AuditLogger:
-    audit_logger = AuditLogger()
-    audit_logger.initialize_from_env()
+    try:
+        audit_logger = AuditLogger()
+    except Exception as e:
+        logger.debug(f"Failed to initialize audit logger: {e}")
+        audit_logger = None
 
 
 class ArtifactSaver:
