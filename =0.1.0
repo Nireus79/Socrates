@@ -1,0 +1,9 @@
+Collecting socratic-docs
+  Downloading socratic_docs-0.1.0-py3-none-any.whl.metadata (2.7 kB)
+Collecting socratic-performance
+  Downloading socratic_performance-0.1.0-py3-none-any.whl.metadata (2.6 kB)
+Downloading socratic_docs-0.1.0-py3-none-any.whl (4.4 kB)
+Downloading socratic_performance-0.1.0-py3-none-any.whl (5.6 kB)
+Installing collected packages: socratic-performance, socratic-docs
+
+Successfully installed socratic-docs-0.1.0 socratic-performance-0.1.0

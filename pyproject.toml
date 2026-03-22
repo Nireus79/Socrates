@@ -67,11 +67,18 @@ dependencies = [
     # Multi-agent system requires socratic-agents for core project management, code generation, etc.
 
     # External dependencies (kept for orchestrator functionality)
-    "anthropic>=0.72.0",                 # Required by: socratic-agents, socrates-nexus
+    "anthropic>=0.72.0",                 # Required by: socratic-agents
     "socratic-core>=0.1.1",              # Core framework (config, events, exceptions)
     "socratic-agents>=0.1.2",            # Multi-agent orchestration (core functionality)
     "socratic-rag>=0.1.0",               # Retrieval-Augmented Generation (core functionality)
     "socratic-security==0.4.0",          # Security utilities (prompt injection, path validation, sandboxing)
+    "socratic-learning>=0.1.1",          # Learning system (interaction tracking, recommendations)
+    "socratic-analyzer>=0.1.0",          # Code analysis capabilities
+    "socratic-conflict>=0.1.0",          # Conflict detection and resolution
+    "socratic-knowledge>=0.1.0",         # Knowledge management with RBAC and versioning
+    "socratic-workflow>=0.1.1",          # Workflow orchestration
+    "socratic-docs>=0.1.0",              # Documentation generation and management
+    "socratic-performance>=0.1.0",       # Performance monitoring and optimization
     "chromadb>=0.5.0",                   # Required by: socratic-rag (vector database, performance improvements)
     "sentence-transformers>=3.0.0",      # Required by: socratic-rag (embeddings)
     "pypdf>=4.0.0",                      # Document processing for RAG systems
@@ -95,33 +102,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Additional feature libraries beyond core requirements
-# Install as: pip install socrates-ai[rag,learning] to add optional features
+# Interface libraries (optional, for specific use cases)
+# All core socratic-* libraries are now required dependencies
 
-# Individual feature libraries (can be combined)
-rag = [
-    "socratic-rag>=0.1.0",                 # RAG/retrieval capabilities with vector database
-]
-learning = [
-    "socratic-learning>=0.1.1",            # Learning system with interaction tracking and recommendations
-]
-analyzer = [
-    "socratic-analyzer>=0.1.0",            # Code analysis capabilities
-]
-conflict = [
-    "socratic-conflict>=0.1.0",            # Conflict detection and resolution
-]
-knowledge = [
-    "socratic-knowledge>=0.1.0",           # Knowledge management and persistence
-]
-workflow = [
-    "socratic-workflow>=0.1.1",            # Workflow engine and orchestration
-]
-nexus = [
-    "socrates-nexus>=0.1.0",               # LLM provider abstraction (Claude, GPT-4, Gemini, etc.)
-]
-
-# Convenience bundles
 cli = [
     "socrates-cli>=0.1.0",                 # Command-line interface
 ]
@@ -129,14 +112,7 @@ api = [
     "socrates-core-api>=0.1.1",            # REST API server
 ]
 full = [
-    # Note: socratic-core and socratic-agents are already in base dependencies
-    "socratic-rag>=0.1.0",
-    "socratic-learning>=0.1.1",
-    "socratic-analyzer>=0.1.0",
-    "socratic-conflict>=0.1.0",
-    "socratic-knowledge>=0.1.0",
-    "socratic-workflow>=0.1.1",          # Workflow orchestration
-    "socrates-nexus>=0.1.0",
+    # Note: All socratic-* core libraries are already in base dependencies
     "socrates-cli>=0.1.0",
     "socrates-core-api>=0.1.1",
 ]
