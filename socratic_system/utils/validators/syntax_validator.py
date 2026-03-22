@@ -5,6 +5,8 @@ Supports:
 - Python (using compile())
 - JavaScript/TypeScript (basic patterns)
 - Other languages (basic checks)
+
+Includes optional code safety analysis to detect dangerous patterns.
 """
 
 from __future__ import annotations
@@ -12,6 +14,14 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any
+
+# Optional code analysis for safety
+try:
+    from socratic_security.sandbox import CodeAnalyzer
+    SECURITY_AVAILABLE = True
+except ImportError:
+    SECURITY_AVAILABLE = False
+    CodeAnalyzer = None
 
 logger = logging.getLogger("socrates.utils.validators.syntax_validator")
 
@@ -202,13 +212,45 @@ class SyntaxValidator:
         }
 
     def _validate_python_file(self, file_path: str, content: str) -> dict[str, Any]:
-        """Validate Python syntax using compile()"""
+        """Validate Python syntax and optionally analyze for dangerous patterns"""
+        warnings = []
+
         try:
             compile(content, file_path, "exec")
+
+            # Optionally perform code safety analysis
+            if SECURITY_AVAILABLE and CodeAnalyzer:
+                try:
+                    analyzer = CodeAnalyzer()
+                    analysis_result = analyzer.analyze(content)
+
+                    # Add any dangerous patterns as warnings
+                    if analysis_result.get("dangerous_patterns"):
+                        for pattern in analysis_result["dangerous_patterns"]:
+                            warnings.append({
+                                "file": file_path,
+                                "message": f"Potentially dangerous pattern: {pattern.get('name', 'unknown')}",
+                                "severity": "warning",
+                                "category": "security",
+                                "detail": pattern.get("description", ""),
+                            })
+
+                    # Log if code execution would be risky
+                    if analysis_result.get("risk_level") == "high":
+                        warnings.append({
+                            "file": file_path,
+                            "message": "Code has high security risk. Review before execution.",
+                            "severity": "warning",
+                            "category": "security",
+                        })
+                except Exception as e:
+                    logger.debug(f"Code analysis failed (non-fatal): {e}")
+                    # Non-fatal - continue with syntax validation result
+
             return {
                 "valid": True,
                 "issues": [],
-                "warnings": [],
+                "warnings": warnings,
                 "metadata": {
                     "files_checked": 1,
                     "files_valid": 1,
@@ -229,7 +271,7 @@ class SyntaxValidator:
                         "severity": "error",
                     }
                 ],
-                "warnings": [],
+                "warnings": warnings,
                 "metadata": {
                     "files_checked": 1,
                     "files_valid": 0,
@@ -248,7 +290,7 @@ class SyntaxValidator:
                         "severity": "error",
                     }
                 ],
-                "warnings": [],
+                "warnings": warnings,
                 "metadata": {
                     "files_checked": 1,
                     "files_valid": 0,
