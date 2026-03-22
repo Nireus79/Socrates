@@ -1,5 +1,7 @@
 """
 Code generation agent for Socrates AI
+
+Includes input validation for security.
 """
 
 from pathlib import Path
@@ -13,6 +15,14 @@ from modules.foundation.utils.multi_file_splitter import (
     ProjectStructureGenerator,
 )
 
+# Security utilities for input validation
+try:
+    from socratic_security.input_validation import SanitizedStr
+    SECURITY_AVAILABLE = True
+except ImportError:
+    SECURITY_AVAILABLE = False
+    SanitizedStr = str
+
 from .base import Agent
 
 
@@ -23,8 +33,47 @@ class CodeGeneratorAgent(Agent):
         super().__init__("CodeGenerator", orchestrator)
         self.current_user = None
 
+    def _validate_request(self, request: Dict[str, Any]) -> tuple[bool, str]:
+        """
+        Validate incoming request for security issues.
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not isinstance(request, dict):
+            return False, "Request must be a dictionary"
+
+        action = request.get("action", "").strip()
+        if not action or not isinstance(action, str):
+            return False, "Action must be a non-empty string"
+
+        # Validate allowed actions
+        allowed_actions = {"generate_artifact", "generate_documentation", "generate_script"}
+        if action not in allowed_actions:
+            return False, f"Unknown action: {action}"
+
+        # Validate project if present
+        project = request.get("project")
+        if project:
+            if not hasattr(project, "name") or not hasattr(project, "project_type"):
+                return False, "Invalid project structure"
+
+            # Validate project name (prevent path traversal in logging)
+            if hasattr(project, "name"):
+                project_name = str(project.name)
+                if any(char in project_name for char in ["../", "..", "/", "\\"]):
+                    return False, "Invalid project name contains path traversal characters"
+
+        return True, ""
+
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process artifact generation requests"""
+        # Validate request for security issues
+        is_valid, error_msg = self._validate_request(request)
+        if not is_valid:
+            self.log(f"Request validation failed: {error_msg}", level="error")
+            return {"status": "error", "message": f"Invalid request: {error_msg}"}
+
         action = request.get("action")
 
         if action == "generate_artifact":
