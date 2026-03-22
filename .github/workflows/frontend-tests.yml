@@ -36,7 +36,7 @@ jobs:
       - name: Run unit tests
         run: |
           cd socrates-frontend
-          npm test -- --coverage --watchAll=false --passWithNoTests
+          npm run test:coverage -- --passWithNoTests
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
@@ -68,7 +68,7 @@ jobs:
       - name: Run component tests
         run: |
           cd socrates-frontend
-          npm test -- tests/frontend/test_*.test.tsx --coverage --watchAll=false
+          npm run test:coverage -- tests/frontend/test_*.test.tsx
 
       - name: Upload component test results
         uses: actions/upload-artifact@v4
@@ -108,15 +108,14 @@ jobs:
       - name: Install backend dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e . -e ./socrates-cli -e ./socrates-api
+          pip install -e .
 
       - name: Start backend server
         env:
           DATABASE_URL: "sqlite:///:memory:"
           CLAUDE_API_KEY: "test-key"
         run: |
-          cd socrates-api
-          uvicorn socrates_api.main:app --host 127.0.0.1 --port 8000 &
+          uvicorn socrates_core_api.main:app --host 127.0.0.1 --port 8000 &
           sleep 5
 
       - name: Start frontend dev server
@@ -177,7 +176,7 @@ jobs:
       - name: Check formatting with Prettier
         run: |
           cd socrates-frontend
-          npm run format:check || npm run format
+          npx prettier --check .
 
   all-frontend-tests-passed:
     name: All Frontend Tests Passed
