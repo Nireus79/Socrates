@@ -383,6 +383,13 @@ class ClaudeClient:
         if user_response.lower().strip() in non_informative:
             return {"note": "User expressed uncertainty - may need more guidance"}
 
+        # Check for and sanitize user input (prompt injection protection)
+        try:
+            sanitized_response = self._check_and_sanitize_input(user_response)
+        except ValueError as e:
+            self.logger.error(f"Prompt injection blocked: {e}")
+            return {"error": "Input validation failed", "detail": str(e)}
+
         # Check cache first to avoid redundant Claude API calls
         cache_key = self._get_cache_key(user_response)
         if cache_key in self._insights_cache:
@@ -398,7 +405,7 @@ class ClaudeClient:
         - Phase: {project.phase}
         - Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
 
-        User Response: "{user_response}"
+        User Response: "{sanitized_response}"
 
         Please extract and return any mentions of:
         1. Goals or objectives
@@ -599,12 +606,19 @@ class ClaudeClient:
         self, context: str, user_auth_method: str = "api_key", user_id: str = None
     ) -> str:
         """Generate code based on project context"""
+        # Check for and sanitize user input (prompt injection protection)
+        try:
+            sanitized_context = self._check_and_sanitize_input(context)
+        except ValueError as e:
+            self.logger.error(f"Prompt injection blocked in code generation: {e}")
+            return f"# Error: Code generation blocked due to security violation\n# {e}"
+
         # Enhanced prompt engineering: extract and emphasize key project details
         prompt = f"""
 You are a software architect generating code for a specific project phase.
 
 PROJECT CONTEXT:
-{context}
+{sanitized_context}
 
 CODE GENERATION GUIDELINES:
 
@@ -1788,6 +1802,54 @@ Create documentation that will enable others to successfully understand, impleme
                 EventType.LOG_WARNING, {"message": f"Could not parse JSON response: {e}"}
             )
             return {}
+
+    def _check_and_sanitize_input(self, user_input: str) -> str:
+        """
+        Check for prompt injection attempts and sanitize input.
+
+        Args:
+            user_input: User-provided input to check
+
+        Returns:
+            Sanitized input safe for LLM
+
+        Raises:
+            ValueError: If high-risk prompt injection detected and strict mode enabled
+        """
+        if not self.prompt_detector or not self.prompt_sanitizer:
+            # Security module not available, return as-is
+            return user_input
+
+        try:
+            # Check for injection patterns
+            detection_result = self.prompt_detector.detect(user_input)
+
+            # Log detection results
+            if detection_result.get("is_injection", False):
+                risk_score = detection_result.get("risk_score", 0)
+                patterns = detection_result.get("patterns", [])
+                self.logger.warning(
+                    f"Prompt injection detected (risk_score: {risk_score}): {patterns}"
+                )
+
+                # In strict mode, block high-risk attempts
+                if self.prompt_detector.strict_mode and risk_score > 80:
+                    raise ValueError(
+                        f"High-risk prompt injection detected (score: {risk_score}). "
+                        f"Request blocked. Patterns: {', '.join(patterns)}"
+                    )
+
+            # Sanitize the input regardless of detection
+            sanitized = self.prompt_sanitizer.sanitize_for_llm(user_input, context="user_input")
+            return sanitized
+
+        except ValueError:
+            # Re-raise ValueError (from strict mode blocking)
+            raise
+        except Exception as e:
+            self.logger.warning(f"Error during input sanitization: {e}")
+            # If sanitization fails, return original input (graceful degradation)
+            return user_input
 
     def generate_socratic_question(
         self,
