@@ -89,6 +89,7 @@ from socratic_core import EventEmitter, EventType, SocratesConfig
 
 from socratic_system.database import VectorDatabase
 from socratic_system.models import KnowledgeEntry
+from socratic_system.orchestration.library_integrations import SocraticLibraryManager
 
 
 class AgentOrchestrator:
@@ -156,6 +157,10 @@ class AgentOrchestrator:
         )
         # Keep claude_client alias for backward compatibility
         self.claude_client = self.llm_client
+
+        # Initialize Socratic Library Manager (all 12 libraries)
+        self.library_manager = SocraticLibraryManager(self.config)
+        self.logger.info(f"Library integration status: {self.library_manager.get_status()}")
 
         # Cache for lazy-loaded agents
         self._agents_cache: dict[str, Any] = {}
@@ -684,6 +689,57 @@ class AgentOrchestrator:
                 EventType.AGENT_ERROR, {"agent": agent_name, "error": str(e), "async": True}
             )
             raise
+
+    # =========================================================================
+    # LIBRARY INTEGRATION METHODS - Using all 12 Socratic ecosystem libraries
+    # =========================================================================
+
+    def analyze_code_quality(self, code: str, filename: str = "generated_code.py") -> dict:
+        """Analyze generated code using socratic-analyzer"""
+        return self.library_manager.analyzer.analyze_code(code, filename)
+
+    def log_learning_interaction(self, session_id: str, agent_name: str,
+                                input_data: dict, output_data: dict,
+                                tokens: int = 0, cost: float = 0.0,
+                                duration_ms: float = 0.0, success: bool = True) -> Optional[dict]:
+        """Log interaction for learning analytics using socratic-learning"""
+        return self.library_manager.learning.log_interaction(
+            session_id=session_id,
+            agent_name=agent_name,
+            input_data=input_data,
+            output_data=output_data,
+            tokens_used=tokens,
+            cost=cost,
+            duration_ms=duration_ms,
+            success=success
+        )
+
+    def detect_agent_conflicts(self, field: str, agent_outputs: dict,
+                             agents: list) -> Optional[dict]:
+        """Detect and resolve conflicts between agent outputs using socratic-conflict"""
+        return self.library_manager.conflict.detect_and_resolve(field, agent_outputs, agents)
+
+    def store_knowledge(self, tenant_id: str, title: str, content: str,
+                       tags: Optional[list] = None) -> Optional[dict]:
+        """Store knowledge item using socratic-knowledge"""
+        return self.library_manager.knowledge.create_knowledge_item(
+            tenant_id=tenant_id,
+            title=title,
+            content=content,
+            tags=tags
+        )
+
+    def search_knowledge(self, tenant_id: str, query: str) -> list:
+        """Search knowledge base using socratic-knowledge"""
+        return self.library_manager.knowledge.search_knowledge(tenant_id, query)
+
+    def generate_documentation(self, project_info: dict) -> Optional[str]:
+        """Generate project documentation using socratic-docs"""
+        return self.library_manager.docs.generate_readme(project_info)
+
+    def get_library_status(self) -> dict:
+        """Get status of all library integrations"""
+        return self.library_manager.get_status()
 
     def _safe_log(self, level: str, message: str):
         """Safely log messages, suppressing errors during Python shutdown.
