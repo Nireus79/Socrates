@@ -32,6 +32,31 @@ interface DialogueQuestion {
   hints?: string[];
 }
 
+interface FreeSessionResponse {
+  answer: string;
+}
+
+interface CreateProjectFormData {
+  name: string;
+  description?: string;
+}
+
+const FREE_SESSION_COMMANDS = [
+  '/help',
+  '/info',
+  '/docs',
+  '/status',
+  '/debug',
+  '/menu',
+  '/clear',
+  '/exit',
+  '/back',
+  '/model',
+  '/mode',
+  '/nlu',
+  '/subscription',
+];
+
 export const ChatPage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
   const {
@@ -142,43 +167,45 @@ export const ChatPage: React.FC = () => {
     getProject(selectedProjectId);
 
     // Load history and then check for initial question
-    loadHistory(selectedProjectId).then(() => {
-      // Mark that we've loaded initial question for this project FIRST
-      initialQuestionLoadedRef.current = selectedProjectId;
-      isLoadingHistoryRef.current = false;
+    loadHistory(selectedProjectId)
+      .then(() => {
+        // Mark that we've loaded initial question for this project FIRST
+        initialQuestionLoadedRef.current = selectedProjectId;
+        isLoadingHistoryRef.current = false;
 
-      // After history is loaded, check for unanswered questions
-      const { messages: currentMessages, mode: currentMode, getQuestion: storeGetQuestion } = useChatStore.getState();
+        // After history is loaded, check for unanswered questions
+        const { messages: _currentMessages, mode: currentMode, getQuestion: storeGetQuestion } =
+          useChatStore.getState();
 
-      // Mark session start time ONLY if not already set for this project
-      // This prevents hiding messages when switching modes
-      if (!sessionStartTime) {
-        setSessionStartTime(new Date());
-      }
+        // Mark session start time ONLY if not already set for this project
+        // This prevents hiding messages when switching modes
+        if (!sessionStartTime) {
+          setSessionStartTime(new Date());
+        }
 
-      if (currentMode === 'socratic') {
-        // Always fetch question on page load - backend handles logic of:
-        // 1. Returning existing unanswered question from pending_questions
-        // 2. Generating new question if none exist
-        // Frontend doesn't need to duplicate this logic
-        storeGetQuestion(selectedProjectId);
-      }
-    }).catch(error => {
-      console.error('Failed to load history:', error);
-      isLoadingHistoryRef.current = false;
-      // Mark that we've attempted to load for this project
-      initialQuestionLoadedRef.current = selectedProjectId;
+        if (currentMode === 'socratic') {
+          // Always fetch question on page load - backend handles logic of:
+          // 1. Returning existing unanswered question from pending_questions
+          // 2. Generating new question if none exist
+          // Frontend doesn't need to duplicate this logic
+          storeGetQuestion(selectedProjectId);
+        }
+      })
+      .catch((_error) => {
+        isLoadingHistoryRef.current = false;
+        // Mark that we've attempted to load for this project
+        initialQuestionLoadedRef.current = selectedProjectId;
 
-      // Still try to get initial question even if history load fails
-      if (!sessionStartTime) {
-        setSessionStartTime(new Date());
-      }
-      const { mode: currentMode, getQuestion: storeGetQuestion } = useChatStore.getState();
-      if (currentMode === 'socratic') {
-        storeGetQuestion(selectedProjectId);
-      }
-    });
-  }, [selectedProjectId]);
+        // Still try to get initial question even if history load fails
+        if (!sessionStartTime) {
+          setSessionStartTime(new Date());
+        }
+        const { mode: currentMode, getQuestion: storeGetQuestion } = useChatStore.getState();
+        if (currentMode === 'socratic') {
+          storeGetQuestion(selectedProjectId);
+        }
+      });
+  }, [selectedProjectId, getProject, loadHistory, sessionStartTime]);
 
   // Auto-scroll to bottom when messages change
   React.useEffect(() => {
@@ -226,13 +253,15 @@ export const ChatPage: React.FC = () => {
         // No command match - treat as free-form question for Claude
         await handleFreeFormQuestion(userInput);
       }
-    } catch (error) {
-      console.error('Pre-session input error:', error);
-      setFreeSessionResponses(prev => [...prev, {
-        role: 'assistant',
-        content: "Sorry, I encountered an error. Please try again.",
-        type: 'message'
-      }]);
+    } catch (_error) {
+      setFreeSessionResponses((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'Sorry, I encountered an error. Please try again.',
+          type: 'message',
+        },
+      ]);
     } finally {
       setIsInterpretingNLU(false);
     }
@@ -243,25 +272,22 @@ export const ChatPage: React.FC = () => {
    */
   const handleNLUCommand = async (command: string) => {
     // Show command being executed
-    setFreeSessionResponses(prev => [...prev, {
-      role: 'assistant',
-      content: `Understood! Executing: \`${command}\``,
-      type: 'command'
-    }]);
+    setFreeSessionResponses((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: `Understood! Executing: \`${command}\``,
+        type: 'command',
+      },
+    ]);
 
     // Extract command name for routing
     const cmdLower = command.toLowerCase();
     const cmdParts = cmdLower.split(/\s+/);
     const baseCmd = cmdParts[0]; // e.g., '/help', '/docs', '/subscription'
 
-    // Commands that can be handled in pre-session (no project required)
-    const freeSessionCommands = [
-      '/help', '/info', '/docs', '/status', '/debug', '/menu', '/clear',
-      '/exit', '/back', '/model', '/mode', '/nlu', '/subscription'
-    ];
-
     // Check if this is a pre-session compatible command
-    const isFreeSessionCommand = freeSessionCommands.includes(baseCmd);
+    const isFreeSessionCommand = FREE_SESSION_COMMANDS.includes(baseCmd);
 
     if (isFreeSessionCommand) {
       // Handle pre-session commands
@@ -306,30 +332,41 @@ export const ChatPage: React.FC = () => {
       const enabled = mode === 'on';
 
       try {
-        const response = await apiClient.put<any>(
+        interface SubscriptionResponse {
+          message?: string;
+        }
+
+        const response = await apiClient.put<SubscriptionResponse>(
           `/auth/me/testing-mode?enabled=${enabled}`
         );
 
         const result = response?.data || response;
-        const message = (result && result.message) || `Testing mode has been turned ${enabled ? 'ON' : 'OFF'}. All restrictions bypassed!`;
+        const message =
+          (result && result.message) ||
+          `Testing mode has been turned ${enabled ? 'ON' : 'OFF'}. All restrictions bypassed!`;
 
         // Update the store to reflect testing mode change
         setTestingMode(enabled);
         // Refresh subscription to ensure consistency
         await refreshSubscription();
 
-        setFreeSessionResponses(prev => [...prev, {
-          role: 'assistant',
-          content: message,
-          type: 'message'
-        }]);
-      } catch (error) {
-        console.error('Subscription command error:', error);
-        setFreeSessionResponses(prev => [...prev, {
-          role: 'assistant',
-          content: `Failed to execute subscription command. Please try again.`,
-          type: 'message'
-        }]);
+        setFreeSessionResponses((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: message,
+            type: 'message',
+          },
+        ]);
+      } catch (_error) {
+        setFreeSessionResponses((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: 'Failed to execute subscription command. Please try again.',
+            type: 'message',
+          },
+        ]);
       }
     } else {
       setFreeSessionResponses(prev => [...prev, {
@@ -345,35 +382,40 @@ export const ChatPage: React.FC = () => {
    */
   const handleFreeFormQuestion = async (question: string) => {
     try {
-      const response = await apiClient.post<any>(
-        '/free_session/ask',
-        {
-          question,
-          context: {}
-        }
-      );
+      const response = await apiClient.post<FreeSessionResponse>('/free_session/ask', {
+        question,
+        context: {},
+      });
 
       const result = response;
       if (result?.answer) {
-        setFreeSessionResponses(prev => [...prev, {
-          role: 'assistant',
-          content: result.answer,
-          type: 'message'
-        }]);
+        setFreeSessionResponses((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: result.answer,
+            type: 'message',
+          },
+        ]);
       } else {
-        setFreeSessionResponses(prev => [...prev, {
-          role: 'assistant',
-          content: "I couldn't process that question. Please try again or use a command like /help.",
-          type: 'message'
-        }]);
+        setFreeSessionResponses((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: "I couldn't process that question. Please try again or use a command like /help.",
+            type: 'message',
+          },
+        ]);
       }
-    } catch (error) {
-      console.error('Free-form question error:', error);
-      setFreeSessionResponses(prev => [...prev, {
-        role: 'assistant',
-        content: "Sorry, I encountered an error. Please try again.",
-        type: 'message'
-      }]);
+    } catch (_error) {
+      setFreeSessionResponses((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'Sorry, I encountered an error. Please try again.',
+          type: 'message',
+        },
+      ]);
     }
   };
 

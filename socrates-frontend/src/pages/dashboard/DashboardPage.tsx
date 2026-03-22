@@ -3,24 +3,19 @@
  */
 
 import React from 'react';
-import { Plus, Play, TrendingUp, MessageSquare, BookOpen } from 'lucide-react';
+import { Plus, Play, TrendingUp, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../../stores';
 import { useProjectStore } from '../../stores';
 import { showSuccess, showError } from '../../stores/notificationStore';
 import { projectsAPI } from '../../api';
-import {
-  MainLayout,
-  PageHeader,
-} from '../../components/layout';
-import {
-  Card,
-  Button,
-  Alert,
-  Stat,
-  Badge,
-  EmptyState,
-} from '../../components/common';
+import { MainLayout, PageHeader } from '../../components/layout';
+import { Card, Button, Alert, Stat, Badge, EmptyState } from '../../components/common';
 import { ProjectCard, CreateProjectModal } from '../../components/project';
+
+interface ProjectFormData {
+  name: string;
+  description?: string;
+}
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -30,12 +25,7 @@ export const DashboardPage: React.FC = () => {
   const [stats, setStats] = React.useState({ questionsAnswered: 0, codeGenerated: 0 });
   const [statsLoading, setStatsLoading] = React.useState(false);
 
-  React.useEffect(() => {
-    listProjects();
-    fetchStats();
-  }, [listProjects]);
-
-  const fetchStats = async () => {
+  const fetchStats = React.useCallback(async () => {
     try {
       setStatsLoading(true);
       let totalQuestions = 0;
@@ -47,33 +37,39 @@ export const DashboardPage: React.FC = () => {
           const projectStats = await projectsAPI.getProjectStats(project.project_id);
           totalQuestions += projectStats.questions_asked || 0;
           totalCode += projectStats.code_generated || 0;
-        } catch (error) {
+        } catch (_error) {
           // Continue if individual project fails
-          console.error(`Failed to fetch stats for project ${project.project_id}:`, error);
         }
       }
 
       setStats({ questionsAnswered: totalQuestions, codeGenerated: totalCode });
-    } catch (error) {
-      console.error('Failed to fetch dashboard stats:', error);
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [projects]);
+
+  React.useEffect(() => {
+    listProjects();
+  }, [listProjects]);
+
+  React.useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const activeProjects = projects.filter((p) => !p.is_archived);
   const recentProjects = activeProjects.slice(0, 3);
 
-  const handleCreateProject = async (formData: any) => {
+  const handleCreateProject = async (formData: ProjectFormData) => {
     try {
       if (!user) {
         throw new Error('User not authenticated');
       }
       await createProject(formData.name, formData.description);
       setShowCreateModal(false);
-    } catch (error) {
-      console.error('Failed to create project:', error);
-      throw error;
+      showSuccess('Project created successfully');
+    } catch (_error) {
+      showError('Failed to create project');
+      throw _error;
     }
   };
 
@@ -87,47 +83,43 @@ export const DashboardPage: React.FC = () => {
     try {
       setIsChatLoading(true);
       // Navigate to pre-session chat - user will select or create a project there
-      window.location.href = `/chat`;
-    } catch (error) {
-      console.error('Failed to start chat:', error);
+      window.location.href = '/chat';
     } finally {
       setIsChatLoading(false);
     }
   };
 
   const handleArchiveProject = async (projectId: string) => {
-    const projectToArchive = projects.find(p => p.project_id === projectId);
-    console.log('Archive clicked for:', projectToArchive?.name);
+    const projectToArchive = projects.find((p) => p.project_id === projectId);
 
     try {
       const result = await projectsAPI.deleteProject(projectId);
       console.log('Delete API response:', result);
       showSuccess('Project Archived', `${projectToArchive?.name} has been archived successfully`);
-      console.log('Notification shown');
 
       setTimeout(async () => {
-        console.log('Refreshing projects list');
         await listProjects();
-        console.log('Projects refreshed');
       }, 3000);
-    } catch (error) {
-      console.error('Failed to archive project:', error);
+    } catch (_error) {
       showError('Failed to Archive Project', 'Unable to archive the project. Please try again.');
     }
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!window.confirm('Are you sure you want to permanently delete this project? This action cannot be undone.')) {
+    if (
+      !window.confirm(
+        'Are you sure you want to permanently delete this project? This action cannot be undone.'
+      )
+    ) {
       return;
     }
     try {
-      const projectToDelete = projects.find(p => p.project_id === projectId);
+      const projectToDelete = projects.find((p) => p.project_id === projectId);
       await projectsAPI.deleteProject(projectId);
       showSuccess('Project Deleted', `${projectToDelete?.name} has been permanently deleted`);
       // Refresh after notification is shown
       setTimeout(() => listProjects(), 100);
-    } catch (error) {
-      console.error('Failed to delete project:', error);
+    } catch (_error) {
       showError('Failed to Delete Project', 'Unable to delete the project. Please try again.');
     }
   };
