@@ -188,8 +188,8 @@ class ClaudeClient:
             Decrypted API key string, or None if decryption fails
 
         Note:
-            For production, set SOCRATES_ENCRYPTION_KEY environment variable
-            to a secure key. Currently using: default-insecure-key-change-in-production
+            SOCRATES_ENCRYPTION_KEY environment variable must be set for decryption.
+            Generate a secure key with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
         """
         import base64
         import hashlib
@@ -197,18 +197,18 @@ class ClaudeClient:
 
         from cryptography.fernet import Fernet
 
-        # Get encryption key from environment or use default
-        encryption_key_base = os.getenv(
-            "SOCRATES_ENCRYPTION_KEY", "default-insecure-key-change-in-production"
-        )
+        # Get encryption key from environment (no fallback - REQUIRED)
+        encryption_key_base = os.getenv("SOCRATES_ENCRYPTION_KEY")
 
-        # Log which key is being used (without revealing the actual key)
-        key_source = (
-            "SOCRATES_ENCRYPTION_KEY env var (SECURE)"
-            if os.getenv("SOCRATES_ENCRYPTION_KEY")
-            else "default insecure key (CHANGE IN PRODUCTION)"
-        )
-        self.logger.info(f"Decrypting API key using: {key_source}")
+        if not encryption_key_base:
+            self.logger.error(
+                "SOCRATES_ENCRYPTION_KEY environment variable is not set. "
+                "Cannot decrypt API keys without it. "
+                "Please set SOCRATES_ENCRYPTION_KEY to a secure value."
+            )
+            return None
+
+        self.logger.info("Decrypting API key using SOCRATES_ENCRYPTION_KEY")
 
         # Method 1: Try SHA256-based Fernet decryption (simple, reliable, doesn't require PBKDF2)
         try:

@@ -755,9 +755,14 @@ class MultiLLMAgent(Agent):
             from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
             # Use a secret key from config or environment
-            secret = os.getenv(
-                "SOCRATES_ENCRYPTION_KEY", "default-insecure-key-change-in-production"
-            ).encode()
+            secret = os.getenv("SOCRATES_ENCRYPTION_KEY")
+            if not secret:
+                raise ValueError(
+                    "SOCRATES_ENCRYPTION_KEY environment variable is not set. "
+                    "For secure encryption, please set this variable to a strong key. "
+                    "Generate one with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'"
+                )
+            secret = secret.encode()
 
             # Derive key using PBKDF2
             salt = b"socrates-salt"  # In production, use random per-record

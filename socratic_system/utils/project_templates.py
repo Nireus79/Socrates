@@ -571,8 +571,13 @@ LOG_LEVEL=INFO
 DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 
 # API Keys (if applicable)
-API_KEY=your-api-key-here
-SECRET_KEY=your-secret-key-here
+API_KEY=<your-api-key-here>
+SECRET_KEY=<your-secret-key-here>
+
+# Encryption Keys (REQUIRED for production)
+JWT_SECRET_KEY=<generate-with: python -c 'import secrets; print(secrets.token_urlsafe(32))'>
+SOCRATES_ENCRYPTION_KEY=<generate-with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'>
+DATABASE_ENCRYPTION_KEY=<generate-with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'>
 
 # External Services
 GITHUB_TOKEN=your-github-token
