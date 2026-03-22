@@ -15,13 +15,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
-# Optional code analysis for safety
-try:
-    from socratic_security.sandbox import CodeAnalyzer
-    SECURITY_AVAILABLE = True
-except ImportError:
-    SECURITY_AVAILABLE = False
-    CodeAnalyzer = None
+# Code analysis for safety (REQUIRED)
+from socratic_security.sandbox import CodeAnalyzer
 
 logger = logging.getLogger("socrates.utils.validators.syntax_validator")
 
@@ -218,25 +213,24 @@ class SyntaxValidator:
         try:
             compile(content, file_path, "exec")
 
-            # Optionally perform code safety analysis
-            if SECURITY_AVAILABLE and CodeAnalyzer:
-                try:
-                    analyzer = CodeAnalyzer()
-                    analysis_result = analyzer.analyze(content)
+            # Perform code safety analysis (REQUIRED security check)
+            try:
+                analyzer = CodeAnalyzer()
+                analysis_result = analyzer.analyze(content)
 
-                    # Add any dangerous patterns as warnings
-                    if analysis_result.get("dangerous_patterns"):
-                        for pattern in analysis_result["dangerous_patterns"]:
-                            warnings.append({
-                                "file": file_path,
-                                "message": f"Potentially dangerous pattern: {pattern.get('name', 'unknown')}",
-                                "severity": "warning",
-                                "category": "security",
-                                "detail": pattern.get("description", ""),
-                            })
+                # Add any dangerous patterns as warnings
+                if analysis_result.get("dangerous_patterns"):
+                    for pattern in analysis_result["dangerous_patterns"]:
+                        warnings.append({
+                            "file": file_path,
+                            "message": f"Potentially dangerous pattern: {pattern.get('name', 'unknown')}",
+                            "severity": "warning",
+                            "category": "security",
+                            "detail": pattern.get("description", ""),
+                        })
 
-                    # Log if code execution would be risky
-                    if analysis_result.get("risk_level") == "high":
+                # Log if code execution would be risky
+                if analysis_result.get("risk_level") == "high":
                         warnings.append({
                             "file": file_path,
                             "message": "Code has high security risk. Review before execution.",

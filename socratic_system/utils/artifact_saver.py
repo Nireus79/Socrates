@@ -11,34 +11,21 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-# Security utilities for path traversal prevention
-try:
-    from socratic_security.filesystem import PathTraversalError, PathValidator
+# Security utilities for path traversal prevention (REQUIRED)
+from socratic_security.filesystem import PathTraversalError, PathValidator
 
-    SECURITY_AVAILABLE = True
-except ImportError:
-    SECURITY_AVAILABLE = False
-    PathValidator = None
-    PathTraversalError = None
-
-# Audit logging
-try:
-    from socratic_security.audit import AuditLogger
-
-    AUDIT_AVAILABLE = True
-except ImportError:
-    AUDIT_AVAILABLE = False
+# Audit logging (REQUIRED)
+from socratic_security.audit import AuditLogger
     AuditLogger = None
 
 logger = logging.getLogger("socrates.utils.artifact_saver")
-audit_logger = None
 
-if AUDIT_AVAILABLE and AuditLogger:
-    try:
-        audit_logger = AuditLogger()
-    except Exception as e:
-        logger.debug(f"Failed to initialize audit logger: {e}")
-        audit_logger = None
+# Initialize audit logger (REQUIRED)
+try:
+    audit_logger = AuditLogger()
+except Exception as e:
+    logger.warning(f"Failed to initialize audit logger: {e}")
+    audit_logger = None
 
 
 class ArtifactSaver:
@@ -108,20 +95,12 @@ class ArtifactSaver:
             # Create all files in the structure
             for file_path, content in file_structure.items():
                 try:
-                    # Validate path to prevent traversal attacks
-                    if SECURITY_AVAILABLE and PathValidator:
-                        validator = PathValidator()
-                        # Resolve relative paths and validate they're within project_root
-                        validated_relative = validator.validate_path(
-                            project_root / file_path, base_dir=project_root
-                        )
-                    else:
-                        # Fallback validation without PathValidator
-                        full_path = (project_root / file_path).resolve()
-                        if not str(full_path).startswith(str(project_root.resolve())):
-                            logger.error(f"Path traversal detected: {file_path}")
-                            continue
-                        validated_relative = full_path
+                    # Validate path to prevent traversal attacks (REQUIRED security check)
+                    validator = PathValidator()
+                    # Resolve relative paths and validate they're within project_root
+                    validated_relative = validator.validate_path(
+                        project_root / file_path, base_dir=project_root
+                    )
 
                     full_path = validated_relative
 
@@ -250,21 +229,14 @@ class ArtifactSaver:
             else:
                 filename = f"{clean_name}_{artifact_type}{extension}"
 
-            # Validate the final path
+            # Validate the final path (REQUIRED security check)
             file_path = save_dir / filename
-            if SECURITY_AVAILABLE and PathValidator:
-                try:
-                    validator = PathValidator()
-                    file_path = validator.validate_path(file_path, base_dir=save_dir)
-                except (PathTraversalError, ValueError) as e:
-                    logger.error(f"Path validation failed for artifact: {e}")
-                    return False, ""
-            else:
-                # Fallback validation
-                resolved_path = file_path.resolve()
-                if not str(resolved_path).startswith(str(save_dir.resolve())):
-                    logger.error(f"Path traversal detected in artifact path: {filename}")
-                    return False, ""
+            try:
+                validator = PathValidator()
+                file_path = validator.validate_path(file_path, base_dir=save_dir)
+            except (PathTraversalError, ValueError) as e:
+                logger.error(f"Path validation failed for artifact: {e}")
+                return False, ""
 
             # Save file
             with open(file_path, "w", encoding="utf-8") as f:
