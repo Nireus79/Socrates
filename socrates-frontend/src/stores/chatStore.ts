@@ -7,10 +7,18 @@ import type { ChatMessage, ChatMode } from '../types/models';
 import { chatAPI } from '../api';
 
 const logger = {
-  debug: (msg: string, data?: any) => console.debug('[ChatStore]', msg, data),
-  info: (msg: string, data?: any) => console.log('[ChatStore]', msg, data),
-  warn: (msg: string, data?: any) => console.warn('[ChatStore]', msg, data),
-  error: (msg: string, data?: any) => console.error('[ChatStore]', msg, data),
+  debug: (msg: string, _data?: unknown) => {
+    if (import.meta.env.DEV) {
+      console.debug('[ChatStore]', msg, _data);
+    }
+  },
+  info: (msg: string, _data?: unknown) => {
+    if (import.meta.env.DEV) {
+      console.log('[ChatStore]', msg, _data);
+    }
+  },
+  warn: (msg: string, _data?: unknown) => console.warn('[ChatStore]', msg, _data),
+  error: (msg: string, _data?: unknown) => console.error('[ChatStore]', msg, _data),
 };
 
 interface Conflict {
@@ -31,6 +39,10 @@ interface ExtractedSpecs {
   requirements?: string[];
   tech_stack?: string[];
   constraints?: string[];
+}
+
+interface ConflictResolution {
+  [key: string]: string;
 }
 
 interface ChatState {
@@ -61,7 +73,7 @@ interface ChatState {
   loadHistory: (projectId: string) => Promise<void>;
   getSummary: (projectId: string) => Promise<{ summary: string; key_points: string[] }>;
   searchConversations: (projectId: string, query: string) => Promise<void>;
-  resolveConflict: (projectId: string, resolution: any) => Promise<void>;
+  resolveConflict: (projectId: string, resolution: ConflictResolution) => Promise<void>;
   saveExtractedSpecs: (projectId: string, specs: ExtractedSpecs) => Promise<void>;
   clearConflicts: () => void;
   clearExtractedSpecs: () => void;
@@ -337,11 +349,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const history = await chatAPI.getHistory(projectId);
       // Ensure all messages have IDs for React rendering
-      const messagesWithIds = history.messages.map((msg: any, idx: number) => ({
-        ...msg,
-        id: msg.id || `msg_${Date.now()}_${idx}`,
-        role: msg.type || msg.role,
-      }));
+      const messagesWithIds = history.messages.map(
+        (msg: Record<string, unknown>, idx: number) => ({
+          ...msg,
+          id: (msg.id as string) || `msg_${Date.now()}_${idx}`,
+          role: (msg.type as string) || (msg.role as string),
+        })
+      );
       set({ messages: messagesWithIds, isLoading: false });
     } catch (error) {
       set({
@@ -387,7 +401,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   // Resolve conflict
-  resolveConflict: async (projectId: string, resolution: any) => {
+  resolveConflict: async (projectId: string, resolution: ConflictResolution) => {
     const state = get();
     if (!state.currentProjectId) {
       set({ error: 'No project selected' });
@@ -399,7 +413,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Transform resolution from modal format {conflict_id: choice_number}
       // to API format {conflicts: [{conflict_type, old_value, new_value, resolution, manual_value}]}
       const conflicts = state.conflicts || [];
-      const conflictResolutions: any[] = [];
+      interface ConflictResolutionPayload {
+        conflict_type: string;
+        old_value: string;
+        new_value: string;
+        resolution: string;
+        manual_value?: string;
+      }
+      const conflictResolutions: ConflictResolutionPayload[] = [];
 
       for (const [conflictId, choiceNum] of Object.entries(resolution)) {
         const conflict = conflicts.find(c => c.conflict_id === conflictId);
