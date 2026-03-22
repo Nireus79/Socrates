@@ -20,8 +20,8 @@ COPY socratic_system ./socratic_system
 # Install socratic-core first (required dependency)
 RUN cd socratic-core && pip install --no-cache-dir -e . && cd ..
 
-# Install socratic_system package and all dependencies from PyPI
-RUN pip install --no-cache-dir -e .
+# Install socratic_system package with API extras (includes socrates-core-api)
+RUN pip install --no-cache-dir -e ".[api]"
 
 # Production stage
 FROM python:3.11-slim
@@ -64,5 +64,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-# Run API server
-CMD ["uvicorn", "socrates_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run API server (use published socrates-core-api package)
+CMD ["uvicorn", "socrates_core_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
