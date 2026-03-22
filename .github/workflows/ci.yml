@@ -25,9 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Install packages in dependency order
-          pip install -e socratic-core
-          # Main platform
+          # Install main platform and dependencies
           pip install -e .
           # Testing dependencies
           pip install pytest pytest-cov pytest-asyncio pytest-timeout
@@ -35,13 +33,11 @@ jobs:
       - name: Lint with flake8
         run: |
           pip install flake8
-          flake8 socratic-core/src socratic_system || true
+          flake8 socratic_system modules || true
 
       - name: Run unit tests
         timeout-minutes: 30
         run: |
-          # Test socratic-core with timeout to prevent hangs on Python 3.8/3.9
-          pytest socratic-core/tests/ -v --cov=socratic_core --cov-report=xml --timeout=10 || true
           # Test monorepo with timeout
           pytest tests/ -v --tb=short --timeout=10 || true
 
@@ -65,7 +61,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install bandit safety
-          bandit -r socratic-core/src socratic_system || true
+          bandit -r socratic_system modules || true
           safety check || true
 
   build:
@@ -85,13 +81,10 @@ jobs:
 
       - name: Build packages
         run: |
-          cd socratic-core && python -m build && cd ..
           python -m build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: python-packages
-          path: |
-            socratic-core/dist/
-            dist/
+          path: dist/
