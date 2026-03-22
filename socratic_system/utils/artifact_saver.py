@@ -90,16 +90,36 @@ class ArtifactSaver:
 
             # Create all files in the structure
             for file_path, content in file_structure.items():
-                full_path = project_root / file_path
+                try:
+                    # Validate path to prevent traversal attacks
+                    if SECURITY_AVAILABLE and PathValidator:
+                        validator = PathValidator()
+                        # Resolve relative paths and validate they're within project_root
+                        validated_relative = validator.validate_path(
+                            project_root / file_path, base_dir=project_root
+                        )
+                    else:
+                        # Fallback validation without PathValidator
+                        full_path = (project_root / file_path).resolve()
+                        if not str(full_path).startswith(str(project_root.resolve())):
+                            logger.error(f"Path traversal detected: {file_path}")
+                            continue
+                        validated_relative = full_path
 
-                # Create parent directories
-                full_path.parent.mkdir(parents=True, exist_ok=True)
+                    full_path = validated_relative
 
-                # Write file
-                with open(full_path, "w", encoding="utf-8") as f:
-                    f.write(content)
+                    # Create parent directories
+                    full_path.parent.mkdir(parents=True, exist_ok=True)
 
-                logger.debug(f"Created file: {full_path}")
+                    # Write file
+                    with open(full_path, "w", encoding="utf-8") as f:
+                        f.write(content)
+
+                    logger.debug(f"Created file: {full_path}")
+
+                except (PathTraversalError, ValueError) as e:
+                    logger.error(f"Security validation failed for path '{file_path}': {e}")
+                    continue
 
             logger.info(f"Saved multi-file project to {project_root}")
             return True, str(project_root)
@@ -173,8 +193,10 @@ class ArtifactSaver:
             # Determine file extension
             extension = ArtifactSaver.EXTENSION_MAP.get(actual_artifact_type, ".txt")
 
-            # Create filename
+            # Sanitize filename to prevent path traversal
             clean_name = project_name.replace(" ", "_").replace("/", "_").lower()[:30]
+            # Remove any path separators and dangerous characters from filename
+            clean_name = clean_name.replace("..", "").replace("\\", "").replace(":", "")
 
             if timestamp:
                 timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -182,7 +204,21 @@ class ArtifactSaver:
             else:
                 filename = f"{clean_name}_{artifact_type}{extension}"
 
+            # Validate the final path
             file_path = save_dir / filename
+            if SECURITY_AVAILABLE and PathValidator:
+                try:
+                    validator = PathValidator()
+                    file_path = validator.validate_path(file_path, base_dir=save_dir)
+                except (PathTraversalError, ValueError) as e:
+                    logger.error(f"Path validation failed for artifact: {e}")
+                    return False, ""
+            else:
+                # Fallback validation
+                resolved_path = file_path.resolve()
+                if not str(resolved_path).startswith(str(save_dir.resolve())):
+                    logger.error(f"Path traversal detected in artifact path: {filename}")
+                    return False, ""
 
             # Save file
             with open(file_path, "w", encoding="utf-8") as f:
