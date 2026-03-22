@@ -15,7 +15,9 @@ from pathlib import Path
 from socratic_security.filesystem import PathTraversalError, PathValidator
 
 # Audit logging (REQUIRED)
-from socratic_security.audit import AuditLogger
+try:
+    from socratic_security.audit import AuditLogger
+except ImportError:
     AuditLogger = None
 
 logger = logging.getLogger("socrates.utils.artifact_saver")
