@@ -34,6 +34,10 @@ except ImportError:
     QuestionEffectiveness = None  # type: ignore
     UserBehaviorPattern = None  # type: ignore
 
+from socratic_system.database.encryption import (
+    DatabaseEncryptionWrapper,
+    initialize_encryption,
+)
 from socratic_system.database.migration_runner import MigrationRunner
 from socratic_system.models.llm_provider import LLMUsageRecord
 from socratic_system.models.note import ProjectNote
@@ -74,6 +78,15 @@ class ProjectDatabase:
         data_dir = os.path.dirname(db_path)
         if data_dir:  # Only create if directory path is non-empty
             os.makedirs(data_dir, exist_ok=True)
+
+        # Initialize database encryption (optional feature)
+        # Note: Only encrypt non-queryable fields to avoid breaking WHERE clauses
+        db_encryption_enabled = os.getenv("SECURITY_DATABASE_ENCRYPTION", "false").lower() == "true"
+        initialize_encryption(enabled=db_encryption_enabled)
+        # Only encrypt password hash and API keys, NOT email (used in queries)
+        self.encryption_wrapper = DatabaseEncryptionWrapper(
+            ["passcode_hash", "encrypted_key"]
+        )
 
         # Initialize V2 schema if not already exists
         self._init_database_v2()
@@ -1247,7 +1260,7 @@ class ProjectDatabase:
     # ========================================================================
 
     def save_user(self, user: User) -> None:
-        """Save or update a user"""
+        """Save or update a user (with field-level encryption for sensitive data)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -1256,6 +1269,11 @@ class ProjectDatabase:
             sub_end = getattr(user, "subscription_end", None)
             is_archived = getattr(user, "is_archived", False)
             archived_at = getattr(user, "archived_at", None)
+
+            # Encrypt sensitive fields (password hash, not email as it's used in queries)
+            encrypted_passcode = self.encryption_wrapper.encrypt_row(
+                {"passcode_hash": user.passcode_hash}
+            )["passcode_hash"]
 
             cursor.execute(
                 """
@@ -1268,7 +1286,7 @@ class ProjectDatabase:
                 (
                     user.username,
                     user.email,
-                    user.passcode_hash,
+                    encrypted_passcode,
                     getattr(user, "subscription_tier", "free"),
                     getattr(user, "subscription_status", "active"),
                     serialize_datetime(sub_start) if sub_start else None,
@@ -1291,7 +1309,7 @@ class ProjectDatabase:
             conn.close()
 
     def load_user(self, username: str) -> User | None:
-        """Load a user by username"""
+        """Load a user by username (with field-level decryption for sensitive data)"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -1303,10 +1321,17 @@ class ProjectDatabase:
             if not row:
                 return None
 
+            # Decrypt sensitive fields (password hash only, not email)
+            decrypted = self.encryption_wrapper.decrypt_row(
+                {
+                    "passcode_hash": row["passcode_hash"],
+                }
+            )
+
             user = User(
                 username=row["username"],
                 email=row["email"],
-                passcode_hash=row["passcode_hash"],
+                passcode_hash=decrypted["passcode_hash"],
                 created_at=deserialize_datetime(row["created_at"]),
             )
 
@@ -1338,7 +1363,7 @@ class ProjectDatabase:
             conn.close()
 
     def load_user_by_email(self, email: str) -> User | None:
-        """Load a user by email address"""
+        """Load a user by email address (with field-level decryption for sensitive data)"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -1350,10 +1375,17 @@ class ProjectDatabase:
             if not row:
                 return None
 
+            # Decrypt sensitive fields (password hash only, not email)
+            decrypted = self.encryption_wrapper.decrypt_row(
+                {
+                    "passcode_hash": row["passcode_hash"],
+                }
+            )
+
             user = User(
                 username=row["username"],
                 email=row["email"],
-                passcode_hash=row["passcode_hash"],
+                passcode_hash=decrypted["passcode_hash"],
                 created_at=deserialize_datetime(row["created_at"]),
             )
 
@@ -1540,12 +1572,12 @@ class ProjectDatabase:
 
     def save_api_key(self, user_id: str, provider: str, encrypted_key: str, key_hash: str) -> bool:
         """
-        Save or update an API key for a provider.
+        Save or update an API key for a provider (with field-level encryption).
 
         Args:
             user_id: Username
             provider: Provider name (e.g., 'claude', 'openai')
-            encrypted_key: Encrypted API key
+            encrypted_key: Encrypted API key (will be encrypted again for storage)
             key_hash: Hash of the API key for verification
 
         Returns:
@@ -1558,6 +1590,11 @@ class ProjectDatabase:
             api_key_id = f"{user_id}:{provider}:{int(datetime.now().timestamp())}"
             now = datetime.now()
 
+            # Add extra encryption layer for already-encrypted API key
+            doubly_encrypted = self.encryption_wrapper.encrypt_row(
+                {"encrypted_key": encrypted_key}
+            )["encrypted_key"]
+
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO api_keys
@@ -1568,7 +1605,7 @@ class ProjectDatabase:
                     api_key_id,
                     user_id,
                     provider,
-                    encrypted_key,
+                    doubly_encrypted,
                     key_hash,
                     serialize_datetime(now),
                     serialize_datetime(now),
@@ -1588,14 +1625,14 @@ class ProjectDatabase:
 
     def get_api_key(self, user_id: str, provider: str) -> str | None:
         """
-        Get encrypted API key for a provider.
+        Get encrypted API key for a provider (with field-level decryption).
 
         Args:
             user_id: Username
             provider: Provider name (e.g., 'claude', 'openai')
 
         Returns:
-            Encrypted API key or None if not found
+            Encrypted API key (decrypted from storage) or None if not found
         """
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -1614,7 +1651,11 @@ class ProjectDatabase:
 
             row = cursor.fetchone()
             if row:
-                return row["encrypted_key"]
+                # Decrypt the storage encryption layer (returns the original encrypted_key)
+                decrypted = self.encryption_wrapper.decrypt_row(
+                    {"encrypted_key": row["encrypted_key"]}
+                )
+                return decrypted["encrypted_key"]
             return None
 
         except Exception as e:
