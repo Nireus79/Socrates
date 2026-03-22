@@ -5,24 +5,34 @@ These are lightweight integration tests that verify:
 1. All new endpoints are properly registered
 2. Endpoints return appropriate HTTP status codes
 3. Basic error handling works
+
+Note: These tests require socrates_api package which is in a separate repository.
+They will be skipped if socrates_api is not available.
 """
 
 from datetime import timedelta
 
 import pytest
 
-pytest.importorskip("socrates_api", minversion=None)
-
-from fastapi.testclient import TestClient
-from socrates_api.auth.jwt_handler import JWTHandler
+# Try to import socrates_api, skip module if not available
+try:
+    from fastapi.testclient import TestClient
+    from socrates_api.auth.jwt_handler import JWTHandler
+    SOCRATES_API_AVAILABLE = True
+except ImportError:
+    SOCRATES_API_AVAILABLE = False
+    pytestmark = pytest.mark.skip(reason="socrates_api package not available")
 
 # Test data
 TEST_USER = "testuser"
 TEST_USER_2 = "testuser2"
 TEST_PROJECT_ID = "test_project_id"
 
-# Create valid JWT tokens
-VALID_TOKEN = JWTHandler.create_access_token(subject=TEST_USER, expires_delta=timedelta(hours=1))
+# Create valid JWT tokens (only if socrates_api available)
+if SOCRATES_API_AVAILABLE:
+    VALID_TOKEN = JWTHandler.create_access_token(subject=TEST_USER, expires_delta=timedelta(hours=1))
+else:
+    VALID_TOKEN = "dummy_token"
 
 
 # Fixtures

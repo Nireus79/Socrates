@@ -7,15 +7,22 @@ Tests metrics collection including:
 - Response size tracking
 - Status code distribution
 - Slow request detection
+
+Note: These tests require socrates_api package which is in a separate repository.
+They will be skipped if socrates_api is not available.
 """
 
 import pytest
 
-pytest.importorskip("socrates_api", minversion=None)
-
-from fastapi import FastAPI
-from socrates_api.middleware.metrics import MetricsMiddleware
-from starlette.testclient import TestClient
+# Try to import socrates_api, skip module if not available
+try:
+    from fastapi import FastAPI
+    from socrates_api.middleware.metrics import MetricsMiddleware
+    from starlette.testclient import TestClient
+    SOCRATES_API_AVAILABLE = True
+except ImportError:
+    SOCRATES_API_AVAILABLE = False
+    pytestmark = pytest.mark.skip(reason="socrates_api package not available")
 
 
 @pytest.mark.unit
