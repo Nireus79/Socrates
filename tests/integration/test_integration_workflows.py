@@ -17,6 +17,7 @@ def test_project_creation_workflow():
 
     try:
         from socratic_core.utils import ProjectIDGenerator
+
         from socratic_system.database import DatabaseSingleton
         from socratic_system.models import User
         from socratic_system.subscription.checker import SubscriptionChecker
