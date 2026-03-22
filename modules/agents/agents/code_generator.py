@@ -23,6 +23,14 @@ except ImportError:
     SECURITY_AVAILABLE = False
     SanitizedStr = str
 
+# Code analyzer (REQUIRED)
+try:
+    from socratic_system.core.analyzer_integration import AnalyzerIntegration
+    ANALYZER_AVAILABLE = True
+except ImportError:
+    ANALYZER_AVAILABLE = False
+    AnalyzerIntegration = None
+
 from .base import Agent
 
 
@@ -32,6 +40,15 @@ class CodeGeneratorAgent(Agent):
     def __init__(self, orchestrator):
         super().__init__("CodeGenerator", orchestrator)
         self.current_user = None
+
+        # Initialize code analyzer (REQUIRED)
+        self.analyzer = None
+        if ANALYZER_AVAILABLE and AnalyzerIntegration:
+            try:
+                self.analyzer = AnalyzerIntegration()
+                self.log("Code analyzer initialized")
+            except Exception as e:
+                self.log(f"Failed to initialize analyzer: {e}", level="warning")
 
     def _validate_request(self, request: Dict[str, Any]) -> tuple[bool, str]:
         """
@@ -195,6 +212,17 @@ class CodeGeneratorAgent(Agent):
                     except Exception as e:
                         self.log(f"WARNING: Failed to save generated files to database: {str(e)}")
                         # Don't fail artifact generation if database save fails
+
+                    # NEW: Perform code analysis on generated artifact
+                    if self.analyzer:
+                        self.log("Running code analysis on generated artifact...")
+                        try:
+                            analysis = self._analyze_generated_code(artifact, language="python")
+                            if analysis.get("status") != "analyzer_unavailable":
+                                # Store analysis results in project context for later use
+                                self.log(f"Analysis complete: {analysis.get('overall_score', 'N/A')}/100")
+                        except Exception as e:
+                            self.log(f"Failed to analyze generated code: {e}", level="warning")
 
                 else:
                     self.log(f"WARNING: Failed to auto-save {artifact_type}")
@@ -380,3 +408,34 @@ class CodeGeneratorAgent(Agent):
 
         file_ext = Path(file_path).suffix.lower()
         return ext_to_lang.get(file_ext, "Unknown")
+
+    def _analyze_generated_code(self, code: str, language: str = "python") -> Dict[str, Any]:
+        """
+        Perform comprehensive analysis on generated code.
+
+        Args:
+            code: Generated source code
+            language: Programming language
+
+        Returns:
+            Analysis results with quality, security, and performance metrics
+        """
+        if not self.analyzer:
+            return {"status": "analyzer_unavailable"}
+
+        try:
+            result = self.analyzer.analyze_code(code, language=language)
+
+            # Log key metrics
+            if result.get("overall_score"):
+                self.log(
+                    f"Code analysis complete: Score {result['overall_score']:.2f}/100 "
+                    f"({result.get('quality', {}).get('issues', 0)} quality issues, "
+                    f"{result.get('security', {}).get('issues', 0)} security issues)"
+                )
+
+            return result
+
+        except Exception as e:
+            self.log(f"Failed to analyze generated code: {e}", level="warning")
+            return {"status": "analysis_failed", "error": str(e)}
