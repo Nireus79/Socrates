@@ -21,7 +21,21 @@ except ImportError:
     PathValidator = None
     PathTraversalError = None
 
+# Audit logging
+try:
+    from socratic_security.audit import AuditLogger
+
+    AUDIT_AVAILABLE = True
+except ImportError:
+    AUDIT_AVAILABLE = False
+    AuditLogger = None
+
 logger = logging.getLogger("socrates.utils.artifact_saver")
+audit_logger = None
+
+if AUDIT_AVAILABLE and AuditLogger:
+    audit_logger = AuditLogger()
+    audit_logger.initialize_from_env()
 
 
 class ArtifactSaver:
@@ -122,10 +136,39 @@ class ArtifactSaver:
                     continue
 
             logger.info(f"Saved multi-file project to {project_root}")
+
+            # Audit log
+            if audit_logger:
+                audit_logger.log_event(
+                    action="artifact.save.multi_file",
+                    resource_type="project",
+                    resource_id=project_id,
+                    status="success",
+                    details={
+                        "project_name": project_name,
+                        "file_count": len(file_structure),
+                        "path": str(project_root),
+                    },
+                )
+
             return True, str(project_root)
 
         except Exception as e:
             logger.error(f"Error saving multi-file project: {e}")
+
+            # Audit log failure
+            if audit_logger:
+                audit_logger.log_event(
+                    action="artifact.save.multi_file",
+                    resource_type="project",
+                    resource_id=project_id,
+                    status="failure",
+                    details={
+                        "project_name": project_name,
+                        "error": str(e),
+                    },
+                )
+
             return False, ""
 
     @staticmethod
@@ -230,16 +273,76 @@ class ArtifactSaver:
                 return False, ""
 
             logger.info(f"Saved {artifact_type} to {file_path}")
+
+            # Audit log
+            if audit_logger:
+                audit_logger.log_event(
+                    action="artifact.save",
+                    resource_type="artifact",
+                    resource_id=str(file_path),
+                    status="success",
+                    details={
+                        "project_id": project_id,
+                        "artifact_type": artifact_type,
+                        "path": str(file_path),
+                    },
+                )
+
             return True, str(file_path)
 
         except PermissionError as e:
             logger.error(f"Permission denied saving artifact to {save_dir}: {e}")
+
+            # Audit log
+            if audit_logger:
+                audit_logger.log_event(
+                    action="artifact.save",
+                    resource_type="artifact",
+                    resource_id="",
+                    status="failure",
+                    details={
+                        "project_id": project_id,
+                        "artifact_type": artifact_type,
+                        "error": "Permission denied",
+                    },
+                )
+
             return False, ""
         except OSError as e:
             logger.error(f"OS error saving artifact to {save_dir}: {e}")
+
+            # Audit log
+            if audit_logger:
+                audit_logger.log_event(
+                    action="artifact.save",
+                    resource_type="artifact",
+                    resource_id="",
+                    status="failure",
+                    details={
+                        "project_id": project_id,
+                        "artifact_type": artifact_type,
+                        "error": "OS error",
+                    },
+                )
+
             return False, ""
         except Exception as e:
             logger.error(f"Error saving artifact: {e}")
+
+            # Audit log
+            if audit_logger:
+                audit_logger.log_event(
+                    action="artifact.save",
+                    resource_type="artifact",
+                    resource_id="",
+                    status="failure",
+                    details={
+                        "project_id": project_id,
+                        "artifact_type": artifact_type,
+                        "error": str(e),
+                    },
+                )
+
             return False, ""
 
     @staticmethod
