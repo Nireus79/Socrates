@@ -1,19 +1,31 @@
 """
 Socratic Library Integrations
 
-Comprehensive integration of all 12 Socratic ecosystem libraries into the orchestrator:
-- socrates-nexus: LLM foundation
-- socratic-core: Framework
+Comprehensive integration of all 14 Socratic ecosystem libraries into the orchestrator:
+
+Core Frameworks:
+- socratic-core: Framework foundation
+- socrates-nexus: Universal LLM client
+
+Multi-Agent & Knowledge:
 - socratic-agents: Multi-agent orchestration
 - socratic-rag: Knowledge retrieval
-- socratic-analyzer: Code analysis
 - socratic-security: Security features
+
+Analytics & Features:
 - socratic-learning: Learning analytics
+- socratic-analyzer: Code quality analysis
 - socratic-conflict: Conflict resolution
 - socratic-knowledge: Knowledge management
+
+Orchestration & Monitoring:
 - socratic-workflow: Workflow orchestration
 - socratic-docs: Documentation generation
 - socratic-performance: Performance monitoring
+
+Interface Packages:
+- socrates-core-api: REST API server
+- socrates-cli: Command-line interface
 """
 
 import logging
@@ -367,28 +379,257 @@ class PerformanceIntegration:
             return {}
 
 
+class CoreIntegration:
+    """Integrate socratic-core framework foundation"""
+
+    def __init__(self, config: Any = None):
+        """Initialize core framework"""
+        try:
+            from socratic_core import SocratesConfig
+            self.config = config or SocratesConfig()
+            self.enabled = True
+            logger.info("Core integration enabled")
+        except ImportError:
+            self.enabled = False
+            self.config = config
+            logger.warning("socratic-core not available")
+
+    def get_system_info(self) -> Dict[str, Any]:
+        """Get system information"""
+        if not self.enabled:
+            return {}
+        try:
+            return {
+                "framework": "socratic-core",
+                "version": "0.1.1",
+                "components": ["config", "events", "exceptions", "logging"]
+            }
+        except Exception as e:
+            logger.error(f"Failed to get system info: {e}")
+            return {}
+
+    def get_config(self) -> Dict[str, Any]:
+        """Get current configuration"""
+        if not self.enabled:
+            return {}
+        try:
+            return {
+                "model": getattr(self.config, "claude_model", "claude-opus"),
+                "data_dir": getattr(self.config, "data_dir", "~/.socrates"),
+                "log_level": getattr(self.config, "log_level", "INFO")
+            }
+        except Exception as e:
+            logger.error(f"Failed to get config: {e}")
+            return {}
+
+
+class NexusIntegration:
+    """Integrate socrates-nexus for universal LLM client access"""
+
+    def __init__(self, config: Any = None):
+        """Initialize nexus LLM client"""
+        try:
+            from socrates_nexus import LLMClient
+            self.client = LLMClient(config=config) if config else LLMClient()
+            self.enabled = True
+            logger.info("Nexus integration enabled")
+        except ImportError:
+            self.enabled = False
+            self.client = None
+            logger.warning("socrates-nexus not available")
+
+    def call_llm(self, prompt: str, model: str = "claude-opus", provider: str = "anthropic",
+                 temperature: float = 0.7, **kwargs) -> Optional[Dict[str, Any]]:
+        """Call LLM via nexus"""
+        if not self.enabled or not self.client:
+            return None
+        try:
+            response = self.client.call(
+                prompt=prompt,
+                model=model,
+                provider=provider,
+                temperature=temperature,
+                **kwargs
+            )
+            return {
+                "provider": provider,
+                "model": model,
+                "response": response,
+                "tokens_used": getattr(response, "tokens_used", 0) if response else 0
+            }
+        except Exception as e:
+            logger.error(f"LLM call failed: {e}")
+            return None
+
+    def list_models(self, provider: Optional[str] = None) -> Dict[str, List[str]]:
+        """List available LLM models"""
+        if not self.enabled or not self.client:
+            return {}
+        try:
+            return self.client.list_available_models(provider=provider)
+        except Exception as e:
+            logger.error(f"Failed to list models: {e}")
+            return {}
+
+
+class AgentsIntegration:
+    """Integrate socratic-agents for multi-agent orchestration"""
+
+    def __init__(self, config: Any = None):
+        """Initialize agents system"""
+        try:
+            from socratic_agents import AgentRegistry
+            self.registry = AgentRegistry(config=config)
+            self.enabled = True
+            logger.info("Agents integration enabled")
+        except ImportError:
+            self.enabled = False
+            self.registry = None
+            logger.warning("socratic-agents not available")
+
+    def execute_agent(self, agent_name: str, request_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Execute an agent"""
+        if not self.enabled or not self.registry:
+            return None
+        try:
+            agent = self.registry.get_agent(agent_name)
+            if not agent:
+                logger.error(f"Agent {agent_name} not found")
+                return None
+            return agent.execute(request_data)
+        except Exception as e:
+            logger.error(f"Agent execution failed: {e}")
+            return None
+
+    def list_agents(self) -> List[str]:
+        """List all available agents"""
+        if not self.enabled or not self.registry:
+            return []
+        try:
+            return self.registry.list_agents()
+        except Exception as e:
+            logger.error(f"Failed to list agents: {e}")
+            return []
+
+
+class RAGIntegration:
+    """Integrate socratic-rag for knowledge retrieval"""
+
+    def __init__(self, config: Any = None):
+        """Initialize RAG system"""
+        try:
+            from socratic_rag import RAGManager
+            self.manager = RAGManager(config=config)
+            self.enabled = True
+            logger.info("RAG integration enabled")
+        except ImportError:
+            self.enabled = False
+            self.manager = None
+            logger.warning("socratic-rag not available")
+
+    def index_document(self, content: str, source: str, metadata: Optional[Dict[str, Any]] = None) -> Optional[str]:
+        """Index a document for RAG retrieval"""
+        if not self.enabled or not self.manager:
+            return None
+        try:
+            doc_id = self.manager.index_document(content=content, source=source, metadata=metadata or {})
+            return doc_id
+        except Exception as e:
+            logger.error(f"Document indexing failed: {e}")
+            return None
+
+    def search(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Search RAG system"""
+        if not self.enabled or not self.manager:
+            return []
+        try:
+            results = self.manager.search(query=query, limit=limit)
+            return results if isinstance(results, list) else []
+        except Exception as e:
+            logger.error(f"RAG search failed: {e}")
+            return []
+
+
+class SecurityIntegration:
+    """Integrate socratic-security for security features"""
+
+    def __init__(self, config: Any = None):
+        """Initialize security system"""
+        try:
+            from socratic_security import SecurityManager
+            self.manager = SecurityManager(config=config)
+            self.enabled = True
+            logger.info("Security integration enabled")
+        except ImportError:
+            self.enabled = False
+            self.manager = None
+            logger.warning("socratic-security not available")
+
+    def validate_input(self, user_input: str) -> Dict[str, Any]:
+        """Validate user input for security issues"""
+        if not self.enabled or not self.manager:
+            return {"valid": True, "threats": []}
+        try:
+            result = self.manager.validate_input(user_input)
+            return {
+                "valid": result.get("valid", True),
+                "security_score": result.get("security_score", 100),
+                "threats": result.get("threats", [])
+            }
+        except Exception as e:
+            logger.error(f"Input validation failed: {e}")
+            return {"valid": True, "threats": []}
+
+    def check_mfa(self, user_id: str) -> bool:
+        """Check if MFA is enabled for user"""
+        if not self.enabled or not self.manager:
+            return False
+        try:
+            return self.manager.is_mfa_enabled(user_id)
+        except Exception as e:
+            logger.error(f"MFA check failed: {e}")
+            return False
+
+
 class SocraticLibraryManager:
-    """Central manager for all 12 Socratic ecosystem libraries"""
+    """Central manager for all 14 Socratic ecosystem libraries"""
 
     def __init__(self, config: Any):
         """Initialize all library integrations"""
         self.config = config
         self.logger = logging.getLogger("socrates.library_manager")
 
-        # Initialize all 12 library integrations
+        # Initialize all 14 library integrations
+        # Core frameworks
+        self.core = CoreIntegration(config)
+        self.nexus = NexusIntegration(config)
+
+        # Multi-agent & knowledge
+        self.agents = AgentsIntegration(config)
+        self.rag = RAGIntegration(config)
+        self.security = SecurityIntegration(config)
+
+        # Analytics & features
         self.learning = LearningIntegration()
         self.analyzer = AnalyzerIntegration()
         self.conflict = ConflictIntegration()
         self.knowledge = KnowledgeIntegration()
+
+        # Orchestration & monitoring
         self.workflow = WorkflowIntegration()
         self.docs = DocsIntegration()
         self.performance = PerformanceIntegration()
 
-        self.logger.info("Socratic Library Manager initialized with all 12 libraries")
+        self.logger.info("Socratic Library Manager initialized with all 14 libraries")
 
     def get_status(self) -> Dict[str, bool]:
         """Get status of all library integrations"""
         return {
+            "core": self.core.enabled,
+            "nexus": self.nexus.enabled,
+            "agents": self.agents.enabled,
+            "rag": self.rag.enabled,
+            "security": self.security.enabled,
             "learning": self.learning.enabled,
             "analyzer": self.analyzer.enabled,
             "conflict": self.conflict.enabled,

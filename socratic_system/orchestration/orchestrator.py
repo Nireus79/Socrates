@@ -737,6 +737,63 @@ class AgentOrchestrator:
         """Generate project documentation using socratic-docs"""
         return self.library_manager.docs.generate_readme(project_info)
 
+    # =========================================================================
+    # CORE FRAMEWORK METHODS (5 additional libraries)
+    # =========================================================================
+
+    def get_system_info(self) -> dict:
+        """Get system information from socratic-core"""
+        return self.library_manager.core.get_system_info()
+
+    def get_system_config(self) -> dict:
+        """Get system configuration from socratic-core"""
+        return self.library_manager.core.get_config()
+
+    def call_llm(self, prompt: str, model: str = "claude-opus",
+                 provider: str = "anthropic", temperature: float = 0.7,
+                 **kwargs) -> Optional[dict]:
+        """Call LLM via socrates-nexus with multi-provider support"""
+        return self.library_manager.nexus.call_llm(
+            prompt=prompt,
+            model=model,
+            provider=provider,
+            temperature=temperature,
+            **kwargs
+        )
+
+    def list_llm_models(self, provider: Optional[str] = None) -> dict:
+        """List available LLM models via socrates-nexus"""
+        return self.library_manager.nexus.list_models(provider=provider)
+
+    def execute_agent(self, agent_name: str, request_data: dict) -> Optional[dict]:
+        """Execute an agent using socratic-agents"""
+        return self.library_manager.agents.execute_agent(agent_name, request_data)
+
+    def list_agents(self) -> list:
+        """List all available agents from socratic-agents"""
+        return self.library_manager.agents.list_agents()
+
+    def index_rag_document(self, content: str, source: str,
+                          metadata: Optional[dict] = None) -> Optional[str]:
+        """Index a document for RAG retrieval using socratic-rag"""
+        return self.library_manager.rag.index_document(
+            content=content,
+            source=source,
+            metadata=metadata
+        )
+
+    def search_rag(self, query: str, limit: int = 5) -> list:
+        """Search RAG system using socratic-rag"""
+        return self.library_manager.rag.search(query=query, limit=limit)
+
+    def validate_security_input(self, user_input: str) -> dict:
+        """Validate user input for security issues using socratic-security"""
+        return self.library_manager.security.validate_input(user_input)
+
+    def check_user_mfa(self, user_id: str) -> bool:
+        """Check if MFA is enabled for user using socratic-security"""
+        return self.library_manager.security.check_mfa(user_id)
+
     def get_library_status(self) -> dict:
         """Get status of all library integrations"""
         return self.library_manager.get_status()
