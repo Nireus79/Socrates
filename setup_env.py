@@ -59,12 +59,12 @@ def setup_environment():
     # Check JWT_SECRET_KEY
     print("\n[1/3] Checking JWT_SECRET_KEY...")
     if 'JWT_SECRET_KEY' not in env_vars:
-        print("  ⚠ JWT_SECRET_KEY not found")
+        print("  [!] JWT_SECRET_KEY not found")
         jwt_secret = generate_jwt_secret()
         env_vars['JWT_SECRET_KEY'] = jwt_secret
-        print(f"  ✓ Generated: {jwt_secret[:20]}...")
+        print(f"  [OK] Generated: {jwt_secret[:20]}...")
     else:
-        print(f"  ✓ Already set: {env_vars['JWT_SECRET_KEY'][:20]}...")
+        print(f"  [OK] Already set: {env_vars['JWT_SECRET_KEY'][:20]}...")
 
     # Check ANTHROPIC_API_KEY
     print("\n[2/3] Checking ANTHROPIC_API_KEY...")
@@ -72,13 +72,13 @@ def setup_environment():
         api_key = os.getenv('ANTHROPIC_API_KEY')
         if api_key:
             env_vars['ANTHROPIC_API_KEY'] = api_key
-            print(f"  ✓ Found from environment: {api_key[:20]}...")
+            print(f"  [OK] Found from environment: {api_key[:20]}...")
         else:
-            print("  ⚠ ANTHROPIC_API_KEY not set")
-            print("  💡 Add your API key later in .env file")
-            print("  💡 Or set: export ANTHROPIC_API_KEY='your-key'")
+            print("  [!] ANTHROPIC_API_KEY not set")
+            print("  [TIP] Add your API key later in .env file")
+            print("  [TIP] Or set: export ANTHROPIC_API_KEY='your-key'")
     else:
-        print(f"  ✓ Already set: {env_vars['ANTHROPIC_API_KEY'][:20]}...")
+        print(f"  [OK] Already set: {env_vars['ANTHROPIC_API_KEY'][:20]}...")
 
     # Set other defaults
     print("\n[3/3] Setting defaults...")
@@ -92,18 +92,18 @@ def setup_environment():
     for key, default_value in defaults.items():
         if key not in env_vars:
             env_vars[key] = default_value
-            print(f"  ✓ {key} = {default_value}")
+            print(f"  [OK] {key} = {default_value}")
         else:
-            print(f"  ✓ {key} = {env_vars[key]} (existing)")
+            print(f"  [OK] {key} = {env_vars[key]} (existing)")
 
     # Save .env file
     print("\n[SAVE] Writing .env file...")
     save_env_file(env_file, env_vars)
-    print(f"  ✓ Saved to {env_file.absolute()}")
+    print(f"  [OK] Saved to {env_file.absolute()}")
 
     # Summary
     print("\n" + "=" * 70)
-    print("SETUP COMPLETE ✓")
+    print("SETUP COMPLETE")
     print("=" * 70)
     print("\nNext steps:")
     print("  1. (Optional) Add your ANTHROPIC_API_KEY to .env")
