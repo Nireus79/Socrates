@@ -1576,8 +1576,207 @@ class SecurityIntegration:
             return False
 
 
+class LangGraphIntegration:
+    """Integrate socrates-ai-langraph for LangGraph workflow orchestration"""
+
+    def __init__(self, config: Optional[Any] = None):
+        """Initialize LangGraph integration"""
+        self.workflow = None
+        self.agents = None
+        self.config = config
+        self.enabled = False
+
+        try:
+            from socrates_ai_langraph import create_socrates_langgraph_workflow, AgentState
+            from socrates_ai_langraph.agents import CodeAnalysisAgent, CodeGenerationAgent, KnowledgeRetrievalAgent
+
+            self.create_workflow_fn = create_socrates_langgraph_workflow
+            self.agent_state_class = AgentState
+            self.agents = {
+                "code_analysis": CodeAnalysisAgent,
+                "code_generation": CodeGenerationAgent,
+                "knowledge_retrieval": KnowledgeRetrievalAgent,
+            }
+            self.enabled = True
+            logger.info("LangGraph integration enabled")
+        except ImportError as e:
+            self.enabled = False
+            logger.warning(f"socrates-ai-langraph not available: {e}")
+
+    def create_workflow(self, config: Optional[Any] = None) -> Optional[Any]:
+        """Create a LangGraph workflow"""
+        if not self.enabled:
+            return None
+        try:
+            workflow_config = config or self.config
+            if workflow_config is None:
+                from socratic_core import SocratesConfig
+                workflow_config = SocratesConfig()
+
+            workflow = self.create_workflow_fn(workflow_config)
+            logger.info("LangGraph workflow created successfully")
+            return workflow
+        except Exception as e:
+            logger.error(f"Failed to create LangGraph workflow: {e}")
+            return None
+
+    def execute_workflow(self, workflow: Any, initial_state: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Execute a LangGraph workflow"""
+        if not self.enabled or not workflow:
+            return {"status": "disabled", "error": "LangGraph integration not available"}
+        try:
+            # Compile the workflow
+            if hasattr(workflow, 'compile'):
+                compiled = workflow.compile()
+            else:
+                compiled = workflow
+
+            # Execute with initial state
+            state = initial_state or {"input": "", "messages": [], "results": {}, "errors": []}
+
+            if hasattr(compiled, 'invoke'):
+                result = compiled.invoke(state)
+            else:
+                result = compiled(state)
+
+            return {
+                "status": "success",
+                "results": result if isinstance(result, dict) else {"output": str(result)},
+                "framework": "langgraph"
+            }
+        except Exception as e:
+            logger.error(f"Failed to execute LangGraph workflow: {e}")
+            return {"status": "error", "error": str(e), "framework": "langgraph"}
+
+    def get_agents(self) -> Dict[str, str]:
+        """Get available agents in LangGraph"""
+        if not self.enabled or not self.agents:
+            return {}
+        return {name: agent.__name__ for name, agent in self.agents.items()}
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get LangGraph integration status"""
+        return {
+            "enabled": self.enabled,
+            "framework": "langgraph",
+            "agents": list(self.agents.keys()) if self.agents else [],
+            "version": "0.1.0"
+        }
+
+
+class SocraticOpenclawIntegration:
+    """Integrate socratic-openclaw-skill for Socratic discovery workflows"""
+
+    def __init__(self, config: Optional[Any] = None):
+        """Initialize OpenClaw integration"""
+        self.skill = None
+        self.config = config
+        self.enabled = False
+        self.sessions = {}
+
+        try:
+            from socratic_openclaw_skill import SocraticDiscoverySkill, SocraticOpenclawConfig
+
+            # Initialize with provided config or create new one
+            if config and hasattr(config, 'data_dir'):
+                openclaw_config = SocraticOpenclawConfig(
+                    socratic_config=config,
+                    workspace_root=config.data_dir / "openclaw"
+                )
+            else:
+                openclaw_config = SocraticOpenclawConfig()
+
+            self.skill = SocraticDiscoverySkill(openclaw_config)
+            self.config_class = SocraticOpenclawConfig
+            self.enabled = True
+            logger.info("OpenClaw integration enabled")
+        except ImportError as e:
+            self.enabled = False
+            logger.warning(f"socratic-openclaw-skill not available: {e}")
+
+    async def start_discovery(self, topic: str) -> Dict[str, Any]:
+        """Start a Socratic discovery session"""
+        if not self.enabled or not self.skill:
+            return {"status": "disabled", "error": "OpenClaw integration not available"}
+        try:
+            session = await self.skill.start_discovery(topic)
+            session_id = session.get("session_id") if isinstance(session, dict) else str(hash(topic))
+            self.sessions[session_id] = {
+                "topic": topic,
+                "status": "active",
+                "started_at": datetime.now().isoformat()
+            }
+            return {
+                "status": "success",
+                "session_id": session_id,
+                "topic": topic,
+                "framework": "openclaw"
+            }
+        except Exception as e:
+            logger.error(f"Failed to start discovery: {e}")
+            return {"status": "error", "error": str(e), "framework": "openclaw"}
+
+    async def respond(self, session_id: str, response: str) -> Dict[str, Any]:
+        """Respond to a discovery question"""
+        if not self.enabled or not self.skill:
+            return {"status": "disabled"}
+        try:
+            result = await self.skill.respond(session_id, response)
+            if session_id in self.sessions:
+                self.sessions[session_id]["last_response"] = datetime.now().isoformat()
+            return {
+                "status": "success",
+                "session_id": session_id,
+                "response_processed": True,
+                "framework": "openclaw"
+            }
+        except Exception as e:
+            logger.error(f"Failed to respond to discovery: {e}")
+            return {"status": "error", "error": str(e)}
+
+    async def generate(self, session_id: str) -> Dict[str, Any]:
+        """Generate specification from discovery session"""
+        if not self.enabled or not self.skill:
+            return {"status": "disabled"}
+        try:
+            spec = await self.skill.generate(session_id)
+            if session_id in self.sessions:
+                self.sessions[session_id]["status"] = "completed"
+                self.sessions[session_id]["spec_generated"] = True
+            return {
+                "status": "success",
+                "session_id": session_id,
+                "specification": spec if isinstance(spec, str) else str(spec),
+                "framework": "openclaw"
+            }
+        except Exception as e:
+            logger.error(f"Failed to generate specification: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """Get session information"""
+        if not self.enabled:
+            return None
+        return self.sessions.get(session_id)
+
+    def list_sessions(self) -> List[str]:
+        """List all active sessions"""
+        if not self.enabled:
+            return []
+        return list(self.sessions.keys())
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get OpenClaw integration status"""
+        return {
+            "enabled": self.enabled,
+            "framework": "openclaw",
+            "active_sessions": len(self.sessions),
+            "version": "0.1.1"
+        }
+
+
 class SocraticLibraryManager:
-    """Central manager for all 14 Socratic ecosystem libraries"""
+    """Central manager for all 16 Socratic ecosystem libraries"""
 
     def __init__(self, config: Any):
         """Initialize all library integrations"""
@@ -1605,7 +1804,11 @@ class SocraticLibraryManager:
         self.docs = DocsIntegration()
         self.performance = PerformanceIntegration()
 
-        self.logger.info("Socratic Library Manager initialized with all 14 libraries")
+        # Framework integrations
+        self.langgraph = LangGraphIntegration(config)
+        self.openclaw = SocraticOpenclawIntegration(config)
+
+        self.logger.info("Socratic Library Manager initialized with all 16 libraries")
 
     def get_status(self) -> Dict[str, bool]:
         """Get status of all library integrations"""
@@ -1621,10 +1824,12 @@ class SocraticLibraryManager:
             "knowledge": self.knowledge.enabled,
             "workflow": self.workflow.enabled,
             "docs": self.docs.enabled,
-            "performance": self.performance.enabled
+            "performance": self.performance.enabled,
+            "langgraph": self.langgraph.enabled,
+            "openclaw": self.openclaw.enabled
         }
 
     def __repr__(self) -> str:
         status = self.get_status()
         enabled = sum(1 for v in status.values() if v)
-        return f"<SocraticLibraryManager: {enabled}/12 libraries enabled>"
+        return f"<SocraticLibraryManager: {enabled}/16 libraries enabled>"
