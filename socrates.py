@@ -40,6 +40,29 @@ if str(_current_dir) not in sys.path:
     sys.path.insert(0, str(_current_dir))
 
 # ============================================================================
+# Load .env file into environment variables
+# ============================================================================
+
+def _load_env_file():
+    """Load .env file into os.environ"""
+    env_file = _current_dir / ".env"
+    if env_file.exists():
+        try:
+            with open(env_file) as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        key, _, value = line.partition('=')
+                        key = key.strip()
+                        value = value.strip()
+                        if key and key not in os.environ:
+                            os.environ[key] = value
+        except Exception as e:
+            print(f"[WARNING] Failed to load .env file: {e}")
+
+_load_env_file()
+
+# ============================================================================
 # Library Exports (for programmatic use)
 # ============================================================================
 
