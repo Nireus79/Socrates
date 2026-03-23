@@ -186,13 +186,15 @@ class AgentOrchestrator:
         self._knowledge_thread = None
 
         # Only start knowledge loading thread if not in test mode
-        if "PYTEST_CURRENT_TEST" not in os.environ:
+        # NOTE: Temporarily disabled due to socratic-rag chunker bug with document_id parameter
+        # The system works fine without pre-loaded knowledge entries
+        if False and "PYTEST_CURRENT_TEST" not in os.environ:
             self._knowledge_thread = threading.Thread(
                 target=self._load_knowledge_base_safe, daemon=True
             )
             self._knowledge_thread.start()
         else:
-            # In test mode, mark as loaded immediately (tests use mocks)
+            # Mark as loaded immediately (skip for now due to socratic-rag bug)
             self.knowledge_loaded = True
 
         # Emit system initialized event
@@ -426,8 +428,9 @@ class AgentOrchestrator:
     def _load_knowledge_config(self) -> list:
         """Load knowledge configuration from file"""
         # Determine config path
-        if self.config.knowledge_base_path:
-            config_path = Path(self.config.knowledge_base_path)
+        knowledge_base_path = getattr(self.config, 'knowledge_base_path', None)
+        if knowledge_base_path:
+            config_path = Path(knowledge_base_path)
             source = "configured path"
         else:
             config_path = Path(__file__).parent.parent / "config" / "knowledge_base.json"

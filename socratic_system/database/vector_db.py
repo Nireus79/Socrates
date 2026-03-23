@@ -78,7 +78,6 @@ class VectorDatabase:
         """
         try:
             metadata = {
-                "id": entry.id,
                 "category": getattr(entry, "category", "general"),
                 "tags": ",".join(getattr(entry, "tags", [])),
                 "created_at": str(getattr(entry, "created_at", "")),

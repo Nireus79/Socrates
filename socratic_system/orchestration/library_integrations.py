@@ -1200,7 +1200,7 @@ class CoreIntegration:
 
             # Initialize performance monitor (Phase 4 enhancement)
             try:
-                self.perf_monitor = PerformanceMonitor()
+                self.perf_monitor = PerformanceMonitor(logger=logger)
                 logger.info("Performance monitor initialized")
             except Exception as e:
                 logger.debug(f"Performance monitor not available: {e}")
