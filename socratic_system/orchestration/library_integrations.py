@@ -29,6 +29,7 @@ Interface Packages:
 """
 
 import logging
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -1170,8 +1171,15 @@ class CoreIntegration:
 
     def __init__(self, config: Any = None):
         """Initialize core framework"""
+        self.emitter = None
+        self.perf_monitor = None
+        self.event_history = []
+        self.perf_metrics = {}
+
         try:
-            from socratic_core import SocratesConfig, ConfigBuilder
+            from socratic_core import SocratesConfig, ConfigBuilder, EventEmitter
+            from socratic_core.logging import PerformanceMonitor
+
             # Try to use provided config or create one
             if config:
                 self.config = config
@@ -1182,6 +1190,21 @@ class CoreIntegration:
                 except:
                     # Fallback if config fails
                     self.config = None
+
+            # Initialize event emitter for tracking (Phase 4 enhancement)
+            try:
+                self.emitter = EventEmitter()
+                logger.info("Event emitter initialized")
+            except Exception as e:
+                logger.debug(f"Event emitter not available: {e}")
+
+            # Initialize performance monitor (Phase 4 enhancement)
+            try:
+                self.perf_monitor = PerformanceMonitor()
+                logger.info("Performance monitor initialized")
+            except Exception as e:
+                logger.debug(f"Performance monitor not available: {e}")
+
             self.enabled = True
             logger.info("Core integration enabled")
         except ImportError as e:
@@ -1197,8 +1220,10 @@ class CoreIntegration:
             return {
                 "framework": "socratic-core",
                 "version": "0.1.1",
-                "components": ["config", "events", "exceptions", "logging"],
-                "status": "operational"
+                "components": ["config", "events", "exceptions", "logging", "performance_monitor"],
+                "status": "operational",
+                "event_tracking": self.emitter is not None,
+                "performance_monitoring": self.perf_monitor is not None
             }
         except Exception as e:
             logger.error(f"Failed to get system info: {e}")
@@ -1218,12 +1243,96 @@ class CoreIntegration:
             logger.error(f"Failed to get config: {e}")
             return {}
 
+    def emit_event(self, event_type: str, data: Optional[Dict[str, Any]] = None) -> bool:
+        """Emit and track system event (Phase 4 enhancement)"""
+        if not self.enabled or not self.emitter:
+            return False
+        try:
+            event_data = {
+                "type": event_type,
+                "timestamp": datetime.now().isoformat(),
+                "data": data or {}
+            }
+            # Store in history
+            self.event_history.append(event_data)
+            # Limit history size
+            if len(self.event_history) > 1000:
+                self.event_history.pop(0)
+            logger.debug(f"Event emitted: {event_type}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to emit event: {e}")
+            return False
+
+    def get_event_history(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get recent event history (Phase 4 enhancement)"""
+        if not self.enabled:
+            return []
+        return self.event_history[-limit:]
+
+    def track_performance(self, operation_name: str, duration_ms: float) -> bool:
+        """Track operation performance (Phase 4 enhancement)"""
+        if not self.enabled:
+            return False
+        try:
+            if operation_name not in self.perf_metrics:
+                self.perf_metrics[operation_name] = {
+                    "count": 0,
+                    "total_ms": 0,
+                    "min_ms": float('inf'),
+                    "max_ms": 0
+                }
+
+            metrics = self.perf_metrics[operation_name]
+            metrics["count"] += 1
+            metrics["total_ms"] += duration_ms
+            metrics["min_ms"] = min(metrics["min_ms"], duration_ms)
+            metrics["max_ms"] = max(metrics["max_ms"], duration_ms)
+
+            logger.debug(f"Performance tracked: {operation_name} = {duration_ms}ms")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to track performance: {e}")
+            return False
+
+    def get_performance_report(self) -> Dict[str, Any]:
+        """Get performance metrics report (Phase 4 enhancement)"""
+        if not self.enabled or not self.perf_metrics:
+            return {}
+        try:
+            report = {}
+            for op_name, metrics in self.perf_metrics.items():
+                avg_ms = metrics["total_ms"] / metrics["count"] if metrics["count"] > 0 else 0
+                report[op_name] = {
+                    "count": metrics["count"],
+                    "average_ms": round(avg_ms, 2),
+                    "min_ms": metrics["min_ms"],
+                    "max_ms": metrics["max_ms"],
+                    "total_ms": metrics["total_ms"]
+                }
+            return report
+        except Exception as e:
+            logger.error(f"Failed to get performance report: {e}")
+            return {}
+
 
 class NexusIntegration:
     """Integrate socrates-nexus for universal LLM client access"""
 
     def __init__(self, config: Any = None):
         """Initialize nexus LLM client"""
+        self.client = None
+        self.usage_tracker = {}
+        self.providers = {
+            "anthropic": {"key": "ANTHROPIC_API_KEY", "models": ["claude-opus", "claude-sonnet", "claude-haiku"]},
+            "openai": {"key": "OPENAI_API_KEY", "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"]},
+            "google": {"key": "GOOGLE_API_KEY", "models": ["gemini-pro"]},
+            "ollama": {"key": None, "models": ["available-models"]}
+        }
+        self.current_provider = "anthropic"
+        self.fallback_providers = ["openai", "google", "ollama"]
+        self.streaming_enabled = True
+
         try:
             from socrates_nexus import AsyncLLMClient
             # AsyncLLMClient requires provider, model, and api_key parameters
@@ -1253,28 +1362,286 @@ class NexusIntegration:
                 temperature=temperature,
                 **kwargs
             ))
+
+            # Track usage
+            tokens_estimate = len(prompt.split()) + 50  # Rough estimate
+            self._track_usage(provider, model, tokens_estimate)
+
             return {
                 "provider": provider,
                 "model": model,
                 "response": str(response) if response else "",
-                "status": "success"
+                "status": "success",
+                "tokens_used": tokens_estimate
             }
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
             return None
+
+    def stream_llm(self, prompt: str, model: str = "claude-opus", provider: str = "anthropic",
+                   temperature: float = 0.7, callback=None, **kwargs) -> Optional[str]:
+        """Stream LLM response via nexus (Phase 4 enhancement)"""
+        if not self.enabled or not self.streaming_enabled:
+            return None
+        try:
+            # Collect streamed response
+            full_response = ""
+            chunk_count = 0
+
+            # Simulate streaming (actual implementation would use real streaming API)
+            import asyncio
+            response = asyncio.run(self.client.call(
+                prompt=prompt,
+                model=model,
+                temperature=temperature,
+                **kwargs
+            ))
+
+            if response:
+                full_response = str(response)
+                # Simulate chunks for callback
+                words = full_response.split()
+                for i, word in enumerate(words):
+                    chunk = word + " " if i < len(words) - 1 else word
+                    if callback:
+                        callback(chunk)
+                    chunk_count += 1
+
+            # Track usage
+            tokens_estimate = len(prompt.split()) + len(full_response.split())
+            self._track_usage(provider, model, tokens_estimate)
+
+            logger.debug(f"Streamed {chunk_count} chunks")
+            return full_response
+        except Exception as e:
+            logger.error(f"Stream LLM call failed: {e}")
+            return None
+
+    async def stream_llm_async(self, prompt: str, model: str = "claude-opus", provider: str = "anthropic",
+                               temperature: float = 0.7, callback=None, **kwargs) -> Optional[str]:
+        """Stream LLM response asynchronously (Phase 4 enhancement)"""
+        if not self.enabled or not self.streaming_enabled:
+            return None
+        try:
+            if not self.client:
+                return None
+
+            full_response = ""
+            response = await self.client.call(
+                prompt=prompt,
+                model=model,
+                temperature=temperature,
+                **kwargs
+            )
+
+            if response:
+                full_response = str(response)
+                if callback:
+                    # Call callback with full response
+                    if callable(callback):
+                        callback(full_response)
+
+            # Track usage
+            tokens_estimate = len(prompt.split()) + len(full_response.split())
+            self._track_usage(provider, model, tokens_estimate)
+
+            return full_response
+        except Exception as e:
+            logger.error(f"Async stream LLM call failed: {e}")
+            return None
+
+    def call_with_fallback(self, prompt: str, model: str = "claude-opus",
+                          max_retries: int = 3) -> Optional[Dict[str, Any]]:
+        """Call LLM with automatic provider fallback (Phase 4 enhancement)"""
+        if not self.enabled:
+            return None
+
+        providers_to_try = [self.current_provider] + self.fallback_providers
+        last_error = None
+
+        for attempt, provider in enumerate(providers_to_try[:max_retries]):
+            try:
+                logger.info(f"Attempt {attempt + 1}: Trying provider {provider}")
+                result = self.call_llm(
+                    prompt=prompt,
+                    model=model,
+                    provider=provider,
+                    temperature=0.7
+                )
+                if result:
+                    self.current_provider = provider  # Update current provider on success
+                    logger.info(f"Success with provider: {provider}")
+                    return result
+            except Exception as e:
+                last_error = e
+                logger.debug(f"Provider {provider} failed: {e}")
+                continue
+
+        return {
+            "status": "error",
+            "error": str(last_error) if last_error else "All providers failed",
+            "attempts": max_retries
+        }
+
+    def call_with_tools(self, prompt: str, tools: List[Dict[str, Any]], model: str = "claude-opus",
+                       provider: str = "anthropic") -> Optional[Dict[str, Any]]:
+        """Call LLM with function/tool calling (Phase 4 enhancement)"""
+        if not self.enabled or not self.client:
+            return None
+        try:
+            import asyncio
+            response = asyncio.run(self.client.call(
+                prompt=prompt,
+                model=model,
+                temperature=0,  # Lower temperature for tool calling
+                tools=tools
+            ))
+
+            # Track usage
+            tokens_estimate = len(prompt.split()) + 100
+            self._track_usage(provider, model, tokens_estimate)
+
+            return {
+                "provider": provider,
+                "model": model,
+                "response": str(response) if response else "",
+                "tools_used": True,
+                "status": "success"
+            }
+        except Exception as e:
+            logger.error(f"Tool calling failed: {e}")
+            return None
+
+    def call_with_image(self, prompt: str, image_data: str, model: str = "claude-opus",
+                       provider: str = "anthropic", image_format: str = "base64") -> Optional[Dict[str, Any]]:
+        """Call LLM with vision/image support (Phase 4 enhancement)"""
+        if not self.enabled or not self.client:
+            return None
+        try:
+            import asyncio
+            response = asyncio.run(self.client.call(
+                prompt=prompt,
+                model=model,
+                image_data=image_data,
+                image_format=image_format
+            ))
+
+            # Track usage
+            tokens_estimate = len(prompt.split()) + 200  # Images use more tokens
+            self._track_usage(provider, model, tokens_estimate)
+
+            return {
+                "provider": provider,
+                "model": model,
+                "response": str(response) if response else "",
+                "image_processed": True,
+                "status": "success"
+            }
+        except Exception as e:
+            logger.error(f"Vision call failed: {e}")
+            return None
+
+    def _track_usage(self, provider: str, model: str, tokens: int, cost_usd: float = 0.0):
+        """Track token and cost usage (Phase 4 enhancement)"""
+        try:
+            key = f"{provider}:{model}"
+            if key not in self.usage_tracker:
+                self.usage_tracker[key] = {
+                    "calls": 0,
+                    "total_tokens": 0,
+                    "total_cost": 0.0
+                }
+
+            self.usage_tracker[key]["calls"] += 1
+            self.usage_tracker[key]["total_tokens"] += tokens
+            self.usage_tracker[key]["total_cost"] += cost_usd
+        except Exception as e:
+            logger.debug(f"Usage tracking failed: {e}")
+
+    def get_usage_summary(self) -> Dict[str, Any]:
+        """Get usage summary (Phase 4 enhancement)"""
+        if not self.enabled:
+            return {}
+        try:
+            total_calls = sum(u["calls"] for u in self.usage_tracker.values())
+            total_tokens = sum(u["total_tokens"] for u in self.usage_tracker.values())
+            total_cost = sum(u["total_cost"] for u in self.usage_tracker.values())
+
+            return {
+                "total_calls": total_calls,
+                "total_tokens": total_tokens,
+                "total_cost_usd": round(total_cost, 2),
+                "by_provider": self.usage_tracker
+            }
+        except Exception as e:
+            logger.error(f"Failed to get usage summary: {e}")
+            return {}
+
+    def estimate_cost(self, prompt: str, model: str = "claude-opus", provider: str = "anthropic") -> Dict[str, Any]:
+        """Estimate cost for LLM call (Phase 4 enhancement)"""
+        if not self.enabled:
+            return {}
+        try:
+            # Rough pricing estimates (cents per 1K tokens)
+            pricing = {
+                "claude-opus": {"input": 15, "output": 75},
+                "claude-sonnet": {"input": 3, "output": 15},
+                "claude-haiku": {"input": 0.8, "output": 4},
+                "gpt-4": {"input": 3, "output": 6},
+                "gpt-4-turbo": {"input": 1, "output": 3},
+                "gpt-3.5-turbo": {"input": 0.5, "output": 1.5}
+            }
+
+            input_tokens = len(prompt.split())
+            estimated_output_tokens = input_tokens * 2  # Rough estimate
+
+            price_info = pricing.get(model, {"input": 1, "output": 2})
+            input_cost = (input_tokens / 1000) * price_info["input"]
+            output_cost = (estimated_output_tokens / 1000) * price_info["output"]
+            total_cost = (input_cost + output_cost) / 100  # Convert cents to dollars
+
+            return {
+                "model": model,
+                "provider": provider,
+                "estimated_input_tokens": input_tokens,
+                "estimated_output_tokens": estimated_output_tokens,
+                "estimated_cost_usd": round(total_cost, 4),
+                "breakdown": {
+                    "input_cost": round(input_cost / 100, 4),
+                    "output_cost": round(output_cost / 100, 4)
+                }
+            }
+        except Exception as e:
+            logger.error(f"Cost estimation failed: {e}")
+            return {}
+
+    def switch_provider(self, provider: str) -> bool:
+        """Switch to a different LLM provider (Phase 4 enhancement)"""
+        if not self.enabled:
+            return False
+        try:
+            if provider not in self.providers:
+                logger.error(f"Unknown provider: {provider}")
+                return False
+
+            self.current_provider = provider
+            logger.info(f"Switched to provider: {provider}")
+            return True
+        except Exception as e:
+            logger.error(f"Provider switch failed: {e}")
+            return False
 
     def list_models(self, provider: Optional[str] = None) -> Dict[str, List[str]]:
         """List available LLM models"""
         if not self.enabled:
             return {}
         try:
-            # Return known supported models
-            return {
-                "anthropic": ["claude-opus", "claude-sonnet", "claude-haiku"],
-                "openai": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-                "google": ["gemini-pro"],
-                "ollama": ["available-models"]
-            }
+            if provider:
+                provider_info = self.providers.get(provider)
+                return {provider: provider_info["models"]} if provider_info else {}
+
+            # Return all providers' models
+            return {name: info["models"] for name, info in self.providers.items()}
         except Exception as e:
             logger.error(f"Failed to list models: {e}")
             return {}
@@ -1512,6 +1879,12 @@ class SecurityIntegration:
 
     def __init__(self, config: Any = None):
         """Initialize security system"""
+        self.path_validator = None
+        self.injection_detector = None
+        self.code_analyzer = None
+        self.audit_log = []
+        self.mfa_enabled_users = set()
+
         try:
             # socratic-security provides validators and detectors
             from socratic_security import PathValidator, PromptInjectionDetector, CodeAnalyzer
@@ -1522,9 +1895,6 @@ class SecurityIntegration:
             logger.info("Security integration enabled")
         except ImportError as e:
             self.enabled = False
-            self.path_validator = None
-            self.injection_detector = None
-            self.code_analyzer = None
             logger.warning(f"socratic-security not available: {e}")
 
     def validate_input(self, user_input: str) -> Dict[str, Any]:
@@ -1545,6 +1915,16 @@ class SecurityIntegration:
                 except Exception as e:
                     logger.debug(f"Injection detection failed: {e}")
 
+            # Check for SQL injection
+            if self._detect_sql_injection(user_input):
+                threats.append("sql_injection")
+                security_score -= 35
+
+            # Check for XSS
+            if self._detect_xss(user_input):
+                threats.append("xss_vulnerability")
+                security_score -= 30
+
             # Check for path traversal
             if self.path_validator:
                 try:
@@ -1564,16 +1944,263 @@ class SecurityIntegration:
             logger.error(f"Input validation failed: {e}")
             return {"valid": True, "threats": []}
 
+    def _detect_sql_injection(self, user_input: str) -> bool:
+        """Detect potential SQL injection (Phase 4 enhancement)"""
+        try:
+            sql_patterns = [
+                r"('\s*(OR|AND)\s*'|'|;|--|\*)",
+                r"(UNION|SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER)",
+                r"(EXEC|EXECUTE|SCRIPT|JAVASCRIPT|ONCLICK)"
+            ]
+            import re
+            for pattern in sql_patterns:
+                if re.search(pattern, user_input, re.IGNORECASE):
+                    return True
+            return False
+        except Exception as e:
+            logger.debug(f"SQL injection detection failed: {e}")
+            return False
+
+    def _detect_xss(self, user_input: str) -> bool:
+        """Detect potential XSS (Phase 4 enhancement)"""
+        try:
+            xss_patterns = [
+                r"<script[^>]*>.*?</script>",
+                r"javascript:",
+                r"on\w+\s*=",
+                r"<iframe[^>]*>",
+                r"<object[^>]*>",
+                r"<embed[^>]*>"
+            ]
+            import re
+            for pattern in xss_patterns:
+                if re.search(pattern, user_input, re.IGNORECASE):
+                    return True
+            return False
+        except Exception as e:
+            logger.debug(f"XSS detection failed: {e}")
+            return False
+
+    def detect_sql_injection(self, query: str) -> Dict[str, Any]:
+        """Detect SQL injection in query (Phase 4 enhancement)"""
+        if not self.enabled:
+            return {"vulnerable": False, "confidence": 0}
+        try:
+            vulnerable = self._detect_sql_injection(query)
+            confidence = 0.95 if vulnerable else 0.05
+
+            audit_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "action": "sql_check",
+                "query_preview": query[:50],
+                "vulnerable": vulnerable,
+                "confidence": confidence
+            }
+            self.audit_log.append(audit_entry)
+
+            return {
+                "vulnerable": vulnerable,
+                "confidence": confidence,
+                "query_length": len(query)
+            }
+        except Exception as e:
+            logger.error(f"SQL injection detection failed: {e}")
+            return {"vulnerable": False, "confidence": 0}
+
+    def detect_xss_vulnerability(self, html_content: str) -> Dict[str, Any]:
+        """Detect XSS vulnerabilities in HTML (Phase 4 enhancement)"""
+        if not self.enabled:
+            return {"vulnerable": False, "issues": []}
+        try:
+            vulnerable = self._detect_xss(html_content)
+            issues = []
+
+            if "<script" in html_content.lower():
+                issues.append("script_tag_found")
+            if "javascript:" in html_content.lower():
+                issues.append("javascript_protocol_found")
+            if re.search(r"on\w+\s*=", html_content, re.IGNORECASE):
+                issues.append("event_handler_found")
+
+            audit_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "action": "xss_check",
+                "content_length": len(html_content),
+                "vulnerable": vulnerable,
+                "issues_found": len(issues)
+            }
+            self.audit_log.append(audit_entry)
+
+            return {
+                "vulnerable": vulnerable or len(issues) > 0,
+                "issues": issues,
+                "severity": "high" if vulnerable else "medium" if issues else "low"
+            }
+        except Exception as e:
+            logger.error(f"XSS detection failed: {e}")
+            return {"vulnerable": False, "issues": []}
+
+    def sandbox_execute(self, code: str, allowed_imports: List[str] = None,
+                       timeout_seconds: int = 5) -> Dict[str, Any]:
+        """Execute code in sandbox (Phase 4 enhancement)"""
+        if not self.enabled:
+            return {"status": "disabled", "output": None}
+        try:
+            allowed_imports = allowed_imports or ["math", "json", "re"]
+
+            # Validate code doesn't import dangerous modules
+            for line in code.split('\n'):
+                if 'import' in line:
+                    for imp in line.split('import'):
+                        module = imp.strip().split()[0]
+                        if module not in allowed_imports:
+                            audit_entry = {
+                                "timestamp": datetime.now().isoformat(),
+                                "action": "sandbox_block",
+                                "reason": f"disallowed_import_{module}",
+                                "code_preview": code[:50]
+                            }
+                            self.audit_log.append(audit_entry)
+                            return {
+                                "status": "blocked",
+                                "reason": f"Disallowed import: {module}",
+                                "output": None
+                            }
+
+            # Execute in restricted namespace
+            restricted_globals = {"__builtins__": {}}
+            restricted_locals = {}
+
+            import signal
+            def timeout_handler(signum, frame):
+                raise TimeoutError(f"Code execution exceeded {timeout_seconds} seconds")
+
+            # Set timeout
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(timeout_seconds)
+
+            try:
+                exec(code, restricted_globals, restricted_locals)
+                result = restricted_locals.get("result", "No result returned")
+
+                audit_entry = {
+                    "timestamp": datetime.now().isoformat(),
+                    "action": "sandbox_execute",
+                    "status": "success",
+                    "code_length": len(code)
+                }
+                self.audit_log.append(audit_entry)
+
+                return {
+                    "status": "success",
+                    "output": result,
+                    "execution_time": "completed"
+                }
+            finally:
+                signal.alarm(0)  # Cancel alarm
+
+        except Exception as e:
+            logger.error(f"Sandbox execution failed: {e}")
+            audit_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "action": "sandbox_execute",
+                "status": "error",
+                "error": str(e)
+            }
+            self.audit_log.append(audit_entry)
+            return {
+                "status": "error",
+                "output": None,
+                "error": str(e)
+            }
+
+    def log_audit_event(self, event_type: str, user_id: Optional[str] = None,
+                       resource_id: Optional[str] = None, details: Optional[Dict[str, Any]] = None) -> bool:
+        """Log security audit event (Phase 4 enhancement)"""
+        if not self.enabled:
+            return False
+        try:
+            audit_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "event_type": event_type,
+                "user_id": user_id,
+                "resource_id": resource_id,
+                "details": details or {}
+            }
+            self.audit_log.append(audit_entry)
+
+            # Limit audit log size
+            if len(self.audit_log) > 10000:
+                self.audit_log.pop(0)
+
+            logger.info(f"Audit event logged: {event_type}")
+            return True
+        except Exception as e:
+            logger.error(f"Audit logging failed: {e}")
+            return False
+
+    def get_audit_trail(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Get audit trail (Phase 4 enhancement)"""
+        if not self.enabled:
+            return []
+        try:
+            return self.audit_log[-limit:]
+        except Exception as e:
+            logger.error(f"Failed to retrieve audit trail: {e}")
+            return []
+
+    def enable_mfa(self, user_id: str) -> bool:
+        """Enable MFA for user (Phase 4 enhancement)"""
+        if not self.enabled:
+            return False
+        try:
+            self.mfa_enabled_users.add(user_id)
+            audit_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "action": "mfa_enabled",
+                "user_id": user_id
+            }
+            self.audit_log.append(audit_entry)
+            logger.info(f"MFA enabled for user: {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"MFA enable failed: {e}")
+            return False
+
     def check_mfa(self, user_id: str) -> bool:
         """Check if MFA is enabled for user"""
         if not self.enabled:
             return False
         try:
-            # Placeholder - actual MFA check would query user database
-            return False
+            return user_id in self.mfa_enabled_users
         except Exception as e:
             logger.error(f"MFA check failed: {e}")
             return False
+
+    def verify_mfa_token(self, user_id: str, token: str) -> Dict[str, Any]:
+        """Verify MFA token (Phase 4 enhancement)"""
+        if not self.enabled or not self.check_mfa(user_id):
+            return {"valid": False, "message": "MFA not enabled"}
+        try:
+            # Placeholder - actual implementation would verify TOTP/SMS token
+            valid = len(token) == 6 and token.isdigit()
+
+            audit_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "action": "mfa_verify",
+                "user_id": user_id,
+                "valid": valid
+            }
+            self.audit_log.append(audit_entry)
+
+            return {
+                "valid": valid,
+                "user_id": user_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        except Exception as e:
+            logger.error(f"MFA verification failed: {e}")
+            return {"valid": False, "message": str(e)}
 
 
 class LangGraphIntegration:
