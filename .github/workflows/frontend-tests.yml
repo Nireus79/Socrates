@@ -39,7 +39,7 @@ jobs:
           npm run test:coverage -- --passWithNoTests
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: frontend-coverage
@@ -71,7 +71,7 @@ jobs:
           npm run test:coverage -- --passWithNoTests
 
       - name: Upload component test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: component-test-results
@@ -134,14 +134,14 @@ jobs:
           CYPRESS_BASE_URL: http://localhost:3000
 
       - name: Upload Cypress videos
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: cypress-videos
           path: socrates-frontend/cypress/videos/
 
       - name: Upload Cypress screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: cypress-screenshots
