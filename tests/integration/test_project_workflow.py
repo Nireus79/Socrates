@@ -14,9 +14,10 @@ from pathlib import Path
 
 import pytest
 
+from socratic_analyzer import AnalyzerClient
+
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
-from socratic_system.utils.code_structure_analyzer import CodeStructureAnalyzer
 from socratic_system.utils.file_change_tracker import FileChangeTracker
 
 
@@ -112,10 +113,10 @@ class Application:
         )
 
         # Analyze structure
-        analyzer = CodeStructureAnalyzer(py_file.read_text())
-        result = analyzer.analyze()
+        analyzer = AnalyzerClient()
+        result = analyzer.analyze_code(py_file.read_text(), str(py_file))
 
-        assert isinstance(result, dict)
+        assert result is not None
 
     def test_extract_dependencies(self, integration_env):
         """Test extracting project dependencies."""
@@ -158,10 +159,10 @@ def validate_email(email):
 """
         )
 
-        analyzer = CodeStructureAnalyzer(py_file.read_text())
-        result = analyzer.analyze()
+        analyzer = AnalyzerClient()
+        result = analyzer.analyze_code(py_file.read_text(), str(py_file))
 
-        assert isinstance(result, dict)
+        assert result is not None
 
 
 class TestFileChangeTrackingWorkflow:
@@ -256,11 +257,11 @@ class MainApp:
 
         # Analyze project code
         code = main_file.read_text()
-        analyzer = CodeStructureAnalyzer(code)
-        analysis = analyzer.analyze()
+        analyzer = AnalyzerClient()
+        analysis = analyzer.analyze_code(code, "main.py")
 
         assert sample_project.project_id == "proj-001"
-        assert isinstance(analysis, dict)
+        assert analysis is not None
 
     def test_user_project_codebase_workflow(self, sample_user, sample_project, integration_env):
         """Test complete user -> project -> codebase workflow."""
@@ -333,10 +334,10 @@ class User(BaseModel):
 
         # Analyze structure
         app_code = (code_dir / "app.py").read_text()
-        analyzer = CodeStructureAnalyzer(app_code)
-        result = analyzer.analyze()
+        analyzer = AnalyzerClient()
+        result = analyzer.analyze_code(app_code, "app.py")
 
-        assert isinstance(result, dict)
+        assert result is not None
 
     def test_data_science_project_setup(self, integration_env):
         """Test setting up data science project."""
@@ -415,11 +416,11 @@ class TestErrorHandlingInWorkflows:
         invalid_py = code_dir / "invalid.py"
         invalid_py.write_text("def broken(\n    invalid syntax\n")
 
-        analyzer = CodeStructureAnalyzer(invalid_py.read_text())
-        result = analyzer.analyze()
+        analyzer = AnalyzerClient()
+        result = analyzer.analyze_code(invalid_py.read_text(), "invalid.py")
 
         # Should handle gracefully
-        assert isinstance(result, dict)
+        assert result is not None
 
     def test_handle_missing_files(self, integration_env):
         """Test handling missing project files."""

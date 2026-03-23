@@ -231,15 +231,15 @@ class SyntaxValidator:
 
                 # Log if code execution would be risky
                 if analysis_result.get("risk_level") == "high":
-                        warnings.append({
-                            "file": file_path,
-                            "message": "Code has high security risk. Review before execution.",
-                            "severity": "warning",
-                            "category": "security",
-                        })
-                except Exception as e:
-                    logger.debug(f"Code analysis failed (non-fatal): {e}")
-                    # Non-fatal - continue with syntax validation result
+                    warnings.append({
+                        "file": file_path,
+                        "message": "Code has high security risk. Review before execution.",
+                        "severity": "warning",
+                        "category": "security",
+                    })
+            except Exception as e:
+                logger.debug(f"Code analysis failed (non-fatal): {e}")
+                # Non-fatal - continue with syntax validation result
 
             return {
                 "valid": True,
