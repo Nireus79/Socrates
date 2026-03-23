@@ -1,31 +1,41 @@
 """
 Socratic Library Integrations
 
-Comprehensive integration of all 14 Socratic ecosystem libraries into the orchestrator:
+This module bridges the AgentOrchestrator with all 16 published Socratic libraries.
 
-Core Frameworks:
-- socratic-core: Framework foundation
-- socrates-nexus: Universal LLM client
+Each library has an integration class that:
+1. Safely imports the library (graceful degradation if unavailable)
+2. Initializes with proper configuration
+3. Wraps methods with error handling
+4. Returns sensible defaults if library missing
 
-Multi-Agent & Knowledge:
-- socratic-agents: Multi-agent orchestration
-- socratic-rag: Knowledge retrieval
-- socratic-security: Security features
+The SocraticLibraryManager centralizes all integrations and provides a unified
+interface to access all 16 libraries through a single manager object.
 
-Analytics & Features:
-- socratic-learning: Learning analytics
-- socratic-analyzer: Code quality analysis
-- socratic-conflict: Conflict resolution
-- socratic-knowledge: Knowledge management
+Usage:
+    from socratic_system.orchestration.library_integrations import SocraticLibraryManager
+    manager = SocraticLibraryManager(config)
 
-Orchestration & Monitoring:
-- socratic-workflow: Workflow orchestration
-- socratic-docs: Documentation generation
-- socratic-performance: Performance monitoring
+    manager.nexus.call_llm(...)
+    manager.rag.search(...)
+    manager.agents.execute_agent(...)
+    manager.security.validate_input(...)
 
-Interface Packages:
-- socrates-core-api: REST API server
-- socrates-cli: Command-line interface
+Design Philosophy:
+- Simplicity: Each integration wraps one library, nothing more
+- Graceful degradation: Missing library doesn't crash system
+- No reinvention: Integration delegates to library
+- Backward compatibility: Unified interface, no breaking changes
+
+See INTEGRATION_LAYER_GUIDE.md for detailed documentation.
+
+Libraries Integrated (16):
+Core: socratic-core, socrates-nexus
+Multi-Agent: socratic-agents, socratic-rag, socratic-security
+Analytics: socratic-learning, socratic-analyzer, socratic-conflict
+Knowledge: socratic-knowledge, socratic-workflow, socratic-docs, socratic-performance
+Frameworks: socrates-ai-langraph, socratic-openclaw-skill
+Interfaces: socrates-cli, socrates-core-api
 """
 
 import logging
