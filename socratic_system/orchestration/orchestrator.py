@@ -67,6 +67,15 @@ try:
     from socratic_agents import (
         UserManager as UserManagerAgent,
     )
+    from socratic_agents import (
+        SkillGeneratorAgent,
+    )
+    from socratic_agents import (
+        DocumentContextAnalyzer,
+    )
+    from socratic_agents import (
+        GithubSyncHandler,
+    )
 except ImportError:
     # Fallback if socratic_agents is not installed
     CodeGeneratorAgent = None  # type: ignore
@@ -85,6 +94,9 @@ except ImportError:
     SocraticCounselorAgent = None  # type: ignore
     SystemMonitorAgent = None  # type: ignore
     UserManagerAgent = None  # type: ignore
+    SkillGeneratorAgent = None  # type: ignore
+    DocumentContextAnalyzer = None  # type: ignore
+    GithubSyncHandler = None  # type: ignore
 from socratic_core import EventEmitter, EventType, SocratesConfig
 
 from socratic_system.database import VectorDatabase
@@ -333,6 +345,21 @@ class AgentOrchestrator:
     def code_validation_agent(self) -> CodeValidationAgent:
         """Lazy-load code validation agent"""
         return self._get_agent("code_validation_agent", CodeValidationAgent)
+
+    @property
+    def skill_generator(self) -> SkillGeneratorAgent:
+        """Lazy-load skill generator agent"""
+        return self._get_agent("skill_generator", SkillGeneratorAgent)
+
+    @property
+    def document_context_analyzer(self) -> DocumentContextAnalyzer:
+        """Lazy-load document context analyzer agent"""
+        return self._get_agent("document_context_analyzer", DocumentContextAnalyzer)
+
+    @property
+    def github_sync_handler(self) -> GithubSyncHandler:
+        """Lazy-load GitHub sync handler agent"""
+        return self._get_agent("github_sync_handler", GithubSyncHandler)
 
     @property
     def learning_integration(self) -> Any:
@@ -585,6 +612,9 @@ class AgentOrchestrator:
             "multi_llm": self.multi_llm_agent,
             "question_queue": self.question_queue,
             "code_validation": self.code_validation_agent,
+            "skill_generator": self.skill_generator,
+            "document_context_analyzer": self.document_context_analyzer,
+            "github_sync_handler": self.github_sync_handler,
         }
 
         agent = agents.get(agent_name)
@@ -662,6 +692,9 @@ class AgentOrchestrator:
             "multi_llm": self.multi_llm_agent,
             "question_queue": self.question_queue,
             "code_validation": self.code_validation_agent,
+            "skill_generator": self.skill_generator,
+            "document_context_analyzer": self.document_context_analyzer,
+            "github_sync_handler": self.github_sync_handler,
         }
 
         agent = agents.get(agent_name)
