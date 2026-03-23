@@ -2402,12 +2402,322 @@ class SocraticOpenclawIntegration:
         }
 
 
-class SocraticLibraryManager:
-    """Central manager for all 16 Socratic ecosystem libraries"""
+class CLIIntegration:
+    """Integrate socrates-cli for command-line interface access (Phase 5)"""
 
-    def __init__(self, config: Any):
+    def __init__(self, config: Any = None, api_url: str = "http://localhost:8000"):
+        """Initialize CLI integration"""
+        self.api_url = api_url
+        self.config = config
+        self.enabled = False
+        self.command_cache = {}
+
+        try:
+            from socrates_cli import CommandClient
+            self.client = CommandClient(api_url=api_url)
+            self.enabled = True
+            logger.info("CLI integration enabled")
+        except ImportError as e:
+            self.enabled = False
+            self.client = None
+            logger.warning(f"socrates-cli not available: {e}")
+
+    def list_commands(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List available CLI commands (Phase 5 enhancement)"""
+        if not self.enabled or not self.client:
+            return []
+        try:
+            commands = self.client.list_commands(category=category) if category else self.client.list_commands()
+            return commands if commands else []
+        except Exception as e:
+            logger.error(f"Failed to list commands: {e}")
+            return []
+
+    def list_categories(self) -> List[str]:
+        """List command categories (Phase 5 enhancement)"""
+        if not self.enabled or not self.client:
+            return []
+        try:
+            categories = self.client.list_categories()
+            return categories if categories else []
+        except Exception as e:
+            logger.error(f"Failed to list categories: {e}")
+            return []
+
+    def get_help(self, command: str) -> Dict[str, Any]:
+        """Get help for a command (Phase 5 enhancement)"""
+        if not self.enabled or not self.client:
+            return {}
+        try:
+            help_text = self.client.get_help(command)
+            return {"command": command, "help": help_text}
+        except Exception as e:
+            logger.error(f"Failed to get help for {command}: {e}")
+            return {}
+
+    def get_command_info(self, command_name: str) -> Dict[str, Any]:
+        """Get command metadata (Phase 5 enhancement)"""
+        if not self.enabled or not self.client:
+            return {}
+        try:
+            info = self.client.get_command_info(command_name)
+            return info if info else {}
+        except Exception as e:
+            logger.error(f"Failed to get command info: {e}")
+            return {}
+
+    def execute_command(self, command: str, args: Optional[Dict[str, Any]] = None,
+                       project_id: Optional[str] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
+        """Execute a CLI command (Phase 5 enhancement)"""
+        if not self.enabled or not self.client:
+            return {"status": "disabled"}
+        try:
+            result = self.client.execute_command(
+                command=command,
+                args=args or {},
+                project_id=project_id,
+                session_id=session_id
+            )
+            return result if result else {"status": "no_result"}
+        except Exception as e:
+            logger.error(f"Failed to execute command {command}: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def search_commands(self, query: str) -> List[Dict[str, Any]]:
+        """Search for commands (Phase 5 enhancement)"""
+        if not self.enabled or not self.client:
+            return []
+        try:
+            results = self.client.search_commands(query)
+            return results if results else []
+        except Exception as e:
+            logger.error(f"Failed to search commands: {e}")
+            return []
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get CLI integration status"""
+        return {
+            "enabled": self.enabled,
+            "interface": "cli",
+            "api_url": self.api_url,
+            "version": "0.1.0"
+        }
+
+
+class APIIntegration:
+    """Integrate socrates-core-api for REST API access (Phase 5)"""
+
+    def __init__(self, config: Any = None, api_url: str = "http://localhost:8000"):
+        """Initialize API integration"""
+        self.api_url = api_url
+        self.config = config
+        self.enabled = False
+        self.http_client = None
+        self.endpoints = {
+            "projects": "/projects",
+            "chat": "/chat/sessions",
+            "knowledge": "/knowledge",
+            "commands": "/commands",
+            "code": "/code",
+            "libraries": "/libraries",
+            "collaboration": "/collaboration",
+            "analytics": "/analytics",
+            "security": "/security"
+        }
+
+        try:
+            import httpx
+            self.http_client = httpx.Client(base_url=api_url, timeout=30.0)
+            self.enabled = True
+            logger.info("API integration enabled")
+        except ImportError as e:
+            self.enabled = False
+            logger.warning(f"socrates-api not available: {e}")
+
+    def _make_request(self, method: str, endpoint: str, **kwargs) -> Optional[Dict[str, Any]]:
+        """Make HTTP request to API (Phase 5 internal helper)"""
+        if not self.enabled or not self.http_client:
+            return None
+        try:
+            response = self.http_client.request(method, endpoint, **kwargs)
+            if response.status_code in (200, 201, 204):
+                try:
+                    return response.json()
+                except:
+                    return {"status": "success", "data": response.text}
+            else:
+                logger.error(f"API error {response.status_code}: {response.text}")
+                return {"status": "error", "error": response.text}
+        except Exception as e:
+            logger.error(f"API request failed: {e}")
+            return None
+
+    def list_projects(self) -> List[Dict[str, Any]]:
+        """List all projects (Phase 5 enhancement)"""
+        if not self.enabled:
+            return []
+        try:
+            result = self._make_request("GET", self.endpoints["projects"])
+            return result.get("data", []) if result else []
+        except Exception as e:
+            logger.error(f"Failed to list projects: {e}")
+            return []
+
+    def create_project(self, name: str, description: str = "") -> Dict[str, Any]:
+        """Create a new project (Phase 5 enhancement)"""
+        if not self.enabled:
+            return {"status": "disabled"}
+        try:
+            result = self._make_request(
+                "POST",
+                self.endpoints["projects"],
+                json={"name": name, "description": description}
+            )
+            return result if result else {"status": "no_result"}
+        except Exception as e:
+            logger.error(f"Failed to create project: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def get_project(self, project_id: str) -> Dict[str, Any]:
+        """Get project details (Phase 5 enhancement)"""
+        if not self.enabled:
+            return {}
+        try:
+            result = self._make_request("GET", f"{self.endpoints['projects']}/{project_id}")
+            return result.get("data", {}) if result else {}
+        except Exception as e:
+            logger.error(f"Failed to get project: {e}")
+            return {}
+
+    def delete_project(self, project_id: str) -> bool:
+        """Delete a project (Phase 5 enhancement)"""
+        if not self.enabled:
+            return False
+        try:
+            result = self._make_request("DELETE", f"{self.endpoints['projects']}/{project_id}")
+            return result and result.get("status") in ("success", "deleted")
+        except Exception as e:
+            logger.error(f"Failed to delete project: {e}")
+            return False
+
+    def list_chats(self, project_id: str) -> List[Dict[str, Any]]:
+        """List chat sessions (Phase 5 enhancement)"""
+        if not self.enabled:
+            return []
+        try:
+            result = self._make_request("GET", f"{self.endpoints['chat']}?project_id={project_id}")
+            return result.get("data", []) if result else []
+        except Exception as e:
+            logger.error(f"Failed to list chats: {e}")
+            return []
+
+    def start_chat(self, project_id: str, title: str = "New Chat") -> Dict[str, Any]:
+        """Start a new chat session (Phase 5 enhancement)"""
+        if not self.enabled:
+            return {"status": "disabled"}
+        try:
+            result = self._make_request(
+                "POST",
+                self.endpoints["chat"],
+                json={"project_id": project_id, "title": title}
+            )
+            return result if result else {"status": "no_result"}
+        except Exception as e:
+            logger.error(f"Failed to start chat: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def send_message(self, session_id: str, message: str) -> Dict[str, Any]:
+        """Send chat message (Phase 5 enhancement)"""
+        if not self.enabled:
+            return {"status": "disabled"}
+        try:
+            result = self._make_request(
+                "POST",
+                f"{self.endpoints['chat']}/{session_id}/messages",
+                json={"content": message}
+            )
+            return result if result else {"status": "no_result"}
+        except Exception as e:
+            logger.error(f"Failed to send message: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def get_knowledge_items(self, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get knowledge base items (Phase 5 enhancement)"""
+        if not self.enabled:
+            return []
+        try:
+            endpoint = self.endpoints["knowledge"]
+            if project_id:
+                endpoint += f"?project_id={project_id}"
+            result = self._make_request("GET", endpoint)
+            return result.get("data", []) if result else []
+        except Exception as e:
+            logger.error(f"Failed to get knowledge items: {e}")
+            return []
+
+    def import_knowledge(self, content: str, source: str = "import",
+                        metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Import knowledge (Phase 5 enhancement)"""
+        if not self.enabled:
+            return {"status": "disabled"}
+        try:
+            result = self._make_request(
+                "POST",
+                f"{self.endpoints['knowledge']}/import",
+                json={"content": content, "source": source, "metadata": metadata or {}}
+            )
+            return result if result else {"status": "no_result"}
+        except Exception as e:
+            logger.error(f"Failed to import knowledge: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def get_analytics(self, project_id: str) -> Dict[str, Any]:
+        """Get project analytics (Phase 5 enhancement)"""
+        if not self.enabled:
+            return {}
+        try:
+            result = self._make_request("GET", f"{self.endpoints['analytics']}/{project_id}")
+            return result.get("data", {}) if result else {}
+        except Exception as e:
+            logger.error(f"Failed to get analytics: {e}")
+            return {}
+
+    def call_api_endpoint(self, method: str, endpoint: str, **kwargs) -> Optional[Dict[str, Any]]:
+        """Make arbitrary API call (Phase 5 enhancement)"""
+        if not self.enabled:
+            return None
+        try:
+            return self._make_request(method, endpoint, **kwargs)
+        except Exception as e:
+            logger.error(f"API call failed: {e}")
+            return None
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get API integration status"""
+        return {
+            "enabled": self.enabled,
+            "interface": "api",
+            "api_url": self.api_url,
+            "endpoints": list(self.endpoints.keys()),
+            "version": "0.1.1"
+        }
+
+    def __del__(self):
+        """Cleanup HTTP client"""
+        try:
+            if self.http_client:
+                self.http_client.close()
+        except:
+            pass
+
+
+class SocraticLibraryManager:
+    """Central manager for all 16 Socratic ecosystem libraries + 2 interface packages"""
+
+    def __init__(self, config: Any, api_url: str = "http://localhost:8000"):
         """Initialize all library integrations"""
         self.config = config
+        self.api_url = api_url
         self.logger = logging.getLogger("socrates.library_manager")
 
         # Initialize all 14 library integrations
@@ -2435,7 +2745,11 @@ class SocraticLibraryManager:
         self.langgraph = LangGraphIntegration(config)
         self.openclaw = SocraticOpenclawIntegration(config)
 
-        self.logger.info("Socratic Library Manager initialized with all 16 libraries")
+        # Interface package integrations (Phase 5)
+        self.cli = CLIIntegration(config, api_url=api_url)
+        self.api = APIIntegration(config, api_url=api_url)
+
+        self.logger.info("Socratic Library Manager initialized with all 16 libraries + 2 interfaces")
 
     def get_status(self) -> Dict[str, bool]:
         """Get status of all library integrations"""
@@ -2453,10 +2767,12 @@ class SocraticLibraryManager:
             "docs": self.docs.enabled,
             "performance": self.performance.enabled,
             "langgraph": self.langgraph.enabled,
-            "openclaw": self.openclaw.enabled
+            "openclaw": self.openclaw.enabled,
+            "cli": self.cli.enabled,
+            "api": self.api.enabled
         }
 
     def __repr__(self) -> str:
         status = self.get_status()
         enabled = sum(1 for v in status.values() if v)
-        return f"<SocraticLibraryManager: {enabled}/16 libraries enabled>"
+        return f"<SocraticLibraryManager: {enabled}/16 libraries + 2 interfaces enabled>"
