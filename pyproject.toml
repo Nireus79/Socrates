@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "1.4.0"
+version = "1.4.1"
 description = "Socratic method tutoring system with multi-agent orchestration, RAG, code analysis, learning analytics, and workflow management"
 readme = "README.md"
 license = {text = "MIT"}
@@ -74,12 +74,12 @@ dependencies = [
     "socratic-rag>=0.1.0",               # Retrieval-Augmented Generation (core functionality)
     "socratic-security==0.4.0",          # Security utilities (prompt injection, path validation, sandboxing)
     "socratic-learning>=0.1.1",          # Learning system (interaction tracking, recommendations)
-    "socratic-analyzer>=0.1.0",          # Code analysis capabilities
-    "socratic-conflict>=0.1.0",          # Conflict detection and resolution
-    "socratic-knowledge>=0.1.0",         # Knowledge management with RBAC and versioning
+    "socratic-analyzer>=0.1.1",          # Code analysis capabilities (Pydantic v2 compatible)
+    "socratic-conflict>=0.1.2",          # Conflict detection and resolution
+    "socratic-knowledge>=0.1.2",         # Knowledge management with RBAC and versioning
     "socratic-workflow>=0.1.1",          # Workflow orchestration
-    "socratic-docs>=0.1.0",              # Documentation generation and management
-    "socratic-performance>=0.1.0",       # Performance monitoring and optimization
+    "socratic-docs>=0.1.1",              # Documentation generation and management
+    "socratic-performance>=0.1.1",       # Performance monitoring and optimization (with cache support)
     "chromadb>=0.5.0",                   # Required by: socratic-rag (vector database, performance improvements)
     "sentence-transformers>=3.0.0",      # Required by: socratic-rag (embeddings)
     "pypdf>=4.0.0",                      # Document processing for RAG systems
