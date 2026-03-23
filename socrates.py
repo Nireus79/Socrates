@@ -383,6 +383,25 @@ uvicorn.run(
 
 def main():
     """Main entry point with argument parsing"""
+    # Check if setup is needed (JWT_SECRET_KEY required for API)
+    if not os.getenv('JWT_SECRET_KEY'):
+        env_file = Path('.env')
+        if not env_file.exists():
+            print("\n" + "=" * 70)
+            print("FIRST TIME SETUP REQUIRED")
+            print("=" * 70)
+            print("\nSocrates needs to generate security keys for the API.")
+            print("Running setup_env.py...")
+            print("=" * 70 + "\n")
+
+            # Run setup script
+            try:
+                import setup_env
+                setup_env.setup_environment()
+            except Exception as e:
+                print(f"[WARNING] Setup failed: {e}")
+                print("Please run: python setup_env.py")
+
     parser = argparse.ArgumentParser(
         prog="socrates",
         description="Socrates AI - A Socratic method tutoring system powered by Claude AI",
