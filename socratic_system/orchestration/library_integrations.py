@@ -322,18 +322,27 @@ class DocsIntegration:
             self.enabled = False
             logger.warning("socratic-docs not available")
 
-    def generate_readme(self, project_info: Dict[str, Any]) -> Optional[str]:
-        """Generate README documentation"""
+    def generate_comprehensive_readme(self, project_name: str, description: str,
+                                     features: Optional[List[str]] = None,
+                                     installation: Optional[str] = None,
+                                     usage: Optional[str] = None) -> Optional[str]:
+        """Generate comprehensive README documentation"""
         if not self.enabled:
             return None
         try:
-            return self.generator.generate_comprehensive_readme(project_info)
+            return self.generator.generate_comprehensive_readme(
+                project_name=project_name,
+                description=description,
+                features=features,
+                installation=installation,
+                usage=usage
+            )
         except Exception as e:
             logger.error(f"Failed to generate README: {e}")
             return None
 
-    def generate_api_docs(self, code_structure: Dict[str, Any]) -> Optional[str]:
-        """Generate API documentation"""
+    def generate_api_documentation(self, code_structure: Dict[str, Any]) -> Optional[str]:
+        """Generate API documentation from code structure"""
         if not self.enabled:
             return None
         try:
@@ -342,44 +351,150 @@ class DocsIntegration:
             logger.error(f"Failed to generate API docs: {e}")
             return None
 
+    def generate_architecture_docs(self, modules: List[str]) -> Optional[str]:
+        """Generate architecture documentation"""
+        if not self.enabled:
+            return None
+        try:
+            return self.generator.generate_architecture_docs(modules)
+        except Exception as e:
+            logger.error(f"Failed to generate architecture docs: {e}")
+            return None
+
+    def generate_setup_guide(self, project: Dict[str, Any]) -> Optional[str]:
+        """Generate setup/installation guide"""
+        if not self.enabled:
+            return None
+        try:
+            return self.generator.generate_setup_guide(project)
+        except Exception as e:
+            logger.error(f"Failed to generate setup guide: {e}")
+            return None
+
+    def generate_all_documentation(self, project: Dict[str, Any],
+                                  code_structure: Dict[str, Any]) -> Optional[Dict[str, str]]:
+        """Generate complete documentation set (README, API, ARCHITECTURE, SETUP)"""
+        if not self.enabled:
+            return None
+        try:
+            return self.generator.generate_all(project, code_structure)
+        except Exception as e:
+            logger.error(f"Failed to generate all documentation: {e}")
+            return None
+
 
 class PerformanceIntegration:
     """Integrate socratic-performance for monitoring and caching"""
 
-    def __init__(self):
-        """Initialize performance monitor"""
-        try:
-            from socratic_performance import QueryProfiler
+    def __init__(self, ttl_minutes: int = 30):
+        """Initialize performance monitor and cache"""
+        self.profiler = None
+        self.cache = None
+        self.enabled = False
 
-            self.profiler = QueryProfiler()
+        try:
+            from socratic_performance import QueryProfiler, TTLCache
+
+            self.profiler = QueryProfiler(ttl_minutes=ttl_minutes)
+            self.cache = TTLCache(ttl_minutes=ttl_minutes)
             self.enabled = True
-            logger.info("Performance integration enabled")
-        except ImportError:
-            self.enabled = False
-            logger.warning("socratic-performance not available")
+            logger.info("Performance integration enabled with profiler and cache")
+        except ImportError as e:
+            logger.warning(f"socratic-performance not available: {e}")
 
     def profile_execution(self, func_name: str, duration_ms: float, success: bool = True):
         """Record execution metrics"""
-        if not self.enabled:
+        if not self.enabled or not self.profiler:
             return
         try:
-            self.profiler.record_execution(
-                task_id=func_name,
+            # Use the profiler's internal tracking
+            from socratic_performance import ExecutionMetric
+            metric = ExecutionMetric(
+                name=func_name,
                 duration_ms=duration_ms,
-                success=success
+                timestamp=datetime.now().timestamp(),
+                error=None if success else "Execution failed"
             )
+            self.profiler._record_metric(func_name, metric)
         except Exception as e:
             logger.error(f"Failed to profile execution: {e}")
 
     def get_performance_stats(self) -> Dict[str, Any]:
         """Get performance statistics"""
-        if not self.enabled:
+        if not self.enabled or not self.profiler:
             return {}
         try:
             stats = self.profiler.get_stats()
             return stats if isinstance(stats, dict) else {}
         except Exception as e:
             logger.error(f"Failed to get stats: {e}")
+            return {}
+
+    def get_slow_queries(self, threshold_ms: float = 1000) -> List[Dict[str, Any]]:
+        """Get queries exceeding performance threshold"""
+        if not self.enabled or not self.profiler:
+            return []
+        try:
+            slow = self.profiler.get_slow_queries(threshold_ms)
+            return [{"name": m.name, "duration_ms": m.duration_ms} for m in slow]
+        except Exception as e:
+            logger.error(f"Failed to get slow queries: {e}")
+            return []
+
+    def reset_profiler(self) -> bool:
+        """Reset profiler statistics"""
+        if not self.enabled or not self.profiler:
+            return False
+        try:
+            self.profiler.reset()
+            logger.info("Profiler reset successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to reset profiler: {e}")
+            return False
+
+    def get_cache(self, key: str) -> Any:
+        """Get value from cache"""
+        if not self.enabled or not self.cache:
+            return None
+        try:
+            return self.cache.get(key)
+        except Exception as e:
+            logger.debug(f"Cache get failed: {e}")
+            return None
+
+    def set_cache(self, key: str, value: Any) -> bool:
+        """Set value in cache"""
+        if not self.enabled or not self.cache:
+            return False
+        try:
+            self.cache.set(key, value)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to set cache: {e}")
+            return False
+
+    def clear_cache(self) -> bool:
+        """Clear all cache entries"""
+        if not self.enabled or not self.cache:
+            return False
+        try:
+            self.cache.clear()
+            logger.info("Cache cleared successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to clear cache: {e}")
+            return False
+
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics"""
+        if not self.enabled or not self.cache:
+            return {}
+        try:
+            stats = self.cache.stats()
+            return stats if isinstance(stats, dict) else {}
+        except Exception as e:
+            logger.error(f"Failed to get cache stats: {e}")
             return {}
 
 
@@ -744,4 +859,4 @@ class SocraticLibraryManager:
     def __repr__(self) -> str:
         status = self.get_status()
         enabled = sum(1 for v in status.values() if v)
-        return f"<SocraticLibraryManager: {enabled}/7 libraries enabled>"
+        return f"<SocraticLibraryManager: {enabled}/12 libraries enabled>"
