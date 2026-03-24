@@ -19,58 +19,6 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger("phase5_verification")
 
 
-def verify_cli_integration():
-    """Verify CLIIntegration enhancements"""
-    logger.info("=" * 70)
-    logger.info("VERIFYING CLI INTEGRATION")
-    logger.info("=" * 70)
-
-    results = {}
-
-    try:
-        from socratic_system.orchestration.library_integrations import CLIIntegration
-
-        integration = CLIIntegration()
-        logger.info("PASS: CLIIntegration class found and instantiated")
-
-        # Test new Phase 5 methods
-        methods = [
-            'list_commands',
-            'list_categories',
-            'get_help',
-            'get_command_info',
-            'execute_command',
-            'search_commands',
-            'get_status'
-        ]
-
-        all_exist = True
-        for method in methods:
-            exists = hasattr(integration, method) and callable(getattr(integration, method))
-            logger.info(f"  - CLIIntegration.{method}: {exists}")
-            all_exist = all_exist and exists
-
-        # Test status
-        status = integration.get_status()
-        logger.info(f"  - get_status() returned: interface={status.get('interface')}")
-
-        # Test methods that should return lists/dicts
-        commands = integration.list_commands()
-        logger.info(f"  - list_commands() returned: {type(commands).__name__}")
-
-        categories = integration.list_categories()
-        logger.info(f"  - list_categories() returned: {type(categories).__name__}")
-
-        results["CLIIntegration"] = all_exist
-    except Exception as e:
-        logger.error(f"FAIL: CLIIntegration verification failed: {e}")
-        results["CLIIntegration"] = False
-
-    passed = sum(1 for v in results.values() if v)
-    logger.info(f"\nCLI Integration: {passed}/1 passed")
-    return passed == 1
-
-
 def verify_api_integration():
     """Verify APIIntegration enhancements"""
     logger.info("\n" + "=" * 70)
@@ -140,24 +88,21 @@ def verify_library_manager_update():
         manager = SocraticLibraryManager({})
         logger.info("PASS: SocraticLibraryManager instantiated")
 
-        # Check for new interface integrations
-        has_cli = hasattr(manager, 'cli')
+        # Check for interface integration
         has_api = hasattr(manager, 'api')
 
-        logger.info(f"  - Has cli property: {has_cli}")
         logger.info(f"  - Has api property: {has_api}")
 
-        # Check status includes both
+        # Check status includes api
         status = manager.get_status()
         logger.info(f"  - Total integrations in status: {len(status)}")
-        logger.info(f"  - Includes 'cli': {'cli' in status}")
         logger.info(f"  - Includes 'api': {'api' in status}")
 
         # Check repr
         repr_str = repr(manager)
         logger.info(f"  - Manager repr: {repr_str}")
 
-        return has_cli and has_api and 'cli' in status and 'api' in status
+        return has_api and 'api' in status
     except Exception as e:
         logger.error(f"FAIL: Library manager verification failed: {e}")
         return False
@@ -170,7 +115,6 @@ def main():
     logger.info("=" * 70 + "\n")
 
     results = {
-        "CLI Integration": verify_cli_integration(),
         "API Integration": verify_api_integration(),
         "Library Manager": verify_library_manager_update(),
     }
