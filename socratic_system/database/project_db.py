@@ -730,7 +730,7 @@ class ProjectDatabase:
                 SET is_archived = 1, archived_at = ?, status = 'archived'
                 WHERE project_id = ?
             """,
-                (datetime.now().isoformat(), project_id),
+                (serialize_datetime(datetime.now()), project_id),
             )
 
             conn.commit()
@@ -872,7 +872,7 @@ class ProjectDatabase:
                         project_id,
                         message_type,
                         msg.get("content", ""),
-                        msg.get("timestamp", datetime.now().isoformat()),
+                        msg.get("timestamp", serialize_datetime(datetime.now())),
                         json.dumps(metadata) if metadata else json.dumps({}),
                     ),
                 )
@@ -1088,7 +1088,7 @@ class ProjectDatabase:
                     session_id,
                     message_type,
                     content,
-                    datetime.now().isoformat(),
+                    serialize_datetime(datetime.now()),
                     json.dumps(metadata or {}),
                 ),
             )
@@ -3120,7 +3120,7 @@ class ProjectDatabase:
             now = datetime.now()
             cursor.execute(
                 "UPDATE chat_sessions SET archived = ?, updated_at = ? WHERE session_id = ?",
-                (1 if archived else 0, now.isoformat(), session_id),
+                (1 if archived else 0, serialize_datetime(now), session_id),
             )
             conn.commit()
             self.logger.debug(f"{'Archived' if archived else 'Restored'} chat session {session_id}")
@@ -3297,7 +3297,7 @@ class ProjectDatabase:
                 SET content = ?, metadata = ?, updated_at = ?
                 WHERE message_id = ?
                 """,
-                (content, metadata_json, now.isoformat(), message_id),
+                (content, metadata_json, serialize_datetime(now), message_id),
             )
             conn.commit()
             self.logger.debug(f"Updated chat message {message_id}")
@@ -3494,7 +3494,7 @@ class ProjectDatabase:
                 SET status = ?, accepted_at = ?
                 WHERE id = ?
                 """,
-                ("accepted", now.isoformat(), invitation_id),
+                ("accepted", serialize_datetime(now), invitation_id),
             )
             conn.commit()
             self.logger.debug(f"Accepted invitation {invitation_id}")
