@@ -16,9 +16,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from uuid import uuid4
 
 logger = logging.getLogger("socrates.utils.git_repo_manager")
 
@@ -130,7 +130,7 @@ class GitRepositoryManager:
             }
 
         # Create isolated temp directory
-        temp_dir = os.path.join(self.temp_base_dir, f"{self.TEMP_PREFIX}{uuid.uuid4().hex[:8]}")
+        temp_dir = os.path.join(self.temp_base_dir, f"{self.TEMP_PREFIX}{uuid4().hex[:8]}")
 
         try:
             # Create directory

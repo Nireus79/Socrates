@@ -1,9 +1,10 @@
 """Project note model for Socrates AI"""
 
 import datetime
-import uuid
 from dataclasses import dataclass, field
 from typing import List, Optional
+
+from socratic_core.utils import ProjectIDGenerator
 
 
 @dataclass
@@ -31,7 +32,7 @@ class ProjectNote:
     ) -> "ProjectNote":
         """Create a new project note with auto-generated ID"""
         return cls(
-            note_id=str(uuid.uuid4()),
+            note_id=ProjectIDGenerator.generate(),
             project_id=project_id,
             note_type=note_type,
             title=title,

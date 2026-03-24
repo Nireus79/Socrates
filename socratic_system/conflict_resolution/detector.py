@@ -14,6 +14,7 @@ except ImportError:
     # socratic_conflict is optional - provide graceful fallback
     SKConflictDetector = None  # type: ignore
 
+from socratic_core.utils import ProjectIDGenerator
 from socratic_system.models import ConflictInfo, ProjectContext
 
 
@@ -267,7 +268,6 @@ class ConflictDetector:
             ConflictInfo object
         """
         import datetime
-        import uuid
 
         # Extract proposal values
         old_value = ""
@@ -277,7 +277,7 @@ class ConflictDetector:
             new_value = conflict.proposals[1].description
 
         return ConflictInfo(
-            conflict_id=str(uuid.uuid4()),
+            conflict_id=ProjectIDGenerator.generate(),
             conflict_type=field_name,
             old_value=old_value,
             new_value=new_value,
