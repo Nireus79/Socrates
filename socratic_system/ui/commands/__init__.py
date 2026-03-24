@@ -62,6 +62,12 @@ from socratic_system.ui.commands.doc_commands import (
     DocPasteCommand,
     DocsCommand,
 )
+from socratic_system.ui.commands.docs_generation_commands import (
+    GenerateReadmeCommand,
+    GenerateApiDocsCommand,
+    GenerateArchitectureDocsCommand,
+    GenerateAllDocsCommand,
+)
 from socratic_system.ui.commands.file_commands import FileDeleteCommand
 from socratic_system.ui.commands.finalize_commands import (
     FinalizeDocsCommand,
@@ -238,6 +244,10 @@ __all__ = [
     "DocListCommand",
     "DocPasteCommand",
     "DocsCommand",
+    "GenerateReadmeCommand",
+    "GenerateApiDocsCommand",
+    "GenerateArchitectureDocsCommand",
+    "GenerateAllDocsCommand",
     "FileDeleteCommand",
     "NoteAddCommand",
     "NoteListCommand",
