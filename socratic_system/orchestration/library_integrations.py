@@ -2416,136 +2416,6 @@ class SocraticOpenclawIntegration:
         }
 
 
-class CLIIntegration:
-    """Integrate socrates-cli for command-line interface access (Phase 5)"""
-
-    def __init__(self, config: Any = None, api_url: str = "http://localhost:8000"):
-        """Initialize CLI integration"""
-        self.api_url = api_url
-        self.config = config
-        self.enabled = False
-        self.command_cache = {}
-        self.cli_module = None
-
-        try:
-            # Try to import the CLI module
-            from socrates_cli.cli import main as cli_main
-            self.cli_module = cli_main
-            self.enabled = True
-            logger.info("CLI integration enabled")
-        except ImportError as e:
-            # Try alternative import path
-            try:
-                from socrates_cli import cli
-                self.cli_module = cli
-                self.enabled = True
-                logger.info("CLI integration enabled (alternative)")
-            except ImportError as e2:
-                self.enabled = False
-                self.cli_module = None
-                logger.warning(f"socrates-cli not available: {e2}")
-
-    def list_commands(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
-        """List available CLI commands (Phase 5 enhancement)"""
-        if not self.enabled:
-            return []
-        try:
-            # Return common CLI command categories available
-            commands = [
-                {"name": "project", "category": "project", "description": "Manage projects"},
-                {"name": "code", "category": "code", "description": "Generate code"},
-                {"name": "chat", "category": "chat", "description": "Chat sessions"},
-                {"name": "knowledge", "category": "knowledge", "description": "Knowledge management"},
-                {"name": "analytics", "category": "analytics", "description": "Project analytics"},
-            ]
-            if category:
-                return [c for c in commands if c.get("category") == category]
-            return commands
-        except Exception as e:
-            logger.error(f"Failed to list commands: {e}")
-            return []
-
-    def list_categories(self) -> List[str]:
-        """List command categories (Phase 5 enhancement)"""
-        if not self.enabled:
-            return []
-        try:
-            return ["project", "code", "chat", "knowledge", "analytics", "system"]
-        except Exception as e:
-            logger.error(f"Failed to list categories: {e}")
-            return []
-
-    def get_help(self, command: str) -> Dict[str, Any]:
-        """Get help for a command (Phase 5 enhancement)"""
-        if not self.enabled:
-            return {}
-        try:
-            help_map = {
-                "project": "Manage Socrates projects - create, list, delete",
-                "code": "Generate code for project specifications",
-                "chat": "Start and manage interactive chat sessions",
-                "knowledge": "Manage project knowledge base",
-                "analytics": "View project analytics and metrics",
-            }
-            return {"command": command, "help": help_map.get(command, f"Help for {command}")}
-        except Exception as e:
-            logger.error(f"Failed to get help for {command}: {e}")
-            return {}
-
-    def get_command_info(self, command_name: str) -> Dict[str, Any]:
-        """Get command metadata (Phase 5 enhancement)"""
-        if not self.enabled:
-            return {}
-        try:
-            return {
-                "name": command_name,
-                "available": True,
-                "description": f"Command: {command_name}",
-                "version": "0.1.0"
-            }
-        except Exception as e:
-            logger.error(f"Failed to get command info: {e}")
-            return {}
-
-    def execute_command(self, command: str, args: Optional[Dict[str, Any]] = None,
-                       project_id: Optional[str] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
-        """Execute a CLI command (Phase 5 enhancement)"""
-        if not self.enabled:
-            return {"status": "disabled"}
-        try:
-            return {
-                "status": "success",
-                "command": command,
-                "args": args or {},
-                "project_id": project_id,
-                "result": f"Executed {command}"
-            }
-        except Exception as e:
-            logger.error(f"Failed to execute command {command}: {e}")
-            return {"status": "error", "error": str(e)}
-
-    def search_commands(self, query: str) -> List[Dict[str, Any]]:
-        """Search for commands (Phase 5 enhancement)"""
-        if not self.enabled:
-            return []
-        try:
-            all_commands = self.list_commands()
-            return [c for c in all_commands if query.lower() in c.get("name", "").lower() or
-                   query.lower() in c.get("description", "").lower()]
-        except Exception as e:
-            logger.error(f"Failed to search commands: {e}")
-            return []
-
-    def get_status(self) -> Dict[str, Any]:
-        """Get CLI integration status"""
-        return {
-            "enabled": self.enabled,
-            "interface": "cli",
-            "api_url": self.api_url,
-            "version": "0.1.0"
-        }
-
-
 class APIIntegration:
     """Integrate socrates-core-api for REST API access (Phase 5)"""
 
@@ -2788,10 +2658,9 @@ class SocraticLibraryManager:
         self.openclaw = SocraticOpenclawIntegration(config)
 
         # Interface package integrations (Phase 5)
-        self.cli = CLIIntegration(config, api_url=api_url)
         self.api = APIIntegration(config, api_url=api_url)
 
-        self.logger.info("Socratic Library Manager initialized with all 16 libraries + 2 interfaces")
+        self.logger.info("Socratic Library Manager initialized with all 16 libraries + 1 interface")
 
     def get_status(self) -> Dict[str, bool]:
         """Get status of all library integrations"""
@@ -2810,11 +2679,10 @@ class SocraticLibraryManager:
             "performance": self.performance.enabled,
             "langgraph": self.langgraph.enabled,
             "openclaw": self.openclaw.enabled,
-            "cli": self.cli.enabled,
             "api": self.api.enabled
         }
 
     def __repr__(self) -> str:
         status = self.get_status()
         enabled = sum(1 for v in status.values() if v)
-        return f"<SocraticLibraryManager: {enabled}/16 libraries + 2 interfaces enabled>"
+        return f"<SocraticLibraryManager: {enabled}/16 libraries + 1 interface enabled>"
