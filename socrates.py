@@ -26,6 +26,29 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+# ============================================================================
+# Automatically activate virtual environment if needed
+# ============================================================================
+
+def _ensure_venv_activated():
+    """Re-execute script with venv Python if not already in venv"""
+    _script_dir = Path(__file__).parent
+    _venv_python = _script_dir / ".venv" / "Scripts" / "python.exe"
+
+    # Check if we're in the venv by looking at the executable path
+    _in_venv = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
+
+    # If venv exists and we're not already in it, re-execute with venv Python
+    if _venv_python.exists() and not _in_venv:
+        import subprocess
+        import os
+        # Re-execute with venv Python, preserving all environment variables
+        env = os.environ.copy()
+        result = subprocess.run([str(_venv_python)] + sys.argv, env=env)
+        sys.exit(result.returncode)
+
+_ensure_venv_activated()
+
 from socratic_core import SocratesConfig
 from socratic_system.orchestration import AgentOrchestrator
 
