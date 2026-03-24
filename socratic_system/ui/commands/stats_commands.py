@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
+from socratic_core.utils import serialize_datetime
 from socratic_system.constants import ErrorMessages, ProjectStatus
 from socratic_system.ui.commands.base import BaseCommand
 
@@ -80,11 +81,11 @@ class ProjectStatsCommand(BaseCommand):
                 "status": getattr(project, "status", "active"),
                 "progress": getattr(project, "progress", 0),
                 "created_at": (
-                    created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
+                    serialize_datetime(created_at) if isinstance(created_at, datetime) else str(created_at)
                 ),
                 "updated_at": (
-                    (getattr(project, "updated_at", datetime.now(timezone.utc))).isoformat()
-                    if hasattr(getattr(project, "updated_at", None), "isoformat")
+                    serialize_datetime(getattr(project, "updated_at", datetime.now()))
+                    if isinstance(getattr(project, "updated_at", None), datetime)
                     else str(getattr(project, "updated_at", ""))
                 ),
                 "days_active": max(0, days_active),

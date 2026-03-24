@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List
 
+from socratic_core.utils import serialize_datetime, deserialize_datetime
+
 
 @dataclass
 class TeamMemberRole:
@@ -34,7 +36,7 @@ class TeamMemberRole:
             "username": self.username,
             "role": self.role,
             "skills": self.skills,
-            "joined_at": self.joined_at.isoformat(),
+            "joined_at": serialize_datetime(self.joined_at),
         }
 
     @staticmethod
@@ -44,7 +46,7 @@ class TeamMemberRole:
             username=data["username"],
             role=data["role"],
             skills=data.get("skills", []),
-            joined_at=datetime.fromisoformat(data["joined_at"]),
+            joined_at=deserialize_datetime(data["joined_at"]),
         )
 
 

@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
+from socratic_core.utils import serialize_datetime
 from socratic_system.core import get_all_project_types, get_project_type_description
 from socratic_system.models.project import ProjectContext
 from socratic_system.ui.commands.base import BaseCommand
@@ -531,7 +532,7 @@ class ProjectRestoreCommand(BaseCommand):
                     "name": p.name,
                     "owner": p.owner,
                     "archived_at": (
-                        p.archived_at.isoformat()
+                        serialize_datetime(p.archived_at)
                         if hasattr(p.archived_at, "isoformat")
                         else str(p.archived_at)
                     ),

@@ -43,6 +43,8 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from socratic_core.utils import serialize_datetime
+
 logger = logging.getLogger("socrates.integrations")
 
 
@@ -194,7 +196,7 @@ class LearningIntegration:
             result = {
                 "recommendation_id": recommendation_id,
                 "status": "applied",
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "effectiveness_tracking": "enabled"
             }
             logger.info(f"Recommendation {recommendation_id} applied")
@@ -630,7 +632,7 @@ class KnowledgeIntegration:
                 content=content,
                 created_by="system",
                 tags=tags or [],
-                metadata={"created_at": datetime.now().isoformat()}
+                metadata={"created_at": serialize_datetime(datetime.now())}
             )
             return {
                 "item_id": item.item_id if hasattr(item, 'item_id') else str(item),
@@ -667,7 +669,7 @@ class KnowledgeIntegration:
             version_info = {
                 "item_id": item_id,
                 "version_number": 1,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "message": message,
                 "status": "created"
             }
@@ -685,7 +687,7 @@ class KnowledgeIntegration:
             history = [
                 {
                     "version_number": 1,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": serialize_datetime(datetime.now()),
                     "message": "Initial version",
                     "created_by": "system"
                 }
@@ -704,7 +706,7 @@ class KnowledgeIntegration:
                 "item_id": item_id,
                 "version_number": version_number,
                 "status": "rolled_back",
-                "timestamp": datetime.now().isoformat()
+                "timestamp": serialize_datetime(datetime.now())
             }
             logger.info(f"Item {item_id} rolled back to version {version_number}")
             return result
@@ -765,7 +767,7 @@ class KnowledgeIntegration:
                 "event_type": event_type,
                 "user_id": user_id,
                 "resource_id": resource_id,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "details": details or {}
             }
             logger.info(f"Audit event logged: {event_type} by {user_id}")
@@ -784,7 +786,7 @@ class KnowledgeIntegration:
                 {
                     "event_type": "created",
                     "user_id": "system",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": serialize_datetime(datetime.now()),
                     "details": {}
                 }
             ]
@@ -938,7 +940,7 @@ class WorkflowIntegration:
                 "failed_tasks": 0,
                 "average_task_duration_ms": 0,
                 "total_cost_usd": 0.0,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": serialize_datetime(datetime.now())
             }
             logger.info(f"Metrics retrieved for workflow: {workflow_id}")
             return metrics
@@ -1260,7 +1262,7 @@ class CoreIntegration:
         try:
             event_data = {
                 "type": event_type,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "data": data or {}
             }
             # Store in history
@@ -2004,7 +2006,7 @@ class SecurityIntegration:
             confidence = 0.95 if vulnerable else 0.05
 
             audit_entry = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "action": "sql_check",
                 "query_preview": query[:50],
                 "vulnerable": vulnerable,
@@ -2037,7 +2039,7 @@ class SecurityIntegration:
                 issues.append("event_handler_found")
 
             audit_entry = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "action": "xss_check",
                 "content_length": len(html_content),
                 "vulnerable": vulnerable,
@@ -2069,7 +2071,7 @@ class SecurityIntegration:
                         module = imp.strip().split()[0]
                         if module not in allowed_imports:
                             audit_entry = {
-                                "timestamp": datetime.now().isoformat(),
+                                "timestamp": serialize_datetime(datetime.now()),
                                 "action": "sandbox_block",
                                 "reason": f"disallowed_import_{module}",
                                 "code_preview": code[:50]
@@ -2098,7 +2100,7 @@ class SecurityIntegration:
                 result = restricted_locals.get("result", "No result returned")
 
                 audit_entry = {
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": serialize_datetime(datetime.now()),
                     "action": "sandbox_execute",
                     "status": "success",
                     "code_length": len(code)
@@ -2116,7 +2118,7 @@ class SecurityIntegration:
         except Exception as e:
             logger.error(f"Sandbox execution failed: {e}")
             audit_entry = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "action": "sandbox_execute",
                 "status": "error",
                 "error": str(e)
@@ -2135,7 +2137,7 @@ class SecurityIntegration:
             return False
         try:
             audit_entry = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "event_type": event_type,
                 "user_id": user_id,
                 "resource_id": resource_id,
@@ -2170,7 +2172,7 @@ class SecurityIntegration:
         try:
             self.mfa_enabled_users.add(user_id)
             audit_entry = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "action": "mfa_enabled",
                 "user_id": user_id
             }
@@ -2200,7 +2202,7 @@ class SecurityIntegration:
             valid = len(token) == 6 and token.isdigit()
 
             audit_entry = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": serialize_datetime(datetime.now()),
                 "action": "mfa_verify",
                 "user_id": user_id,
                 "valid": valid
@@ -2210,7 +2212,7 @@ class SecurityIntegration:
             return {
                 "valid": valid,
                 "user_id": user_id,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": serialize_datetime(datetime.now())
             }
         except Exception as e:
             logger.error(f"MFA verification failed: {e}")
@@ -2345,7 +2347,7 @@ class SocraticOpenclawIntegration:
             self.sessions[session_id] = {
                 "topic": topic,
                 "status": "active",
-                "started_at": datetime.now().isoformat()
+                "started_at": serialize_datetime(datetime.now())
             }
             return {
                 "status": "success",
@@ -2364,7 +2366,7 @@ class SocraticOpenclawIntegration:
         try:
             result = await self.skill.respond(session_id, response)
             if session_id in self.sessions:
-                self.sessions[session_id]["last_response"] = datetime.now().isoformat()
+                self.sessions[session_id]["last_response"] = serialize_datetime(datetime.now())
             return {
                 "status": "success",
                 "session_id": session_id,

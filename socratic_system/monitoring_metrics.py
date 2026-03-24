@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Optional
 
+from socratic_core.utils import serialize_datetime
+
 
 @dataclass
 class MetricPoint:
@@ -113,7 +115,7 @@ class MetricsCollector:
             "max": max(values),
             "avg": sum(values) / len(values),
             "latest": values[-1],
-            "timestamp": recent[-1].timestamp.isoformat(),
+            "timestamp": serialize_datetime(recent[-1].timestamp),
         }
 
     def get_all_counters(self) -> Dict[str, int]:

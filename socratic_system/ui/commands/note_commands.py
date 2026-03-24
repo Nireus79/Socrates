@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
+from socratic_core.utils import serialize_datetime
 from socratic_system.models.note import ProjectNote
 from socratic_system.ui.commands.base import BaseCommand
 
@@ -102,7 +103,7 @@ class NoteAddCommand(BaseCommand):
                         "note_type": note.note_type,
                         "created_by": note.created_by,
                         "created_at": (
-                            note.created_at.isoformat()
+                            serialize_datetime(note.created_at)
                             if hasattr(note.created_at, "isoformat")
                             else str(note.created_at)
                         ),
@@ -171,7 +172,7 @@ class NoteListCommand(BaseCommand):
                     "note_type": note.note_type,
                     "created_by": note.created_by,
                     "created_at": (
-                        note.created_at.isoformat()
+                        serialize_datetime(note.created_at)
                         if hasattr(note.created_at, "isoformat")
                         else str(note.created_at)
                     ),
@@ -258,7 +259,7 @@ class NoteSearchCommand(BaseCommand):
                     "note_type": note.note_type,
                     "created_by": note.created_by,
                     "created_at": (
-                        note.created_at.isoformat()
+                        serialize_datetime(note.created_at)
                         if hasattr(note.created_at, "isoformat")
                         else str(note.created_at)
                     ),
