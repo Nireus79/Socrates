@@ -27,6 +27,12 @@ from socratic_system.ui.commands.workflow_commands import (
     WorkflowExecuteCommand,
     WorkflowListCommand,
 )
+from socratic_system.ui.commands.security_commands import (
+    SecurityIncidentsCommand,
+    SecurityStatusCommand,
+    SecurityTrendsCommand,
+    SecurityValidateCommand,
+)
 from socratic_system.ui.commands.conv_commands import ConvSearchCommand, ConvSummaryCommand
 from socratic_system.ui.commands.debug_commands import DebugCommand, LogsCommand
 from socratic_system.ui.commands.doc_commands import (
@@ -192,6 +198,10 @@ __all__ = [
     "WorkflowCreateCommand",
     "WorkflowListCommand",
     "WorkflowExecuteCommand",
+    "SecurityStatusCommand",
+    "SecurityIncidentsCommand",
+    "SecurityValidateCommand",
+    "SecurityTrendsCommand",
     "SkillsSetCommand",
     "SkillsListCommand",
     "DocImportCommand",

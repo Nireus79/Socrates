@@ -4506,3 +4506,102 @@ class ProjectDatabase:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_workflow_executions_workflow_id ON workflow_executions(workflow_id)")
         except Exception as e:
             self.logger.debug(f"Workflow executions table already exists: {e}")
+
+    def save_security_incident(self, incident_type: str, severity: str,
+                              details: dict = None, user_id: str = None) -> bool:
+        """Save a security incident to the database."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_security_incidents_table(cursor)
+            incident_id = f"sec_{ProjectIDGenerator.generate()}"
+            now = serialize_datetime(datetime.now())
+
+            cursor.execute(
+                "INSERT INTO security_incidents (incident_id, incident_type, severity, details, user_id, detected_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (incident_id, incident_type, severity, json.dumps(details or {}), user_id, now),
+            )
+            conn.commit()
+            self.logger.debug(f"Saved security incident {incident_id}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error saving incident: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def get_security_incidents(self, severity: str = None, limit: int = 50) -> list:
+        """Get security incidents."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_security_incidents_table(cursor)
+
+            if severity:
+                cursor.execute(
+                    "SELECT * FROM security_incidents WHERE severity = ? ORDER BY detected_at DESC LIMIT ?",
+                    (severity, limit),
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM security_incidents ORDER BY detected_at DESC LIMIT ?",
+                    (limit,),
+                )
+
+            incidents = []
+            for row in cursor.fetchall():
+                incidents.append({
+                    "incident_id": row["incident_id"],
+                    "incident_type": row["incident_type"],
+                    "severity": row["severity"],
+                    "details": json.loads(row["details"]) if row["details"] else {},
+                    "user_id": row["user_id"],
+                    "detected_at": row["detected_at"],
+                })
+
+            return incidents
+        except Exception as e:
+            self.logger.error(f"Error getting incidents: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_security_trends(self) -> dict:
+        """Get security incident trends by type."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_security_incidents_table(cursor)
+
+            cursor.execute(
+                "SELECT incident_type, COUNT(*) as count FROM security_incidents GROUP BY incident_type"
+            )
+
+            trends = {}
+            for row in cursor.fetchall():
+                trends[row["incident_type"]] = row["count"]
+
+            return trends
+        except Exception as e:
+            self.logger.error(f"Error getting trends: {e}")
+            return {}
+        finally:
+            conn.close()
+
+    def _ensure_security_incidents_table(self, cursor: sqlite3.Cursor) -> None:
+        """Ensure the security_incidents table exists."""
+        try:
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS security_incidents (incident_id TEXT PRIMARY KEY, incident_type TEXT NOT NULL, severity TEXT NOT NULL, details TEXT, user_id TEXT, detected_at TEXT NOT NULL)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_security_incidents_severity ON security_incidents(severity)"
+            )
+        except Exception as e:
+            self.logger.debug(f"Security incidents table already exists: {e}")
