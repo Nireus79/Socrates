@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from socratic_core.utils import deserialize_datetime, serialize_datetime
+from socratic_core.utils import cached, deserialize_datetime, serialize_datetime
 
 # Import learning models from modules/foundation (moved from socratic_system.models)
 try:
@@ -484,9 +484,10 @@ class ProjectDatabase:
             self.logger.error(f"Error saving specs: {e}")
             raise
 
+    @cached(ttl_minutes=15)
     def load_project(self, project_id: str) -> ProjectContext | None:
         """
-        Load a project by ID
+        Load a project by ID (cached for 15 minutes)
 
         Performance: < 10ms (vs 30ms+ with pickle)
 
@@ -588,11 +589,12 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    @cached(ttl_minutes=10)
     def get_user_projects(
         self, username: str, include_archived: bool = False
     ) -> list[ProjectContext]:
         """
-        Get all projects for a user (owned or collaborated)
+        Get all projects for a user (owned or collaborated) - cached for 10 minutes
 
         Performance: 50ms for 107 projects (vs 500-800ms with pickle unpickling)
 
@@ -1308,8 +1310,9 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    @cached(ttl_minutes=10)
     def load_user(self, username: str) -> User | None:
-        """Load a user by username (with field-level decryption for sensitive data)"""
+        """Load a user by username (with field-level decryption for sensitive data) - cached for 10 minutes"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -1362,8 +1365,9 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    @cached(ttl_minutes=10)
     def load_user_by_email(self, email: str) -> User | None:
-        """Load a user by email address (with field-level decryption for sensitive data)"""
+        """Load a user by email address (with field-level decryption for sensitive data) - cached for 10 minutes"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -1416,9 +1420,10 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    @cached(ttl_minutes=60)
     def get_user_llm_configs(self, user_id: str) -> list[dict[str, Any]]:
         """
-        Get all LLM provider configurations for a user.
+        Get all LLM provider configurations for a user (cached for 60 minutes).
 
         Args:
             user_id: Username to get configs for
@@ -1471,9 +1476,10 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    @cached(ttl_minutes=60)
     def get_user_llm_config(self, user_id: str, provider: str) -> dict[str, Any] | None:
         """
-        Get single LLM provider configuration for a user.
+        Get single LLM provider configuration for a user (cached for 60 minutes).
 
         Args:
             user_id: Username
@@ -1943,10 +1949,11 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    @cached(ttl_minutes=60)
     def get_question_effectiveness(
         self, user_id: str, question_template_id: str
     ) -> dict[str, any] | None:
-        """Get question effectiveness record for a user-question pair"""
+        """Get question effectiveness record for a user-question pair (cached for 60 minutes)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -1986,8 +1993,9 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    @cached(ttl_minutes=60)
     def get_user_effectiveness_all(self, user_id: str) -> list[dict[str, any]]:
-        """Get all question effectiveness records for a user"""
+        """Get all question effectiveness records for a user (cached for 60 minutes)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -2112,8 +2120,9 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    @cached(ttl_minutes=60)
     def get_user_behavior_patterns(self, user_id: str) -> list[dict[str, any]]:
-        """Get all behavior patterns for a user"""
+        """Get all behavior patterns for a user (cached for 60 minutes)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
