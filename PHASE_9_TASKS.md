@@ -92,26 +92,58 @@ Total: ~2-3 weeks of work before Phase 9 (Deploy and Publish)
 
 ### 2.1: socratic-core Integration Verification
 **Priority:** CRITICAL
-**Status:** PARTIALLY VERIFIED
+**Status:** ✅ FINDINGS IDENTIFIED, REMEDIATION PENDING
 **Dependencies:** None
-**Effort:** 1 day
+**Effort:** 1 day (audit) + 1 day (fixes)
+**Completed:** 2026-03-24 (audit phase)
 
 **What:** Verify complete socratic-core usage
-- ✅ Config (SocratesConfig)
-- ✅ Events (EventEmitter, EventBus)
-- ✅ Exceptions
-- ⚠️ Utils (DateTime serialization, ID generators)
-- ⚠️ Caching (TTLCache)
 
-**Missing verification:**
-- Is UUID generation using socratic-core generators or local?
-- Is datetime serialization using socratic-core utilities?
-- Is caching decorator being used everywhere it should be?
+**Verified ✅:**
+- ✅ Config (SocratesConfig) - Correctly used throughout
+- ✅ Events (EventEmitter, EventBus) - Correctly used throughout
+- ✅ Exceptions - All imported from socratic-core
+- ✅ Imports - All utilities properly imported and available
 
-**Actions:**
-- Audit ID generation calls (grep "uuid" or similar)
-- Audit datetime handling (grep "datetime")
-- Verify TTLCache usage in database operations
+**FINDINGS - Inconsistencies Identified:**
+
+**1. UUID/ID Generation - 100% INCONSISTENT (CRITICAL)**
+- Current: Using `uuid.uuid4()` directly
+- Should: Use `ProjectIDGenerator.generate()` from socratic-core
+- Files affected: 3 production files
+  - `detector.py:280` - `str(uuid.uuid4())`
+  - `note.py:34` - `str(uuid.uuid4())`
+  - `git_repository_manager.py:133` - `uuid.uuid4().hex[:8]`
+- Estimated fix: 1 hour (3 files, 4 changes)
+
+**2. DateTime Serialization - 80% INCONSISTENT (HIGH)**
+- Current: Using `.isoformat()` and `.fromisoformat()` directly
+- Should: Use `serialize_datetime()` and `deserialize_datetime()` from socratic-core
+- Files affected: 10+ files with 50+ occurrences
+  - `base_service.py:75-76` - `.isoformat()`
+  - `event_bus.py:29` - `.isoformat()`
+  - `llm_provider.py:34-35, 42-44, 67-69, 75-80` - Mix of both patterns
+  - `role.py:37, 47` - Mix of both patterns
+  - `learning.py:40-42, 92-93` - `.isoformat()`
+  - `detector.py:286-287` - `.isoformat()`
+  - `insight_categorizer.py:238, 348, 365` - `.isoformat()`
+  - `project_db.py:733, 875, 1091, 3123, 3300, 3497` - Inconsistent within same file
+  - `git_initializer.py` - Multiple `.isoformat()` calls
+  - `ui/commands/` - note_commands.py, project_commands.py, stats_commands.py
+- Estimated fix: 2-3 hours (10+ files, 50+ changes)
+
+**3. Caching - UNDERUTILIZED (MEDIUM)**
+- Current: Only 2 files implement caching
+  - `tests/caching/test_ttl_cache.py` - Test coverage
+  - `library_integrations.py` - Performance integration (uses socratic_performance.TTLCache, not socratic-core)
+- Should: Apply `@cached(ttl_minutes=X)` decorator to:
+  - Database queries (user, project lookups): 5-10 min TTL
+  - Configuration reads (LLM providers, roles): 1 day TTL
+  - Analytical data (patterns, insights): 1 hour TTL
+- Missing implementations: 8-10 high-frequency operations
+- Estimated fix: 2-3 hours (implementation + testing)
+
+**Total Remediation Effort:** 5-7 hours (~1 day of work)
 
 ---
 
@@ -146,6 +178,144 @@ Total: ~2-3 weeks of work before Phase 9 (Deploy and Publish)
 - ✅ All agents have CLI commands
 
 **No action needed** - This is properly integrated.
+
+---
+
+## SECTION 2.5: socratic-core Remediation (NEW - Based on Audit Findings)
+
+### 2.5.1: Fix UUID/ID Generation Inconsistencies
+**Priority:** CRITICAL
+**Status:** NOT STARTED
+**Dependencies:** 2.1
+**Effort:** 1 hour
+
+**What:** Replace all direct `uuid.uuid4()` calls with `ProjectIDGenerator.generate()`
+
+**Implementation:**
+1. Update `socratic_system/conflict_resolution/detector.py:280`
+   ```python
+   # Old: conflict_id=str(uuid.uuid4())
+   # New: conflict_id=ProjectIDGenerator.generate()
+   ```
+
+2. Update `socratic_system/models/note.py:34`
+   ```python
+   # Old: note_id=str(uuid.uuid4())
+   # New: note_id=ProjectIDGenerator.generate()
+   ```
+
+3. Update `socratic_system/utils/git_repository_manager.py:133`
+   ```python
+   # Old: uuid.uuid4().hex[:8]
+   # New: Create custom hex generator (proposal for socratic-core)
+   # OR: Use temporary ID generator if available
+   ```
+
+**Verification:** All ID generation uses ProjectIDGenerator
+
+---
+
+### 2.5.2: Fix DateTime Serialization Inconsistencies
+**Priority:** HIGH
+**Status:** NOT STARTED
+**Dependencies:** 2.1
+**Effort:** 2-3 hours
+
+**What:** Replace all `.isoformat()` and `.fromisoformat()` with socratic-core utilities
+
+**Implementation by file:**
+
+1. **Core Framework** (1 hour)
+   - `socratic_system/core/base_service.py:75-76`
+   - `socratic_system/core/event_bus.py:29`
+   - Add: `from socratic_core.utils import serialize_datetime`
+   - Replace: `.isoformat()` → `serialize_datetime(datetime_obj)`
+
+2. **Models** (1 hour)
+   - `socratic_system/models/llm_provider.py:34-35, 42-44, 67-69, 75-80`
+   - `socratic_system/models/role.py:37, 47`
+   - `socratic_system/models/learning.py:40-42, 92-93`
+   - Add: `from socratic_core.utils import serialize_datetime, deserialize_datetime`
+   - Replace all serialization patterns
+
+3. **Business Logic** (0.5 hours)
+   - `socratic_system/conflict_resolution/detector.py:286-287`
+   - `socratic_system/core/insight_categorizer.py:238, 348, 365`
+   - Replace: `.isoformat()` → `serialize_datetime()`
+
+4. **Database Layer** (0.5 hours)
+   - `socratic_system/database/project_db.py:733, 875, 1091, 3123, 3300, 3497`
+   - Note: Already using `serialize_datetime()` in most places
+   - Fix only the scattered `.isoformat()` calls
+
+5. **Utilities & UI** (1 hour)
+   - `socratic_system/utils/git_initializer.py`
+   - `socratic_system/ui/commands/note_commands.py`
+   - `socratic_system/ui/commands/project_commands.py`
+   - `socratic_system/ui/commands/stats_commands.py`
+   - Replace all `.isoformat()` calls
+
+**Verification:** All datetime operations use socratic-core utilities
+
+---
+
+### 2.5.3: Implement Caching in High-Frequency Operations
+**Priority:** MEDIUM
+**Status:** NOT STARTED
+**Dependencies:** 2.1
+**Effort:** 2-3 hours
+
+**What:** Add `@cached` decorator from socratic-core to frequently-called methods
+
+**Implementation:**
+
+1. **Database Queries** (1 hour)
+   - Add to `socratic_system/database/project_db.py`:
+     ```python
+     from socratic_core.utils import cached
+
+     @cached(ttl_minutes=10)
+     def get_user(self, user_id: str):
+         ...
+
+     @cached(ttl_minutes=10)
+     def get_project(self, project_id: str):
+         ...
+
+     @cached(ttl_minutes=60)
+     def get_user_patterns(self, user_id: str):
+         ...
+     ```
+
+2. **Configuration** (0.5 hours)
+   - Add to `socratic_system/models/llm_provider.py`:
+     ```python
+     @cached(ttl_minutes=1440)  # 1 day
+     def get_provider_metadata(self):
+         ...
+     ```
+   - Add to `socratic_system/models/role.py`:
+     ```python
+     @cached(ttl_minutes=1440)  # Static, cache forever
+     def get_role_focus_areas(self):
+         ...
+     ```
+
+3. **Analytical Data** (1 hour)
+   - Add to `socratic_system/core/insight_categorizer.py`:
+     ```python
+     @cached(ttl_minutes=60)
+     def categorize_insights(self, ...):
+         ...
+     ```
+   - Add to `socratic_system/database/project_db.py`:
+     ```python
+     @cached(ttl_minutes=60)
+     def get_question_effectiveness(self, ...):
+         ...
+     ```
+
+**Verification:** Cache decorator tests pass, performance improved for repeated queries
 
 ---
 
