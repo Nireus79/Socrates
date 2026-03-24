@@ -24,7 +24,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from socratic_core.utils import cached, deserialize_datetime, serialize_datetime
+from socratic_core.utils import (
+    ProjectIDGenerator,
+    cached,
+    deserialize_datetime,
+    serialize_datetime,
+)
 
 # Import learning models from modules/foundation (moved from socratic_system.models)
 try:
@@ -4109,3 +4114,239 @@ class ProjectDatabase:
             return {}
         finally:
             conn.close()
+
+    def save_conflict(self, project_id: str, conflict_data: dict[str, Any]) -> bool:
+        """
+        Save a detected conflict to the database.
+
+        Args:
+            project_id: Project ID
+            conflict_data: Conflict data including field, type, severity, etc.
+
+        Returns:
+            True if saved successfully, False otherwise
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Ensure conflicts table exists
+            self._ensure_conflicts_table(cursor)
+
+            conflict_id = conflict_data.get("conflict_id") or f"conf_{ProjectIDGenerator.generate()}"
+            now = serialize_datetime(datetime.now())
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO conflicts
+                (conflict_id, project_id, field, conflict_type, severity, detected_at, status, resolution_data)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    conflict_id,
+                    project_id,
+                    conflict_data.get("field"),
+                    conflict_data.get("type", "data_conflict"),
+                    conflict_data.get("severity", "medium"),
+                    now,
+                    conflict_data.get("status", "open"),
+                    json.dumps(conflict_data.get("resolution_data", {})),
+                ),
+            )
+            conn.commit()
+            self.logger.debug(f"Saved conflict {conflict_id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error saving conflict: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def get_project_conflicts(self, project_id: str, status: str | None = None) -> list[dict[str, Any]]:
+        """
+        Get all conflicts for a project.
+
+        Args:
+            project_id: Project ID
+            status: Optional status filter (open, resolved, ignored)
+
+        Returns:
+            List of conflict dictionaries
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_conflicts_table(cursor)
+
+            if status:
+                cursor.execute(
+                    """
+                    SELECT * FROM conflicts
+                    WHERE project_id = ? AND status = ?
+                    ORDER BY detected_at DESC
+                    """,
+                    (project_id, status),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT * FROM conflicts
+                    WHERE project_id = ?
+                    ORDER BY detected_at DESC
+                    """,
+                    (project_id,),
+                )
+
+            conflicts = []
+            for row in cursor.fetchall():
+                conflicts.append({
+                    "conflict_id": row["conflict_id"],
+                    "project_id": row["project_id"],
+                    "field": row["field"],
+                    "conflict_type": row["conflict_type"],
+                    "severity": row["severity"],
+                    "detected_at": row["detected_at"],
+                    "status": row["status"],
+                    "resolution_data": json.loads(row["resolution_data"]) if row["resolution_data"] else {},
+                })
+
+            return conflicts
+
+        except Exception as e:
+            self.logger.error(f"Error getting project conflicts: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_project_conflict(self, project_id: str, conflict_id: str) -> dict[str, Any] | None:
+        """
+        Get a specific conflict by ID.
+
+        Args:
+            project_id: Project ID
+            conflict_id: Conflict ID
+
+        Returns:
+            Conflict dictionary or None if not found
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_conflicts_table(cursor)
+
+            cursor.execute(
+                """
+                SELECT * FROM conflicts
+                WHERE project_id = ? AND conflict_id = ?
+                """,
+                (project_id, conflict_id),
+            )
+
+            row = cursor.fetchone()
+            if not row:
+                return None
+
+            return {
+                "conflict_id": row["conflict_id"],
+                "project_id": row["project_id"],
+                "field": row["field"],
+                "conflict_type": row["conflict_type"],
+                "severity": row["severity"],
+                "detected_at": row["detected_at"],
+                "status": row["status"],
+                "resolution_data": json.loads(row["resolution_data"]) if row["resolution_data"] else {},
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error getting conflict {conflict_id}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def update_conflict_status(self, conflict_id: str, status: str, resolution: dict[str, Any] | None = None) -> bool:
+        """
+        Update the status of a conflict.
+
+        Args:
+            conflict_id: Conflict ID
+            status: New status (open, resolved, ignored)
+            resolution: Optional resolution data
+
+        Returns:
+            True if updated successfully, False otherwise
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_conflicts_table(cursor)
+
+            resolution_json = json.dumps(resolution) if resolution else None
+
+            cursor.execute(
+                """
+                UPDATE conflicts
+                SET status = ?, resolution_data = ?
+                WHERE conflict_id = ?
+                """,
+                (status, resolution_json, conflict_id),
+            )
+
+            conn.commit()
+            self.logger.debug(f"Updated conflict {conflict_id} status to {status}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error updating conflict status: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def _ensure_conflicts_table(self, cursor: sqlite3.Cursor) -> None:
+        """
+        Ensure the conflicts table exists.
+
+        Args:
+            cursor: Database cursor
+        """
+        try:
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS conflicts (
+                    conflict_id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    field TEXT NOT NULL,
+                    conflict_type TEXT DEFAULT 'data_conflict',
+                    severity TEXT DEFAULT 'medium',
+                    detected_at TEXT NOT NULL,
+                    status TEXT DEFAULT 'open',
+                    resolution_data TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
+                )
+                """
+            )
+
+            # Create index for faster queries
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_conflicts_project_id
+                ON conflicts(project_id)
+                """
+            )
+
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_conflicts_status
+                ON conflicts(status)
+                """
+            )
+        except Exception as e:
+            self.logger.debug(f"Conflicts table already exists or creation skipped: {e}")

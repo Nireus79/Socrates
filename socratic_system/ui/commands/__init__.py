@@ -16,6 +16,12 @@ from socratic_system.ui.commands.collab_commands import (
     CollabRemoveCommand,
     CollabRoleCommand,
 )
+from socratic_system.ui.commands.conflict_commands import (
+    ConflictAnalyzeCommand,
+    ConflictIgnoreCommand,
+    ConflictListCommand,
+    ConflictResolveCommand,
+)
 from socratic_system.ui.commands.conv_commands import ConvSearchCommand, ConvSummaryCommand
 from socratic_system.ui.commands.debug_commands import DebugCommand, LogsCommand
 from socratic_system.ui.commands.doc_commands import (
@@ -174,6 +180,10 @@ __all__ = [
     "CollabRemoveCommand",
     "CollabListCommand",
     "CollabRoleCommand",
+    "ConflictAnalyzeCommand",
+    "ConflictListCommand",
+    "ConflictResolveCommand",
+    "ConflictIgnoreCommand",
     "SkillsSetCommand",
     "SkillsListCommand",
     "DocImportCommand",

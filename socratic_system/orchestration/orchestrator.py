@@ -177,6 +177,9 @@ class AgentOrchestrator:
         # Cache for lazy-loaded agents
         self._agents_cache: dict[str, Any] = {}
 
+        # Register conflict detection event handler
+        self._setup_conflict_detection()
+
         # Start background knowledge base loading (non-blocking)
         # Skip in test mode to avoid SQLite deadlocks from multiple threads
         import os
@@ -532,6 +535,85 @@ class AgentOrchestrator:
                 "status": "success" if error_count == 0 else "partial",
             },
         )
+
+    def _setup_conflict_detection(self) -> None:
+        """Set up conflict detection event handlers"""
+        try:
+            # Register handler for detecting conflicts when projects are analyzed
+            # This is a placeholder for future event binding
+            self.logger.debug("Conflict detection event handlers registered")
+        except Exception as e:
+            self.logger.debug(f"Conflict detection setup: {e}")
+
+    def detect_project_conflicts(self, project) -> list[dict[str, Any]]:
+        """
+        Detect and store conflicts in a project.
+
+        Args:
+            project: ProjectContext object to analyze
+
+        Returns:
+            List of detected conflicts
+        """
+        if not self.library_manager or not self.library_manager.conflict:
+            self.logger.debug("Conflict detection not available")
+            return []
+
+        try:
+            detected_conflicts = []
+
+            # Check for conflicts in requirements
+            if project.requirements and len(project.requirements) > 1:
+                conflict_data = self.library_manager.conflict.detect_conflicts(
+                    proposals=project.requirements,
+                    agents=[f"requirement_{i}" for i in range(len(project.requirements))]
+                )
+                for conf in conflict_data:
+                    detected_conflicts.append({
+                        "field": "requirements",
+                        "type": conf.get("conflict_type", "data_conflict"),
+                        "severity": "medium",
+                        "proposal_index": conf.get("proposal_index"),
+                    })
+
+            # Check for conflicts in tech stack
+            if project.tech_stack and len(project.tech_stack) > 1:
+                conflict_data = self.library_manager.conflict.detect_conflicts(
+                    proposals=project.tech_stack,
+                    agents=[f"tech_{i}" for i in range(len(project.tech_stack))]
+                )
+                for conf in conflict_data:
+                    detected_conflicts.append({
+                        "field": "tech_stack",
+                        "type": conf.get("conflict_type", "data_conflict"),
+                        "severity": "low",
+                        "proposal_index": conf.get("proposal_index"),
+                    })
+
+            # Save detected conflicts to database
+            if detected_conflicts:
+                self.logger.debug(f"Detected {len(detected_conflicts)} conflicts in project {project.project_id}")
+                for conflict_data in detected_conflicts:
+                    try:
+                        self.database.save_conflict(project.project_id, conflict_data)
+                    except Exception as e:
+                        self.logger.error(f"Error saving conflict: {e}")
+
+                # Emit conflict detection event
+                self.event_emitter.emit(
+                    "conflict.detected",
+                    {
+                        "project_id": project.project_id,
+                        "conflict_count": len(detected_conflicts),
+                        "conflicts": detected_conflicts,
+                    }
+                )
+
+            return detected_conflicts
+
+        except Exception as e:
+            self.logger.error(f"Error detecting conflicts: {e}")
+            return []
 
     def set_model(self, model_name: str) -> bool:
         """
