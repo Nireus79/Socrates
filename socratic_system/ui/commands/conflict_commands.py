@@ -7,7 +7,6 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
-from socratic_core.utils import serialize_datetime
 from socratic_system.ui.commands.base import BaseCommand
 
 

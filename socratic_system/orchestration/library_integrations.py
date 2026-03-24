@@ -55,7 +55,6 @@ class LearningIntegration:
         """Initialize learning system"""
         try:
             from socratic_learning import InteractionLogger, SQLiteLearningStore
-            from socratic_learning.recommendations import RecommendationEngine
 
             self.store = SQLiteLearningStore(storage_path)
             self.logger = InteractionLogger(self.store)

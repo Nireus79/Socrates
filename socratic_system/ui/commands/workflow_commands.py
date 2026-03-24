@@ -4,7 +4,7 @@ Workflow orchestration and execution commands
 '''
 
 from typing import Any, Dict, List
-from colorama import Fore, Style
+from colorama import Fore
 from socratic_system.ui.commands.base import BaseCommand
 
 
