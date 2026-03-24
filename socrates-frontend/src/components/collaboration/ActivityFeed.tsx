@@ -11,7 +11,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import {
-  MessageSquare,
+  MessageCircle,
   Code2,
   FileText,
   Users,
@@ -52,7 +52,7 @@ interface ActivityFeedProps {
 }
 
 const activityIcons = {
-  dialogue: MessageSquare,
+  dialogue: MessageCircle,
   code: Code2,
   note: FileText,
   collaboration: Users,

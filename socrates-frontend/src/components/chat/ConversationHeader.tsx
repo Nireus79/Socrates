@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Search, MessageSquare } from 'lucide-react';
+import { Search, MessageCircle } from 'lucide-react';
 import { Button } from '../common';
 import { CompactPhaseIndicator } from './CompactPhaseIndicator';
 import { DialogueMode } from './DialogueMode';
@@ -87,7 +87,7 @@ export const ConversationHeader: React.FC<ConversationHeaderProps> = ({
           title="Get conversation summary"
           className="p-2"
         >
-          <MessageSquare size={18} />
+          <MessageCircle size={18} />
         </Button>
       </div>
     </div>

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Card } from '../common';
-import { MessageSquare, Code2, Zap, TrendingUp } from 'lucide-react';
+import { MessageCircle, Code2, Zap, TrendingUp } from 'lucide-react';
 
 interface StatData {
   label: string;
@@ -23,7 +23,7 @@ export const AnalyticsStats: React.FC<AnalyticsStatsProps> = ({
   stats,
 }) => {
   const defaultIcons = {
-    'Total Questions': <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
+    'Total Questions': <MessageCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
     'Code Generated': <Code2 className="h-6 w-6 text-purple-600 dark:text-purple-400" />,
     'Avg Confidence': <Zap className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />,
     'Velocity': <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />,

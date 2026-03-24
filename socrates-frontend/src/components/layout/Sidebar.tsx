@@ -7,7 +7,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   FolderOpen,
-  MessageSquare,
+  MessageCircle,
   Code2,
   BarChart3,
   Users,
@@ -43,7 +43,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Dialogue',
-    icon: <MessageSquare size={20} />,
+    icon: <MessageCircle size={20} />,
     path: '/chat',
   },
   {

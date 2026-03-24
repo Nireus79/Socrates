@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { MessageSquare, Code2, FileText, BookOpen, TrendingUp } from 'lucide-react';
+import { MessageCircle, Code2, FileText, BookOpen, TrendingUp } from 'lucide-react';
 
 interface ProgressItem {
   label: string;
@@ -33,7 +33,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
     {
       label: 'Conversations',
       count: conversationCount,
-      icon: <MessageSquare className="h-5 w-5" />,
+      icon: <MessageCircle className="h-5 w-5" />,
       color: 'text-blue-600 dark:text-blue-400',
     },
     {
