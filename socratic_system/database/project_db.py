@@ -4713,3 +4713,73 @@ class ProjectDatabase:
             )
         except Exception as e:
             self.logger.debug(f"Performance metrics table already exists: {e}")
+
+    def save_learning_session(self, session_id: str, user_id: str, context: str = None) -> bool:
+        """Save a learning session."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_learning_sessions_table(cursor)
+            now = serialize_datetime(datetime.now())
+
+            cursor.execute(
+                "INSERT INTO learning_sessions (session_id, user_id, context, created_at) VALUES (?, ?, ?, ?)",
+                (session_id, user_id, context or "", now),
+            )
+            conn.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"Error saving learning session: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def get_learning_sessions(self, user_id: str = None, limit: int = 50) -> list:
+        """Get learning sessions."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_learning_sessions_table(cursor)
+
+            if user_id:
+                cursor.execute(
+                    "SELECT * FROM learning_sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
+                    (user_id, limit),
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM learning_sessions ORDER BY created_at DESC LIMIT ?",
+                    (limit,),
+                )
+
+            sessions = []
+            for row in cursor.fetchall():
+                sessions.append({
+                    "session_id": row["session_id"],
+                    "user_id": row["user_id"],
+                    "context": row["context"],
+                    "created_at": row["created_at"],
+                })
+
+            return sessions
+        except Exception as e:
+            self.logger.error(f"Error getting learning sessions: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def _ensure_learning_sessions_table(self, cursor: sqlite3.Cursor) -> None:
+        """Ensure the learning_sessions table exists."""
+        try:
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS learning_sessions (session_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, context TEXT, created_at TEXT NOT NULL)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_learning_sessions_user ON learning_sessions(user_id)"
+            )
+        except Exception as e:
+            self.logger.debug(f"Learning sessions table already exists: {e}")

@@ -40,6 +40,12 @@ from socratic_system.ui.commands.performance_commands import (
     PerformanceResetCommand,
     PerformanceStatusCommand,
 )
+from socratic_system.ui.commands.learning_commands import (
+    LearningAnalyzeCommand,
+    LearningPatternsCommand,
+    LearningRecommendationsCommand,
+    LearningSessionCommand,
+)
 from socratic_system.ui.commands.conv_commands import ConvSearchCommand, ConvSummaryCommand
 from socratic_system.ui.commands.debug_commands import DebugCommand, LogsCommand
 from socratic_system.ui.commands.doc_commands import (
@@ -214,6 +220,10 @@ __all__ = [
     "PerformanceCacheCommand",
     "PerformanceBottlenecksCommand",
     "PerformanceResetCommand",
+    "LearningRecommendationsCommand",
+    "LearningPatternsCommand",
+    "LearningSessionCommand",
+    "LearningAnalyzeCommand",
     "SkillsSetCommand",
     "SkillsListCommand",
     "DocImportCommand",
