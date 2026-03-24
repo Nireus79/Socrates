@@ -22,6 +22,11 @@ from socratic_system.ui.commands.conflict_commands import (
     ConflictListCommand,
     ConflictResolveCommand,
 )
+from socratic_system.ui.commands.workflow_commands import (
+    WorkflowCreateCommand,
+    WorkflowExecuteCommand,
+    WorkflowListCommand,
+)
 from socratic_system.ui.commands.conv_commands import ConvSearchCommand, ConvSummaryCommand
 from socratic_system.ui.commands.debug_commands import DebugCommand, LogsCommand
 from socratic_system.ui.commands.doc_commands import (
@@ -184,6 +189,9 @@ __all__ = [
     "ConflictListCommand",
     "ConflictResolveCommand",
     "ConflictIgnoreCommand",
+    "WorkflowCreateCommand",
+    "WorkflowListCommand",
+    "WorkflowExecuteCommand",
     "SkillsSetCommand",
     "SkillsListCommand",
     "DocImportCommand",

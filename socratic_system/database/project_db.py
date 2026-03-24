@@ -4350,3 +4350,159 @@ class ProjectDatabase:
             )
         except Exception as e:
             self.logger.debug(f"Conflicts table already exists or creation skipped: {e}")
+
+    def save_workflow(self, workflow_name: str, description: str, steps: list,
+                     workflow_data: dict = None) -> bool:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_workflows_table(cursor)
+            workflow_id = f"wf_{ProjectIDGenerator.generate()}"
+            now = serialize_datetime(datetime.now())
+
+            cursor.execute(
+                "INSERT INTO workflows (workflow_id, name, description, steps, workflow_data, created_at, execution_count) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (workflow_id, workflow_name, description, json.dumps(steps), json.dumps(workflow_data or {}), now, 0,),
+            )
+            conn.commit()
+            self.logger.debug(f"Saved workflow {workflow_id}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error saving workflow: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def get_workflows(self) -> list:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_workflows_table(cursor)
+            cursor.execute("SELECT * FROM workflows ORDER BY created_at DESC")
+            workflows = []
+            for row in cursor.fetchall():
+                workflows.append({
+                    "workflow_id": row["workflow_id"],
+                    "name": row["name"],
+                    "description": row["description"],
+                    "steps": json.loads(row["steps"]) if row["steps"] else [],
+                    "workflow_data": json.loads(row["workflow_data"]) if row["workflow_data"] else {},
+                    "created_at": row["created_at"],
+                    "execution_count": row["execution_count"],
+                })
+            return workflows
+        except Exception as e:
+            self.logger.error(f"Error getting workflows: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_workflow(self, workflow_id: str):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_workflows_table(cursor)
+            cursor.execute("SELECT * FROM workflows WHERE workflow_id = ?", (workflow_id,))
+            row = cursor.fetchone()
+            if not row:
+                return None
+
+            return {
+                "workflow_id": row["workflow_id"],
+                "name": row["name"],
+                "description": row["description"],
+                "steps": json.loads(row["steps"]) if row["steps"] else [],
+                "workflow_data": json.loads(row["workflow_data"]) if row["workflow_data"] else {},
+                "created_at": row["created_at"],
+                "execution_count": row["execution_count"],
+                "executions": self._get_workflow_executions(workflow_id),
+            }
+        except Exception as e:
+            self.logger.error(f"Error getting workflow: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def save_workflow_execution(self, workflow_id: str, status: str, duration_ms: float, result_data: dict = None) -> bool:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_workflow_executions_table(cursor)
+            execution_id = f"wfexec_{ProjectIDGenerator.generate()}"
+            now = serialize_datetime(datetime.now())
+
+            cursor.execute(
+                "INSERT INTO workflow_executions (execution_id, workflow_id, status, duration_ms, result_data, executed_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (execution_id, workflow_id, status, duration_ms, json.dumps(result_data or {}), now,),
+            )
+            cursor.execute("UPDATE workflows SET execution_count = execution_count + 1 WHERE workflow_id = ?", (workflow_id,))
+            conn.commit()
+            self.logger.debug(f"Saved workflow execution {execution_id}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error saving workflow execution: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def delete_workflow(self, workflow_id: str) -> bool:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("DELETE FROM workflow_executions WHERE workflow_id = ?", (workflow_id,))
+            cursor.execute("DELETE FROM workflows WHERE workflow_id = ?", (workflow_id,))
+            conn.commit()
+            self.logger.debug(f"Deleted workflow {workflow_id}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting workflow: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def _get_workflow_executions(self, workflow_id: str, limit: int = 10) -> list:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT * FROM workflow_executions WHERE workflow_id = ? ORDER BY executed_at DESC LIMIT ?", (workflow_id, limit,))
+            executions = []
+            for row in cursor.fetchall():
+                executions.append({
+                    "execution_id": row["execution_id"],
+                    "status": row["status"],
+                    "duration_ms": row["duration_ms"],
+                    "executed_at": row["executed_at"],
+                    "result_data": json.loads(row["result_data"]) if row["result_data"] else {},
+                })
+            return executions
+        except Exception as e:
+            self.logger.debug(f"Error getting workflow executions: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def _ensure_workflows_table(self, cursor: sqlite3.Cursor) -> None:
+        try:
+            cursor.execute("CREATE TABLE IF NOT EXISTS workflows (workflow_id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, steps TEXT, workflow_data TEXT, created_at TEXT NOT NULL, execution_count INTEGER DEFAULT 0, UNIQUE(name))")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_workflows_name ON workflows(name)")
+        except Exception as e:
+            self.logger.debug(f"Workflows table already exists: {e}")
+
+    def _ensure_workflow_executions_table(self, cursor: sqlite3.Cursor) -> None:
+        try:
+            cursor.execute("CREATE TABLE IF NOT EXISTS workflow_executions (execution_id TEXT PRIMARY KEY, workflow_id TEXT NOT NULL, status TEXT NOT NULL, duration_ms REAL, result_data TEXT, executed_at TEXT NOT NULL, FOREIGN KEY (workflow_id) REFERENCES workflows(workflow_id) ON DELETE CASCADE)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_workflow_executions_workflow_id ON workflow_executions(workflow_id)")
+        except Exception as e:
+            self.logger.debug(f"Workflow executions table already exists: {e}")
