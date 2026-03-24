@@ -10,6 +10,7 @@ import logging
 from datetime import datetime
 from typing import Dict, List
 
+from socratic_core.utils import serialize_datetime
 from socratic_system.core.project_categories import (
     get_phase_categories,
     get_project_type_description,
@@ -235,7 +236,7 @@ Rules:
                     "source_field": self._find_source_field(
                         item.get("content", ""), original_insights
                     ),
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": serialize_datetime(datetime.now()),
                 }
 
                 # Only include if we have content and category
@@ -345,7 +346,7 @@ Rules:
                                 "confidence": confidence,  # Use computed confidence
                                 "value": 1.0,
                                 "source_field": field,
-                                "timestamp": datetime.now().isoformat(),
+                                "timestamp": serialize_datetime(datetime.now()),
                             }
                         )
                         spec_count += 1
@@ -362,7 +363,7 @@ Rules:
                             "confidence": confidence,  # Use computed confidence
                             "value": 1.0,
                             "source_field": field,
-                            "timestamp": datetime.now().isoformat(),
+                            "timestamp": serialize_datetime(datetime.now()),
                         }
                     )
                     logger.debug(

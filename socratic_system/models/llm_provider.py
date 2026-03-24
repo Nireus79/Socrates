@@ -6,6 +6,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from socratic_core.utils import serialize_datetime, deserialize_datetime
+
 
 @dataclass
 class LLMProviderConfig:
@@ -31,17 +33,17 @@ class LLMProviderConfig:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         data = asdict(self)
-        data["created_at"] = self.created_at.isoformat()
-        data["updated_at"] = self.updated_at.isoformat()
+        data["created_at"] = serialize_datetime(self.created_at)
+        data["updated_at"] = serialize_datetime(self.updated_at)
         return data
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "LLMProviderConfig":
         """Create from dictionary."""
         if isinstance(data.get("created_at"), str):
-            data["created_at"] = datetime.fromisoformat(data["created_at"])
+            data["created_at"] = deserialize_datetime(data["created_at"])
         if isinstance(data.get("updated_at"), str):
-            data["updated_at"] = datetime.fromisoformat(data["updated_at"])
+            data["updated_at"] = deserialize_datetime(data["updated_at"])
         return LLMProviderConfig(**data)
 
 
@@ -64,20 +66,20 @@ class APIKeyRecord:
             "id": self.id,
             "user_id": self.user_id,
             "provider": self.provider,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "last_used_at": self.last_used_at.isoformat() if self.last_used_at else None,
+            "created_at": serialize_datetime(self.created_at),
+            "updated_at": serialize_datetime(self.updated_at),
+            "last_used_at": serialize_datetime(self.last_used_at) if self.last_used_at else None,
         }
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "APIKeyRecord":
         """Create from dictionary."""
         if isinstance(data.get("created_at"), str):
-            data["created_at"] = datetime.fromisoformat(data["created_at"])
+            data["created_at"] = deserialize_datetime(data["created_at"])
         if isinstance(data.get("updated_at"), str):
-            data["updated_at"] = datetime.fromisoformat(data["updated_at"])
+            data["updated_at"] = deserialize_datetime(data["updated_at"])
         if data.get("last_used_at") and isinstance(data["last_used_at"], str):
-            data["last_used_at"] = datetime.fromisoformat(data["last_used_at"])
+            data["last_used_at"] = deserialize_datetime(data["last_used_at"])
         return APIKeyRecord(**data)
 
 
@@ -106,7 +108,7 @@ class LLMUsageRecord:
             "user_id": self.user_id,
             "provider": self.provider,
             "model": self.model,
-            "timestamp": self.timestamp.isoformat(),
+            "timestamp": serialize_datetime(self.timestamp),
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
             "total_tokens": self.total_tokens,

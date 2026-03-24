@@ -14,7 +14,7 @@ except ImportError:
     # socratic_conflict is optional - provide graceful fallback
     SKConflictDetector = None  # type: ignore
 
-from socratic_core.utils import ProjectIDGenerator
+from socratic_core.utils import ProjectIDGenerator, serialize_datetime
 from socratic_system.models import ConflictInfo, ProjectContext
 
 
@@ -283,8 +283,8 @@ class ConflictDetector:
             new_value=new_value,
             old_author=project.owner,
             new_author=current_user,
-            old_timestamp=datetime.datetime.now().isoformat(),
-            new_timestamp=datetime.datetime.now().isoformat(),
+            old_timestamp=serialize_datetime(datetime.datetime.now()),
+            new_timestamp=serialize_datetime(datetime.datetime.now()),
             severity=conflict.severity if hasattr(conflict, "severity") else "medium",
             suggestions=[
                 f"Review {field_name} values",

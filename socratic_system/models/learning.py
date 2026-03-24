@@ -7,6 +7,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
+from socratic_core.utils import serialize_datetime, deserialize_datetime
+
 
 @dataclass
 class QuestionEffectiveness:
@@ -37,9 +39,9 @@ class QuestionEffectiveness:
         data["average_spec_extraction_count"] = float(self.average_spec_extraction_count)
         data["effectiveness_score"] = float(self.effectiveness_score)
         # Convert datetime to ISO string
-        data["last_asked_at"] = self.last_asked_at.isoformat() if self.last_asked_at else None
-        data["created_at"] = self.created_at.isoformat()
-        data["updated_at"] = self.updated_at.isoformat()
+        data["last_asked_at"] = serialize_datetime(self.last_asked_at) if self.last_asked_at else None
+        data["created_at"] = serialize_datetime(self.created_at)
+        data["updated_at"] = serialize_datetime(self.updated_at)
         return data
 
     @staticmethod
@@ -89,8 +91,8 @@ class UserBehaviorPattern:
             "pattern_data": self.pattern_data,
             "confidence": float(self.confidence),
             "learned_from_projects": self.learned_from_projects,
-            "learned_at": self.learned_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
+            "learned_at": self.learned_atserialize_datetime() if isinstance(..., datetime) else ...,
+            "updated_at": self.updated_atserialize_datetime() if isinstance(..., datetime) else ...,
         }
 
     @staticmethod
