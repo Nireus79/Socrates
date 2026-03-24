@@ -4605,3 +4605,111 @@ class ProjectDatabase:
             )
         except Exception as e:
             self.logger.debug(f"Security incidents table already exists: {e}")
+
+    def save_performance_metric(self, metric_type: str, value: float,
+                               metadata: dict = None) -> bool:
+        """Save a performance metric."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_performance_metrics_table(cursor)
+            metric_id = f"perf_{ProjectIDGenerator.generate()}"
+            now = serialize_datetime(datetime.now())
+
+            cursor.execute(
+                "INSERT INTO performance_metrics (metric_id, metric_type, value, metadata, recorded_at) VALUES (?, ?, ?, ?, ?)",
+                (metric_id, metric_type, value, json.dumps(metadata or {}), now),
+            )
+            conn.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"Error saving metric: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def get_performance_metrics(self, metric_type: str = None, limit: int = 100) -> list:
+        """Get performance metrics."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_performance_metrics_table(cursor)
+
+            if metric_type:
+                cursor.execute(
+                    "SELECT * FROM performance_metrics WHERE metric_type = ? ORDER BY recorded_at DESC LIMIT ?",
+                    (metric_type, limit),
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM performance_metrics ORDER BY recorded_at DESC LIMIT ?",
+                    (limit,),
+                )
+
+            metrics = []
+            for row in cursor.fetchall():
+                metrics.append({
+                    "metric_id": row["metric_id"],
+                    "metric_type": row["metric_type"],
+                    "value": row["value"],
+                    "metadata": json.loads(row["metadata"]) if row["metadata"] else {},
+                    "recorded_at": row["recorded_at"],
+                })
+
+            return metrics
+        except Exception as e:
+            self.logger.error(f"Error getting metrics: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_performance_summary(self, metric_type: str = None) -> dict:
+        """Get performance metrics summary."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_performance_metrics_table(cursor)
+
+            if metric_type:
+                cursor.execute(
+                    "SELECT AVG(value) as avg_value, MIN(value) as min_value, MAX(value) as max_value, COUNT(*) as count FROM performance_metrics WHERE metric_type = ?",
+                    (metric_type,),
+                )
+            else:
+                cursor.execute(
+                    "SELECT AVG(value) as avg_value, MIN(value) as min_value, MAX(value) as max_value, COUNT(*) as count FROM performance_metrics"
+                )
+
+            row = cursor.fetchone()
+            if not row:
+                return {}
+
+            return {
+                "average": float(row["avg_value"]) if row["avg_value"] else 0,
+                "minimum": float(row["min_value"]) if row["min_value"] else 0,
+                "maximum": float(row["max_value"]) if row["max_value"] else 0,
+                "count": row["count"],
+            }
+        except Exception as e:
+            self.logger.error(f"Error getting summary: {e}")
+            return {}
+        finally:
+            conn.close()
+
+    def _ensure_performance_metrics_table(self, cursor: sqlite3.Cursor) -> None:
+        """Ensure the performance_metrics table exists."""
+        try:
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS performance_metrics (metric_id TEXT PRIMARY KEY, metric_type TEXT NOT NULL, value REAL NOT NULL, metadata TEXT, recorded_at TEXT NOT NULL)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_performance_metrics_type ON performance_metrics(metric_type)"
+            )
+        except Exception as e:
+            self.logger.debug(f"Performance metrics table already exists: {e}")

@@ -33,6 +33,13 @@ from socratic_system.ui.commands.security_commands import (
     SecurityTrendsCommand,
     SecurityValidateCommand,
 )
+from socratic_system.ui.commands.performance_commands import (
+    PerformanceAgentsCommand,
+    PerformanceBottlenecksCommand,
+    PerformanceCacheCommand,
+    PerformanceResetCommand,
+    PerformanceStatusCommand,
+)
 from socratic_system.ui.commands.conv_commands import ConvSearchCommand, ConvSummaryCommand
 from socratic_system.ui.commands.debug_commands import DebugCommand, LogsCommand
 from socratic_system.ui.commands.doc_commands import (
@@ -202,6 +209,11 @@ __all__ = [
     "SecurityIncidentsCommand",
     "SecurityValidateCommand",
     "SecurityTrendsCommand",
+    "PerformanceStatusCommand",
+    "PerformanceAgentsCommand",
+    "PerformanceCacheCommand",
+    "PerformanceBottlenecksCommand",
+    "PerformanceResetCommand",
     "SkillsSetCommand",
     "SkillsListCommand",
     "DocImportCommand",
