@@ -8,6 +8,12 @@ from socratic_system.ui.commands.analytics_commands import (
     AnalyticsSummaryCommand,
     AnalyticsTrendsCommand,
 )
+from socratic_system.ui.commands.analyzer_commands import (
+    AnalyzeCodeCommand,
+    AnalyzeFileCommand,
+    AnalyzeProjectCommand,
+    AnalysisIssuesCommand,
+)
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.ui.commands.code_commands import CodeDocsCommand, CodeGenerateCommand
 from socratic_system.ui.commands.collab_commands import (
@@ -256,6 +262,10 @@ __all__ = [
     "AnalyticsSummaryCommand",
     "AnalyticsBreakdownCommand",
     "AnalyticsStatusCommand",
+    "AnalyzeCodeCommand",
+    "AnalyzeFileCommand",
+    "AnalyzeProjectCommand",
+    "AnalysisIssuesCommand",
     "KnowledgeAddCommand",
     "KnowledgeListCommand",
     "KnowledgeSearchCommand",

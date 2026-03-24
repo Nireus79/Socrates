@@ -4783,3 +4783,81 @@ class ProjectDatabase:
             )
         except Exception as e:
             self.logger.debug(f"Learning sessions table already exists: {e}")
+
+    def save_analysis_result(self, file_path: str, quality_score: float,
+                           issues_count: int, analysis_type: str, details: dict = None) -> bool:
+        """Save code analysis result."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_analysis_results_table(cursor)
+            result_id = f"analysis_{ProjectIDGenerator.generate()}"
+            now = serialize_datetime(datetime.now())
+
+            cursor.execute(
+                "INSERT INTO analysis_results (result_id, file_path, quality_score, issues_count, analysis_type, details, analyzed_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (result_id, file_path, quality_score, issues_count, analysis_type, json.dumps(details or {}), now),
+            )
+            conn.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"Error saving analysis result: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+    def get_analysis_results(self, file_path: str = None, limit: int = 100) -> list:
+        """Get code analysis results."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            self._ensure_analysis_results_table(cursor)
+
+            if file_path:
+                cursor.execute(
+                    "SELECT * FROM analysis_results WHERE file_path = ? ORDER BY analyzed_at DESC LIMIT ?",
+                    (file_path, limit),
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM analysis_results ORDER BY analyzed_at DESC LIMIT ?",
+                    (limit,),
+                )
+
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    "result_id": row["result_id"],
+                    "file_path": row["file_path"],
+                    "quality_score": row["quality_score"],
+                    "issues_count": row["issues_count"],
+                    "analysis_type": row["analysis_type"],
+                    "details": json.loads(row["details"]) if row["details"] else {},
+                    "analyzed_at": row["analyzed_at"],
+                })
+
+            return results
+        except Exception as e:
+            self.logger.error(f"Error getting analysis results: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def _ensure_analysis_results_table(self, cursor: sqlite3.Cursor) -> None:
+        """Ensure the analysis_results table exists."""
+        try:
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS analysis_results (result_id TEXT PRIMARY KEY, file_path TEXT NOT NULL, quality_score REAL NOT NULL, issues_count INTEGER NOT NULL, analysis_type TEXT NOT NULL, details TEXT, analyzed_at TEXT NOT NULL)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_analysis_results_file ON analysis_results(file_path)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_analysis_results_type ON analysis_results(analysis_type)"
+            )
+        except Exception as e:
+            self.logger.debug(f"Analysis results table already exists: {e}")
