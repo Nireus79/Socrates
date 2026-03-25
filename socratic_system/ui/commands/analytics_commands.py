@@ -1,0 +1,368 @@
+"""
+Analytics CLI commands for maturity insights and recommendations.
+
+Provides user-facing commands for analyzing category performance,
+getting recommendations, and viewing progression trends.
+"""
+
+import logging
+from typing import Any, Callable, Dict, List
+
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
+
+try:
+    from socratic_learning import AnalyticsCalculator
+except ImportError:
+    AnalyticsCalculator = None  # type: ignore
+
+from socratic_system.ui.analytics_display import AnalyticsDisplay
+from socratic_system.ui.commands.base import BaseCommand
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_display(display_func: Callable, *args, **kwargs) -> None:
+    """
+    Safely call a display function, handling closed file errors gracefully.
+
+    In test environments, stdout/stderr may be closed prematurely by pytest,
+    causing "ValueError: I/O operation on closed file" when trying to print.
+    This wrapper silently skips display in such cases since display is optional.
+    """
+    try:
+        display_func(*args, **kwargs)
+    except ValueError as e:
+        if "closed file" in str(e):
+            # Stdout is closed (likely in a test environment), skip display
+            logger.debug(f"Skipping display: {str(e)}")
+        else:
+            raise
+
+
+class AnalyticsAnalyzeCommand(BaseCommand):
+    """
+    /analytics analyze [phase]
+
+    Show detailed category analysis for current or specified phase.
+    Displays weak/strong categories, balance, and metrics.
+
+    Usage:
+        /analytics analyze           # Analyze current phase
+        /analytics analyze discovery # Analyze specific phase
+    """
+
+    def __init__(self, orchestrator: AgentOrchestrator):
+        super().__init__("analytics analyze")
+        self.orchestrator = orchestrator
+        logger.debug("AnalyticsAnalyzeCommand initialized")
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute category analysis command."""
+        logger.debug(f"AnalyticsAnalyzeCommand.execute called with args: {args}")
+        try:
+            project = context.get("project")
+            if not project:
+                logger.warning("No active project found")
+                return {"status": "error", "message": "No active project"}
+
+            # Determine phase to analyze
+            phase = args[0] if args else project.phase
+            logger.debug(f"Analyzing phase: {phase}")
+
+            # Validate phase
+            valid_phases = ["discovery", "analysis", "design", "implementation"]
+            if phase not in valid_phases:
+                logger.error(f"Invalid phase: {phase}")
+                return {
+                    "status": "error",
+                    "message": f"Invalid phase: {phase}. Must be one of: {', '.join(valid_phases)}",
+                }
+
+            # Calculate analysis
+            if AnalyticsCalculator is None:
+                logger.warning(
+                    "AnalyticsCalculator not available - socratic_learning not installed"
+                )
+                return {
+                    "status": "error",
+                    "message": "Analytics feature requires: pip install socrates-ai[learning]",
+                }
+
+            logger.debug(f"Creating AnalyticsCalculator for project type: {project.project_type}")
+            calculator = AnalyticsCalculator(project.project_type)
+            analysis = calculator.analyze_category_performance(project)
+
+            logger.info(
+                f"Category analysis complete for {phase}: {len(analysis.get('weak_categories', []))} weak, {len(analysis.get('strong_categories', []))} strong"
+            )
+
+            # Display results
+            logger.debug("Displaying category analysis")
+            _safe_display(AnalyticsDisplay.display_category_analysis, analysis, phase)
+
+            return {"status": "success", "analysis": analysis}
+
+        except Exception as e:
+            logger.error(f"Analysis failed: {type(e).__name__}: {e}")
+            return {"status": "error", "message": f"Analysis failed: {str(e)}"}
+
+
+class AnalyticsRecommendCommand(BaseCommand):
+    """Get AI-powered recommendations based on analytics.
+
+    Leverages orchestrator agents to suggest:
+    - Code optimization opportunities
+    - Documentation gaps to fill
+    - Test coverage improvements
+    - Refactoring suggestions
+    """
+
+    def __init__(self, orchestrator: AgentOrchestrator):
+        super().__init__("analytics recommend")
+        self.orchestrator = orchestrator
+        logger.debug("AnalyticsRecommendCommand initialized")
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute recommendations command."""
+        logger.debug("AnalyticsRecommendCommand.execute called")
+        try:
+            project = context.get("project")
+            if not project:
+                logger.warning("No active project found")
+                return {"status": "error", "message": "No active project"}
+
+            user_id = context.get("user_id", "default_user")
+
+            # Generate recommendations using both analytics and learning insights
+            if AnalyticsCalculator is None:
+                logger.warning(
+                    "AnalyticsCalculator not available - socratic_learning not installed"
+                )
+                return {
+                    "status": "error",
+                    "message": "Analytics feature requires: pip install socrates-ai[learning]",
+                }
+
+            logger.debug(f"Generating recommendations for project type: {project.project_type}")
+            calculator = AnalyticsCalculator(project.project_type)
+            recommendations = calculator.generate_recommendations(project)
+            questions = calculator.suggest_next_questions(project, count=5)
+
+            # Enhance with personalized learning recommendations
+            learning_recs = []
+            try:
+                learning_recs = self.orchestrator.learning_integration.get_recommendations(
+                    user_id=user_id,
+                    context={
+                        "project_id": project.id,
+                        "phase": project.phase,
+                        "project_type": project.project_type,
+                    },
+                    top_k=3,
+                )
+                logger.debug(f"Retrieved {len(learning_recs)} learning-based recommendations")
+            except Exception as e:
+                logger.debug(f"Learning recommendations unavailable: {e}")
+
+            logger.info(
+                f"Generated {len(recommendations)} recommendations, {len(learning_recs)} learning-based, and {len(questions)} suggested questions"
+            )
+
+            # Display results
+            logger.debug("Displaying recommendations")
+            _safe_display(AnalyticsDisplay.display_recommendations, recommendations, questions)
+
+            return {
+                "status": "success",
+                "recommendations": recommendations,
+                "learning_recommendations": learning_recs,
+                "suggestions": questions,
+            }
+
+        except Exception as e:
+            logger.error(f"Recommendation generation failed: {type(e).__name__}: {e}")
+            return {"status": "error", "message": f"Recommendation failed: {str(e)}"}
+
+
+class AnalyticsTrendsCommand(BaseCommand):
+    """Analyze analytics trends over time.
+
+    Shows how metrics have changed:
+    - Quality trend direction (improving/declining)
+    - Engagement trend analysis
+    - Historical comparisons
+    - Predictive insights
+    """
+
+    def __init__(self, orchestrator: AgentOrchestrator):
+        super().__init__("analytics trends")
+        self.orchestrator = orchestrator
+        logger.debug("AnalyticsTrendsCommand initialized")
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute trends analysis command."""
+        logger.debug("AnalyticsTrendsCommand.execute called")
+        try:
+            project = context.get("project")
+            if not project:
+                logger.warning("No active project found")
+                return {"status": "error", "message": "No active project"}
+
+            user_id = context.get("user_id", "default_user")
+
+            # Analyze trends
+            if AnalyticsCalculator is None:
+                logger.warning(
+                    "AnalyticsCalculator not available - socratic_learning not installed"
+                )
+                return {
+                    "status": "error",
+                    "message": "Analytics feature requires: pip install socrates-ai[learning]",
+                }
+
+            logger.debug(f"Analyzing progression trends for project type: {project.project_type}")
+            calculator = AnalyticsCalculator(project.project_type)
+            trends = calculator.analyze_progression_trends(project)
+
+            # Enhance with learning metrics
+            learning_metrics = {}
+            try:
+                learning_metrics = self.orchestrator.learning_integration.get_learning_metrics(
+                    user_id
+                )
+                logger.debug(
+                    f"Retrieved learning metrics: engagement={learning_metrics.get('engagement_score', 0)}"
+                )
+            except Exception as e:
+                logger.debug(f"Learning metrics unavailable: {e}")
+
+            logger.info(
+                f"Trends analysis: velocity={trends.get('velocity', 0):.2f}, sessions={trends.get('total_sessions', 0)}"
+            )
+
+            # Display results
+            logger.debug("Displaying trends")
+            _safe_display(AnalyticsDisplay.display_trends, trends, project.maturity_history)
+
+            return {"status": "success", "trends": trends, "learning_metrics": learning_metrics}
+
+        except Exception as e:
+            logger.error(f"Trend analysis failed: {type(e).__name__}: {e}")
+            return {"status": "error", "message": f"Trend analysis failed: {str(e)}"}
+
+
+class AnalyticsSummaryCommand(BaseCommand):
+    """Provide comprehensive analytics summary.
+
+    Generates a detailed report covering:
+    - Code quality metrics
+    - Documentation completeness
+    - Test coverage
+    - Performance benchmarks
+    - Recommendations for improvement
+    """
+
+    def __init__(self, orchestrator: AgentOrchestrator):
+        super().__init__("analytics summary")
+        self.orchestrator = orchestrator
+        logger.debug("AnalyticsSummaryCommand initialized")
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute summary command."""
+        logger.debug("AnalyticsSummaryCommand.execute called")
+        try:
+            project = context.get("project")
+            if not project:
+                logger.warning("No active project found")
+                return {"status": "error", "message": "No active project"}
+
+            logger.info(f"Displaying analytics summary for project: {project.name}")
+            logger.debug(
+                f"Analytics metrics: velocity={project.analytics_metrics.get('velocity', 0):.2f}, "
+                + f"sessions={project.analytics_metrics.get('total_qa_sessions', 0)}, "
+                + f"confidence={project.analytics_metrics.get('avg_confidence', 0):.3f}"
+            )
+
+            # Display summary from real-time metrics
+            logger.debug("Displaying analytics summary")
+            _safe_display(AnalyticsDisplay.display_summary, project.analytics_metrics, project)
+
+            return {"status": "success", "metrics": project.analytics_metrics}
+
+        except Exception as e:
+            logger.error(f"Summary display failed: {type(e).__name__}: {e}")
+            return {"status": "error", "message": f"Summary display failed: {str(e)}"}
+
+
+class AnalyticsBreakdownCommand(BaseCommand):
+    """Break down metrics by component.
+
+    Provides granular analysis:
+    - Per-module metrics
+    - Per-function metrics
+    - Dependency impact analysis
+    - Component-level recommendations
+    """
+
+    def __init__(self, orchestrator: AgentOrchestrator):
+        super().__init__("analytics breakdown")
+        self.orchestrator = orchestrator
+        logger.debug("AnalyticsBreakdownCommand initialized")
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute breakdown command."""
+        logger.debug("AnalyticsBreakdownCommand.execute called")
+        try:
+            project = context.get("project")
+            if not project:
+                logger.warning("No active project found")
+                return {"status": "error", "message": "No active project"}
+
+            logger.info(f"Displaying detailed breakdown for project: {project.name}")
+
+            # Display detailed breakdown
+            logger.debug("Displaying detailed breakdown")
+            _safe_display(AnalyticsDisplay.display_detailed_breakdown, project)
+
+            return {"status": "success"}
+
+        except Exception as e:
+            logger.error(f"Breakdown display failed: {type(e).__name__}: {e}")
+            return {"status": "error", "message": f"Breakdown display failed: {str(e)}"}
+
+
+class AnalyticsStatusCommand(BaseCommand):
+    """Display current analytics status for the project.
+
+    Shows high-level analytics metrics including:
+    - Overall project health score
+    - Quality metrics summary
+    - Engagement trends
+    - Key performance indicators
+    """
+
+    def __init__(self, orchestrator: AgentOrchestrator):
+        super().__init__("analytics status")
+        self.orchestrator = orchestrator
+        logger.debug("AnalyticsStatusCommand initialized")
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute status command."""
+        logger.debug("AnalyticsStatusCommand.execute called")
+        try:
+            project = context.get("project")
+            if not project:
+                logger.warning("No active project found")
+                return {"status": "error", "message": "No active project"}
+
+            logger.info(f"Displaying completion status for project: {project.name}")
+
+            # Display completion status
+            logger.debug("Displaying completion status")
+            _safe_display(AnalyticsDisplay.display_completion_status, project)
+
+            return {"status": "success"}
+
+        except Exception as e:
+            logger.error(f"Status display failed: {type(e).__name__}: {e}")
+            return {"status": "error", "message": f"Status display failed: {str(e)}"}
