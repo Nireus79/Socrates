@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, MessageSquare, Send } from 'lucide-react';
+import { Search, MessageCircle, Send } from 'lucide-react';
 import { useChatStore, useProjectStore, useSubscriptionStore } from '../../stores';
 import { apiClient, chatAPI, nluAPI } from '../../api';
 import type { NLUInterpretResponse } from '../../api/nlu';
@@ -1769,7 +1769,7 @@ User: ${currentProject?.owner || 'N/A'}`;
               {freeSessionResponses.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center text-gray-500 dark:text-gray-400">
-                    <MessageSquare className="mx-auto mb-4 text-gray-400" size={48} />
+                    <MessageCircle className="mx-auto mb-4 text-gray-400" size={48} />
                     <p className="text-lg font-medium">Start a conversation</p>
                     <p className="text-sm mt-2">Type your question, describe what you want, or use commands like /help</p>
                   </div>

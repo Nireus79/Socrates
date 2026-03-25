@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { Users, Settings, TrendingUp, MessageSquare, Code, Github, Zap, Download, GitPullRequest } from 'lucide-react';
+import { Users, Settings, TrendingUp, MessageCircle, Code, Github, Zap, Download, GitPullRequest } from 'lucide-react';
 import { useProjectStore } from '../../stores';
 import { useCollaborationStore } from '../../stores/collaborationStore';
 import { showSuccess, showError } from '../../stores/notificationStore';
@@ -170,7 +170,7 @@ export const ProjectDetailPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
             <Button
               variant="primary"
-              icon={<MessageSquare className="h-4 w-4" />}
+              icon={<MessageCircle className="h-4 w-4" />}
               fullWidth
               onClick={() => window.location.href = `/chat/${currentProject.project_id}`}
             >

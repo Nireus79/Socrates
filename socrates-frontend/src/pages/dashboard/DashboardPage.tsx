@@ -195,7 +195,7 @@ export const DashboardPage: React.FC = () => {
             <Button
               variant="secondary"
               fullWidth
-              icon={<MessageSquare className="h-4 w-4" />}
+              icon={<MessageCircle className="h-4 w-4" />}
               onClick={handleChatNow}
               isLoading={isChatLoading}
             >

@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { FileText, MessageSquare, BookOpen, StickyNote, Calendar, Eye } from 'lucide-react';
+import { FileText, MessageCircle, BookOpen, StickyNote, Calendar, Eye } from 'lucide-react';
 import type { SearchResult } from '../../api/search';
 
 interface SearchResultsGridProps {
@@ -16,7 +16,7 @@ interface SearchResultsGridProps {
 const getIconForType = (type: SearchResult['type']) => {
   switch (type) {
     case 'conversation':
-      return <MessageSquare className="h-5 w-5" />;
+      return <MessageCircle className="h-5 w-5" />;
     case 'knowledge':
       return <BookOpen className="h-5 w-5" />;
     case 'note':
