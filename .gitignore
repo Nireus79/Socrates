@@ -94,6 +94,9 @@ socrates-api/dist/
 # Claude Code temporary files
 tmpclaude-*
 
+# Pip installation logs
+=*
+
 # Marketing & Implementation (Local Only)
 PHASE2_*.md
 docs/marketing/PHASE2_*.md
