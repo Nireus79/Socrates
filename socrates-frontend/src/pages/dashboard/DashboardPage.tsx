@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Plus, Play, TrendingUp, BookOpen } from 'lucide-react';
+import { Plus, Play, TrendingUp, BookOpen, MessageCircle } from 'lucide-react';
 import { useAuthStore } from '../../stores';
 import { useProjectStore } from '../../stores';
 import { showSuccess, showError } from '../../stores/notificationStore';
