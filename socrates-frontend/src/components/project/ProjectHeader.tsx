@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { MessageSquare, Code, TrendingUp, Settings } from 'lucide-react';
+import { MessageCircle, Code, TrendingUp, Settings } from 'lucide-react';
 import { Badge, Button } from '../common';
 
 interface ProjectHeaderProps {
@@ -99,7 +99,7 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
           <Button
             variant="primary"
             fullWidth
-            icon={<MessageSquare className="h-4 w-4" />}
+            icon={<MessageCircle className="h-4 w-4" />}
             onClick={onContinueDialogue}
           >
             Continue Dialogue

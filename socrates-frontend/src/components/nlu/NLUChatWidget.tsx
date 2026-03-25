@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { MessageSquare, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send } from 'lucide-react';
 import { nluAPI } from '../../api/nlu';
 import { freeSessionAPI } from '../../api/freeSession';
 import { authAPI } from '../../api/auth';
@@ -267,7 +267,7 @@ export const NLUChatWidget: React.FC<NLUChatWidgetProps> = ({
         className={`fixed bottom-6 right-6 p-4 bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all z-40 ${className}`}
         title="Open NLU Chat"
       >
-        <MessageSquare size={24} />
+        <MessageCircle size={24} />
       </button>
     );
   }
@@ -277,7 +277,7 @@ export const NLUChatWidget: React.FC<NLUChatWidgetProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900 dark:to-blue-900 rounded-t-lg">
         <div className="flex items-center gap-2">
-          <MessageSquare size={20} className="text-purple-600 dark:text-purple-400" />
+          <MessageCircle size={20} className="text-purple-600 dark:text-purple-400" />
           <h3 className="font-semibold text-gray-900 dark:text-white">Ask Socrates</h3>
         </div>
         <button
