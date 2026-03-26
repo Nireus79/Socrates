@@ -115,12 +115,17 @@ async def list_projects(
         # Load all projects for user
         projects = db.get_user_projects(current_user)
 
-        project_responses = [_project_to_response(p).dict() if hasattr(_project_to_response(p), 'dict') else _project_to_response(p) for p in projects]
+        # Convert projects to response format - use model_dump() for Pydantic v2
+        project_responses = [_project_to_response(p).model_dump() for p in projects]
 
-        return {
-            "projects": project_responses,
-            "total": len(project_responses),
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "projects": project_responses,
+                "total": len(project_responses),
+            },
+        )
 
     except HTTPException:
         raise
@@ -135,10 +140,10 @@ async def list_projects(
 @router.post(
     "",
     response_model=APIResponse,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_201_CREATED,
     summary="Create new project",
     responses={
-        200: {"description": "Project created successfully"},
+        201: {"description": "Project created successfully"},
         400: {"description": "Invalid request", "model": ErrorResponse},
         401: {"description": "Not authenticated", "model": ErrorResponse},
         403: {"description": "Subscription limit exceeded", "model": ErrorResponse},

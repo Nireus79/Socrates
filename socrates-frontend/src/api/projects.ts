@@ -114,7 +114,7 @@ export const projectsAPI = {
     const response = await fetch(`/api/projects/${projectId}/export?format=${format}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
       },
     });
 

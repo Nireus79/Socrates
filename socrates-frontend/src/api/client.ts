@@ -176,6 +176,9 @@ class APIClient {
             }
           }
         }
+
+        // Normalize field names for consistency between backend and frontend
+        response.data = this.normalizeResponseFields(response.data);
         return response;
       },
       (error) => this.handleResponseError(error)
@@ -245,6 +248,41 @@ class APIClient {
       console.error('[APIClient] Error checking token expiration:', error);
       return true; // Assume expired if we can't parse
     }
+  }
+
+  /**
+   * Normalize field names in API responses for consistency
+   * Handles conversions like message_id -> id, session_id -> sessionId, etc.
+   */
+  private normalizeResponseFields(data: any): any {
+    if (!data || typeof data !== 'object') {
+      return data;
+    }
+
+    // Handle arrays
+    if (Array.isArray(data)) {
+      return data.map(item => this.normalizeResponseFields(item));
+    }
+
+    // Handle objects - create new object with normalized fields
+    const normalized: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      // Normalize specific field names
+      let normalizedKey = key;
+
+      // message_id -> id (for chat messages)
+      if (key === 'message_id') {
+        normalizedKey = 'id';
+      }
+
+      // Recursively normalize nested objects
+      if (value && typeof value === 'object') {
+        normalized[normalizedKey] = this.normalizeResponseFields(value);
+      } else {
+        normalized[normalizedKey] = value;
+      }
+    }
+    return normalized;
   }
 
   /**
