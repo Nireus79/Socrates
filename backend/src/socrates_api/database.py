@@ -11,9 +11,10 @@ import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from socrates_api.utils import IDGenerator
+from socrates_api.models_local import User, ProjectContext
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +153,7 @@ class LocalDatabase:
             # Don't raise - migration failure shouldn't crash initialization
             # The app can still work if migration partially succeeded
 
-    def create_project(self, project_id: str, name: str, description: str = "", owner: str = None, metadata: Dict = None) -> Dict:
+    def create_project(self, project_id: str, name: str, description: str = "", owner: str = None, metadata: Dict = None) -> Optional[ProjectContext]:
         """Create a new project"""
         try:
             now = datetime.utcnow().isoformat()
@@ -164,56 +165,69 @@ class LocalDatabase:
             )
             self.conn.commit()
 
-            return {"id": project_id, "name": name, "description": description, "created_at": now, "status": "created", "owner": owner}
+            project = ProjectContext(
+                project_id=project_id,
+                name=name,
+                description=description,
+                owner=owner,
+                created_at=now,
+                updated_at=now,
+                phase="discovery",
+                is_archived=False,
+            )
+            project.metadata = metadata or {}
+            return project
         except Exception as e:
             logger.error(f"Failed to create project: {e}")
             return None
 
-    def get_project(self, project_id: str) -> Optional[Dict]:
+    def get_project(self, project_id: str) -> Optional[ProjectContext]:
         """Get project by ID"""
         try:
             cursor = self.conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
             row = cursor.fetchone()
             if row:
-                return {
-                    "id": row[0],
-                    "owner": row[1],
-                    "name": row[2],
-                    "description": row[3],
-                    "created_at": row[4],
-                    "updated_at": row[5],
-                    "phase": row[6],
-                    "is_archived": row[7] == 1,
-                    "metadata": json.loads(row[8] or "{}"),
-                }
+                project = ProjectContext(
+                    project_id=row[0],
+                    owner=row[1],
+                    name=row[2],
+                    description=row[3],
+                    created_at=row[4],
+                    updated_at=row[5],
+                    phase=row[6],
+                    is_archived=row[7] == 1,
+                )
+                project.metadata = json.loads(row[8] or "{}")
+                return project
             return None
         except Exception as e:
             logger.error(f"Failed to get project: {e}")
             return None
 
-    def list_projects(self, limit: int = 100) -> List[Dict]:
+    def list_projects(self, limit: int = 100) -> List[ProjectContext]:
         """List all projects"""
         try:
             cursor = self.conn.execute("SELECT * FROM projects LIMIT ?", (limit,))
             projects = []
             for row in cursor.fetchall():
-                projects.append({
-                    "id": row[0],
-                    "owner": row[1],
-                    "name": row[2],
-                    "description": row[3],
-                    "created_at": row[4],
-                    "updated_at": row[5],
-                    "phase": row[6],
-                    "is_archived": row[7] == 1,
-                    "metadata": json.loads(row[8] or "{}"),
-                })
+                project = ProjectContext(
+                    project_id=row[0],
+                    owner=row[1],
+                    name=row[2],
+                    description=row[3],
+                    created_at=row[4],
+                    updated_at=row[5],
+                    phase=row[6],
+                    is_archived=row[7] == 1,
+                )
+                project.metadata = json.loads(row[8] or "{}")
+                projects.append(project)
             return projects
         except Exception as e:
             logger.error(f"Failed to list projects: {e}")
             return []
 
-    def create_user(self, user_id: str, username: str, email: str = "", passcode_hash: str = "", metadata: Dict = None) -> Dict:
+    def create_user(self, user_id: str, username: str, email: str = "", passcode_hash: str = "", metadata: Dict = None) -> Optional[User]:
         """Create a new user"""
         try:
             now = datetime.utcnow().isoformat()
@@ -225,92 +239,117 @@ class LocalDatabase:
             )
             self.conn.commit()
 
-            return {"id": user_id, "username": username, "email": email, "created_at": now}
+            user = User(
+                user_id=user_id,
+                username=username,
+                email=email,
+                passcode_hash=passcode_hash or "",
+                subscription_tier="free",
+                subscription_status="active",
+                testing_mode=False,
+                created_at=now,
+            )
+            user.metadata = metadata or {}
+            return user
         except Exception as e:
             logger.error(f"Failed to create user: {e}")
             return None
 
-    def get_user(self, user_id: str) -> Optional[Dict]:
+    def get_user(self, user_id: str) -> Optional[User]:
         """Get user by ID"""
         try:
             cursor = self.conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
             row = cursor.fetchone()
             if row:
-                return {
-                    "id": row[0],
-                    "username": row[1],
-                    "email": row[2],
-                    "passcode_hash": row[3],
-                    "subscription_tier": row[4],
-                    "subscription_status": row[5],
-                    "testing_mode": bool(row[6]),
-                    "created_at": row[7],
-                    "updated_at": row[8],
-                    "metadata": json.loads(row[9] or "{}"),
-                }
+                user = User(
+                    user_id=row[0],
+                    username=row[1],
+                    email=row[2],
+                    passcode_hash=row[3],
+                    subscription_tier=row[4],
+                    subscription_status=row[5],
+                    testing_mode=bool(row[6]),
+                    created_at=row[7],
+                )
+                user.metadata = json.loads(row[9] or "{}")
+                return user
             return None
         except Exception as e:
             logger.error(f"Failed to get user: {e}")
             return None
 
-    def load_user(self, username: str) -> Optional[Dict]:
+    def load_user(self, username: str) -> Optional[User]:
         """Get user by username"""
         try:
             cursor = self.conn.execute("SELECT * FROM users WHERE username = ?", (username,))
             row = cursor.fetchone()
             if row:
-                return {
-                    "id": row[0],
-                    "username": row[1],
-                    "email": row[2],
-                    "passcode_hash": row[3],
-                    "subscription_tier": row[4],
-                    "subscription_status": row[5],
-                    "testing_mode": bool(row[6]),
-                    "created_at": row[7],
-                    "updated_at": row[8],
-                    "metadata": json.loads(row[9] or "{}"),
-                }
+                user = User(
+                    user_id=row[0],
+                    username=row[1],
+                    email=row[2],
+                    passcode_hash=row[3],
+                    subscription_tier=row[4],
+                    subscription_status=row[5],
+                    testing_mode=bool(row[6]),
+                    created_at=row[7],
+                )
+                user.metadata = json.loads(row[9] or "{}")
+                return user
             return None
         except Exception as e:
             logger.error(f"Failed to load user by username: {e}")
             return None
 
-    def load_user_by_email(self, email: str) -> Optional[Dict]:
+    def load_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email"""
         try:
             cursor = self.conn.execute("SELECT * FROM users WHERE email = ?", (email,))
             row = cursor.fetchone()
             if row:
-                return {
-                    "id": row[0],
-                    "username": row[1],
-                    "email": row[2],
-                    "passcode_hash": row[3],
-                    "subscription_tier": row[4],
-                    "subscription_status": row[5],
-                    "testing_mode": bool(row[6]),
-                    "created_at": row[7],
-                    "updated_at": row[8],
-                    "metadata": json.loads(row[9] or "{}"),
-                }
+                user = User(
+                    user_id=row[0],
+                    username=row[1],
+                    email=row[2],
+                    passcode_hash=row[3],
+                    subscription_tier=row[4],
+                    subscription_status=row[5],
+                    testing_mode=bool(row[6]),
+                    created_at=row[7],
+                )
+                user.metadata = json.loads(row[9] or "{}")
+                return user
             return None
         except Exception as e:
             logger.error(f"Failed to load user by email: {e}")
             return None
 
-    def save_user(self, user_data: Dict) -> Optional[Dict]:
-        """Insert or update a user record"""
+    def save_user(self, user_data: Union[Dict, User]) -> Optional[User]:
+        """Insert or update a user record. Accepts both dict and User objects."""
         try:
             now = datetime.utcnow().isoformat()
-            user_id = user_data.get("id")
-            username = user_data.get("username")
-            email = user_data.get("email", "")
-            passcode_hash = user_data.get("passcode_hash", "")
-            subscription_tier = user_data.get("subscription_tier", "free")
-            subscription_status = user_data.get("subscription_status", "active")
-            testing_mode = int(user_data.get("testing_mode", False))
-            meta_json = json.dumps(user_data.get("metadata", {}))
+
+            # Handle both dict and User object input
+            if isinstance(user_data, User):
+                user_id = user_data.id
+                username = user_data.username
+                email = user_data.email
+                passcode_hash = user_data.passcode_hash
+                subscription_tier = user_data.subscription_tier
+                subscription_status = user_data.subscription_status
+                testing_mode = int(user_data.testing_mode)
+                metadata = user_data.metadata or {}
+            else:
+                user_id = user_data.get("id")
+                username = user_data.get("username")
+                email = user_data.get("email", "")
+                passcode_hash = user_data.get("passcode_hash", "")
+                subscription_tier = user_data.get("subscription_tier", "free")
+                subscription_status = user_data.get("subscription_status", "active")
+                testing_mode = int(user_data.get("testing_mode", False))
+                metadata = user_data.get("metadata", {})
+
+            meta_json = json.dumps(metadata)
 
             # Check if user exists
             existing = self.get_user(user_id) if user_id else None
@@ -325,7 +364,7 @@ class LocalDatabase:
                 # Create new user
                 if not user_id:
                     user_id = IDGenerator.user()
-                created_at = user_data.get("created_at", now)
+                created_at = user_data.get("created_at", now) if isinstance(user_data, dict) else (user_data.created_at or now)
                 self.conn.execute(
                     "INSERT INTO users (id, username, email, passcode_hash, subscription_tier, subscription_status, testing_mode, created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (user_id, username, email, passcode_hash, subscription_tier, subscription_status, testing_mode, created_at, now, meta_json)
@@ -453,9 +492,6 @@ class LocalDatabase:
             logger.error(f"Failed to permanently delete user {username}: {e}")
             return False
 
-    def get_user(self, user_id: str) -> Optional[Dict]:
-        """Get user by ID (alias for load_user for compatibility)"""
-        return self.load_user(user_id)
 
     def close(self):
         """Close database connection"""

@@ -64,7 +64,7 @@ class TestDatabaseMethods:
         # Retrieve it
         user = db.get_user("test_user")
         assert user is not None
-        assert isinstance(user, dict)
+        assert isinstance(user, User)
         assert user.get("username") == "test_user"
 
 
@@ -179,7 +179,7 @@ class TestDatabaseProjectOperations:
         # Create
         result = db.create_project("proj_test", "owner_user", "Test Project", "A test")
         assert result is not None
-        assert result.get("id") == "proj_test"
+        assert result.get("project_id") == "proj_test"
 
         # Retrieve
         project = db.get_project("proj_test")
@@ -222,7 +222,7 @@ class TestDatabaseProjectOperations:
 
         projects = db.list_projects()
         assert len(projects) >= 2
-        assert all("id" in p and "owner" in p for p in projects)
+        assert all("project_id" in p and "owner" in p for p in projects)
 
 
 class TestDatabaseUserOperations:

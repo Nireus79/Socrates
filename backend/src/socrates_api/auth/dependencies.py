@@ -121,25 +121,11 @@ async def get_current_user_object(
         HTTPException: 404 if user not found in database
     """
     try:
-        user_data = db.load_user(username)
-        if user_data is None:
+        user = db.load_user(username)
+        if user is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"User {username} not found"
             )
-        # Convert dictionary to User object
-        if isinstance(user_data, dict):
-            user = User(
-                user_id=user_data.get("id", ""),
-                username=user_data.get("username", ""),
-                email=user_data.get("email", ""),
-                passcode_hash=user_data.get("passcode_hash", ""),
-                subscription_tier=user_data.get("subscription_tier", "free"),
-                subscription_status=user_data.get("subscription_status", "active"),
-                testing_mode=user_data.get("testing_mode", False),
-                created_at=user_data.get("created_at"),
-            )
-        else:
-            user = user_data
         return user
     except HTTPException:
         raise

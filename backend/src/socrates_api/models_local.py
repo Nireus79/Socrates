@@ -75,6 +75,16 @@ class User:
         """Dict-like get method for compatibility"""
         return getattr(self, key, default)
 
+    def __getitem__(self, key: str) -> Any:
+        """Dict-like access for compatibility"""
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(key)
+
+    def __contains__(self, key: str) -> bool:
+        """Dict-like 'in' operator support"""
+        return hasattr(self, key)
+
 
 class ProjectContext:
     """Minimal ProjectContext model stub for API routers"""
@@ -148,6 +158,20 @@ class ProjectContext:
             "progress": self.progress,
             "metadata": self.metadata
         }
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """Dict-like get method for compatibility"""
+        return getattr(self, key, default)
+
+    def __getitem__(self, key: str) -> Any:
+        """Dict-like access for compatibility"""
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(key)
+
+    def __contains__(self, key: str) -> bool:
+        """Dict-like 'in' operator support"""
+        return hasattr(self, key)
 
 
 class StorageQuotaManager:
