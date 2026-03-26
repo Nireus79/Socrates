@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Users, Settings, TrendingUp, MessageCircle, Code, Github, Zap, Download, GitPullRequest } from 'lucide-react';
 import { useProjectStore } from '../../stores';
 import { useCollaborationStore } from '../../stores/collaborationStore';
@@ -24,6 +24,7 @@ import { ProjectExport } from '../../components/project/ProjectExport';
 import { GitHubPublish } from '../../components/project/GitHubPublish';
 
 export const ProjectDetailPage: React.FC = () => {
+  const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
   const { currentProject, isLoading: projectLoading, getProject, updateProject, deleteProject } = useProjectStore();
   const { collaborators, isLoading: collabLoading, loadCollaborators } = useCollaborationStore();
@@ -51,7 +52,7 @@ export const ProjectDetailPage: React.FC = () => {
       showSuccess('Project Deleted', `${currentProject?.name} has been deleted successfully`);
       // Delay navigation to allow toast to be visible
       setTimeout(() => {
-        window.location.href = '/projects';
+        navigate('/projects');
       }, 1500);
     } catch (error) {
       console.error('Failed to delete project:', error);
@@ -133,7 +134,7 @@ export const ProjectDetailPage: React.FC = () => {
               <Button
                 variant="primary"
                 fullWidth
-                onClick={() => window.location.href = `/chat/${currentProject.project_id}`}
+                onClick={() => navigate(`/chat/${currentProject.project_id}`)}
               >
                 Continue Dialogue
               </Button>
@@ -172,7 +173,7 @@ export const ProjectDetailPage: React.FC = () => {
               variant="primary"
               icon={<MessageCircle className="h-4 w-4" />}
               fullWidth
-              onClick={() => window.location.href = `/chat/${currentProject.project_id}`}
+              onClick={() => navigate(`/chat/${currentProject.project_id}`)}
             >
               Dialogue
             </Button>
