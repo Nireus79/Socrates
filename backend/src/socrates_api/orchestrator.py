@@ -20,19 +20,43 @@ class APIOrchestrator:
         self.agents = {}
         self.skill_orchestrator = None
         self.workflow_orchestrator = None
+        self.pure_orchestrator = None
 
         # Initialize documentation and performance tools
         self.doc_generator = None
         self.profiler = None
         self.cache = None
 
+        # Create LLMClient first (if API key provided)
+        self.llm_client = self._create_llm_client()
+
         self._initialize_agents()
+        self._initialize_orchestrators()
         self._initialize_documentation()
         self._initialize_performance_monitoring()
         logger.info("API Orchestrator initialized with real agents")
 
+    def _create_llm_client(self):
+        """Create LLM client if API key provided"""
+        try:
+            if not self.api_key:
+                logger.debug("No API key provided - LLM client will be None")
+                return None
+
+            from socrates_nexus import LLMClient
+            llm_client = LLMClient(
+                provider="anthropic",
+                model="claude-3-sonnet",
+                api_key=self.api_key
+            )
+            logger.info("LLM client created successfully")
+            return llm_client
+        except Exception as e:
+            logger.warning(f"Failed to create LLM client: {e}")
+            return None
+
     def _initialize_agents(self) -> None:
-        """Initialize all agents from socratic-agents"""
+        """Initialize all agents from socratic-agents with LLM client"""
         try:
             from socratic_agents import (
                 CodeGenerator, CodeValidator, SocraticCounselor,
@@ -42,44 +66,95 @@ class APIOrchestrator:
                 SystemMonitor, AgentConflictDetector
             )
 
-            # Initialize agents (without LLM client for now)
+            # Initialize agents with LLM client
             self.agents = {
-                "code_generator": CodeGenerator(),
-                "code_validator": CodeValidator(),
-                "socratic_counselor": SocraticCounselor(),
-                "project_manager": ProjectManager(),
-                "quality_controller": QualityController(),
-                "learning_agent": LearningAgent(),
-                "skill_generator": SkillGeneratorAgent(),
-                "context_analyzer": ContextAnalyzer(),
-                "user_manager": UserManager(),
-                "knowledge_manager": KnowledgeManager(),
-                "document_processor": DocumentProcessor(),
-                "note_manager": NoteManager(),
-                "system_monitor": SystemMonitor(),
-                "conflict_detector": AgentConflictDetector(),
+                "code_generator": CodeGenerator(llm_client=self.llm_client),
+                "code_validator": CodeValidator(llm_client=self.llm_client),
+                "socratic_counselor": SocraticCounselor(llm_client=self.llm_client),
+                "project_manager": ProjectManager(llm_client=self.llm_client),
+                "quality_controller": QualityController(llm_client=self.llm_client),
+                "learning_agent": LearningAgent(llm_client=self.llm_client),
+                "skill_generator": SkillGeneratorAgent(llm_client=self.llm_client),
+                "context_analyzer": ContextAnalyzer(llm_client=self.llm_client),
+                "user_manager": UserManager(llm_client=self.llm_client),
+                "knowledge_manager": KnowledgeManager(llm_client=self.llm_client),
+                "document_processor": DocumentProcessor(llm_client=self.llm_client),
+                "note_manager": NoteManager(llm_client=self.llm_client),
+                "system_monitor": SystemMonitor(llm_client=self.llm_client),
+                "conflict_detector": AgentConflictDetector(llm_client=self.llm_client),
             }
-            logger.info(f"Initialized {len(self.agents)} agents from socratic-agents")
+            logger.info(f"Initialized {len(self.agents)} agents from socratic-agents with LLM client")
         except Exception as e:
             logger.warning(f"Failed to initialize agents: {e}")
             self.agents = {}
 
     def _initialize_orchestrators(self) -> None:
-        """Initialize skill and workflow orchestrators"""
+        """Initialize skill, workflow, and pure orchestrators"""
         try:
             from socratic_agents.integrations.skill_orchestrator import SkillOrchestrator
             from socratic_agents.skill_generation.workflow_orchestrator import WorkflowOrchestrator
+            from socratic_agents.orchestration.orchestrator import PureOrchestrator
 
+            # Initialize SkillOrchestrator
             self.skill_orchestrator = SkillOrchestrator(
                 quality_controller=self.agents.get("quality_controller"),
                 skill_generator=self.agents.get("skill_generator"),
                 learning_agent=self.agents.get("learning_agent")
             )
 
+            # Initialize WorkflowOrchestrator
             self.workflow_orchestrator = WorkflowOrchestrator()
-            logger.info("Initialized skill and workflow orchestrators")
+
+            # Initialize PureOrchestrator with maturity-driven gating
+            self.pure_orchestrator = PureOrchestrator(
+                agents=self.agents,
+                get_maturity=self._get_maturity_score,
+                get_learning_effectiveness=self._get_learning_effectiveness,
+                on_event=self._on_coordination_event
+            )
+
+            logger.info("Initialized skill, workflow, and pure orchestrators")
         except Exception as e:
             logger.warning(f"Failed to initialize orchestrators: {e}")
+            self.skill_orchestrator = None
+            self.workflow_orchestrator = None
+            self.pure_orchestrator = None
+
+    def _get_maturity_score(self, user_id: str, phase: str) -> float:
+        """Get maturity score for a user in a phase (callback for PureOrchestrator)"""
+        try:
+            # Stub implementation - would integrate with MaturityCalculator
+            # For now, return a default score that allows agents to run
+            logger.debug(f"Getting maturity score for user {user_id} in phase {phase}")
+            return 0.5  # Default to mid-range score
+        except Exception as e:
+            logger.error(f"Failed to get maturity score: {e}")
+            return 0.0
+
+    def _get_learning_effectiveness(self, user_id: str) -> float:
+        """Get learning effectiveness for a user (callback for PureOrchestrator)"""
+        try:
+            # Stub implementation - would integrate with LearningAgent
+            logger.debug(f"Getting learning effectiveness for user {user_id}")
+            return 0.7  # Default to good effectiveness
+        except Exception as e:
+            logger.error(f"Failed to get learning effectiveness: {e}")
+            return 0.0
+
+    def _on_coordination_event(self, event, data: Dict[str, Any]) -> None:
+        """Handle coordination events from PureOrchestrator"""
+        try:
+            event_name = event.value if hasattr(event, 'value') else str(event)
+            logger.info(f"Coordination event: {event_name}, data: {data}")
+
+            # Event handlers can be extended here to:
+            # - Update maturity scores
+            # - Emit webhooks
+            # - Store interaction metrics
+            # - Trigger follow-up agents
+            # - Update UI in real-time
+        except Exception as e:
+            logger.error(f"Failed to handle coordination event: {e}")
 
     def get_system_info(self) -> Dict[str, Any]:
         """Get system information"""
@@ -88,8 +163,10 @@ class APIOrchestrator:
                 "framework": "socratic-agents",
                 "agents_loaded": len(self.agents),
                 "agents": list(self.agents.keys()),
+                "llm_client": self.llm_client is not None,
                 "skill_orchestrator": self.skill_orchestrator is not None,
                 "workflow_orchestrator": self.workflow_orchestrator is not None,
+                "pure_orchestrator": self.pure_orchestrator is not None,
                 "status": "operational"
             }
         except Exception as e:
@@ -184,7 +261,21 @@ class APIOrchestrator:
             if not self.skill_orchestrator:
                 return {"status": "error", "message": "SkillOrchestrator not available"}
 
+            # Call SkillOrchestrator - returns nested structure with quality_analysis
             result = self.skill_orchestrator.process_quality_issue(code)
+            # Result structure:
+            # {
+            #     "status": "success",
+            #     "agent": "SkillOrchestrator",
+            #     "session_id": "...",
+            #     "generated_skills": [...],
+            #     "personalized_skills": [...],
+            #     "quality_analysis": {
+            #         "score": float,
+            #         "issues": list,
+            #         "weak_areas": list
+            #     }
+            # }
             return result
         except Exception as e:
             logger.error(f"Quality issue processing failed: {e}")
@@ -236,9 +327,11 @@ class APIOrchestrator:
     def get_library_status(self) -> Dict[str, bool]:
         """Get status of all library integrations"""
         return {
+            "llm_client": self.llm_client is not None,
             "agents_loaded": len(self.agents) > 0,
             "skill_orchestrator": self.skill_orchestrator is not None,
             "workflow_orchestrator": self.workflow_orchestrator is not None,
+            "pure_orchestrator": self.pure_orchestrator is not None,
         }
 
     def execute_agent(self, agent_name: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -257,15 +350,18 @@ class APIOrchestrator:
     def call_llm(self, prompt: str, model: str = "claude-3-sonnet", **kwargs) -> Dict[str, Any]:
         """Call LLM via socrates-nexus"""
         try:
-            from socrates_nexus import LLMClient
+            # Use existing LLM client if available
+            if not self.llm_client:
+                return {"status": "error", "message": "LLM client not initialized. API key required."}
 
-            client = LLMClient(provider="anthropic", model=model, api_key=self.api_key)
-            response = client.chat(prompt=prompt, **kwargs)
+            # Note: If a different model is requested, would need to create new client
+            # For now, use the initialized client with its model
+            response = self.llm_client.chat(prompt=prompt, **kwargs)
 
             return {
                 "status": "success",
                 "response": str(response) if response else "",
-                "model": model
+                "model": self.llm_client.model if hasattr(self.llm_client, 'model') else model
             }
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
@@ -387,9 +483,11 @@ class APIOrchestrator:
         """Get system configuration"""
         return {
             "api_key_set": bool(self.api_key),
+            "llm_client_ready": self.llm_client is not None,
             "agents_count": len(self.agents),
             "skill_orchestrator_ready": self.skill_orchestrator is not None,
-            "workflow_orchestrator_ready": self.workflow_orchestrator is not None
+            "workflow_orchestrator_ready": self.workflow_orchestrator is not None,
+            "pure_orchestrator_ready": self.pure_orchestrator is not None
         }
 
     def log_learning_interaction(self, session_id: str, agent_name: str,
