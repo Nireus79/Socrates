@@ -261,7 +261,7 @@ async def create_project(
         # CRITICAL: Validate subscription before creating project in fallback path
         logger.info("Validating subscription for fallback project creation...")
         try:
-            user_object = get_current_user_object(current_user)
+            user_object = await get_current_user_object(current_user)
 
             # Check if user has active subscription
             if user_object.subscription_status != "active":
