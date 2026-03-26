@@ -13,6 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from socrates_api.utils import IDGenerator
+
 logger = logging.getLogger(__name__)
 
 
@@ -175,11 +177,14 @@ class LocalDatabase:
             if row:
                 return {
                     "id": row[0],
-                    "name": row[1],
-                    "description": row[2],
-                    "created_at": row[3],
-                    "updated_at": row[4],
-                    "metadata": json.loads(row[5] or "{}"),
+                    "owner": row[1],
+                    "name": row[2],
+                    "description": row[3],
+                    "created_at": row[4],
+                    "updated_at": row[5],
+                    "phase": row[6],
+                    "is_archived": row[7] == 1,
+                    "metadata": json.loads(row[8] or "{}"),
                 }
             return None
         except Exception as e:
@@ -192,7 +197,17 @@ class LocalDatabase:
             cursor = self.conn.execute("SELECT * FROM projects LIMIT ?", (limit,))
             projects = []
             for row in cursor.fetchall():
-                projects.append({"id": row[0], "name": row[1], "description": row[2], "created_at": row[3]})
+                projects.append({
+                    "id": row[0],
+                    "owner": row[1],
+                    "name": row[2],
+                    "description": row[3],
+                    "created_at": row[4],
+                    "updated_at": row[5],
+                    "phase": row[6],
+                    "is_archived": row[7] == 1,
+                    "metadata": json.loads(row[8] or "{}"),
+                })
             return projects
         except Exception as e:
             logger.error(f"Failed to list projects: {e}")
@@ -309,8 +324,7 @@ class LocalDatabase:
             else:
                 # Create new user
                 if not user_id:
-                    import uuid
-                    user_id = str(uuid.uuid4())
+                    user_id = IDGenerator.user()
                 created_at = user_data.get("created_at", now)
                 self.conn.execute(
                     "INSERT INTO users (id, username, email, passcode_hash, subscription_tier, subscription_status, testing_mode, created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -402,6 +416,46 @@ class LocalDatabase:
         except Exception as e:
             logger.error(f"Failed to save knowledge document: {e}")
             return False
+
+    def get_api_key(self, username: str, provider: str) -> Optional[str]:
+        """Get API key for a user and provider (stub - not persisted)"""
+        # In production, this would be stored in database
+        # For now, return None (API key not found)
+        return None
+
+    def delete_project(self, project_id: str) -> bool:
+        """Delete (archive) a project"""
+        try:
+            self.conn.execute(
+                "UPDATE projects SET is_archived = 1 WHERE id = ?",
+                (project_id,)
+            )
+            self.conn.commit()
+            logger.info(f"Project {project_id} archived")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to archive project {project_id}: {e}")
+            return False
+
+    def permanently_delete_user(self, username: str) -> bool:
+        """Permanently delete a user and all associated data"""
+        try:
+            # Delete refresh tokens
+            self.conn.execute("DELETE FROM refresh_tokens WHERE user_id = ?", (username,))
+            # Delete projects
+            self.conn.execute("DELETE FROM projects WHERE owner = ?", (username,))
+            # Delete user
+            self.conn.execute("DELETE FROM users WHERE username = ?", (username,))
+            self.conn.commit()
+            logger.info(f"User {username} permanently deleted")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to permanently delete user {username}: {e}")
+            return False
+
+    def get_user(self, user_id: str) -> Optional[Dict]:
+        """Get user by ID (alias for load_user for compatibility)"""
+        return self.load_user(user_id)
 
     def close(self):
         """Close database connection"""

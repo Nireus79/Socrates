@@ -5,6 +5,7 @@ Provides document import, search, and knowledge management functionality.
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 import tempfile
 import uuid
 from pathlib import Path
@@ -17,6 +18,7 @@ from socrates_api.auth import get_current_user
 from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse, BulkImportData, ErrorResponse
 from socrates_api.models_local import User
+from socrates_api.utils import IDGenerator
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
@@ -197,7 +199,8 @@ async def get_all_knowledge_sources(
         asyncio.get_event_loop()
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -507,7 +510,8 @@ async def import_file(
 
         # Verify project access if provided
         if project_id:
-            project = db.load_project(project_id)
+            project_dict = db.load_project(project_id)
+            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -518,7 +522,7 @@ async def import_file(
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Create document ID first
-        doc_id = str(uuid.uuid4())
+        doc_id = IDGenerator.document()
 
         # Save uploaded file to persistent storage
         knowledge_dir = Path.home() / ".socrates" / "knowledge_base" / current_user / doc_id
@@ -710,7 +714,8 @@ async def import_url(
 
         # Verify project access if provided
         if project_id:
-            project = db.load_project(project_id)
+            project_dict = db.load_project(project_id)
+            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -721,7 +726,7 @@ async def import_url(
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Create document ID first (for source consistency)
-        doc_id = str(uuid.uuid4())
+        doc_id = IDGenerator.document()
 
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(
@@ -833,7 +838,8 @@ async def import_text(
 
         # Verify project access if provided
         if project_id:
-            project = db.load_project(project_id)
+            project_dict = db.load_project(project_id)
+            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -844,7 +850,7 @@ async def import_text(
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Create document ID first (for source consistency)
-        doc_id = str(uuid.uuid4())
+        doc_id = IDGenerator.document()
 
         # CHECK STORAGE QUOTA BEFORE IMPORTING TEXT
         content_size_bytes = len(content.encode("utf-8"))
@@ -977,7 +983,8 @@ async def search_knowledge(
 
         # Verify project access if provided
         if project_id:
-            project = db.load_project(project_id)
+            project_dict = db.load_project(project_id)
+            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -1200,7 +1207,8 @@ async def bulk_import_documents(
     try:
         # Verify project access if specified
         if project_id:
-            project = db.load_project(project_id)
+            project_dict = db.load_project(project_id)
+            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -1225,7 +1233,7 @@ async def bulk_import_documents(
 
                 try:
                     # Process file
-                    doc_id = f"doc_{uuid.uuid4().hex[:12]}"
+                    doc_id = IDGenerator.document()
                     result = orchestrator.process_request(
                         "document_agent",
                         {
@@ -1410,7 +1418,8 @@ async def add_knowledge_entry(
 
         # Verify project access if provided
         if project_id:
-            project = db.load_project(project_id)
+            project_dict = db.load_project(project_id)
+            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"

@@ -10,6 +10,7 @@ Provides:
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -28,6 +29,7 @@ from socrates_api.models import (
 )
 from socrates_api.websocket import get_connection_manager
 from socrates_api.models_local import User, EventType
+from socrates_api.utils import IDGenerator
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["collaboration"])
@@ -208,7 +210,8 @@ async def add_collaborator_new(
             )
 
         # Verify project exists and user is owner
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -410,7 +413,8 @@ async def list_collaborators(
     """
     try:
         # Verify project access
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -430,12 +434,20 @@ async def list_collaborators(
             )
 
         # Load collaborators from project
+        # Helper function to safely convert datetime to ISO format string
+        def to_iso_string(dt_value):
+            if dt_value is None:
+                return None
+            if isinstance(dt_value, str):
+                return dt_value
+            return dt_value.isoformat() if hasattr(dt_value, 'isoformat') else str(dt_value)
+
         collaborators = [
             {
                 "username": project.owner,
                 "role": "owner",
                 "status": "active",
-                "joined_at": project.created_at.isoformat() if project.created_at else None,
+                "joined_at": to_iso_string(project.created_at),
             }
         ]
 
@@ -450,9 +462,7 @@ async def list_collaborators(
                         "username": member.username,
                         "role": member.role,
                         "status": "active",
-                        "joined_at": (
-                            member.joined_at.isoformat() if hasattr(member, "joined_at") else None
-                        ),
+                        "joined_at": to_iso_string(getattr(member, "joined_at", None)),
                     }
                 )
 
@@ -514,7 +524,8 @@ async def update_collaborator_role(
             )
 
         # Verify project and ownership
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -605,7 +616,8 @@ async def remove_collaborator(
     """
     try:
         # Verify project and ownership
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -701,7 +713,8 @@ async def get_presence(
     """
     try:
         # Verify project access
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -771,7 +784,8 @@ async def record_activity(
         import uuid
 
         # Verify project access
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -790,7 +804,7 @@ async def record_activity(
 
         # Create activity record
         activity = {
-            "id": f"act_{uuid.uuid4().hex[:12]}",
+            "id": IDGenerator.activity(),
             "project_id": project_id,
             "user_id": current_user,
             "activity_type": activity_type or "unknown",
@@ -864,7 +878,8 @@ async def get_activities(
     """
     try:
         # Verify project access
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -951,7 +966,8 @@ async def create_project_invitation(
         from datetime import timedelta
 
         # Verify project exists and user is owner
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1030,7 +1046,7 @@ async def create_project_invitation(
 
         # Create invitation record
         invitation = {
-            "id": f"inv_{uuid.uuid4().hex[:12]}",
+            "id": IDGenerator.invitation(),
             "project_id": project_id,
             "inviter_id": current_user,
             "invitee_email": email,
@@ -1085,7 +1101,8 @@ async def get_project_invitations(
     """
     try:
         # Verify project access
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1178,7 +1195,8 @@ async def accept_invitation(
             )
 
         # Load project
-        project = db.load_project(invitation["project_id"])
+        project_dict = db.load_project(invitation["project_id"])
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1276,7 +1294,8 @@ async def cancel_invitation(
     """
     try:
         # Verify project ownership
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

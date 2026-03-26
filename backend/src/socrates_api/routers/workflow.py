@@ -6,6 +6,7 @@ Handles the blocking workflow optimization flow during question generation.
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -58,7 +59,8 @@ async def get_pending_approvals(
         orchestrator = get_orchestrator()
 
         # Load project to verify it exists
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

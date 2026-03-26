@@ -8,6 +8,7 @@ Provides REST endpoints for querying and searching including:
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -150,7 +151,8 @@ async def search_knowledge(
         results = []
 
         if project_id:
-            project = db.load_project(project_id)
+            project_dict = db.load_project(project_id)
+            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
             if project:
                 # Search in project notes
                 if project.notes:

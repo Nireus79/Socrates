@@ -172,9 +172,9 @@ async def get_learning_status() -> Dict[str, Any]:
 
 @router.post("/conflict/detect-and-resolve")
 async def detect_agent_conflicts(
-    field: str = Query(..., description="Field name where conflict exists"),
-    agent_outputs: Dict[str, Any] = Query(..., description="Outputs from different agents"),
-    agents: List[str] = Query(..., description="List of agent names"),
+    field: str = Body(..., description="Field name where conflict exists"),
+    agent_outputs: Dict[str, Any] = Body(..., description="Outputs from different agents"),
+    agents: List[str] = Body(..., description="List of agent names"),
 ) -> Optional[Dict[str, Any]]:
     """
     Detect and resolve conflicts between agent outputs using socratic-conflict.
@@ -321,7 +321,7 @@ async def get_knowledge_status() -> Dict[str, Any]:
 
 @router.post("/docs/generate-readme")
 async def generate_project_documentation(
-    project_info: Dict[str, Any] = Query(..., description="Project information"),
+    project_info: Dict[str, Any] = Body(..., description="Project information"),
 ) -> Optional[str]:
     """
     Generate project documentation using socratic-docs.

@@ -5,6 +5,7 @@ Provides GitHub repository import, pull, push, and sync functionality.
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 import os
 from pathlib import Path
 from typing import Optional
@@ -453,7 +454,8 @@ async def pull_changes(
     try:
         await check_project_access(project_id, current_user, db, min_role="editor")
         # Validate project exists
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -645,7 +647,8 @@ async def push_changes(
     try:
         await check_project_access(project_id, current_user, db, min_role="editor")
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -854,7 +857,8 @@ async def sync_project(
     try:
         await check_project_access(project_id, current_user, db, min_role="editor")
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1083,7 +1087,8 @@ async def get_sync_status(
     try:
         await check_project_access(project_id, current_user, db, min_role="viewer")
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

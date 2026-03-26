@@ -5,6 +5,7 @@ Provides code validation, testing, review, and analysis functionality.
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -63,7 +64,8 @@ async def validate_code(
             logger.info(f"Validating code for project: {project_id}")
             # Load project from database
             db = get_database()
-            project = db.load_project(project_id)
+            project_dict = db.load_project(project_id)
+            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
             if not project:
                 raise HTTPException(status_code=404, detail="Project not found")
 
@@ -166,7 +168,8 @@ async def assess_maturity(
         logger.info(f"Assessing maturity for project: {project_id}")
 
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -264,7 +267,8 @@ async def run_tests(
         logger.info(f"Running tests for project: {project_id}")
 
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -357,7 +361,8 @@ async def analyze_structure(
 
         # Load project
         db = get_database()
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -439,7 +444,8 @@ async def review_code(
 
         # Load project
         db = get_database()
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -522,7 +528,8 @@ async def auto_fix_issues(
         logger.info(f"Auto-fixing issues for project: {project_id}")
 
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -606,7 +613,8 @@ async def get_analysis_report(
 
         # Load project
         db = get_database()
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

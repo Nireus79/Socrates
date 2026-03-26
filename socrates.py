@@ -183,7 +183,7 @@ def start_api(host: str = "0.0.0.0", port: int = 8000, reload: bool = False, aut
         auto_port: Auto-detect and use available port if preferred port is in use (default: True)
     """
     sys.path.insert(0, str(Path(__file__).parent))
-    sys.path.insert(0, str(Path(__file__).parent / "socrates-api" / "src"))
+    sys.path.insert(0, str(Path(__file__).parent / "backend" / "src"))
 
     import uvicorn
 

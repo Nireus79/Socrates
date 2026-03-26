@@ -38,6 +38,8 @@ class User:
         subscription_status: str = "active",
         testing_mode: bool = False,
         created_at: Optional[Any] = None,
+        archived: bool = False,
+        archived_at: Optional[str] = None,
         **kwargs
     ):
         self.id = user_id
@@ -48,6 +50,8 @@ class User:
         self.subscription_status = subscription_status
         self.testing_mode = testing_mode
         self.created_at = created_at
+        self.archived = archived
+        self.archived_at = archived_at
         self.metadata: Dict[str, Any] = {}
         # Store any additional kwargs
         for key, value in kwargs.items():
@@ -92,6 +96,11 @@ class ProjectContext:
         tech_stack: Optional[list] = None,
         constraints: Optional[list] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        repository_url: Optional[str] = None,
+        team_members: Optional[list] = None,
+        code_history: Optional[list] = None,
+        chat_sessions: Optional[Dict] = None,
+        code_generated_count: int = 0,
         **kwargs
     ):
         self.project_id = project_id
@@ -111,6 +120,15 @@ class ProjectContext:
         self.requirements = requirements or []
         self.tech_stack = tech_stack or []
         self.constraints = constraints or []
+        self.repository_url = repository_url
+        self.team_members = team_members or []
+        self.code_history = code_history or []
+        self.chat_sessions = chat_sessions or {}
+        self.code_generated_count = code_generated_count
+        # Chat and question attributes
+        self.pending_questions: List[Dict[str, Any]] = kwargs.get("pending_questions", [])
+        self.answered_questions: List[Dict[str, Any]] = kwargs.get("answered_questions", [])
+        self.skipped_questions: List[Dict[str, Any]] = kwargs.get("skipped_questions", [])
         # Store any additional kwargs
         for key, value in kwargs.items():
             if not key.startswith("_"):

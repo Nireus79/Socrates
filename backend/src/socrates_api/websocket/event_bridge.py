@@ -11,8 +11,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Optional
 
-# REMOVED LOCAL IMPORT: from socratic_system.events.event_emitter import EventType
-
+from socrates_api.models_local import EventType
 from .connection_manager import get_connection_manager
 from .message_handler import ResponseType, WebSocketResponse
 
@@ -40,13 +39,10 @@ class EventBridge:
         EventType.CODE_GENERATED: "CODE_GENERATED",
         EventType.CODE_ANALYSIS_COMPLETE: "CODE_VALIDATED",
         EventType.PHASE_MATURITY_UPDATED: "MATURITY_UPDATED",
-        EventType.PHASE_ADVANCED: "PHASE_ADVANCED",
         EventType.DOCUMENT_IMPORTED: "DOCUMENT_UPLOADED",
-        EventType.DOCUMENTS_INDEXED: "DOCUMENT_INDEXED",
-        EventType.CONTEXT_ANALYZED: "INSIGHT_GENERATED",
-        EventType.AGENT_START: "AGENT_STARTED",
-        EventType.AGENT_COMPLETE: "AGENT_COMPLETED",
-        EventType.AGENT_ERROR: "AGENT_ERROR",
+        EventType.COLLABORATION_ADDED: "COLLABORATION_ADDED",
+        EventType.COLLABORATION_REMOVED: "COLLABORATION_REMOVED",
+        EventType.ACTIVITY_LOGGED: "ACTIVITY_LOGGED",
     }
 
     def __init__(self):

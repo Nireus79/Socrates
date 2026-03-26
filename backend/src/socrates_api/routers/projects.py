@@ -26,6 +26,7 @@ See socratic_system/models/user.py for complete authorization architecture docum
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
@@ -49,6 +50,7 @@ from socrates_api.models import (
     UpdateProjectRequest,
 )
 from socrates_api.models_local import User, ProjectContext
+from socrates_api.utils import IDGenerator
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -262,7 +264,7 @@ async def create_project(
         # (user_object: Optional[User] = Depends(get_current_user_object_optional))
         # Subscription checking already done above with user_object if available
 
-        project_id = ProjectIDGenerator.generate()
+        project_id = IDGenerator.project()
         logger.info(f"Generated project ID: {project_id}")
 
         project = ProjectContext(
@@ -429,13 +431,16 @@ async def get_project(
         HTTPException: If project not found or access denied
     """
     try:
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
 
-        if not project:
+        if not project_dict:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
             )
+
+        # Convert dict to ProjectContext if needed
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         # Check access: user must be owner or team member
         is_team_member = False
@@ -497,7 +502,8 @@ async def update_project(
         Updated ProjectResponse
     """
     try:
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
@@ -571,7 +577,8 @@ async def delete_project(
         SuccessResponse confirming deletion
     """
     try:
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             # Project not found
@@ -638,7 +645,8 @@ async def restore_project(
         Restored ProjectResponse
     """
     try:
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
@@ -708,13 +716,18 @@ async def get_project_stats(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
             )
+
+        # Convert dict to ProjectContext if needed
+        if isinstance(project, dict):
+            project = ProjectContext(**project)
 
         # Gather statistics
         conversation_history = getattr(project, "conversation_history", [])
@@ -779,7 +792,8 @@ async def get_project_maturity(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
@@ -853,7 +867,8 @@ async def get_maturity_analysis(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
@@ -1091,7 +1106,8 @@ async def advance_phase(
         # Check project access - owner only for phase management
         await check_project_access(project_id, current_user, db, min_role="owner")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
@@ -1179,7 +1195,8 @@ async def rollback_phase(
         # Check project access - owner only for phase management
         await check_project_access(project_id, current_user, db, min_role="owner")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
@@ -1264,7 +1281,8 @@ async def get_project_analytics(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
@@ -1373,7 +1391,8 @@ async def get_project_files(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
@@ -1482,7 +1501,8 @@ async def get_file_content(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(
@@ -1584,7 +1604,8 @@ async def delete_project_file(
         await check_project_access(project_id, current_user, db, min_role="editor")
 
         # Get and verify project exists
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

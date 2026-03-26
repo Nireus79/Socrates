@@ -11,6 +11,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from socrates_api.database import get_database, LocalDatabase
 from socrates_api.auth.dependencies import get_current_user
+from socrates_api.models_local import ProjectContext
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +42,15 @@ async def get_user_project_role(
     Raises:
         HTTPException: 404 if project not found
     """
-    project = db.load_project(project_id)
-    if project is None:
+    project_dict = db.load_project(project_id)
+    if project_dict is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
+
+    # Convert dict to ProjectContext if needed
+    project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
     # Owner is always an owner
     if project.owner == current_user:

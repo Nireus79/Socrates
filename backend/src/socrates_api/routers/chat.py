@@ -8,6 +8,7 @@ Provides REST endpoints for chat operations including:
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -55,7 +56,8 @@ async def get_next_question(
         from socrates_api.main import get_orchestrator
 
         logger.info(f"Getting next question for project: {project_id}")
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -124,7 +126,8 @@ async def get_conversation_history(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         logger.info(f"Getting conversation history for project: {project_id}")
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -184,7 +187,8 @@ async def get_conversation_summary(
         from socrates_api.main import get_orchestrator
 
         logger.info(f"Generating summary for project: {project_id}")
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

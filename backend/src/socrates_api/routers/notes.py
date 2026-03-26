@@ -9,6 +9,7 @@ Provides REST endpoints for note management including:
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -72,7 +73,8 @@ async def add_note(
         logger.info(f"Adding note to project: {project_id}")
 
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -144,7 +146,8 @@ async def list_notes(
         logger.info(f"Listing notes for project: {project_id}")
 
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -212,7 +215,8 @@ async def search_notes(
         logger.info(f"Searching notes for project: {project_id} with query: {query}")
 
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -278,7 +282,8 @@ async def delete_note(
         logger.info(f"Deleting note {note_id} from project: {project_id}")
 
         # Load project
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

@@ -9,6 +9,7 @@ Provides REST endpoints for managing project knowledge base including:
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -65,7 +66,8 @@ async def add_knowledge_document(
 
         logger.info(f"Adding knowledge document to project {project_id}")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -166,7 +168,8 @@ async def add_knowledge(
 
         logger.info(f"Adding knowledge item to project {project_id}")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -269,7 +272,8 @@ async def list_knowledge(
 
         logger.info(f"Listing knowledge items for project {project_id}")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -357,7 +361,8 @@ async def search_knowledge(
 
         logger.info(f"Searching knowledge in project {project_id}: {query}")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -437,7 +442,8 @@ async def remember_knowledge(
 
         logger.info(f"Remembering knowledge {knowledge_id} in project {project_id}")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -508,7 +514,8 @@ async def remove_knowledge(
 
         logger.info(f"Removing knowledge {knowledge_id} from project {project_id}")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -574,7 +581,8 @@ async def export_knowledge(
 
         logger.info(f"Exporting knowledge from project {project_id} as {format}")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -672,7 +680,8 @@ async def import_knowledge(
 
         logger.info(f"Importing {len(knowledge_items)} knowledge items to project {project_id}")
 
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")

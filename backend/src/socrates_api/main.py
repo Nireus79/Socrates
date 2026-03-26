@@ -124,6 +124,11 @@ def get_orchestrator_from_state() -> APIOrchestrator:
     return app_state["orchestrator"]
 
 
+def get_orchestrator() -> APIOrchestrator:
+    """Alias for get_orchestrator_from_state() for compatibility with routers"""
+    return get_orchestrator_from_state()
+
+
 def get_rate_limiter_for_app():
     """Get rate limiter instance from app state"""
     return app_state.get("limiter")

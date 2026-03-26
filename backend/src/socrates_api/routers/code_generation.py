@@ -9,6 +9,7 @@ Provides:
 """
 
 import logging
+from socrates_api.models_local import ProjectContext
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -18,6 +19,7 @@ from pydantic import BaseModel, Field
 from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse
+from socrates_api.models_local import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])
@@ -163,7 +165,8 @@ async def generate_code(
             )
 
         # Verify project access
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -413,7 +416,8 @@ async def validate_code(
             )
 
         # Verify project access
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -546,7 +550,8 @@ async def get_code_history(
     """
     try:
         # Verify project access
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -705,7 +710,8 @@ async def refactor_code(
             )
 
         # Verify project access
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -897,7 +903,8 @@ async def generate_documentation(
 
         # Verify project access
         db = get_database()
-        project = db.load_project(project_id)
+        project_dict = db.load_project(project_id)
+        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

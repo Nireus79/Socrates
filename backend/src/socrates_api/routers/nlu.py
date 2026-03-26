@@ -12,6 +12,7 @@ Features:
 """
 
 import json
+from socrates_api.models_local import ProjectContext
 import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -239,7 +240,8 @@ async def interpret_input(
                 from socrates_api.database import get_database
 
                 db = get_database()
-                project = db.load_project(project_id)
+                project_dict = db.load_project(project_id)
+                project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
                 if project:
                     # Create note from NLU input
                     note_content = f"[NLU] {request.input}"

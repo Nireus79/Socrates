@@ -1,16 +1,21 @@
-# Troubleshooting Guide
+# Troubleshooting Guide for Socrates
 
-Solutions to common problems and error messages.
+Solutions for common issues encountered when running Socrates.
+
+---
 
 ## Table of Contents
 
 1. [Installation Issues](#installation-issues)
-2. [Runtime Errors](#runtime-errors)
-3. [API & Network Issues](#api--network-issues)
-4. [Database Problems](#database-problems)
-5. [Performance Issues](#performance-issues)
-6. [Dialogue & Project Issues](#dialogue--project-issues)
-7. [Debugging](#debugging)
+2. [Startup Issues](#startup-issues)
+3. [API Issues](#api-issues)
+4. [Database Issues](#database-issues)
+5. [LLM Integration Issues](#llm-integration-issues)
+6. [Frontend Issues](#frontend-issues)
+7. [Performance Issues](#performance-issues)
+8. [Deployment Issues](#deployment-issues)
+9. [Data Recovery](#data-recovery)
+10. [Getting Help](#getting-help)
 
 ---
 

@@ -23,6 +23,7 @@ from socrates_api.auth import get_current_user
 from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse, SuccessResponse
 from socrates_api.models_local import User
+from socrates_api.utils import IDGenerator
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
@@ -249,7 +250,7 @@ async def ask_question(
                 data={
                     "answer": "I'm ready to help. What would you like to know?",
                     "has_context": False,
-                    "session_id": str(uuid.uuid4()),
+                    "session_id": IDGenerator.session(),
                     "suggested_commands": [],
                     "topics_detected": [],
                 },
@@ -258,7 +259,7 @@ async def ask_question(
         question = request.question.strip()
 
         # Generate or use existing session ID
-        session_id = request.session_id or str(uuid.uuid4())
+        session_id = request.session_id or IDGenerator.session()
         logger.info(
             f"Pre-session question from user {current_user} in session {session_id}: '{question}'"
         )
@@ -366,7 +367,7 @@ async def ask_question(
             data={
                 "answer": "I encountered an error processing your question. Please try again.",
                 "has_context": False,
-                "session_id": request.session_id or str(uuid.uuid4()),
+                "session_id": request.session_id or IDGenerator.session(),
                 "suggested_commands": [],
                 "topics_detected": [],
             },

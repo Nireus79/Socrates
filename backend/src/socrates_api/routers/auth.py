@@ -40,6 +40,7 @@ from socrates_api.models import (
     UserResponse,
 )
 from socrates_api.models_local import User
+from socrates_api.utils import IDGenerator
 
 # Import security features (REQUIRED)
 from socratic_security.auth import (
@@ -672,12 +673,15 @@ async def change_password(
             )
 
         # Load user
-        user = db.load_user(current_user)
-        if user is None:
+        user_dict = db.load_user(current_user)
+        if user_dict is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
             )
+
+        # Convert to User object
+        user = User(**user_dict) if isinstance(user_dict, dict) else user_dict
 
         # Verify old password
         if not verify_password(request.old_password, user.passcode_hash):
@@ -894,8 +898,17 @@ async def mfa_disable(
     """
     try:
         # Load user and verify password
-        user = db.load_user(current_user)
-        if user is None or not verify_password(request.password, user.passcode_hash):
+        user_dict = db.load_user(current_user)
+        if user_dict is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+
+        # Convert to User object
+        user = User(**user_dict) if isinstance(user_dict, dict) else user_dict
+
+        if not verify_password(request.password, user.passcode_hash):
             logger.warning(f"MFA disable attempt with invalid password for user {current_user}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -1321,9 +1334,12 @@ async def archive_account(
         db = get_database()
 
         # Load user
-        user = db.get_user(current_user)
-        if not user:
+        user_dict = db.get_user(current_user)
+        if not user_dict:
             raise HTTPException(status_code=404, detail="User not found")
+
+        # Convert to User object if dict
+        user = User(**user_dict) if isinstance(user_dict, dict) else user_dict
 
         # Archive user
         user.archived = True
@@ -1377,9 +1393,12 @@ async def restore_account(
         db = get_database()
 
         # Load user
-        user = db.get_user(current_user)
-        if not user:
+        user_dict = db.get_user(current_user)
+        if not user_dict:
             raise HTTPException(status_code=404, detail="User not found")
+
+        # Convert to User object if dict
+        user = User(**user_dict) if isinstance(user_dict, dict) else user_dict
 
         if not getattr(user, "archived", False):
             raise HTTPException(status_code=400, detail="Account is not archived")
@@ -1451,7 +1470,7 @@ def _store_refresh_token(db: LocalDatabase, username: str, token: str) -> None:
         token_hash = hash_password(token_sha256)
 
         # Generate unique ID for this token record
-        token_id = str(uuid.uuid4())
+        token_id = IDGenerator.token()
 
         # Get database connection from the LocalDatabase object
         # We need to access the underlying sqlite3 connection
