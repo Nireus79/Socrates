@@ -18,6 +18,7 @@ from socrates_api.auth import (
     create_access_token,
     create_refresh_token,
     get_current_user,
+    get_current_user_object,
     hash_password,
     verify_password,
     verify_refresh_token,
@@ -1042,14 +1043,14 @@ async def logout(
     },
 )
 async def get_me(
-    current_user: str = Depends(get_current_user),
+    request: Request,
     db: LocalDatabase = Depends(get_database),
 ):
     """
     Get the current authenticated user's profile.
 
     Args:
-        current_user: Current authenticated user (from JWT)
+        request: HTTP request object
         db: Database connection
 
     Returns:
@@ -1059,12 +1060,57 @@ async def get_me(
         HTTPException: If user not found or not authenticated
     """
     try:
-        user = db.load_user(current_user)
-        if user is None:
+        from socrates_api.auth.jwt_handler import verify_access_token
+
+        # Extract token from Authorization header
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.startswith("Bearer "):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing or invalid Authorization header",
+            )
+
+        token = auth_header[7:]  # Remove "Bearer " prefix
+
+        # Verify token
+        payload = verify_access_token(token)
+        if payload is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired token",
+            )
+
+        current_user = payload.get("sub")
+        if not current_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token does not contain user information",
+            )
+
+        # Load user from database
+        user_data = db.load_user(current_user)
+        if user_data is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
+
+        # Convert dict to User object if needed
+        if isinstance(user_data, dict):
+            user = User(
+                user_id=user_data.get("id", ""),
+                username=user_data.get("username", ""),
+                email=user_data.get("email", ""),
+                passcode_hash=user_data.get("passcode_hash", ""),
+                subscription_tier=user_data.get("subscription_tier", "free"),
+                subscription_status=user_data.get("subscription_status", "active"),
+                testing_mode=user_data.get("testing_mode", False),
+                created_at=user_data.get("created_at"),
+                archived=user_data.get("archived", False),
+                archived_at=user_data.get("archived_at"),
+            )
+        else:
+            user = user_data
 
         return _user_to_response(user)
 
@@ -1073,8 +1119,8 @@ async def get_me(
     except Exception as e:
         logger.error(f"Error getting user profile: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error while retrieving user profile",
         )
 
 
