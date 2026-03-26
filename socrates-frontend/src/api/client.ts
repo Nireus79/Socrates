@@ -36,7 +36,7 @@ const tryPort = async (port: number): Promise<boolean> => {
 const loadServerConfig = async () => {
   // Strategy 1: Try to load from API's /health endpoint on common ports
   console.log('[APIClient] Attempting to discover API port from /health endpoint...');
-  const commonPorts = [8000, 8008, 8009, 8010, 8015, 8020];
+  const commonPorts = [8000, 8001, 8008, 8009, 8010, 8015, 8020];
   for (const port of commonPorts) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/health`, {
