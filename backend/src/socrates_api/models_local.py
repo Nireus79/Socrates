@@ -6,7 +6,7 @@ Routers should use get_database() and other local modules instead of relying on 
 """
 
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 class EventType(str, Enum):
@@ -74,20 +74,60 @@ class User:
 
 class ProjectContext:
     """Minimal ProjectContext model stub for API routers"""
-    def __init__(self, project_id: str = "", name: str = ""):
+    def __init__(
+        self,
+        project_id: str = "",
+        name: str = "",
+        owner: str = "",
+        description: str = "",
+        phase: str = "discovery",
+        created_at: str = "",
+        updated_at: str = "",
+        is_archived: bool = False,
+        conversation_history: Optional[list] = None,
+        overall_maturity: float = 0.0,
+        progress: int = 0,
+        goals: str = "",
+        requirements: Optional[list] = None,
+        tech_stack: Optional[list] = None,
+        constraints: Optional[list] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
         self.project_id = project_id
         self.name = name
-        self.description = ""
-        self.created_at = ""
-        self.metadata: Dict[str, Any] = {}
+        self.owner = owner
+        self.description = description
+        self.created_at = created_at
+        self.updated_at = updated_at
+        self.phase = phase
+        self.is_archived = is_archived
         self.phase_maturity_scores: Dict[str, float] = {}
+        self.overall_maturity = overall_maturity
+        self.progress = progress
+        self.metadata = metadata or {}
+        self.conversation_history = conversation_history or []
+        self.goals = goals
+        self.requirements = requirements or []
+        self.tech_stack = tech_stack or []
+        self.constraints = constraints or []
+        # Store any additional kwargs
+        for key, value in kwargs.items():
+            if not key.startswith("_"):
+                setattr(self, key, value)
 
     def to_dict(self) -> Dict:
         return {
             "project_id": self.project_id,
             "name": self.name,
+            "owner": self.owner,
             "description": self.description,
             "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "phase": self.phase,
+            "is_archived": self.is_archived,
+            "overall_maturity": self.overall_maturity,
+            "progress": self.progress,
             "metadata": self.metadata
         }
 

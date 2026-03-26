@@ -33,17 +33,20 @@ class LocalDatabase:
     def _initialize(self):
         """Create tables if they don't exist"""
         try:
-            self.conn = sqlite3.connect(str(self.db_path))
+            self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
             self.conn.row_factory = sqlite3.Row
 
             # Projects table - stores project metadata
             self.conn.execute("""
                 CREATE TABLE IF NOT EXISTS projects (
                     id TEXT PRIMARY KEY,
+                    owner TEXT,
                     name TEXT NOT NULL,
                     description TEXT,
                     created_at TEXT,
                     updated_at TEXT,
+                    phase TEXT DEFAULT 'discovery',
+                    is_archived INTEGER DEFAULT 0,
                     metadata TEXT
                 )
             """)
@@ -94,6 +97,29 @@ class LocalDatabase:
     def _migrate_schema(self):
         """Add missing columns to existing tables from previous schema versions"""
         try:
+            # Get existing columns in projects table
+            cursor = self.conn.execute("PRAGMA table_info(projects)")
+            projects_columns = {row[1] for row in cursor.fetchall()}
+
+            # Define required columns for projects table
+            projects_required = {
+                'owner': 'ALTER TABLE projects ADD COLUMN owner TEXT',
+                'phase': "ALTER TABLE projects ADD COLUMN phase TEXT DEFAULT 'discovery'",
+                'is_archived': 'ALTER TABLE projects ADD COLUMN is_archived INTEGER DEFAULT 0',
+            }
+
+            # Add any missing columns to projects
+            for col_name, alter_sql in projects_required.items():
+                if col_name not in projects_columns:
+                    logger.info(f"Adding missing column to projects: {col_name}")
+                    try:
+                        self.conn.execute(alter_sql)
+                        self.conn.commit()
+                    except sqlite3.OperationalError as e:
+                        # Column already exists (race condition in concurrent access)
+                        if 'duplicate column' not in str(e).lower():
+                            raise
+
             # Get existing columns in users table
             cursor = self.conn.execute("PRAGMA table_info(users)")
             existing_columns = {row[1] for row in cursor.fetchall()}
@@ -124,19 +150,19 @@ class LocalDatabase:
             # Don't raise - migration failure shouldn't crash initialization
             # The app can still work if migration partially succeeded
 
-    def create_project(self, project_id: str, name: str, description: str = "", metadata: Dict = None) -> Dict:
+    def create_project(self, project_id: str, name: str, description: str = "", owner: str = None, metadata: Dict = None) -> Dict:
         """Create a new project"""
         try:
             now = datetime.utcnow().isoformat()
             meta_json = json.dumps(metadata or {})
 
             self.conn.execute(
-                "INSERT INTO projects (id, name, description, created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?)",
-                (project_id, name, description, now, now, meta_json)
+                "INSERT INTO projects (id, owner, name, description, created_at, updated_at, phase, is_archived, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (project_id, owner, name, description, now, now, "discovery", 0, meta_json)
             )
             self.conn.commit()
 
-            return {"id": project_id, "name": name, "description": description, "created_at": now, "status": "created"}
+            return {"id": project_id, "name": name, "description": description, "created_at": now, "status": "created", "owner": owner}
         except Exception as e:
             logger.error(f"Failed to create project: {e}")
             return None
@@ -299,6 +325,83 @@ class LocalDatabase:
     def load_project(self, project_id: str) -> Optional[Dict]:
         """Get project by ID (alias for get_project for compatibility)"""
         return self.get_project(project_id)
+
+    def get_user_projects(self, username: str) -> List:
+        """Get all projects for a user (both owned and collaborated)"""
+        try:
+            from socrates_api.models_local import ProjectContext
+
+            # For now, return all projects owned by the user
+            # Collaboration support can be added later with a separate table
+            cursor = self.conn.execute(
+                "SELECT * FROM projects WHERE owner = ? ORDER BY updated_at DESC",
+                (username,)
+            )
+            projects = []
+            for row in cursor.fetchall():
+                project = ProjectContext(
+                    project_id=row[0],
+                    name=row[2],
+                )
+                project.owner = row[1]
+                project.description = row[3]
+                project.created_at = row[4]
+                project.updated_at = row[5]
+                project.phase = row[6] if len(row) > 6 else "discovery"
+                project.is_archived = bool(row[7]) if len(row) > 7 else False
+                metadata = json.loads(row[8] or "{}") if len(row) > 8 else {}
+                project.metadata = metadata
+                projects.append(project)
+            return projects
+        except Exception as e:
+            logger.error(f"Failed to get user projects: {e}")
+            return []
+
+    def save_project(self, project) -> bool:
+        """Save or update a project"""
+        try:
+            now = datetime.utcnow().isoformat()
+            project_id = project.project_id
+            owner = getattr(project, 'owner', None)
+            name = project.name
+            description = getattr(project, 'description', '')
+            phase = getattr(project, 'phase', 'discovery')
+            is_archived = int(getattr(project, 'is_archived', False))
+            metadata = json.dumps(getattr(project, 'metadata', {}))
+
+            # Check if project exists
+            cursor = self.conn.execute("SELECT id FROM projects WHERE id = ?", (project_id,))
+            exists = cursor.fetchone() is not None
+
+            if exists:
+                # Update
+                self.conn.execute(
+                    "UPDATE projects SET owner = ?, name = ?, description = ?, phase = ?, is_archived = ?, updated_at = ?, metadata = ? WHERE id = ?",
+                    (owner, name, description, phase, is_archived, now, metadata, project_id)
+                )
+            else:
+                # Insert
+                created_at = getattr(project, 'created_at', now)
+                self.conn.execute(
+                    "INSERT INTO projects (id, owner, name, description, phase, is_archived, created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (project_id, owner, name, description, phase, is_archived, created_at, now, metadata)
+                )
+            self.conn.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save project: {e}")
+            return False
+
+    def save_knowledge_document(self, user_id: str, project_id: str, doc_id: str, title: str, content: str, source: str, document_type: str) -> bool:
+        """Save a knowledge document for a project (stub - not implemented yet)"""
+        try:
+            # Stub implementation - just log it
+            logger.info(f"Knowledge document {doc_id} received for project {project_id}: {title}")
+            # TODO: Implement actual storage of knowledge documents
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save knowledge document: {e}")
+            return False
 
     def close(self):
         """Close database connection"""
