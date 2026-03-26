@@ -17,9 +17,9 @@ from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.auth.project_access import check_project_access
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ async def add_knowledge_document(
     project_id: str,
     request: KnowledgeDocumentRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Add a knowledge document to the project's knowledge base.
@@ -143,7 +143,7 @@ async def add_knowledge(
     category: Optional[str] = Body(None),
     tags: Optional[List[str]] = Body(None),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Add a knowledge item to the project's knowledge base.
@@ -246,7 +246,7 @@ async def list_knowledge(
     pinned_only: Optional[bool] = False,
     limit: Optional[int] = 50,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     List knowledge items in project's knowledge base.
@@ -336,7 +336,7 @@ async def search_knowledge(
     query: str = Body(...),
     limit: Optional[int] = Body(10),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Search knowledge items by title and content.
@@ -417,7 +417,7 @@ async def remember_knowledge(
     project_id: str,
     knowledge_id: str = Body(...),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Pin a knowledge item for easy access (mark as important/remembered).
@@ -488,7 +488,7 @@ async def remove_knowledge(
     project_id: str,
     knowledge_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Remove a knowledge item from the project's knowledge base.
@@ -554,7 +554,7 @@ async def export_knowledge(
     project_id: str,
     format: Optional[str] = Body("json"),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Export project knowledge base in specified format.
@@ -651,7 +651,7 @@ async def import_knowledge(
     knowledge_items: List[dict] = Body(...),
     merge: Optional[bool] = Body(True),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Import knowledge items into project knowledge base.

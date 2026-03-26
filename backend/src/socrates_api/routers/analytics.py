@@ -14,10 +14,10 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 
 from socrates_api.auth import get_current_user, get_current_user_object
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 from socrates_api.services.report_generator import get_report_generator
-from socrates_api.models_local import User, ProjectDatabase
+from socrates_api.models_local import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -69,7 +69,8 @@ def get_phase_readiness_status(project):
 async def get_analytics_summary(
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
+    user_object: User = Depends(get_current_user_object),
 ):
     """
     Get analytics summary for a project or overall.
@@ -78,6 +79,7 @@ async def get_analytics_summary(
         project_id: Optional project ID
         current_user: Current authenticated user
         db: Database connection
+        user_object: Current user object with full details
 
     Returns:
         SuccessResponse with summary data
@@ -86,7 +88,7 @@ async def get_analytics_summary(
         # CRITICAL: Validate subscription for analytics feature
         logger.info(f"Validating subscription for analytics summary access by {current_user}")
         try:
-            user_object = get_current_user_object(current_user)
+            # user_object is injected via Depends(get_current_user_object)
 
             # Check if user has active subscription
             if user_object.subscription_status != "active":
@@ -232,7 +234,7 @@ async def get_analytics_summary(
 async def get_project_analytics(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get detailed analytics for a specific project.
@@ -443,13 +445,6 @@ async def get_usage_analytics():
         )
 
 
-def get_database() -> ProjectDatabase:
-    """Get database instance."""
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabase(db_path)
-
-
 @router.get(
     "/trends",
     response_model=APIResponse,
@@ -464,6 +459,7 @@ async def get_trends(
     project_id: str,
     time_period: str = "30d",
     current_user: str = Depends(get_current_user),
+    user_object: User = Depends(get_current_user_object),
 ):
     """
     Get historical analytics trends for a project.
@@ -472,6 +468,7 @@ async def get_trends(
         project_id: Project ID (query param)
         time_period: Time period (7d, 30d, 90d, year) - default 30d
         current_user: Authenticated user
+        user_object: Current user object with full details
 
     Returns:
         SuccessResponse with trend data
@@ -480,7 +477,7 @@ async def get_trends(
         # CRITICAL: Validate subscription for trends feature
         logger.info(f"Validating subscription for trends access by {current_user}")
         try:
-            user_object = get_current_user_object(current_user)
+            # user_object is injected via Depends(get_current_user_object)
 
             # Check if user has active subscription
             if user_object.subscription_status != "active":
@@ -574,6 +571,7 @@ async def get_trends(
 async def get_recommendations(
     request_data: dict = Body(...),
     current_user: str = Depends(get_current_user),
+    user_object: User = Depends(get_current_user_object),
 ):
     """
     Get AI-generated recommendations based on project analytics.
@@ -581,6 +579,7 @@ async def get_recommendations(
     Args:
         request_data: Contains project_id
         current_user: Authenticated user
+        user_object: Current user object with full details
 
     Returns:
         SuccessResponse with recommendations
@@ -589,7 +588,7 @@ async def get_recommendations(
         # CRITICAL: Validate subscription for recommendations feature
         logger.info(f"Validating subscription for recommendations access by {current_user}")
         try:
-            user_object = get_current_user_object(current_user)
+            # user_object is injected via Depends(get_current_user_object)
 
             # Check if user has active subscription
             if user_object.subscription_status != "active":
@@ -693,7 +692,7 @@ async def get_recommendations(
 async def export_analytics(
     request_data: dict = Body(...),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> SuccessResponse:
     """
     Export project analytics to PDF or CSV format.
@@ -953,7 +952,7 @@ async def download_analytics_report(
 )
 async def compare_projects(
     request_data: dict = Body(...),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Compare analytics between two projects.
@@ -1035,7 +1034,7 @@ async def compare_projects(
 )
 async def generate_report(
     request_data: dict = Body(...),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Generate a comprehensive analytics report for a project.
@@ -1119,7 +1118,7 @@ async def generate_report(
 )
 async def analyze_project(
     request_data: dict = Body(...),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Perform deep analysis on a project's analytics.
@@ -1192,7 +1191,7 @@ async def analyze_project(
 )
 async def get_dashboard_analytics(
     project_id: str,
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get comprehensive analytics dashboard data for a project.

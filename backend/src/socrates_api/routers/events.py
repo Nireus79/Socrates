@@ -15,8 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from socrates_api.models import APIResponse
-from socrates_api.database import get_database
-from socrates_api.models_local import User, ProjectDatabase
+from socrates_api.database import get_database, LocalDatabase
+from socrates_api.models_local import User
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
@@ -25,16 +25,6 @@ router = APIRouter(prefix="/api/events", tags=["events"])
 # In-memory event queue (FIFO) - stores last 1000 events
 _event_queue = deque(maxlen=1000)
 _event_subscribers = []  # List of async queues for streaming clients
-
-
-def get_database() -> ProjectDatabase:
-    """Get database instance."""
-    import os
-    from pathlib import Path
-
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabase(db_path)
 
 
 def record_event(event_type: str, data: dict = None, user_id: str = None) -> None:
@@ -77,7 +67,7 @@ async def get_event_history(
     limit: Optional[int] = 100,
     offset: Optional[int] = 0,
     event_type: Optional[str] = None,
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get historical events from the API.
@@ -140,7 +130,7 @@ async def get_event_history(
     },
 )
 async def stream_events(
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Stream events as they occur (Server-Sent Events).

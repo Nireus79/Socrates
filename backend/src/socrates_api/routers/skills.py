@@ -14,11 +14,11 @@ from typing import Optional
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.auth.project_access import check_project_access
 # Database import replaced with local module
 from socrates_api.models import APIResponse
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["skills"])
@@ -37,7 +37,7 @@ async def set_skills(
     confidence: Optional[float] = Body(0.5),
     notes: Optional[str] = Body(None),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Set or update a skill in the project.
@@ -155,7 +155,7 @@ async def list_skills(
     min_confidence: Optional[float] = None,
     sort_by: Optional[str] = "proficiency",
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     List all skills acquired in the project.
@@ -255,7 +255,3 @@ async def list_skills(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list skills: {str(e)}",
         )
-
-
-
-

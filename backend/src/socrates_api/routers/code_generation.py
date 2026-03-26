@@ -16,10 +16,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from socrates_api.auth import get_current_user, get_current_user_object
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse
-from socrates_api.models_local import ProjectDatabase
-# Database import replaced with local module
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])
@@ -123,7 +121,7 @@ async def generate_code(
     language: str = "python",
     requirements: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Generate code from specification.
@@ -355,7 +353,7 @@ async def validate_code(
     code: str,
     language: str = "python",
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Validate generated code for syntax and best practices (requires Professional or Enterprise tier).
@@ -531,7 +529,7 @@ async def get_code_history(
     limit: int = 20,
     offset: int = 0,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get history of generated code for a project.
@@ -631,7 +629,8 @@ async def refactor_code(
     language: str = "python",
     refactor_type: str = "optimize",
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
+    user_object: User = Depends(get_current_user_object),
 ):
     """
     Refactor existing code (requires Professional or Enterprise tier).
@@ -649,6 +648,7 @@ async def refactor_code(
         refactor_type: Type of refactoring
         current_user: Current authenticated user
         db: Database connection
+        user_object: Current user object with full details
 
     Returns:
         Refactored code with explanation and changes
@@ -657,7 +657,7 @@ async def refactor_code(
         # CRITICAL: Validate subscription for code refactoring feature
         logger.info(f"Validating subscription for code refactoring by {current_user}")
         try:
-            user_object = get_current_user_object(current_user)
+            # user_object is injected via Depends(get_current_user_object)
 
             # Check if user has active subscription
             if user_object.subscription_status != "active":

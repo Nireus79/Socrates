@@ -11,9 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.auth.project_access import check_project_access
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse, ErrorResponse
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
@@ -142,7 +142,7 @@ async def assess_maturity(
     project_id: str,
     phase: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Assess project maturity for current or specified phase.
@@ -241,7 +241,7 @@ async def assess_maturity(
 async def run_tests(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Run tests for a project.
@@ -333,7 +333,7 @@ async def run_tests(
 async def analyze_structure(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Analyze the project context and structure.
@@ -415,7 +415,7 @@ async def analyze_structure(
 async def review_code(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get code statistics and quality summary for a project.
@@ -499,7 +499,7 @@ async def review_code(
 async def auto_fix_issues(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Generate improved code for a project.
@@ -582,7 +582,7 @@ async def auto_fix_issues(
 async def get_analysis_report(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get comprehensive analysis report for a project.

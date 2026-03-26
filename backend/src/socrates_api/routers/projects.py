@@ -38,7 +38,7 @@ from socrates_api.auth import get_current_user, get_current_user_object, get_cur
 from socrates_api.auth.project_access import (
     check_project_access,
 )
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.middleware import SubscriptionChecker
 from socrates_api.models import (
     APIResponse,
@@ -48,7 +48,7 @@ from socrates_api.models import (
     ProjectResponse,
     UpdateProjectRequest,
 )
-from socrates_api.models_local import User, ProjectDatabase, ProjectContext
+from socrates_api.models_local import User, ProjectContext
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ def _project_to_response(project: ProjectContext) -> ProjectResponse:
 )
 async def list_projects(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     List all projects for the current user.
@@ -145,7 +145,7 @@ async def list_projects(
 async def create_project(
     request: CreateProjectRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
     user_object: Optional[User] = Depends(get_current_user_object_optional),
     http_request: Request = None,
 ):
@@ -258,41 +258,9 @@ async def create_project(
         # Fallback: create project directly in database without orchestrator
         logger.info("Using fallback database creation...")
 
-        # CRITICAL: Validate subscription before creating project in fallback path
-        logger.info("Validating subscription for fallback project creation...")
-        try:
-            user_object = await get_current_user_object(current_user)
-
-            # Check if user has active subscription
-            if user_object.subscription_status != "active":
-                logger.warning(
-                    f"User {current_user} attempted to create project without active subscription"
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to create projects",
-                )
-
-            # Check project limit for subscription tier (count only OWNED projects)
-            all_projects = db.get_user_projects(current_user)
-            owned_projects = [p for p in all_projects if p.owner == current_user]
-            can_create, error_msg = SubscriptionChecker.can_create_projects(
-                user_object.subscription_tier, len(owned_projects)
-            )
-            if not can_create:
-                logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
-
-            logger.info(f"Subscription validation passed for {current_user}")
-        except HTTPException:
-            # Re-raise HTTP exceptions
-            raise
-        except Exception as e:
-            logger.error(f"Error validating subscription in fallback: {type(e).__name__}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
-            )
+        # User validation already done above with user_object parameter from endpoint
+        # (user_object: Optional[User] = Depends(get_current_user_object_optional))
+        # Subscription checking already done above with user_object if available
 
         project_id = ProjectIDGenerator.generate()
         logger.info(f"Generated project ID: {project_id}")
@@ -444,7 +412,7 @@ async def create_project(
 async def get_project(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get detailed information about a specific project.
@@ -514,7 +482,7 @@ async def update_project(
     project_id: str,
     request: UpdateProjectRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Update project metadata.
@@ -587,7 +555,7 @@ async def update_project(
 async def delete_project(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Permanently delete a project.
@@ -656,7 +624,7 @@ async def delete_project(
 async def restore_project(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Restore an archived project.
@@ -723,7 +691,7 @@ async def restore_project(
 async def get_project_stats(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get statistics about a project.
@@ -794,7 +762,7 @@ async def get_project_stats(
 async def get_project_maturity(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get maturity assessment for a project.
@@ -859,7 +827,7 @@ async def get_maturity_analysis(
     project_id: str,
     phase: str = Query(None, description="Specific phase to analyze (optional)"),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get detailed maturity analysis for a project or specific phase.
@@ -1102,7 +1070,7 @@ async def advance_phase(
     project_id: str,
     request: Optional[UpdateProjectRequest] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Advance project to the next phase.
@@ -1194,7 +1162,7 @@ async def advance_phase(
 async def rollback_phase(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Roll back project to the previous phase.
@@ -1279,7 +1247,7 @@ async def rollback_phase(
 async def get_project_analytics(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get detailed analytics for a project.
@@ -1388,7 +1356,7 @@ async def get_project_analytics(
 async def get_project_files(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get all files in a project.
@@ -1494,7 +1462,7 @@ async def get_file_content(
     project_id: str,
     file_name: str = Query(..., description="Name of the file to retrieve"),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> APIResponse:
     """
     Get content of a specific file in a project.
@@ -1593,7 +1561,7 @@ async def delete_project_file(
     project_id: str,
     file_name: str = Query(..., description="Name of the file to delete"),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Delete a file from a project

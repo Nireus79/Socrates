@@ -150,21 +150,6 @@ class StorageQuotaManager:
         return {"total_gb": 0.0, "breakdown": {}}
 
 
-class ProjectDatabase:
-    """Minimal ProjectDatabase stub - USE get_database() INSTEAD"""
-    def __init__(self, db_path: str = ""):
-        self.db_path = db_path
-
-    def get_project(self, project_id: str) -> Optional[Dict]:
-        return None
-
-    def save_project(self, project: ProjectContext) -> bool:
-        return True
-
-    def list_projects(self, user_id: str = "", limit: int = 100) -> list:
-        return []
-
-
 class LearningIntegration:
     """Minimal LearningIntegration stub - USE socratic_learning FROM PyPI"""
     def __init__(self):

@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse
 from socrates_api.models_local import User, StorageQuotaManager
 
@@ -219,7 +219,7 @@ async def get_subscription_status(
 )
 async def get_storage_usage(
     current_user: str = Depends(get_current_user),
-    db: "ProjectDatabase" = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get detailed storage usage report for user.
@@ -447,7 +447,7 @@ async def downgrade_subscription(
 async def toggle_testing_mode(
     enabled: bool = Query(...),
     current_user: str = Depends(get_current_user),
-    db: "ProjectDatabase" = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Enable/disable testing mode (bypasses subscription restrictions).

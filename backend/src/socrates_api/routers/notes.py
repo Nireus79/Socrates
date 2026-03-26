@@ -17,9 +17,9 @@ from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.auth.project_access import check_project_access
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 # Database import replaced with local module
 
 
@@ -51,7 +51,7 @@ async def add_note(
     project_id: str,
     request: NoteRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Add a new note to a project.
@@ -122,7 +122,7 @@ async def list_notes(
     limit: Optional[int] = None,
     tag: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     List all notes for a project.
@@ -191,7 +191,7 @@ async def search_notes(
     project_id: str,
     query: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Search notes by content and title.
@@ -257,7 +257,7 @@ async def delete_note(
     project_id: str,
     note_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Delete a note from a project.

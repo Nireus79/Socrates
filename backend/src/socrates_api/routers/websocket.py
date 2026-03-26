@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse
 from socrates_api.websocket import (
     MessageType,
@@ -523,7 +523,7 @@ async def send_chat_message(
     project_id: str,
     request_body: dict,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Send a chat message (HTTP fallback for WebSocket).
@@ -666,7 +666,7 @@ async def get_chat_history(
     limit: int = 50,
     offset: int = 0,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get chat message history for a project.
@@ -747,7 +747,7 @@ async def switch_chat_mode(
     project_id: str,
     request_body: dict,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Switch between Socratic and Direct chat modes.
@@ -817,7 +817,7 @@ async def switch_chat_mode(
 async def request_hint(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Request a hint for the current question.
@@ -915,7 +915,7 @@ async def request_hint(
 async def clear_chat_history(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Clear chat history for a project.
@@ -974,7 +974,7 @@ async def clear_chat_history(
 async def get_chat_summary(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get a summary of the conversation for a project.
@@ -1115,7 +1115,7 @@ async def search_conversations(
     project_id: str,
     request_body: dict,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Search through conversation history.

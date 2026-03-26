@@ -11,11 +11,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.auth.project_access import check_project_access
 # Database import replaced with local module
 from socrates_api.models import APIResponse, ErrorResponse
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/workflow", tags=["workflow"])
@@ -35,7 +35,7 @@ router = APIRouter(prefix="/api/v1/workflow", tags=["workflow"])
 async def get_pending_approvals(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get list of pending workflow approval requests for a project.
@@ -111,7 +111,7 @@ async def approve_workflow(
     approved_path_id: str,
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Approve a workflow path and resume execution.
@@ -207,7 +207,7 @@ async def reject_workflow(
     reason: Optional[str] = None,
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Reject a workflow approval.
@@ -303,7 +303,7 @@ async def get_workflow_info(
     request_id: str,
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get detailed workflow approval information.
@@ -367,9 +367,3 @@ async def get_workflow_info(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve workflow information",
         )
-
-
-
-
-
-

@@ -11,7 +11,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from socrates_api.auth import get_current_user
+from socrates_api.auth import get_current_user, get_current_user_object_optional
 from socrates_api.models import (
     APIResponse,
     ErrorResponse,
@@ -19,8 +19,8 @@ from socrates_api.models import (
 )
 # Database import replaced with local module
 from socrates_api.auth.project_access import check_project_access
-from socrates_api.database import get_database
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.database import get_database, LocalDatabase
+from socrates_api.models_local import User
 from socratic_agents import (
     GithubSyncHandler,
 )
@@ -87,13 +87,6 @@ def _chunk_code_content(content: str, chunk_size: int = 300, overlap: int = 30) 
     return chunks if chunks else [content]  # Return at least the full content
 
 
-def get_database() -> ProjectDatabase:
-    """Get database instance."""
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabase(db_path)
-
-
 @router.post(
     "/import",
     response_model=APIResponse,
@@ -109,7 +102,8 @@ def get_database() -> ProjectDatabase:
 async def import_repository(
     request: GitHubImportRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
+    user_object: Optional[User] = Depends(get_current_user_object_optional),
 ):
     """
     Import a GitHub repository as a new project.
@@ -118,6 +112,7 @@ async def import_repository(
         request: GitHub import request with URL, optional project name and branch
         current_user: Current authenticated user
         db: Database connection
+        user_object: Current user object with full details (optional)
 
     Returns:
         SuccessResponse with imported project details
@@ -144,10 +139,8 @@ async def import_repository(
         # CRITICAL: Check subscription limit BEFORE attempting to create project
         logger.info("Checking subscription limits for GitHub import...")
         try:
-            from socrates_api.routers.projects import get_current_user_object
             # Removed local import: from socratic_system.subscription.checker import SubscriptionChecker
-
-            user_object = get_current_user_object(current_user)
+            # user_object is injected via Depends(get_current_user_object_optional)
 
             # Determine subscription tier - default to free if user not in DB yet
             subscription_tier = "free"
@@ -433,7 +426,7 @@ async def import_repository(
 async def pull_changes(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Pull latest changes from GitHub repository.
@@ -624,7 +617,7 @@ async def push_changes(
     project_id: str,
     commit_message: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Push local changes to GitHub repository.
@@ -832,7 +825,7 @@ async def sync_project(
     project_id: str,
     commit_message: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Sync project with GitHub (pull latest changes, then push local changes).
@@ -1071,7 +1064,7 @@ async def sync_project(
 async def get_sync_status(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get GitHub sync status for a project.
@@ -1248,7 +1241,7 @@ async def push_github_changes(
 )
 async def get_github_status(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get GitHub sync status for all projects.

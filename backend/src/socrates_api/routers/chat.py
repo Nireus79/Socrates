@@ -13,11 +13,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.auth.project_access import check_project_access
 # Database import replaced with local module
 from socrates_api.models import APIResponse, ErrorResponse
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -36,7 +36,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 async def get_next_question(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get the next Socratic question for a project.
@@ -106,7 +106,7 @@ async def get_conversation_history(
     project_id: str,
     limit: Optional[int] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get conversation history for a project.
@@ -165,7 +165,7 @@ async def get_conversation_history(
 async def get_conversation_summary(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get AI-generated summary of conversation.
@@ -218,8 +218,3 @@ async def get_conversation_summary(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate summary: {str(e)}",
         )
-
-
-
-
-

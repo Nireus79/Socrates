@@ -14,9 +14,9 @@ from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadF
 from fastapi.responses import FileResponse
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse, BulkImportData, ErrorResponse
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ async def list_documents(
     sort_by: str = "uploaded_at",
     sort_order: str = "desc",
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     List knowledge base documents with advanced filtering and pagination.
@@ -175,7 +175,7 @@ async def list_documents(
 async def get_all_knowledge_sources(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> APIResponse:
     """
     Get all knowledge sources for a project: PDFs, Notes, and GitHub repositories.
@@ -335,7 +335,7 @@ async def get_document_details(
     document_id: str,
     include_content: bool = False,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get detailed information about a document including preview and metadata.
@@ -409,7 +409,7 @@ async def get_document_details(
 async def download_document(
     document_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Download an uploaded document from the knowledge base.
@@ -481,7 +481,7 @@ async def import_file(
     project_id: Optional[str] = Form(None),
     current_user: str = Depends(get_current_user),
     orchestrator=Depends(_get_orchestrator),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Import a file to the knowledge base.
@@ -682,7 +682,7 @@ async def import_url(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
     orchestrator=Depends(_get_orchestrator),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Import content from URL to knowledge base.
@@ -804,7 +804,7 @@ async def import_text(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
     orchestrator=Depends(_get_orchestrator),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Import pasted text to knowledge base.
@@ -948,7 +948,7 @@ async def search_knowledge(
     top_k: int = 10,
     current_user: str = Depends(get_current_user),
     orchestrator=Depends(_get_orchestrator),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Search knowledge base using semantic search.
@@ -1046,7 +1046,7 @@ async def search_knowledge(
 async def delete_document(
     document_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Delete a document from knowledge base.
@@ -1113,7 +1113,7 @@ async def delete_document(
 async def bulk_delete_documents(
     document_ids: list = Body(..., description="List of document IDs to delete"),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Delete multiple documents in one operation.
@@ -1182,7 +1182,7 @@ async def bulk_import_documents(
     project_id: Optional[str] = Form(None),
     current_user: str = Depends(get_current_user),
     orchestrator=Depends(_get_orchestrator),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Import multiple files in one operation.
@@ -1309,7 +1309,7 @@ async def bulk_import_documents(
 async def get_document_analytics(
     document_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get analytics and usage statistics for a document.
@@ -1381,7 +1381,7 @@ async def add_knowledge_entry(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
     orchestrator=Depends(_get_orchestrator),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Add a new knowledge entry.

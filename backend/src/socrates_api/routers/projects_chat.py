@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.auth.project_access import check_project_access
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import (
     APIResponse,
     ChatMessage,
@@ -28,7 +28,7 @@ from socrates_api.models import (
     GetChatMessagesResponse,
     ListChatSessionsResponse,
 )
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 # Local debug mode
 _debug_mode = False
 
@@ -1256,7 +1256,7 @@ async def get_maturity_history(
     project_id: str,
     limit: Optional[int] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get historical maturity tracking for a project.
@@ -1324,7 +1324,7 @@ async def get_maturity_history(
 async def get_maturity_status(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get detailed maturity status for all project phases.
@@ -1534,7 +1534,7 @@ async def reopen_question(
 async def skip_question(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Mark the current unanswered question as skipped.
@@ -1758,7 +1758,7 @@ async def save_extracted_specs(
     project_id: str,
     request: SaveExtractedSpecsRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Save extracted specs from direct dialogue after user confirmation.
@@ -1917,7 +1917,7 @@ async def resolve_conflicts(
     project_id: str,
     request: ConflictResolutionRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Resolve conflicts detected in project specifications.

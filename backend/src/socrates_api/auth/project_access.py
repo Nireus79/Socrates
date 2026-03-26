@@ -9,8 +9,7 @@ import logging
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
-from socrates_api.database import get_database
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.auth.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ ROLE_HIERARCHY = {
 async def get_user_project_role(
     project_id: str,
     current_user: str,
-    db: ProjectDatabase,
+    db: LocalDatabase,
 ) -> Optional[str]:
     """
     Get the role of a user in a specific project.
@@ -65,7 +64,7 @@ async def get_user_project_role(
 async def check_project_access(
     project_id: str,
     current_user: str,
-    db: ProjectDatabase,
+    db: LocalDatabase,
     min_role: str = "viewer",
 ) -> str:
     """
@@ -117,14 +116,14 @@ def require_editor_or_owner():
             project_id: str,
             current_user: str = Depends(get_current_user),
             role: str = Depends(require_editor_or_owner()),
-            db: ProjectDatabase = Depends(get_database),
+            db: LocalDatabase = Depends(get_database),
         ):
             ...
     """
     async def verify_role(
         project_id: str,
         current_user: str = Depends(get_current_user),
-        db: ProjectDatabase = Depends(get_database),
+        db: LocalDatabase = Depends(get_database),
     ) -> str:
         return await check_project_access(
             project_id, current_user, db, min_role="editor"
@@ -143,14 +142,14 @@ def require_owner():
             project_id: str,
             current_user: str = Depends(get_current_user),
             role: str = Depends(require_owner()),
-            db: ProjectDatabase = Depends(get_database),
+            db: LocalDatabase = Depends(get_database),
         ):
             ...
     """
     async def verify_owner(
         project_id: str,
         current_user: str = Depends(get_current_user),
-        db: ProjectDatabase = Depends(get_database),
+        db: LocalDatabase = Depends(get_database),
     ) -> str:
         return await check_project_access(
             project_id, current_user, db, min_role="owner"
@@ -169,14 +168,14 @@ def require_viewer_or_better():
             project_id: str,
             current_user: str = Depends(get_current_user),
             role: str = Depends(require_viewer_or_better()),
-            db: ProjectDatabase = Depends(get_database),
+            db: LocalDatabase = Depends(get_database),
         ):
             ...
     """
     async def verify_viewer(
         project_id: str,
         current_user: str = Depends(get_current_user),
-        db: ProjectDatabase = Depends(get_database),
+        db: LocalDatabase = Depends(get_database),
     ) -> str:
         return await check_project_access(
             project_id, current_user, db, min_role="viewer"

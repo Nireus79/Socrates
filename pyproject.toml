@@ -40,8 +40,22 @@ keywords = [
     "ci-cd",
     "github-actions",
     "docker",
-    "gitops"
+    "gitops",
+    "agents",
+    "orchestration"
 ]
+
+# Architecture Note:
+# Socrates uses a modular architecture with clear separation:
+# - PyPI libraries: Reusable tools for developers (agents, orchestration, analyzers, etc.)
+# - Local code: Socrates-specific implementation
+#
+# Local implementations (not from PyPI):
+# - backend/src/socrates_api/        → REST API server
+# - cli/src/socrates_cli/            → Command-line interface
+# - socratic_system/                 → Domain-specific business logic (orchestration, projects, learning)
+#
+# See ARCHITECTURE_ANALYSIS.md for complete architecture details.
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -65,15 +79,13 @@ requires-python = ">=3.8"
 dependencies = [
     # Core dependencies required for Socrates to function
 
-    # Interface packages (now required for full functionality)
+    # PyPI packages (reusable developer tools)
     "socrates-nexus>=0.3.0",             # Universal LLM client (multi-provider: Claude, GPT-4, Gemini, Ollama)
-    "socrates-cli>=0.1.0",               # Command-line interface
-    "socrates-core-api>=0.5.6",          # REST API server
+    "socratic-core>=0.1.1",              # Core framework (config, events, exceptions)
+    "socratic-agents>=0.2.0",            # Multi-agent orchestration (core functionality)
 
     # External dependencies (kept for orchestrator functionality)
     "anthropic>=0.72.0",                 # Required by: socratic-agents, socrates-nexus
-    "socratic-core>=0.1.1",              # Core framework (config, events, exceptions)
-    "socratic-agents>=0.1.2",            # Multi-agent orchestration (core functionality)
     "socratic-rag>=0.1.0",               # Retrieval-Augmented Generation (core functionality)
     "socratic-security==0.4.0",          # Security utilities (prompt injection, path validation, sandboxing)
     "socratic-learning>=0.1.1",          # Learning system (interaction tracking, recommendations)

@@ -12,11 +12,11 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.auth.project_access import check_project_access
 # Database import replaced with local module
 from socrates_api.models import APIResponse
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["progress"])
@@ -31,7 +31,7 @@ router = APIRouter(prefix="/projects", tags=["progress"])
 async def get_progress(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get overall progress of the project.
@@ -229,7 +229,7 @@ async def get_progress(
 async def get_progress_status(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get detailed progress status with milestone tracking and trends.
@@ -388,7 +388,7 @@ def _generate_recommendations(project) -> list:
 async def get_project_stats(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get project statistics including message count, insights, and questions.
@@ -471,9 +471,3 @@ async def get_project_stats(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get project stats: {str(e)}",
         )
-
-
-
-
-
-

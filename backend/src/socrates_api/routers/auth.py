@@ -22,7 +22,7 @@ from socrates_api.auth import (
     verify_password,
     verify_refresh_token,
 )
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import (
     APIResponse,
     AuthResponse,
@@ -39,7 +39,7 @@ from socrates_api.models import (
     TokenResponse,
     UserResponse,
 )
-from socrates_api.models_local import User, ProjectDatabase
+from socrates_api.models_local import User
 
 # Import security features (REQUIRED)
 from socratic_security.auth import (
@@ -162,7 +162,7 @@ async def get_csrf_token(http_request: Request):
 async def register(
     register_request: RegisterRequest,
     http_request: Request,
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Register a new user account.
@@ -305,7 +305,7 @@ async def register(
 async def login(
     login_request: LoginRequest,
     http_request: Request,
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Login with username and password.
@@ -442,7 +442,7 @@ async def login(
 async def login_mfa_verify(
     request: MFAVerifyRequest,
     http_request: Request,
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Verify MFA code after successful username/password authentication.
@@ -563,7 +563,7 @@ async def login_mfa_verify(
         500: {"description": "Server error during refresh", "model": ErrorResponse},
     },
 )
-async def refresh(request: RefreshTokenRequest, db: ProjectDatabase = Depends(get_database)):
+async def refresh(request: RefreshTokenRequest, db: LocalDatabase = Depends(get_database)):
     """
     Refresh an access token using a refresh token.
 
@@ -645,7 +645,7 @@ async def refresh(request: RefreshTokenRequest, db: ProjectDatabase = Depends(ge
 async def change_password(
     request: ChangePasswordRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Change user password.
@@ -873,7 +873,7 @@ async def mfa_verify_enable(
 async def mfa_disable(
     request: MFADisableRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Disable MFA for the current user.
@@ -977,7 +977,7 @@ async def mfa_status(
 )
 async def logout(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Logout from the account.
@@ -1030,7 +1030,7 @@ async def logout(
 )
 async def get_me(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Get the current authenticated user's profile.
@@ -1079,7 +1079,7 @@ async def get_me(
 async def update_me(
     request_body: dict = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Update the current authenticated user's profile.
@@ -1138,7 +1138,7 @@ async def update_me(
 
 async def _delete_user_helper(
     current_user: str,
-    db: ProjectDatabase,
+    db: LocalDatabase,
 ):
     """
     Helper function to delete a user and all their data.
@@ -1171,7 +1171,7 @@ async def _delete_user_helper(
 )
 async def delete_account(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Permanently delete the current user's account.
@@ -1227,7 +1227,7 @@ async def delete_account(
 async def set_testing_mode(
     enabled: bool = Query(...),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Enable or disable testing mode for the current user.
@@ -1415,7 +1415,7 @@ async def restore_account(
 # ============================================================================
 
 
-def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None:
+def _store_refresh_token(db: LocalDatabase, username: str, token: str) -> None:
     """
     Store refresh token in database.
 
@@ -1453,7 +1453,7 @@ def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None
         # Generate unique ID for this token record
         token_id = str(uuid.uuid4())
 
-        # Get database connection from the ProjectDatabase object
+        # Get database connection from the LocalDatabase object
         # We need to access the underlying sqlite3 connection
         conn = sqlite3.connect(db.db_path)
         cursor = conn.cursor()
@@ -1499,7 +1499,7 @@ def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None
         # The JWT itself is still valid even if DB storage fails
 
 
-def _validate_refresh_token(db: ProjectDatabase, username: str, token: str) -> bool:
+def _validate_refresh_token(db: LocalDatabase, username: str, token: str) -> bool:
     """
     Validate refresh token against database.
 
@@ -1567,7 +1567,7 @@ def _validate_refresh_token(db: ProjectDatabase, username: str, token: str) -> b
         return False
 
 
-def _revoke_refresh_token(db: ProjectDatabase, username: str) -> None:
+def _revoke_refresh_token(db: LocalDatabase, username: str) -> None:
     """
     Revoke all refresh tokens for a user (used during logout).
 

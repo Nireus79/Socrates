@@ -15,19 +15,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.models import APIResponse, ErrorResponse
-from socrates_api.database import get_database
-from socrates_api.models_local import User, ProjectDatabase
+from socrates_api.database import get_database, LocalDatabase
+from socrates_api.models_local import User
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/security", tags=["security"])
-
-
-def get_database() -> ProjectDatabase:
-    """Get database instance."""
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabase(db_path)
 
 
 @router.post(
@@ -47,7 +40,7 @@ async def change_password(
     current_password: str,
     new_password: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Change user password with current password verification.
@@ -151,7 +144,7 @@ async def change_password(
 )
 async def setup_2fa(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Setup two-factor authentication for user account.
@@ -261,7 +254,7 @@ async def verify_2fa(
     code: str,
     secret: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Verify 2FA code to complete setup.
@@ -359,7 +352,7 @@ async def verify_2fa(
 async def disable_2fa(
     password: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Disable two-factor authentication (requires password confirmation).
@@ -453,7 +446,7 @@ async def disable_2fa(
 )
 async def list_sessions(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     List all active sessions for the current user.
@@ -513,7 +506,7 @@ async def list_sessions(
 async def revoke_session(
     session_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Revoke a specific session (sign out from that device).
@@ -587,7 +580,7 @@ async def revoke_session(
 )
 async def revoke_all_sessions(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Revoke all active sessions except current (sign out from all devices).

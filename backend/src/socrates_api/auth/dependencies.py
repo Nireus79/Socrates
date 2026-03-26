@@ -12,8 +12,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from socrates_api.auth.jwt_handler import verify_access_token
-from socrates_api.database import get_database
-from socrates_api.models_local import ProjectDatabase, User
+from socrates_api.database import get_database, LocalDatabase
+from socrates_api.models_local import User
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ async def get_current_user_optional(
 
 async def get_current_user_object(
     username: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> User:
     """
     Get full User object from database for authenticated user.
@@ -153,7 +153,7 @@ async def get_current_user_object(
 
 async def get_current_user_object_optional(
     username: Optional[str] = Depends(get_current_user_optional),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> Optional[User]:
     """
     Get full User object if authenticated, otherwise return None.
@@ -213,7 +213,7 @@ def require_project_role(required_role: str):
     async def check_role(
         project_id: str,
         current_user: str = Depends(get_current_user),
-        db: ProjectDatabase = Depends(get_database),
+        db: LocalDatabase = Depends(get_database),
     ) -> str:
         """
         Validate user has required role for project.

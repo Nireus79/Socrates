@@ -17,10 +17,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.auth.project_access import check_project_access
 from socrates_api.models import APIResponse
-from socrates_api.models_local import ProjectDatabase
+from socrates_api.models_local import User
 
 # Removed imports of non-existent local utilities
 # These can be implemented locally if needed
@@ -41,7 +41,7 @@ async def generate_final_artifacts(
     include_docs: Optional[bool] = True,
     include_tests: Optional[bool] = True,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Generate final project artifacts and deliverables.
@@ -201,7 +201,7 @@ async def generate_final_documentation(
     include_code_docs: Optional[bool] = True,
     include_deployment_guide: Optional[bool] = True,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Generate comprehensive final documentation package.
@@ -469,7 +469,7 @@ async def export_project(
     project_id: str,
     format: Optional[str] = "zip",
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Export generated project as downloadable archive.
@@ -622,7 +622,7 @@ async def publish_to_github(
     private: bool = True,
     github_token: str = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Publish generated project to GitHub.

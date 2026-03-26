@@ -20,9 +20,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
+from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse, SuccessResponse
-from socrates_api.models_local import User, ProjectDatabase
+from socrates_api.models_local import User
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
@@ -203,7 +203,7 @@ async def _generate_command_suggestions(
 async def ask_question(
     request: FreeSessionQuestion,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> SuccessResponse:
     """
     Ask a question and get an answer with conversation history tracking.
@@ -433,7 +433,7 @@ Suggest next steps they might take in their learning journey."""
 )
 async def list_free_session_sessions(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> SuccessResponse:
     """
     List all free_session conversation sessions for the current user.
@@ -498,7 +498,7 @@ async def list_free_session_sessions(
 async def get_free_session_session(
     session_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> SuccessResponse:
     """
     Get a specific free_session conversation session with all messages.
@@ -565,7 +565,7 @@ async def get_free_session_session(
 async def delete_free_session_session(
     session_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> SuccessResponse:
     """
     Delete a free_session conversation session and all its messages.
@@ -623,7 +623,7 @@ async def delete_free_session_session(
 async def get_project_recommendations(
     session_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabase = Depends(get_database),
+    db: LocalDatabase = Depends(get_database),
 ) -> SuccessResponse:
     """
     Get project recommendations based on analyzed free_session conversation topics.
