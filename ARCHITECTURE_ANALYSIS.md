@@ -350,8 +350,8 @@ Socrates Business Logic (Domain)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    Developer's Project                        │
-│          (Building any multi-agent system)                    │
+│                    Developer's Project                       │
+│          (Building any multi-agent system)                   │
 └──────────────────────┬───────────────────────────────────────┘
                        │
         ┌──────────────┼──────────────┐
@@ -364,12 +364,12 @@ Socrates Business Logic (Domain)
    │   agents  │  │ - Workflows │  │ - RAG          │
    │           │  │ - Events    │  │ - Learning     │
    └────┬──────┘  └────┬────────┘  │ - Knowledge    │
-        │              │            │ - Analyzer     │
-        │              │            │ - Conflict     │
-        │              │            │ - Workflow     │
-        │              │            │ - Performance  │
-        │              │            │ - Docs         │
-        │              │            └────────────────┘
+        │              │           │ - Analyzer     │
+        │              │           │ - Conflict     │
+        │              │           │ - Workflow     │
+        │              │           │ - Performance  │
+        │              │           │ - Docs         │
+        │              │           └────────────────┘
         │              │
         └──────────────┼──────────────┐
                        │              │
@@ -379,22 +379,22 @@ Socrates Business Logic (Domain)
               │                                    │
               ├────────────────────────────────────┤
               │ Infrastructure (Local)             │
-              │ - REST API / Routers              │
-              │ - CLI Commands                    │
-              │ - HTTP Auth / Middleware          │
+              │ - REST API / Routers               │
+              │ - CLI Commands                     │
+              │ - HTTP Auth / Middleware           │
               ├────────────────────────────────────┤
               │ Orchestration (Local)              │
-              │ - Maturity System                 │
-              │ - Phase Gating                    │
-              │ - SocraticLibraryManager          │
-              │ - Callbacks & Feedback Loops      │
+              │ - Maturity System                  │
+              │ - Phase Gating                     │
+              │ - SocraticLibraryManager           │
+              │ - Callbacks & Feedback Loops       │
               ├────────────────────────────────────┤
               │ Domain Logic (Local)               │
-              │ - Project Management              │
-              │ - User/Learning System            │
-              │ - Knowledge Base                  │
-              │ - Skill System                    │
-              │ - Database (LocalDatabase)        │
+              │ - Project Management               │
+              │ - User/Learning System             │
+              │ - Knowledge Base                   │
+              │ - Skill System                     │
+              │ - Database (LocalDatabase)         │
               └────────────────────────────────────┘
 ```
 
