@@ -115,8 +115,15 @@ async def list_projects(
         # Load all projects for user
         projects = db.get_user_projects(current_user)
 
-        # Convert projects to response format - use mode='json' for Pydantic v2 to ensure datetime fields are serialized as ISO strings
-        project_responses = [_project_to_response(p).model_dump(mode='json') for p in projects]
+        # Convert projects to response format
+        # First convert dicts to ProjectContext objects if needed
+        project_responses = []
+        for p in projects:
+            # Convert dict to ProjectContext if needed
+            project = ProjectContext(**p) if isinstance(p, dict) else p
+            # Only include non-archived projects
+            if not project.is_archived:
+                project_responses.append(_project_to_response(project).model_dump(mode='json'))
 
         return APIResponse(
             success=True,
@@ -125,6 +132,7 @@ async def list_projects(
                 "projects": project_responses,
                 "total": len(project_responses),
             },
+            message="Projects retrieved successfully",
         )
 
     except HTTPException:

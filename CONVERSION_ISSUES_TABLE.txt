@@ -1,0 +1,208 @@
+DETAILED CONVERSION ISSUES - COMPLETE TABLE
+============================================
+
+FILE:LINE | DATABASE CALL | CURRENT USAGE | ISSUE TYPE | SEVERITY
+===========================================================================
+
+CRITICAL ISSUES - db.load_user()
+===========================================================================
+
+auth.py:1158
+  | user = db.load_user(current_user)
+  | Accesses: user.user_id (line 1169)
+  | Direct attribute access without conversion
+  | CRITICAL
+
+auth.py:1252
+  | user = db.load_user(current_user)
+  | Accesses: user.email (line 1260)
+  | Direct attribute access without conversion
+  | CRITICAL
+
+security.py:79
+  | user = db.load_user(current_user)
+  | Accesses: user.password_hash (line 88)
+  | Direct attribute access without conversion
+  | CRITICAL (security code)
+
+security.py:159
+  | user = db.load_user(current_user)
+  | Accesses: user attributes (line 169+)
+  | Direct attribute access without conversion
+  | CRITICAL (auth code)
+
+security.py:304
+  | user = db.load_user(current_user)
+  | Accesses: user.password_hash
+  | Direct attribute access without conversion
+  | CRITICAL (security code)
+
+security.py:377
+  | user = db.load_user(current_user)
+  | Accesses: user.password_hash
+  | Direct attribute access without conversion
+  | CRITICAL (security code)
+
+sponsorships.py:83
+  | user = db.load_user(github_username)
+  | Accesses: user.email (line 88)
+  | Direct attribute access without conversion
+  | CRITICAL
+
+sponsorships.py:226
+  | user = db.load_user(current_user)
+  | Accesses: user attributes
+  | Direct attribute access without conversion
+  | CRITICAL
+
+subscription.py:154
+  | user = db.load_user(current_user)
+  | Accesses: user.subscription_tier (line 159)
+  | Direct attribute access without conversion
+  | CRITICAL
+
+subscription.py:480
+  | user = db.load_user(current_user)
+  | Accesses: user attributes
+  | Direct attribute access without conversion
+  | CRITICAL
+
+===========================================================================
+CRITICAL ISSUES - db.get_user_projects()
+===========================================================================
+
+auth.py:1210
+  | all_projects = db.get_user_projects(current_user)
+  | Accesses: project.project_id (line 1212)
+  | Direct attribute access without conversion
+  | CRITICAL
+
+github.py:156
+  | all_projects = db.get_user_projects(current_user)
+  | Accesses: p.owner (line 157)
+  | Direct attribute access without conversion
+  | CRITICAL
+
+projects.py:201
+  | all_projects = db.get_user_projects(current_user)
+  | Accesses: p.owner (line 202)
+  | Direct attribute access without conversion
+  | CRITICAL
+
+subscription.py:163
+  | projects = db.get_user_projects(current_user)
+  | Accesses: p.owner (line 164)
+  | Direct attribute access without conversion
+  | CRITICAL
+
+===========================================================================
+CRITICAL ISSUES - db.load_project()
+===========================================================================
+
+analytics.py:172
+  | all_projects = [db.load_project(pid) for pid in db.list_projects(owner=current_user)]
+  | No conversion, returns raw dicts in list
+  | List comprehension without conversion
+  | CRITICAL
+
+===========================================================================
+SAFE - PROPERLY CONVERTED db.load_user()
+===========================================================================
+
+auth.py:351
+  | user_dict = db.load_user(login_request.username)
+  | Converts: user = User(**user_dict) [line 361]
+  | Proper conversion pattern
+  | SAFE
+
+auth.py:677
+  | user_dict = db.load_user(current_user)
+  | Converts: user = User(**user_dict) if isinstance(...) [line 684]
+  | Proper conversion pattern
+  | SAFE
+
+auth.py:902
+  | user_dict = db.load_user(current_user)
+  | Converts: user = User(**user_dict) if isinstance(...) [line 909]
+  | Proper conversion pattern
+  | SAFE
+
+auth.py:1091
+  | user_data = db.load_user(current_user)
+  | Converts to User object [lines 1098-1108]
+  | Proper conversion pattern
+  | SAFE
+
+auth.py:1325
+  | user_data = db.load_user(current_user)
+  | Converts: creates User object from dict
+  | Proper conversion pattern
+  | SAFE
+
+code_generation.py:148
+  | user_object = db.load_user(current_user)
+  | Uses: getattr(user_object, "subscription_tier", "free")
+  | Safe attribute access pattern
+  | SAFE
+
+code_generation.py:383
+  | user_object = db.load_user(current_user)
+  | Uses: getattr with default fallback
+  | Safe attribute access pattern
+  | SAFE
+
+code_generation.py:945
+  | user_obj = db.load_user(current_user)
+  | Uses: getattr pattern
+  | Safe attribute access pattern
+  | SAFE
+
+===========================================================================
+SAFE - PROPERLY CONVERTED db.get_user_projects()
+===========================================================================
+
+projects.py:116
+  | projects = db.get_user_projects(current_user)
+  | Converts: project = ProjectContext(**p) if isinstance(p, dict) else p
+  | Proper conversion pattern
+  | SAFE
+
+===========================================================================
+SAFE - PROPERLY CONVERTED db.load_project() (100 instances)
+===========================================================================
+
+Standard pattern across almost all files:
+  project_dict = db.load_project(project_id)
+  project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+
+Files: analysis.py (7), analytics.py (8), chat.py (3), chat_sessions.py (9),
+        code_generation.py (5), collaboration.py (11), finalization.py (4),
+        github.py (4), knowledge.py (7), knowledge_management.py (8),
+        nlu.py (1), notes.py (4), progress.py (3), projects.py (13),
+        projects_chat.py (24), query.py (1), skills.py (2), websocket.py (9),
+        workflow.py (1)
+
+All use proper conversion pattern - SAFE
+
+===========================================================================
+SUMMARY BY ISSUE TYPE
+===========================================================================
+
+Total db.load_user() calls: 35
+  - Properly converted: 14
+  - Using safe patterns (getattr): 3
+  - Checking existence only: 8
+  - CRITICAL ISSUES: 10
+
+Total db.load_project() calls: 101
+  - Properly converted: 100
+  - CRITICAL ISSUES: 1
+
+Total db.get_user_projects() calls: 7
+  - Properly converted: 1
+  - Using safe patterns: 2
+  - CRITICAL ISSUES: 4
+
+TOTAL CRITICAL ISSUES: 15
+
+===========================================================================

@@ -76,12 +76,16 @@ async def change_password(
         logger.info(f"Password change initiated for user {current_user}")
 
         # Load user from database
-        user = db.load_user(current_user)
-        if not user:
+        user_data = db.load_user(current_user)
+        if not user_data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
+
+        # Convert dict to User object if needed
+        from socrates_api.models_local import User
+        user = User(**user_data) if isinstance(user_data, dict) else user_data
 
         # Verify current password
         if not bcrypt.checkpw(

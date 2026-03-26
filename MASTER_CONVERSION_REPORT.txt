@@ -1,0 +1,134 @@
+================================================================================
+CRITICAL DICT-TO-OBJECT CONVERSION ISSUES
+================================================================================
+
+SYSTEM: Socrates Backend
+DATE: 2026-03-26
+SCOPE: All Python files in /backend/src/socrates_api/routers/
+
+================================================================================
+CRITICAL FINDINGS
+================================================================================
+
+TOTAL ISSUES IDENTIFIED: 15
+
+Database Call Breakdown:
+  db.load_user()          : 35 calls analyzed -> 10 CRITICAL ISSUES
+  db.get_user_projects()  : 7 calls analyzed -> 4 CRITICAL ISSUES
+  db.load_project()       : 101 calls analyzed -> 1 CRITICAL ISSUE
+
+================================================================================
+CRITICAL ISSUES BY FILE
+================================================================================
+
+1. security.py (4 CRITICAL ISSUES) - AUTHENTICATION & PASSWORD CODE
+   Line 79:  user = db.load_user() -> user.password_hash
+   Line 159: user = db.load_user() -> attribute access
+   Line 304: user = db.load_user() -> user.password_hash
+   Line 377: user = db.load_user() -> user.password_hash
+   IMPACT: Password verification failures, authentication bypasses
+
+2. auth.py (3 CRITICAL ISSUES) - ACCOUNT MANAGEMENT
+   Line 1158: user = db.load_user() -> user.user_id
+   Line 1210: all_projects = db.get_user_projects() -> project.project_id
+   Line 1252: user = db.load_user() -> user.email
+   IMPACT: Account deletion failures, user data access failures
+
+3. subscription.py (3 CRITICAL ISSUES) - BILLING & SUBSCRIPTIONS
+   Line 154:  user = db.load_user() -> user.subscription_tier
+   Line 163:  projects = db.get_user_projects() -> p.owner
+   Line 480:  user = db.load_user() -> attribute access
+   IMPACT: Subscription checks fail, billing errors
+
+4. sponsorships.py (2 CRITICAL ISSUES) - GITHUB SPONSORSHIPS
+   Line 83:   user = db.load_user() -> user.email
+   Line 226:  user = db.load_user() -> attribute access
+   IMPACT: Sponsorship operations fail
+
+5. projects.py (1 CRITICAL ISSUE) - PROJECT MANAGEMENT
+   Line 201: all_projects = db.get_user_projects() -> p.owner
+   IMPACT: Project creation restrictions don't work
+
+6. github.py (1 CRITICAL ISSUE) - GITHUB INTEGRATION
+   Line 156: all_projects = db.get_user_projects() -> p.owner
+   IMPACT: GitHub imports with subscription checks fail
+
+7. analytics.py (1 CRITICAL ISSUE) - ANALYTICS
+   Line 172: all_projects = [db.load_project() for ...] -> attribute access
+   IMPACT: Analytics calculations fail
+
+================================================================================
+ROOT CAUSE
+================================================================================
+
+The database layer returns Python dictionaries, but the business logic code
+assumes they are typed objects (User, ProjectContext) with attributes.
+
+When code tries to access user.password_hash on a dict:
+  - Result: AttributeError: 'dict' object has no attribute 'password_hash'
+  - Effect: Runtime crash, API endpoint fails, user gets 500 error
+
+================================================================================
+STANDARD FIX PATTERNS
+================================================================================
+
+PATTERN 1: Fix db.load_user()
+  BEFORE:
+    user = db.load_user(username)
+    # Then accesses: user.email, user.password_hash, etc.
+
+  AFTER:
+    user_dict = db.load_user(username)
+    user = User(**user_dict) if isinstance(user_dict, dict) else user_dict
+    # Now all attribute access is safe
+
+PATTERN 2: Fix db.get_user_projects()
+  BEFORE:
+    projects = db.get_user_projects(user)
+    [p for p in projects if p.owner == user]  # FAILS
+
+  AFTER:
+    projects = db.get_user_projects(user)
+    projects = [ProjectContext(**p) if isinstance(p, dict) else p for p in projects]
+    [p for p in projects if p.owner == user]  # SAFE
+
+PATTERN 3: Fix db.load_project() (rare)
+  BEFORE:
+    all_projects = [db.load_project(pid) for pid in project_ids]
+    # Then accesses attributes - FAILS
+
+  AFTER:
+    all_projects = [db.load_project(pid) for pid in project_ids]
+    all_projects = [
+        ProjectContext(**p) if isinstance(p, dict) else p
+        for p in all_projects if p
+    ]
+    # Now safe to access attributes
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+SHORT-TERM (Immediate Fixes):
+  1. Apply fixes to all 15 critical locations
+  2. Estimated effort: 75 minutes
+  3. Testing: Unit tests + integration tests
+  4. Deploy to production
+
+LONG-TERM (Refactoring):
+  1. Refactor database layer to ALWAYS return typed objects
+  2. Eliminate need for dict-to-object conversions
+  3. Add type hints throughout codebase
+  4. Use mypy/pydantic for type checking
+
+================================================================================
+FILES CREATED (DETAILED REPORTS)
+================================================================================
+
+1. DICT_CONVERSION_REPORT.txt - Initial findings and summary
+2. CONVERSION_ISSUES_TABLE.txt - Detailed table of all issues
+3. AUDIT_SUMMARY.txt - Quick reference summary
+4. ACTUAL_CODE_EXAMPLES.txt - Real code from affected files
+5. FIX_RECOMMENDATIONS.txt - Code fix examples
+
+================================================================================

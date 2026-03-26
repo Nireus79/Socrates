@@ -1322,12 +1322,18 @@ async def set_testing_mode(
         HTTPException: If user not found or not authenticated
     """
     try:
-        user = db.load_user(current_user)
-        if user is None:
+        user_data = db.load_user(current_user)
+        if user_data is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
+
+        # Convert dict to User object if needed
+        if isinstance(user_data, dict):
+            user = User(**user_data)
+        else:
+            user = user_data
 
         # Any authenticated user can toggle testing mode for their own account
         # This is NOT an admin-only feature - aligns with owner-based authorization model
