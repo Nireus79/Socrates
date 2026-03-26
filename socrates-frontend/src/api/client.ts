@@ -252,37 +252,47 @@ class APIClient {
 
   /**
    * Normalize field names in API responses for consistency
-   * Handles conversions like message_id -> id, session_id -> sessionId, etc.
+   * Handles conversions like message_id -> id for chat messages only
+   * Uses a more conservative approach to avoid corrupting data structures
    */
   private normalizeResponseFields(data: any): any {
     if (!data || typeof data !== 'object') {
       return data;
     }
 
-    // Handle arrays
+    // Handle arrays - normalize each item but preserve array structure
     if (Array.isArray(data)) {
       return data.map(item => this.normalizeResponseFields(item));
     }
 
-    // Handle objects - create new object with normalized fields
-    const normalized: any = {};
-    for (const [key, value] of Object.entries(data)) {
-      // Normalize specific field names
-      let normalizedKey = key;
+    // For objects, apply conversions more carefully
+    // Create a shallow copy to preserve all properties
+    const result = { ...data };
 
-      // message_id -> id (for chat messages)
-      if (key === 'message_id') {
-        normalizedKey = 'id';
-      }
+    // Only normalize specific fields that we know need conversion
+    // 1. Convert message_id to id for chat messages (only if message_id exists)
+    if ('message_id' in result && !('id' in result)) {
+      result.id = result.message_id;
+      delete result.message_id;
+    }
 
-      // Recursively normalize nested objects
-      if (value && typeof value === 'object') {
-        normalized[normalizedKey] = this.normalizeResponseFields(value);
-      } else {
-        normalized[normalizedKey] = value;
+    // Recursively normalize nested arrays and objects
+    for (const key in result) {
+      if (Object.prototype.hasOwnProperty.call(result, key)) {
+        const value = result[key];
+        if (Array.isArray(value)) {
+          // Normalize array elements
+          result[key] = value.map(item =>
+            (item && typeof item === 'object') ? this.normalizeResponseFields(item) : item
+          );
+        } else if (value && typeof value === 'object' && !(value instanceof Date)) {
+          // Recursively normalize nested objects (but not Date objects)
+          result[key] = this.normalizeResponseFields(value);
+        }
       }
     }
-    return normalized;
+
+    return result;
   }
 
   /**

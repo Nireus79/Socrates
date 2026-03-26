@@ -115,8 +115,8 @@ async def list_projects(
         # Load all projects for user
         projects = db.get_user_projects(current_user)
 
-        # Convert projects to response format - use model_dump() for Pydantic v2
-        project_responses = [_project_to_response(p).model_dump() for p in projects]
+        # Convert projects to response format - use mode='json' for Pydantic v2 to ensure datetime fields are serialized as ISO strings
+        project_responses = [_project_to_response(p).model_dump(mode='json') for p in projects]
 
         return APIResponse(
             success=True,
