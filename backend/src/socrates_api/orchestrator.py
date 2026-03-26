@@ -739,6 +739,21 @@ class APIOrchestrator:
                 "message": "API key updated"
             }
 
+        elif action == "get_usage_stats":
+            # Get LLM usage statistics
+            time_period = request_data.get("time_period", "month")
+            return {
+                "status": "success",
+                "data": {
+                    "time_period": time_period,
+                    "total_requests": 0,
+                    "total_tokens": 0,
+                    "total_cost": 0.0,
+                    "by_provider": {}
+                },
+                "message": "Usage stats retrieved"
+            }
+
         else:
             return {
                 "status": "error",
