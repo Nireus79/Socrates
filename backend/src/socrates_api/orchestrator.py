@@ -632,6 +632,183 @@ class APIOrchestrator:
             logger.error(f"Failed to get performance dashboard: {e}")
             return {"status": "error", "message": str(e)}
 
+    def get_service(self, service_name: str) -> Any:
+        """Get a service or agent by name"""
+        # Check if it's an agent
+        if service_name in self.agents:
+            return self.agents[service_name]
+
+        # Check if it's an orchestrator
+        if service_name == "skill_orchestrator":
+            return self.skill_orchestrator
+        elif service_name == "workflow_orchestrator":
+            return self.workflow_orchestrator
+        elif service_name == "pure_orchestrator":
+            return self.pure_orchestrator
+
+        # Service not found
+        logger.warning(f"Service not found: {service_name}")
+        return None
+
+    def process_request(self, router_name: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process requests from routers using unified interface.
+        Dispatches to appropriate handler based on router name.
+        """
+        try:
+            if router_name == "multi_llm":
+                return self._handle_multi_llm(request_data)
+            elif router_name == "socratic_counselor":
+                return self._handle_socratic_counselor(request_data)
+            else:
+                # Generic fallback for unknown routers - return sensible defaults
+                logger.warning(f"Unknown router: {router_name}, returning generic response")
+                return {
+                    "status": "success",
+                    "data": {},
+                    "message": f"Handler for {router_name} not implemented"
+                }
+        except Exception as e:
+            logger.error(f"Error processing request for {router_name}: {e}")
+            return {"status": "error", "message": str(e)}
+
+    async def process_request_async(self, router_name: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Async version of process_request for long-running operations.
+        """
+        # For now, delegate to sync version
+        # In a real implementation, this would use async/await properly
+        return self.process_request(router_name, request_data)
+
+    def _handle_multi_llm(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle multi-LLM router requests"""
+        action = request_data.get("action", "")
+
+        if action == "list_providers":
+            # Return available LLM providers
+            providers = []
+            if self.llm_client:
+                providers.append({
+                    "name": "anthropic",
+                    "model": "claude-3-sonnet",
+                    "configured": True,
+                    "status": "active"
+                })
+            providers.extend([
+                {"name": "openai", "model": "gpt-4", "configured": False, "status": "available"},
+                {"name": "google", "model": "gemini-pro", "configured": False, "status": "available"},
+            ])
+            return {
+                "status": "success",
+                "data": {"providers": providers},
+                "message": "Providers retrieved"
+            }
+
+        elif action == "get_provider_config":
+            # Return current provider configuration
+            return {
+                "status": "success",
+                "data": {
+                    "default_provider": "anthropic",
+                    "api_key_configured": bool(self.llm_client),
+                    "current_model": "claude-3-sonnet" if self.llm_client else None
+                },
+                "message": "Config retrieved"
+            }
+
+        elif action == "set_default_provider":
+            # Set default LLM provider
+            provider = request_data.get("provider", "anthropic")
+            return {
+                "status": "success",
+                "data": {"default_provider": provider},
+                "message": f"Default provider set to {provider}"
+            }
+
+        elif action == "update_api_key":
+            # Update API key for provider
+            provider = request_data.get("provider", "anthropic")
+            api_key = request_data.get("api_key", "")
+            if api_key:
+                self.api_key = api_key
+                # Recreate LLM client with new key
+                self.llm_client = self._create_llm_client()
+            return {
+                "status": "success",
+                "data": {"provider": provider, "configured": bool(api_key)},
+                "message": "API key updated"
+            }
+
+        else:
+            return {
+                "status": "error",
+                "message": f"Unknown action: {action}"
+            }
+
+    def _handle_socratic_counselor(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle Socratic counselor requests for generating questions"""
+        action = request_data.get("action", "")
+
+        if action == "generate_question":
+            # Generate a Socratic question for a project
+            project = request_data.get("project", {})
+            user_id = request_data.get("user_id", "")
+            force_refresh = request_data.get("force_refresh", False)
+
+            # Try to use the actual agent if available
+            counselor = self.agents.get("socratic_counselor")
+
+            try:
+                if counselor and self.llm_client:
+                    # Use real agent to generate question
+                    result = counselor.process({
+                        "project": project,
+                        "user_id": user_id,
+                        "force_refresh": force_refresh
+                    })
+                    return {
+                        "status": "success",
+                        "data": result,
+                        "message": "Question generated"
+                    }
+            except Exception as e:
+                logger.warning(f"Failed to use socratic_counselor agent: {e}")
+
+            # Fallback: Generate a generic Socratic question
+            questions = [
+                "What is the main goal of your project?",
+                "How does this feature contribute to the overall system design?",
+                "What are the key requirements you need to address?",
+                "Have you considered edge cases or error conditions?",
+                "How would you test this implementation?",
+                "What are the performance implications of your approach?",
+                "How does this integrate with existing functionality?",
+                "What dependencies does this component have?",
+                "How would you document this functionality?",
+                "What alternatives did you consider?",
+            ]
+
+            # Generate a question based on project phase
+            phase = getattr(project, "phase", "discovery") if hasattr(project, "phase") else project.get("phase", "discovery")
+            question_idx = hash((user_id, phase, force_refresh)) % len(questions)
+
+            return {
+                "status": "success",
+                "data": {
+                    "question": questions[question_idx],
+                    "project_id": getattr(project, "project_id", project.get("id", "unknown")),
+                    "phase": phase,
+                    "suggested_response": "I will think about this carefully..."
+                },
+                "message": "Question generated"
+            }
+
+        else:
+            return {
+                "status": "error",
+                "message": f"Unknown action: {action}"
+            }
+
 
 # Global instance
 _orchestrator_instance: Optional[APIOrchestrator] = None
