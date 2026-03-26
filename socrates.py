@@ -260,7 +260,7 @@ import sys
 import os
 os.environ['ENVIRONMENT'] = 'development'
 sys.path.insert(0, r'{project_root}')
-sys.path.insert(0, r'{project_root / "socrates-api" / "src"}')
+sys.path.insert(0, r'{project_root / "backend" / "src"}')
 print(f'[STARTUP] ENVIRONMENT={{os.getenv("ENVIRONMENT")}}', flush=True)
 import uvicorn
 uvicorn.run(
