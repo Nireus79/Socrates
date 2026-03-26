@@ -118,9 +118,7 @@ async def list_projects(
         # Convert projects to response format
         # First convert dicts to ProjectContext objects if needed
         project_responses = []
-        for p in projects:
-            # Convert dict to ProjectContext if needed
-            project = ProjectContext(**p) if isinstance(p, dict) else p
+        for project in projects:
             # Only include non-archived projects
             if not project.is_archived:
                 project_responses.append(_project_to_response(project).model_dump(mode='json'))
@@ -444,16 +442,13 @@ async def get_project(
         HTTPException: If project not found or access denied
     """
     try:
-        project_dict = db.load_project(project_id)
+        project = db.load_project(project_id)
 
-        if not project_dict:
+        if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
             )
-
-        # Convert dict to ProjectContext if needed
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
         # Check access: user must be owner or team member
         is_team_member = False

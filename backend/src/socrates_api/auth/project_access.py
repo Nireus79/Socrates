@@ -42,15 +42,12 @@ async def get_user_project_role(
     Raises:
         HTTPException: 404 if project not found
     """
-    project_dict = db.load_project(project_id)
-    if project_dict is None:
+    project = db.load_project(project_id)
+    if project is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found",
         )
-
-    # Convert dict to ProjectContext if needed
-    project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
 
     # Owner is always an owner
     if project.owner == current_user:

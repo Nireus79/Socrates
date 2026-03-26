@@ -158,22 +158,8 @@ async def get_current_user_object_optional(
         return None
 
     try:
-        user_data = db.load_user(username)
-        if user_data is None:
-            return None
-        # Convert dictionary to User object
-        if isinstance(user_data, dict):
-            return User(
-                user_id=user_data.get("id", ""),
-                username=user_data.get("username", ""),
-                email=user_data.get("email", ""),
-                passcode_hash=user_data.get("passcode_hash", ""),
-                subscription_tier=user_data.get("subscription_tier", "free"),
-                subscription_status=user_data.get("subscription_status", "active"),
-                testing_mode=user_data.get("testing_mode", False),
-                created_at=user_data.get("created_at"),
-            )
-        return user_data
+        user = db.load_user(username)
+        return user
     except Exception:
         return None
 

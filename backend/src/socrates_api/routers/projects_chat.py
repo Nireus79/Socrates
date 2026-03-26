@@ -110,8 +110,7 @@ async def create_chat_session(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -183,8 +182,7 @@ async def list_chat_sessions(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -252,8 +250,7 @@ async def get_chat_session(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -318,8 +315,7 @@ async def delete_chat_session(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -376,8 +372,7 @@ async def send_chat_message(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -456,8 +451,7 @@ async def get_chat_messages(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -537,8 +531,7 @@ async def get_question(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -619,8 +612,7 @@ async def send_message(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -932,8 +924,7 @@ async def switch_mode(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -984,8 +975,7 @@ async def get_hint(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1050,8 +1040,7 @@ async def clear_history(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1103,8 +1092,7 @@ async def get_summary(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1171,8 +1159,7 @@ async def search_conversations(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1224,8 +1211,7 @@ async def finish_session(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1301,8 +1287,7 @@ async def get_maturity_history(
         logger.info(f"Getting maturity history for project: {project_id}")
 
         # Load project
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1369,8 +1354,7 @@ async def get_maturity_status(
         logger.info(f"Getting maturity status for project: {project_id}")
 
         # Load project
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1513,8 +1497,7 @@ async def reopen_question(
         logger.info(f"Reopening question {question_id} for project {project_id}")
 
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1572,8 +1555,7 @@ async def skip_question(
 
         logger.info(f"Skipping question for project {project_id}")
 
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1634,8 +1616,7 @@ async def get_answer_suggestions(
         logger.info(f"Getting answer suggestions for project {project_id}")
 
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1804,8 +1785,7 @@ async def save_extracted_specs(
     """
     try:
         # Load project
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1977,8 +1957,7 @@ async def resolve_conflicts(
         await check_project_access(project_id, current_user, db, min_role="editor")
 
         # Load and verify project
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

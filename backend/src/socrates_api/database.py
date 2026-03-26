@@ -375,11 +375,11 @@ class LocalDatabase:
             logger.error(f"Failed to save user: {e}")
             return None
 
-    def load_project(self, project_id: str) -> Optional[Dict]:
+    def load_project(self, project_id: str) -> Optional[ProjectContext]:
         """Get project by ID (alias for get_project for compatibility)"""
         return self.get_project(project_id)
 
-    def get_user_projects(self, username: str) -> List:
+    def get_user_projects(self, username: str) -> List[ProjectContext]:
         """Get all projects for a user (both owned and collaborated)"""
         try:
             from socrates_api.models_local import ProjectContext

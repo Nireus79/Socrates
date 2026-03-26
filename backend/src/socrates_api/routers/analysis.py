@@ -64,8 +64,7 @@ async def validate_code(
             logger.info(f"Validating code for project: {project_id}")
             # Load project from database
             db = get_database()
-            project_dict = db.load_project(project_id)
-            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+            project = db.load_project(project_id)
             if not project:
                 raise HTTPException(status_code=404, detail="Project not found")
 
