@@ -107,9 +107,20 @@ app_state = {
 
 
 def get_orchestrator_from_state() -> APIOrchestrator:
-    """Dependency injection for orchestrator"""
+    """Dependency injection for orchestrator - initializes lazily on first use"""
     if app_state["orchestrator"] is None:
-        raise RuntimeError("Orchestrator not initialized. Call /initialize first.")
+        # Lazy initialization on first use
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        logger.info("Lazy-initializing orchestrator on first use...")
+        try:
+            orchestrator = create_orchestrator(
+                api_key=api_key or "placeholder-key-will-use-user-specific-keys"
+            )
+            app_state["orchestrator"] = orchestrator
+            logger.info("Orchestrator initialized successfully on first use")
+        except Exception as e:
+            logger.error(f"Failed to initialize orchestrator on first use: {e}")
+            raise RuntimeError(f"Failed to initialize orchestrator: {e}")
     return app_state["orchestrator"]
 
 
@@ -198,78 +209,41 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Socrates API server...")
 
-    # Initialize audit logger with database connection
-    try:
-        from socrates_api.database import get_database
-        db = get_database()
-        initialize_audit_logger(db)
-        logger.info("Audit logger initialized successfully")
-    except Exception as e:
-        logger.warning(f"Failed to initialize audit logger: {e}")
+    # Store in global state
+    app_state["start_time"] = time.time()
 
-    # Rate limiter initialized at module load time
-    if app_state.get("limiter"):
-        logger.info("Rate limiter is active")
-    else:
-        logger.warning("Rate limiting is disabled")
-
-    # Auto-initialize orchestrator on startup
-    # Note: API key can be provided via environment variable OR per-user via database
+    # Auto-initialize orchestrator on startup (deferred - initialize lazily on first use)
     try:
         api_key = os.getenv("ANTHROPIC_API_KEY")
-        if api_key:
-            logger.info(f"ANTHROPIC_API_KEY is set ({api_key[:10]}...)")
-        else:
-            logger.info(
-                "ANTHROPIC_API_KEY not set. Users will provide their own API keys via Settings > LLM > Anthropic"
-            )
-
-        # Create and initialize orchestrator
-        # If no env API key, use a placeholder - actual keys will be fetched per-user from database
-        logger.info("Creating APIOrchestrator...")
-        orchestrator = create_orchestrator(
-            api_key=api_key or "placeholder-key-will-use-user-specific-keys"
-        )
-        logger.info("APIOrchestrator created successfully with real agents")
-
-        # Test that agents loaded correctly
-        system_info = orchestrator.get_system_info()
-        logger.info(f"Orchestrator status: {system_info}")
-
-        if system_info.get("agents_loaded", 0) > 0:
-            logger.info(f"Orchestrator initialized with {system_info['agents_loaded']} agents")
-        else:
-            logger.warning("Orchestrator initialized but no agents loaded")
-
-        logger.info(
-                "No environment API key set. System will use per-user API keys from database."
-            )
-
-        # Setup event listeners
-        logger.info("Setting up event listeners...")
-        _setup_event_listeners(orchestrator)
-        logger.info("Event listeners set up")
-
-        # Store in global state
-        logger.info("Storing orchestrator in global state...")
-        app_state["orchestrator"] = orchestrator
-        app_state["start_time"] = time.time()
-        logger.info(f"Orchestrator stored. app_state['orchestrator'] = {app_state['orchestrator']}")
-
-        logger.info("Socrates API orchestrator fully initialized and ready for per-user API keys")
-
+        logger.info("Orchestrator will be initialized lazily on first API call")
+        # Don't create orchestrator here - let it be created lazily on first use
+        # This avoids blocking the server startup
     except Exception as e:
-        logger.error(f"Failed to auto-initialize orchestrator on startup: {type(e).__name__}: {e}")
-        import traceback
-
-        logger.error(f"Traceback: {traceback.format_exc()}")
-
+        logger.error(f"Failed to prepare orchestrator initialization: {e}")
 
     # Start shutdown monitor background task
     logger.info("Starting shutdown monitor background task...")
     shutdown_monitor_task = asyncio.create_task(_monitor_shutdown())
 
     yield  # App is running
+
+    # Shutdown
+    logger.info("Shutting down Socrates API server...")
+
+    # Cancel shutdown monitor task
+    if shutdown_monitor_task:
+        shutdown_monitor_task.cancel()
+        try:
+            await shutdown_monitor_task
+        except asyncio.CancelledError:
+            logger.info("Shutdown monitor task cancelled")
+
+    # Close database connection
+    try:
+        from socrates_api.database import close_database
+        close_database()
+    except Exception as e:
+        logger.warning(f"Failed to close database: {e}")
 
     # Shutdown
     logger.info("Shutting down Socrates API server...")

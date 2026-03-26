@@ -25,12 +25,6 @@ from socrates_api.models import APIResponse, SuccessResponse
 from socrates_api.models_local import User, ProjectDatabase
 # Database import replaced with local module
 
-# Import rate limiter if available
-try:
-    from socrates_api.main import limiter
-except ImportError:
-    limiter = None
-
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/free_session", tags=["free_session"])
 
@@ -50,6 +44,12 @@ def _get_orchestrator():
 
 def _get_rate_limit_decorator(limit_str: str):
     """Get rate limit decorator - handles both available and unavailable limiter."""
+    # Import here to avoid circular dependency with main.py
+    try:
+        from socrates_api.main import limiter
+    except ImportError:
+        limiter = None
+
     if limiter:
         return limiter.limit(limit_str)
     else:

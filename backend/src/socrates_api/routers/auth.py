@@ -50,12 +50,6 @@ from socratic_security.auth import (
     get_mfa_manager,
 )
 
-# Import rate limiter if available
-try:
-    from socrates_api.main import limiter
-except ImportError:
-    limiter = None
-
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -68,6 +62,12 @@ mfa_manager = get_mfa_manager()
 
 def _get_rate_limit_decorator(limit_str: str):
     """Get rate limit decorator - handles both available and unavailable limiter."""
+    # Import here to avoid circular dependency with main.py
+    try:
+        from socrates_api.main import limiter
+    except ImportError:
+        limiter = None
+
     if limiter:
         return limiter.limit(limit_str)
     else:
