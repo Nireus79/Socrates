@@ -566,11 +566,15 @@ async def get_question(
         if project.conversation_history:
             db.save_conversation_history(project_id, project.conversation_history)
 
+        # Extract question from orchestrator result (nested in "data" key)
+        question_data = result.get("data", {})
+        question = question_data.get("question", "") if isinstance(question_data, dict) else ""
+
         return APIResponse(
             success=True,
             status="success",
             data={
-                "question": result.get("question", ""),
+                "question": question,
                 "phase": project.phase,
             },
         )
