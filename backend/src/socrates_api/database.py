@@ -312,7 +312,7 @@ class LocalDatabase:
             DatabaseError: If project creation fails
         """
         try:
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             meta_json = json.dumps(metadata or {})
 
             self.conn.execute(
@@ -400,7 +400,7 @@ class LocalDatabase:
     ) -> Optional[User]:
         """Create a new user"""
         try:
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             meta_json = json.dumps(metadata or {})
 
             self.conn.execute(
@@ -532,7 +532,7 @@ class LocalDatabase:
             DatabaseError: If save operation fails
         """
         try:
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
 
             # Handle both dict and User object input
             if isinstance(user_data, User):
@@ -677,7 +677,7 @@ class LocalDatabase:
             DatabaseError: If save operation fails
         """
         try:
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             project_id = project.project_id
             owner = getattr(project, "owner", None)
             name = project.name
@@ -946,12 +946,15 @@ class LocalDatabase:
         # For now, return None (API key not found)
         return None
 
-    def delete_project(self, project_id: str) -> None:
+    def delete_project(self, project_id: str) -> bool:
         """
         Delete (archive) a project.
 
         Args:
             project_id: Project ID to archive
+
+        Returns:
+            True if project was archived successfully
 
         Raises:
             DatabaseError: If delete operation fails
@@ -960,18 +963,22 @@ class LocalDatabase:
             self.conn.execute("UPDATE projects SET is_archived = 1 WHERE id = ?", (project_id,))
             self.conn.commit()
             logger.info(f"Project {project_id} archived")
+            return True
         except Exception as e:
             logger.error(f"Failed to archive project {project_id}: {e}")
             raise DatabaseError(
                 f"Failed to delete project {project_id}: {e}", operation="delete_project"
             ) from e
 
-    def permanently_delete_user(self, username: str) -> None:
+    def permanently_delete_user(self, username: str) -> bool:
         """
         Permanently delete a user and all associated data.
 
         Args:
             username: Username to delete
+
+        Returns:
+            True if user was deleted successfully
 
         Raises:
             DatabaseError: If delete operation fails
@@ -985,6 +992,7 @@ class LocalDatabase:
             self.conn.execute("DELETE FROM users WHERE username = ?", (username,))
             self.conn.commit()
             logger.info(f"User {username} permanently deleted")
+            return True
         except Exception as e:
             logger.error(f"Failed to permanently delete user {username}: {e}")
             raise DatabaseError(

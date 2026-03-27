@@ -9,7 +9,8 @@ from unittest.mock import patch
 import pytest
 
 try:
-    from socratic_system.orchestration.orchestrator import Orchestrator
+    from socratic_system.orchestration.orchestrator import AgentOrchestrator
+    Orchestrator = AgentOrchestrator  # Alias for backward compatibility with tests
 except ImportError:
     Orchestrator = None
 
@@ -21,7 +22,7 @@ def orchestrator():
         pytest.skip("Orchestrator not available")
 
     with patch("socratic_system.orchestration.orchestrator.LLMClient"):
-        return Orchestrator()
+        return Orchestrator(api_key_or_config="")
 
 
 class TestOrchestratorInitialization:
@@ -42,7 +43,7 @@ class TestOrchestratorInitialization:
         """Test graceful initialization even with missing dependencies."""
         with patch("socratic_system.orchestration.orchestrator.LLMClient", None):
             try:
-                orchestrator = Orchestrator()
+                orchestrator = Orchestrator(api_key_or_config="")
                 assert orchestrator is not None
             except Exception:
                 # Should handle missing LLMClient gracefully

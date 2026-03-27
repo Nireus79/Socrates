@@ -28,7 +28,7 @@ class WorkflowTester:
         self.orchestrator = APIOrchestrator(api_key_or_config="")
         self.db = LocalDatabase()
         self.results = []
-        self.user_id = f"workflow_test_{datetime.utcnow().timestamp():.0f}"
+        self.user_id = f"workflow_test_{datetime.now(timezone.utc).timestamp():.0f}"
 
     def setup_test_user(self) -> str:
         """Create test user and return ID"""
@@ -149,7 +149,7 @@ class WorkflowTester:
                     agent_name=agent_name,
                     input_data={"project_id": project_id},
                     output_data={"status": "success"},
-                    timestamp=datetime.utcnow().isoformat()
+                    timestamp=datetime.now(timezone.utc).isoformat()
                 )
 
                 if logged:

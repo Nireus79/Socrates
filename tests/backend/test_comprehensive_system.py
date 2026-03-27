@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from socrates_api.database import LocalDatabase
 from socrates_api.models_local import User, ProjectContext
 from socrates_api.utils import IDGenerator
+from socrates_api.exceptions import UserNotFoundError, ProjectNotFoundError
 
 
 class TestDatabaseMethods:
@@ -52,9 +53,9 @@ class TestDatabaseMethods:
         # Now delete it
         deleted = db.permanently_delete_user("test_user")
         assert deleted is True
-        # Verify it's gone
-        user = db.load_user("test_user")
-        assert user is None
+        # Verify it's gone - load_user raises UserNotFoundError when user doesn't exist
+        with pytest.raises(UserNotFoundError):
+            db.load_user("test_user")
 
     def test_get_user(self):
         """Verify get_user method exists and returns User data."""
@@ -176,8 +177,8 @@ class TestDatabaseProjectOperations:
         """Should create and retrieve projects correctly."""
         db = LocalDatabase(":memory:")
 
-        # Create
-        result = db.create_project("proj_test", "owner_user", "Test Project", "A test")
+        # Create - correct argument order: project_id, name, description, owner
+        result = db.create_project("proj_test", "Test Project", "A test", "owner_user")
         assert result is not None
         assert result.get("project_id") == "proj_test"
 
@@ -204,7 +205,10 @@ class TestDatabaseProjectOperations:
         )
 
         result = db.save_project(project)
-        assert result is True
+        # save_project returns the saved ProjectContext object, not boolean
+        assert result is not None
+        assert isinstance(result, ProjectContext)
+        assert result.get("project_id") == "proj_save_test"
 
         # Verify it was saved
         retrieved = db.get_project("proj_save_test")
@@ -217,8 +221,8 @@ class TestDatabaseProjectOperations:
         db = LocalDatabase(":memory:")
 
         # Create multiple projects
-        db.create_project("proj_1", "user1", "Project 1", "Desc 1")
-        db.create_project("proj_2", "user1", "Project 2", "Desc 2")
+        db.create_project("proj_1", "Project 1", "Desc 1", "user1")
+        db.create_project("proj_2", "Project 2", "Desc 2", "user1")
 
         projects = db.list_projects()
         assert len(projects) >= 2
@@ -242,8 +246,8 @@ class TestDatabaseUserOperations:
         assert user_dict is not None
         assert user_dict.get("username") == "username"
 
-        # Retrieve
-        user = db.load_user("user_test")
+        # Retrieve - load_user expects username, not user_id
+        user = db.load_user("username")
         assert user is not None
         assert user.get("email") == "user@test.com"
 
@@ -253,8 +257,8 @@ class TestDatabaseUserOperations:
 
         # Create user and projects
         db.create_user("user_proj", "user", "user@test.com", "hash")
-        db.create_project("proj_1", "user", "Project 1", "Desc")
-        db.create_project("proj_2", "user", "Project 2", "Desc")
+        db.create_project("proj_1", "Project 1", "Desc", "user")
+        db.create_project("proj_2", "Project 2", "Desc", "user")
 
         projects = db.get_user_projects("user")
         assert len(projects) >= 2
@@ -303,16 +307,16 @@ class TestErrorHandling:
     """Test error handling in critical operations."""
 
     def test_load_nonexistent_user(self):
-        """Loading nonexistent user should return None, not raise error."""
+        """Loading nonexistent user should raise UserNotFoundError."""
         db = LocalDatabase(":memory:")
-        user = db.load_user("nonexistent_user_12345")
-        assert user is None
+        with pytest.raises(UserNotFoundError):
+            db.load_user("nonexistent_user_12345")
 
     def test_load_nonexistent_project(self):
-        """Loading nonexistent project should return None, not raise error."""
+        """Loading nonexistent project should raise ProjectNotFoundError."""
         db = LocalDatabase(":memory:")
-        project = db.get_project("nonexistent_proj_12345")
-        assert project is None
+        with pytest.raises(ProjectNotFoundError):
+            db.get_project("nonexistent_proj_12345")
 
 
 # Run tests

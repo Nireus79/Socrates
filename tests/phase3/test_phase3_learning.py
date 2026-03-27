@@ -95,7 +95,7 @@ def test_learning_profile():
                 agent_name=agent_name,
                 input_data=request_data,
                 output_data=result,
-                timestamp=datetime.utcnow().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 project_id="learning_test_project"
             )
             
