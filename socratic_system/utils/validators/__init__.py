@@ -9,7 +9,7 @@ Provides modular validators for:
 
 from socratic_system.utils.validators.dependency_validator import DependencyValidator
 from socratic_system.utils.validators.syntax_validator import SyntaxValidator
-from socratic_system.utils.validators.test_executor import TestExecutor
+from socratic_system.utils.validators.executor import TestExecutor
 
 __all__ = [
     "SyntaxValidator",
