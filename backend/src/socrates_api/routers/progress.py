@@ -91,75 +91,39 @@ async def get_progress(
             "total_code_blocks": generated_code_count,
         }
 
-        # Maturity progress - safely convert dict values to numbers
-        maturity_score = getattr(project, "maturity_score", 0)
-        maturity_score = maturity_score.get("score", 0)
-        try:
-            maturity_score = float(maturity_score) if maturity_score else 0.0
-        except (TypeError, ValueError):
-            maturity_score = 0.0
-
-        previous_maturity = getattr(project, "previous_maturity", 0)
-        previous_maturity = previous_maturity.get("score", 0)
-        try:
-            previous_maturity = float(previous_maturity) if previous_maturity else 0.0
-        except (TypeError, ValueError):
-            previous_maturity = 0.0
+        # Maturity progress
+        maturity_score = project.maturity_score if hasattr(project, 'maturity_score') else 0.0
+        previous_maturity = project.previous_maturity if hasattr(project, 'previous_maturity') else 0.0
 
         progress_data["maturity_progress"] = {
-            "current_score": maturity_score,
-            "previous_score": previous_maturity,
-            "improvement": maturity_score - previous_maturity,
+            "current_score": float(maturity_score),
+            "previous_score": float(previous_maturity),
+            "improvement": float(maturity_score) - float(previous_maturity),
         }
 
         # Phase progress
-        phase_scores = getattr(project, "phase_maturity_scores", {})
-        # Safely extract numeric values from phase scores (handle dict values)
-        safe_phase_scores = {}
+        phase_scores = project.phase_maturity_scores if hasattr(project, 'phase_maturity_scores') else {}
         completed = 0
-        for phase, score in (phase_scores.items()):
-            if isinstance(score, dict):
-                numeric_score = score.get("score", 0)
-            else:
-                numeric_score = score
-            try:
-                numeric_score = float(numeric_score) if numeric_score else 0.0
-            except (TypeError, ValueError):
-                numeric_score = 0.0
-            safe_phase_scores[phase] = numeric_score
-            if numeric_score >= 80:
+        for phase, score in phase_scores.items():
+            if float(score) >= 80:
                 completed += 1
 
         progress_data["phase_progress"] = {
-            "current_phase": getattr(project, "current_phase", "planning"),
-            "phase_scores": safe_phase_scores,
-            "total_phases": len(safe_phase_scores),
+            "current_phase": project.phase if hasattr(project, 'phase') else "planning",
+            "phase_scores": {k: float(v) for k, v in phase_scores.items()},
+            "total_phases": len(phase_scores),
             "completed_phases": completed,
         }
 
         # Category progress
-        category_scores = getattr(project, "category_scores", {})
-        # Safely convert category scores to numbers
-        safe_category_scores = {}
-        numeric_values = []
-        for category, score in (category_scores.items()):
-            if isinstance(score, dict):
-                numeric_score = score.get("score", 0)
-            else:
-                numeric_score = score
-            try:
-                numeric_score = float(numeric_score) if numeric_score else 0.0
-            except (TypeError, ValueError):
-                numeric_score = 0.0
-            safe_category_scores[category] = numeric_score
-            numeric_values.append(numeric_score)
+        category_scores = project.category_scores if hasattr(project, 'category_scores') else {}
+        numeric_values = [float(score) for score in category_scores.values()]
+        average_score = sum(numeric_values) / len(numeric_values) if numeric_values else 0.0
 
         progress_data["category_progress"] = {
-            "total_categories": len(safe_category_scores),
-            "categories": safe_category_scores,
-            "average_category_score": (
-                sum(numeric_values) / len(numeric_values) if numeric_values else 0
-            ),
+            "total_categories": len(category_scores),
+            "categories": {k: float(v) for k, v in category_scores.items()},
+            "average_category_score": average_score,
         }
 
         # Skills progress

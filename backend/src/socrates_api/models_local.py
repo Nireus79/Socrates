@@ -121,7 +121,6 @@ class ProjectContext:
         self.updated_at = updated_at
         self.phase = phase
         self.is_archived = is_archived
-        self.phase_maturity_scores: Dict[str, float] = {}
         self.overall_maturity = overall_maturity
         self.progress = progress
         self.metadata = metadata or {}
@@ -135,13 +134,29 @@ class ProjectContext:
         self.code_history = code_history or []
         self.chat_sessions = chat_sessions or {}
         self.code_generated_count = code_generated_count
+
+        # Nested data structures - standardized as typed fields
+        # Maturity tracking
+        self.maturity_score: float = kwargs.get("maturity_score", 0.0)
+        self.previous_maturity: float = kwargs.get("previous_maturity", 0.0)
+        self.maturity_history: List[Dict[str, Any]] = kwargs.get("maturity_history", [])
+
+        # Phase and category progress
+        self.phase_maturity_scores: Dict[str, float] = kwargs.get("phase_maturity_scores", {})
+        self.category_scores: Dict[str, float] = kwargs.get("category_scores", {})
+
         # Chat and question attributes
         self.pending_questions: List[Dict[str, Any]] = kwargs.get("pending_questions", [])
         self.answered_questions: List[Dict[str, Any]] = kwargs.get("answered_questions", [])
         self.skipped_questions: List[Dict[str, Any]] = kwargs.get("skipped_questions", [])
+
         # Store any additional kwargs
         for key, value in kwargs.items():
-            if not key.startswith("_"):
+            if not key.startswith("_") and key not in (
+                "maturity_score", "previous_maturity", "maturity_history",
+                "phase_maturity_scores", "category_scores",
+                "pending_questions", "answered_questions", "skipped_questions"
+            ):
                 setattr(self, key, value)
 
     def to_dict(self) -> Dict:
