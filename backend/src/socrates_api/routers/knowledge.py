@@ -529,8 +529,14 @@ async def import_file(
         knowledge_dir = Path.home() / ".socrates" / "knowledge_base" / current_user / doc_id
         knowledge_dir.mkdir(exist_ok=True, parents=True)
 
+        # SECURITY: Validate filename to prevent path traversal attacks
+        # Ensure filename doesn't contain ".." or absolute paths
+        safe_filename = Path(file.filename).name  # Gets only the filename, removes any path components
+        if not safe_filename or safe_filename.startswith('.'):
+            safe_filename = f"document_{doc_id}.txt"
+
         # Preserve original filename with document ID
-        stored_file = knowledge_dir / file.filename
+        stored_file = knowledge_dir / safe_filename
 
         # Write file content
         content = await file.read()
