@@ -56,19 +56,19 @@ class TestEventTypes:
 
     def test_event_type_exists(self):
         """Test that event types are defined."""
-        assert hasattr(EventType, "PROJECT_CREATED")
-        assert hasattr(EventType, "PROJECT_UPDATED")
-        assert hasattr(EventType, "QUESTION_GENERATED")
-        assert hasattr(EventType, "RESPONSE_ANALYZED")
+        assert hasattr(EventType, "AGENT_STARTED")
+        assert hasattr(EventType, "AGENT_COMPLETED")
+        assert hasattr(EventType, "SKILL_GENERATED")
+        assert hasattr(EventType, "AGENT_FAILED")
 
     def test_event_type_values(self):
         """Test event type values."""
         # Event types should be strings or enums
         event_types = [
-            EventType.PROJECT_CREATED,
-            EventType.PROJECT_UPDATED,
-            EventType.QUESTION_GENERATED,
-            EventType.RESPONSE_ANALYZED,
+            EventType.AGENT_STARTED,
+            EventType.AGENT_COMPLETED,
+            EventType.SKILL_GENERATED,
+            EventType.AGENT_FAILED,
         ]
 
         for event_type in event_types:
@@ -78,28 +78,28 @@ class TestEventTypes:
 class TestEventEmission:
     """Tests for event emission."""
 
-    def test_emit_project_created(self, mock_orchestrator, sample_project):
-        """Test emitting project created event."""
-        event_type = EventType.PROJECT_CREATED
-        event_data = {"project_id": sample_project.project_id}
+    def test_emit_agent_started(self, mock_orchestrator, sample_project):
+        """Test emitting agent started event."""
+        event_type = EventType.AGENT_STARTED
+        event_data = {"agent": "code_generator", "action": "generate"}
 
         mock_orchestrator.event_emitter.emit(event_type, event_data)
 
         mock_orchestrator.event_emitter.emit.assert_called_once_with(event_type, event_data)
 
-    def test_emit_question_generated(self, mock_orchestrator):
-        """Test emitting question generated event."""
-        event_type = EventType.QUESTION_GENERATED
-        event_data = {"question": "What are your goals?", "timestamp": datetime.datetime.now()}
+    def test_emit_skill_generated(self, mock_orchestrator):
+        """Test emitting skill generated event."""
+        event_type = EventType.SKILL_GENERATED
+        event_data = {"skill": "code_generation", "timestamp": datetime.datetime.now()}
 
         mock_orchestrator.event_emitter.emit(event_type, event_data)
 
         assert mock_orchestrator.event_emitter.emit.called
 
-    def test_emit_response_analyzed(self, mock_orchestrator):
-        """Test emitting response analyzed event."""
-        event_type = EventType.RESPONSE_ANALYZED
-        event_data = {"response": "Build a web app", "insights": {"goals": "web app"}}
+    def test_emit_agent_completed(self, mock_orchestrator):
+        """Test emitting agent completed event."""
+        event_type = EventType.AGENT_COMPLETED
+        event_data = {"agent": "code_validator", "status": "success"}
 
         mock_orchestrator.event_emitter.emit(event_type, event_data)
 
@@ -108,9 +108,9 @@ class TestEventEmission:
     def test_emit_multiple_events(self, mock_orchestrator):
         """Test emitting multiple events."""
         events = [
-            (EventType.PROJECT_CREATED, {"project_id": "p1"}),
-            (EventType.QUESTION_GENERATED, {"question": "Q?"}),
-            (EventType.RESPONSE_ANALYZED, {"response": "A"}),
+            (EventType.AGENT_STARTED, {"agent": "a1"}),
+            (EventType.SKILL_GENERATED, {"skill": "s1"}),
+            (EventType.AGENT_COMPLETED, {"agent": "a1"}),
         ]
 
         for event_type, data in events:
@@ -124,7 +124,7 @@ class TestEventListening:
 
     def test_register_event_listener(self, mock_orchestrator):
         """Test registering event listener."""
-        event_type = EventType.PROJECT_CREATED
+        event_type = EventType.AGENT_STARTED
         callback = MagicMock()
 
         mock_orchestrator.event_emitter.on(event_type, callback)
@@ -134,8 +134,8 @@ class TestEventListening:
     def test_listener_callback_execution(self, mock_orchestrator):
         """Test listener callback is called."""
         callback = MagicMock()
-        event_type = EventType.QUESTION_GENERATED
-        event_data = {"question": "What?"}
+        event_type = EventType.SKILL_GENERATED
+        event_data = {"skill": "gen"}
 
         # Register listener
         mock_orchestrator.event_emitter.on(event_type, callback)
@@ -150,7 +150,7 @@ class TestEventListening:
         """Test multiple listeners for same event."""
         callback1 = MagicMock()
         callback2 = MagicMock()
-        event_type = EventType.PROJECT_UPDATED
+        event_type = EventType.AGENT_COMPLETED
 
         mock_orchestrator.event_emitter.on(event_type, callback1)
         mock_orchestrator.event_emitter.on(event_type, callback2)
@@ -159,7 +159,7 @@ class TestEventListening:
 
     def test_unregister_listener(self, mock_orchestrator):
         """Test unregistering event listener."""
-        event_type = EventType.QUESTION_GENERATED
+        event_type = EventType.SKILL_GENERATED
         callback = MagicMock()
 
         mock_orchestrator.event_emitter.on(event_type, callback)
@@ -306,23 +306,23 @@ class TestEventIntegration:
 
     def test_project_workflow_events(self, mock_orchestrator, sample_project):
         """Test event sequence in project workflow."""
-        # Project created
-        mock_orchestrator.event_emitter.emit(EventType.PROJECT_CREATED, {"project_id": "p1"})
+        # Agent started
+        mock_orchestrator.event_emitter.emit(EventType.AGENT_STARTED, {"agent": "a1"})
 
-        # Question generated
-        mock_orchestrator.event_emitter.emit(EventType.QUESTION_GENERATED, {"question": "What?"})
+        # Skill generated
+        mock_orchestrator.event_emitter.emit(EventType.SKILL_GENERATED, {"skill": "s1"})
 
-        # Response analyzed
-        mock_orchestrator.event_emitter.emit(EventType.RESPONSE_ANALYZED, {"response": "Answer"})
+        # Agent completed
+        mock_orchestrator.event_emitter.emit(EventType.AGENT_COMPLETED, {"agent": "a1"})
 
-        # Project updated
-        mock_orchestrator.event_emitter.emit(EventType.PROJECT_UPDATED, {"project_id": "p1"})
+        # Learning completed
+        mock_orchestrator.event_emitter.emit(EventType.LEARNING_COMPLETED, {"entries": 5})
 
         assert mock_orchestrator.event_emitter.emit.call_count == 4
 
     def test_error_event_handling(self, mock_orchestrator):
         """Test error event handling."""
-        error_event = EventType.LOG_ERROR
+        error_event = EventType.AGENT_FAILED
         error_data = {"message": "An error occurred", "timestamp": datetime.datetime.now()}
 
         mock_orchestrator.event_emitter.emit(error_event, error_data)
@@ -334,10 +334,10 @@ class TestEventIntegration:
         callback = MagicMock()
 
         # Register listener
-        mock_orchestrator.event_emitter.on(EventType.PROJECT_CREATED, callback)
+        mock_orchestrator.event_emitter.on(EventType.AGENT_STARTED, callback)
 
         # Emit event
-        mock_orchestrator.event_emitter.emit(EventType.PROJECT_CREATED, {"project_id": "p1"})
+        mock_orchestrator.event_emitter.emit(EventType.AGENT_STARTED, {"agent": "a1"})
 
         # Listener registered
         assert mock_orchestrator.event_emitter.on.called

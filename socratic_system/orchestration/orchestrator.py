@@ -408,7 +408,7 @@ class AgentOrchestrator:
             return
 
         self.logger.info("Loading knowledge base...")
-        self.event_emitter.emit(EventType.LOG_INFO, {"message": "Loading knowledge base..."})
+        self.event_emitter.emit(EventType.SERVICE_STARTED, {"message": "Loading knowledge base..."})
 
         # Load knowledge data from config file
         knowledge_data = self._load_knowledge_config()
@@ -517,7 +517,7 @@ class AgentOrchestrator:
             "No knowledge base config found - system will run with empty knowledge base"
         )
         self.event_emitter.emit(
-            EventType.LOG_WARNING, {"message": "No knowledge base config found"}
+            EventType.SERVICE_ERROR, {"message": "No knowledge base config found"}
         )
 
     def _emit_knowledge_loaded_event(self, loaded_count: int, error_count: int) -> None:
@@ -528,7 +528,7 @@ class AgentOrchestrator:
         self.logger.info(summary)
 
         self.event_emitter.emit(
-            EventType.KNOWLEDGE_LOADED,
+            EventType.LEARNING_COMPLETED,
             {
                 "entry_count": loaded_count,
                 "error_count": error_count,
@@ -705,7 +705,7 @@ class AgentOrchestrator:
         agent = agents.get(agent_name)
         if agent:
             self.event_emitter.emit(
-                EventType.AGENT_START,
+                EventType.AGENT_STARTED,
                 {"agent": agent_name, "action": request.get("action", "unknown")},
             )
 
@@ -715,7 +715,7 @@ class AgentOrchestrator:
                 result = agent.process(translated_request)
 
                 self.event_emitter.emit(
-                    EventType.AGENT_COMPLETE,
+                    EventType.AGENT_COMPLETED,
                     {"agent": agent_name, "status": result.get("status", "unknown")},
                 )
 
@@ -723,7 +723,7 @@ class AgentOrchestrator:
             except Exception as e:
                 self.logger.error(f"Agent {agent_name} error: {e}")
                 self.event_emitter.emit(
-                    EventType.AGENT_ERROR, {"agent": agent_name, "error": str(e)}
+                    EventType.AGENT_FAILED, {"agent": agent_name, "error": str(e)}
                 )
                 raise
         else:
@@ -787,7 +787,7 @@ class AgentOrchestrator:
             raise ValueError(f"Unknown agent: {agent_name}")
 
         self.event_emitter.emit(
-            EventType.AGENT_START,
+            EventType.AGENT_STARTED,
             {"agent": agent_name, "action": request.get("action", "unknown"), "async": True},
         )
 
@@ -795,7 +795,7 @@ class AgentOrchestrator:
             result = await agent.process_async(request)
 
             self.event_emitter.emit(
-                EventType.AGENT_COMPLETE,
+                EventType.AGENT_COMPLETED,
                 {"agent": agent_name, "status": result.get("status", "unknown"), "async": True},
             )
 
@@ -804,7 +804,7 @@ class AgentOrchestrator:
         except Exception as e:
             self.logger.error(f"Agent {agent_name} async error: {e}")
             self.event_emitter.emit(
-                EventType.AGENT_ERROR, {"agent": agent_name, "error": str(e), "async": True}
+                EventType.AGENT_FAILED, {"agent": agent_name, "error": str(e), "async": True}
             )
             raise
 
