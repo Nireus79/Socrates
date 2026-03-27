@@ -682,7 +682,7 @@ async def change_password(
             )
 
         # Convert to User object
-        user = User(**user_dict) if isinstance(user_dict, dict) else user_dict
+        user = user_dict
 
         # Verify old password
         if not verify_password(request.old_password, user.passcode_hash):
@@ -907,7 +907,7 @@ async def mfa_disable(
             )
 
         # Convert to User object
-        user = User(**user_dict) if isinstance(user_dict, dict) else user_dict
+        user = user_dict
 
         if not verify_password(request.password, user.passcode_hash):
             logger.warning(f"MFA disable attempt with invalid password for user {current_user}")
@@ -1391,7 +1391,7 @@ async def archive_account(
             raise HTTPException(status_code=404, detail="User not found")
 
         # Convert to User object if dict
-        user = User(**user_dict) if isinstance(user_dict, dict) else user_dict
+        user = user_dict
 
         # Archive user
         user.archived = True
@@ -1450,7 +1450,7 @@ async def restore_account(
             raise HTTPException(status_code=404, detail="User not found")
 
         # Convert to User object if dict
-        user = User(**user_dict) if isinstance(user_dict, dict) else user_dict
+        user = user_dict
 
         if not getattr(user, "archived", False):
             raise HTTPException(status_code=400, detail="Account is not archived")

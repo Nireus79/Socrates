@@ -85,7 +85,7 @@ async def change_password(
 
         # Convert dict to User object if needed
         from socrates_api.models_local import User
-        user = User(**user_data) if isinstance(user_data, dict) else user_data
+        user = user_data
 
         # Verify current password
         if not bcrypt.checkpw(

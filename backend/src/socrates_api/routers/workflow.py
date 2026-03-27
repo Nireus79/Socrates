@@ -59,8 +59,7 @@ async def get_pending_approvals(
         orchestrator = get_orchestrator()
 
         # Load project to verify it exists
-        project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

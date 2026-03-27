@@ -74,7 +74,7 @@ async def add_note(
 
         # Load project
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -147,7 +147,7 @@ async def list_notes(
 
         # Load project
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -216,7 +216,7 @@ async def search_notes(
 
         # Load project
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -283,7 +283,7 @@ async def delete_note(
 
         # Load project
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

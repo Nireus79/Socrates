@@ -151,8 +151,7 @@ async def search_knowledge(
         results = []
 
         if project_id:
-            project_dict = db.load_project(project_id)
-            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+            project = db.load_project(project_id)
             if project:
                 # Search in project notes
                 if project.notes:

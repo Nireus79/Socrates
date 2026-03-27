@@ -561,7 +561,7 @@ async def get_question(
 
         # Extract question from orchestrator result (nested in "data" key)
         question_data = result.get("data", {})
-        question = question_data.get("question", "") if isinstance(question_data, dict) else ""
+        question = question_data.get("question", "")
 
         return APIResponse(
             success=True,
@@ -864,7 +864,7 @@ async def get_history(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Convert dict to ProjectContext if needed
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         # Get conversation history from project
         history = getattr(project, "conversation_history", []) or []
@@ -1441,7 +1441,7 @@ async def get_questions(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Convert dict to ProjectContext if needed
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         questions = getattr(project, "pending_questions", []) or []
 

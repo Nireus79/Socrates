@@ -123,7 +123,7 @@ async def get_analytics_summary(
         if project_id:
             # Get real project data
             project_dict = db.load_project(project_id)
-            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+            project = project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -251,7 +251,7 @@ async def get_project_analytics(
     """
     try:
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -519,7 +519,7 @@ async def get_trends(
         # Load project
         db = get_database()
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -642,7 +642,7 @@ async def get_recommendations(
         # Load project
         db = get_database()
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -753,7 +753,7 @@ async def export_analytics(
 
         # Load project
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1214,7 +1214,7 @@ async def get_dashboard_analytics(
 
         # Load project to compile analytics
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if project is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
@@ -1345,7 +1345,7 @@ async def get_analytics_breakdown(
 
         db = get_database()
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1446,7 +1446,7 @@ async def get_analytics_status(
 
         db = get_database()
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

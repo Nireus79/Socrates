@@ -200,7 +200,7 @@ async def get_all_knowledge_sources(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -511,7 +511,7 @@ async def import_file(
         # Verify project access if provided
         if project_id:
             project_dict = db.load_project(project_id)
-            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+            project = project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -715,7 +715,7 @@ async def import_url(
         # Verify project access if provided
         if project_id:
             project_dict = db.load_project(project_id)
-            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+            project = project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -839,7 +839,7 @@ async def import_text(
         # Verify project access if provided
         if project_id:
             project_dict = db.load_project(project_id)
-            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+            project = project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -984,7 +984,7 @@ async def search_knowledge(
         # Verify project access if provided
         if project_id:
             project_dict = db.load_project(project_id)
-            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+            project = project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -1208,7 +1208,7 @@ async def bulk_import_documents(
         # Verify project access if specified
         if project_id:
             project_dict = db.load_project(project_id)
-            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+            project = project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -1419,7 +1419,7 @@ async def add_knowledge_entry(
         # Verify project access if provided
         if project_id:
             project_dict = db.load_project(project_id)
-            project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+            project = project_dict
             if not project:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"

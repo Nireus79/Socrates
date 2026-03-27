@@ -66,7 +66,7 @@ async def generate_final_artifacts(
 
         logger.info(f"Generating final artifacts for project: {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -228,7 +228,7 @@ async def generate_final_documentation(
 
         logger.info(f"Generating final documentation for project: {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -500,7 +500,7 @@ async def export_project(
 
         logger.info(f"Exporting project: {project_id} as {format}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -657,7 +657,7 @@ async def publish_to_github(
 
         logger.info(f"Publishing project to GitHub: {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

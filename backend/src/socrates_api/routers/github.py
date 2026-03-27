@@ -455,7 +455,7 @@ async def pull_changes(
         await check_project_access(project_id, current_user, db, min_role="editor")
         # Validate project exists
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -648,7 +648,7 @@ async def push_changes(
         await check_project_access(project_id, current_user, db, min_role="editor")
         # Load project
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -858,7 +858,7 @@ async def sync_project(
         await check_project_access(project_id, current_user, db, min_role="editor")
         # Load project
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1088,7 +1088,7 @@ async def get_sync_status(
         await check_project_access(project_id, current_user, db, min_role="viewer")
         # Load project
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

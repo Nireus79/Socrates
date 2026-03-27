@@ -511,7 +511,7 @@ async def update_project(
     """
     try:
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -586,7 +586,7 @@ async def delete_project(
     """
     try:
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             # Project not found
@@ -654,7 +654,7 @@ async def restore_project(
     """
     try:
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -725,7 +725,7 @@ async def get_project_stats(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -801,7 +801,7 @@ async def get_project_maturity(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -876,7 +876,7 @@ async def get_maturity_analysis(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -915,11 +915,11 @@ async def get_maturity_analysis(
             missing_categories = []
 
             for cat_name, cat_data in phase_categories.items():
-                percentage = cat_data.get("percentage", 0.0) if isinstance(cat_data, dict) else getattr(cat_data, "percentage", 0.0)
-                current_score = cat_data.get("current_score", 0.0) if isinstance(cat_data, dict) else getattr(cat_data, "current_score", 0.0)
-                target_score = cat_data.get("target_score", 15.0) if isinstance(cat_data, dict) else getattr(cat_data, "target_score", 15.0)
-                spec_count = cat_data.get("spec_count", 0) if isinstance(cat_data, dict) else getattr(cat_data, "spec_count", 0)
-                confidence = cat_data.get("confidence", 0.0) if isinstance(cat_data, dict) else getattr(cat_data, "confidence", 0.0)
+                percentage = cat_data.get("percentage", 0.0)
+                current_score = cat_data.get("current_score", 0.0)
+                target_score = cat_data.get("target_score", 15.0)
+                spec_count = cat_data.get("spec_count", 0)
+                confidence = cat_data.get("confidence", 0.0)
 
                 category_info = {
                     "name": cat_name,
@@ -948,7 +948,7 @@ async def get_maturity_analysis(
                                         (hasattr(cat, "percentage") and cat.percentage >= 100))
 
             # Estimate metrics for reaching milestones
-            current_score_sum = sum((cat.get("current_score", 0) if isinstance(cat, dict) else getattr(cat, "current_score", 0))
+            current_score_sum = sum((cat.get("current_score", 0)
                                    for cat in phase_categories.values())
 
             milestone_60 = max(0, 54.0 - current_score_sum)  # 60% of 90
@@ -1115,7 +1115,7 @@ async def advance_phase(
         await check_project_access(project_id, current_user, db, min_role="owner")
 
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -1204,7 +1204,7 @@ async def rollback_phase(
         await check_project_access(project_id, current_user, db, min_role="owner")
 
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -1290,7 +1290,7 @@ async def get_project_analytics(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -1400,7 +1400,7 @@ async def get_project_files(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -1510,7 +1510,7 @@ async def get_file_content(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(
@@ -1613,7 +1613,7 @@ async def delete_project_file(
 
         # Get and verify project exists
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

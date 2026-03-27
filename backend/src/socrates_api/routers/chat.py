@@ -57,7 +57,7 @@ async def get_next_question(
 
         logger.info(f"Getting next question for project: {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -127,7 +127,7 @@ async def get_conversation_history(
 
         logger.info(f"Getting conversation history for project: {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -188,7 +188,7 @@ async def get_conversation_summary(
 
         logger.info(f"Generating summary for project: {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

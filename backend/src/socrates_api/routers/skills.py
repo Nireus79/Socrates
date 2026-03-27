@@ -60,7 +60,7 @@ async def set_skills(
 
         logger.info(f"Setting skill '{skill_name}' for project {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -178,7 +178,7 @@ async def list_skills(
 
         logger.info(f"Listing skills for project {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")

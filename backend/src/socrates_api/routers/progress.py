@@ -50,7 +50,7 @@ async def get_progress(
 
         logger.info(f"Getting progress for project {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -76,7 +76,7 @@ async def get_progress(
         if conversation_count > 0:
             last_msg = getattr(project, "conversation_history", [])[-1]
             progress_data["conversation_progress"]["last_message_at"] = (
-                last_msg.get("timestamp") if isinstance(last_msg, dict) else str(last_msg)
+                last_msg.get("timestamp")
             )
 
         # Code generation progress
@@ -93,16 +93,14 @@ async def get_progress(
 
         # Maturity progress - safely convert dict values to numbers
         maturity_score = getattr(project, "maturity_score", 0)
-        if isinstance(maturity_score, dict):
-            maturity_score = maturity_score.get("score", 0)
+        maturity_score = maturity_score.get("score", 0)
         try:
             maturity_score = float(maturity_score) if maturity_score else 0.0
         except (TypeError, ValueError):
             maturity_score = 0.0
 
         previous_maturity = getattr(project, "previous_maturity", 0)
-        if isinstance(previous_maturity, dict):
-            previous_maturity = previous_maturity.get("score", 0)
+        previous_maturity = previous_maturity.get("score", 0)
         try:
             previous_maturity = float(previous_maturity) if previous_maturity else 0.0
         except (TypeError, ValueError):
@@ -119,9 +117,9 @@ async def get_progress(
         # Safely extract numeric values from phase scores (handle dict values)
         safe_phase_scores = {}
         completed = 0
-        for phase, score in (phase_scores.items() if isinstance(phase_scores, dict) else []):
+        for phase, score in (phase_scores.items()):
             if isinstance(score, dict):
-                numeric_score = score.get("score", 0) if isinstance(score, dict) else score
+                numeric_score = score.get("score", 0)
             else:
                 numeric_score = score
             try:
@@ -144,9 +142,9 @@ async def get_progress(
         # Safely convert category scores to numbers
         safe_category_scores = {}
         numeric_values = []
-        for category, score in (category_scores.items() if isinstance(category_scores, dict) else []):
+        for category, score in (category_scores.items()):
             if isinstance(score, dict):
-                numeric_score = score.get("score", 0) if isinstance(score, dict) else score
+                numeric_score = score.get("score", 0)
             else:
                 numeric_score = score
             try:
@@ -249,7 +247,7 @@ async def get_progress_status(
 
         logger.info(f"Getting progress status for project {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -409,7 +407,7 @@ async def get_project_stats(
 
         logger.info(f"Getting stats for project {project_id}")
         project_dict = db.load_project(project_id)
-        project = ProjectContext(**project_dict) if isinstance(project_dict, dict) else project_dict
+        project = project_dict
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -423,17 +421,17 @@ async def get_project_stats(
 
         # Count insights (messages with type='insight')
         insight_count = len(
-            [msg for msg in conversation_history if isinstance(msg, dict) and msg.get("type") == "insight"]
+            [msg for msg in conversation_history if msg.get("type") == "insight"]
         )
 
         # Count questions (messages with type='question')
         question_count = len(
-            [msg for msg in conversation_history if isinstance(msg, dict) and msg.get("type") == "question"]
+            [msg for msg in conversation_history if msg.get("type") == "question"]
         )
 
         # Count code blocks generated
         code_count = len(
-            [msg for msg in conversation_history if isinstance(msg, dict) and msg.get("type") == "code"]
+            [msg for msg in conversation_history if msg.get("type") == "code"]
         )
 
         # Get current phase
