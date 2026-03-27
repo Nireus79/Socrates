@@ -1734,7 +1734,7 @@ def _apply_initial_insights_to_project(project, insights: dict) -> None:
 
     except Exception as e:
         logger.debug("Operation failed")
-        logger.warning(f"Error applying insights to project: {e}")
+        logger.debug("Error applying insights to project:")
 
 
 def _normalize_to_list(value) -> list:

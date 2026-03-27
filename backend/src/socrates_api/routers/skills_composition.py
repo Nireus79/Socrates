@@ -79,7 +79,7 @@ async def create_composition(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error creating composition: {e}", exc_info=True)
+        logger.debug("Error creating composition", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -133,7 +133,7 @@ async def add_parameter_mapping(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error adding parameter mapping: {e}", exc_info=True)
+        logger.debug("Error adding parameter mapping", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -189,7 +189,7 @@ async def add_condition(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error adding condition: {e}", exc_info=True)
+        logger.debug("Error adding condition", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -243,7 +243,7 @@ async def add_error_handler(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error adding error handler: {e}", exc_info=True)
+        logger.debug("Error adding error handler", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -284,7 +284,7 @@ async def execute_composition(
             data=result
         )
     except Exception as e:
-        logger.error(f"Error executing composition: {e}", exc_info=True)
+        logger.debug("Error executing composition", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -323,7 +323,7 @@ async def get_composition(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting composition: {e}", exc_info=True)
+        logger.debug("Error getting composition", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -362,7 +362,7 @@ async def get_composition_metrics(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting composition metrics: {e}", exc_info=True)
+        logger.debug("Error getting composition metrics", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -401,7 +401,7 @@ async def get_execution_history(
             }
         )
     except Exception as e:
-        logger.error(f"Error getting execution history: {e}", exc_info=True)
+        logger.debug("Error getting execution history", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -434,7 +434,7 @@ async def list_compositions(
             }
         )
     except Exception as e:
-        logger.error(f"Error listing compositions: {e}", exc_info=True)
+        logger.debug("Error listing compositions", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -464,5 +464,5 @@ async def get_composition_stats(
             data=stats
         )
     except Exception as e:
-        logger.error(f"Error getting composition stats: {e}", exc_info=True)
+        logger.debug("Error getting composition stats", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

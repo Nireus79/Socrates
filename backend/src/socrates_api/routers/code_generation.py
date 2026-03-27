@@ -325,7 +325,7 @@ async def generate_code(
             )
 
         except Exception as e:
-            logger.error(f"Error in code generation: {e}")
+            logger.debug("Error in code generation", exc_info=True)
             # Return safe fallback
             return APIResponse(
                 success=True,
@@ -344,7 +344,7 @@ async def generate_code(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error generating code: {e}")
+        logger.debug("Error generating code", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error generating code",
@@ -517,7 +517,7 @@ async def validate_code(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error validating code: {e}")
+        logger.debug("Error validating code", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error validating code",
@@ -589,7 +589,7 @@ async def get_code_history(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving code history: {e}")
+        logger.debug("Error retrieving code history", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving history",
@@ -844,7 +844,7 @@ async def refactor_code(
             )
 
         except Exception as e:
-            logger.error(f"Error in code refactoring: {e}")
+            logger.debug("Error in code refactoring", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Operation failed. Please try again later.",
@@ -853,7 +853,7 @@ async def refactor_code(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error refactoring code: {e}")
+        logger.debug("Error refactoring code", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error refactoring code",
@@ -954,7 +954,7 @@ async def generate_documentation(
             logger.info(f"Documentation generated successfully ({len(documentation)} characters)")
 
         except Exception as e:
-            logger.error(f"Error generating documentation with Claude AI: {e}")
+            logger.debug("Error generating documentation with Claude AI", exc_info=True)
             # Fallback to manual documentation building if Claude fails
             logger.info("Falling back to manual documentation generation")
             doc_sections = []
@@ -1052,7 +1052,7 @@ async def generate_documentation(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error generating documentation: {e}")
+        logger.debug("Error generating documentation", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error generating documentation",

@@ -240,7 +240,7 @@ async def get_all_knowledge_sources(
                 })
         except Exception as e:
             logger.debug("Operation failed")
-            logger.warning(f"Error fetching documents: {e}")
+            logger.debug("Error fetching documents:")
 
         # 2. Get project notes
         try:
@@ -264,7 +264,7 @@ async def get_all_knowledge_sources(
                     })
         except Exception as e:
             logger.debug("Operation failed")
-            logger.warning(f"Error fetching notes: {e}")
+            logger.debug("Error fetching notes:")
 
         # 3. Get GitHub repositories
         try:
@@ -298,7 +298,7 @@ async def get_all_knowledge_sources(
                 })
         except Exception as e:
             logger.debug("Operation failed")
-            logger.warning(f"Error fetching GitHub repo info: {e}")
+            logger.debug("Error fetching GitHub repo info:")
 
         return APIResponse(
             success=True,
@@ -464,7 +464,7 @@ async def download_document(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error downloading document {document_id}: {e}")
+        logger.debug("Error downloading document ", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error downloading file"
         )
@@ -638,7 +638,7 @@ async def import_file(
                 logger.debug(f"Emitted DOCUMENT_IMPORTED event for {file.filename}")
             except Exception as e:
                 logger.debug("Operation failed")
-                logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
+                logger.debug("Failed to emit DOCUMENT_IMPORTED event:")
                 # Don't fail the import if event emission fails
 
             return APIResponse(
@@ -662,7 +662,7 @@ async def import_file(
                 temp_file.unlink()
             except Exception as e:
                 logger.debug("Operation failed")
-                logger.warning(f"Failed to delete temp file {temp_file}: {e}")
+                logger.debug("Failed to delete temp file {temp_file}:")
 
     except HTTPException:
         raise
@@ -773,7 +773,7 @@ async def import_url(
             logger.debug(f"Emitted DOCUMENT_IMPORTED event for {url}")
         except Exception as e:
             logger.debug("Operation failed")
-            logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
+            logger.debug("Failed to emit DOCUMENT_IMPORTED event:")
             # Don't fail the import if event emission fails
 
         return APIResponse(
@@ -915,7 +915,7 @@ async def import_text(
             logger.debug(f"Emitted DOCUMENT_IMPORTED event for {title}")
         except Exception as e:
             logger.debug("Operation failed")
-            logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
+            logger.debug("Failed to emit DOCUMENT_IMPORTED event:")
             # Don't fail the import if event emission fails
 
         return APIResponse(
@@ -1175,7 +1175,7 @@ async def bulk_delete_documents(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in bulk delete: {e}")
+        logger.debug("Error in bulk delete", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error performing bulk delete"
         )
@@ -1305,7 +1305,7 @@ async def bulk_import_documents(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in bulk import: {e}")
+        logger.debug("Error in bulk import", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error performing bulk import"
         )
@@ -1372,7 +1372,7 @@ async def get_document_analytics(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting document analytics: {e}")
+        logger.debug("Error getting document analytics", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error retrieving analytics"
         )

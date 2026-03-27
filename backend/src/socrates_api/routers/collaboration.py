@@ -99,7 +99,7 @@ async def _get_active_collaborators(project_id: str) -> List[Dict[str, Any]]:
         return active_collaborators
 
     except Exception as e:
-        logger.error(f"Error getting active collaborators for {project_id}: {e}")
+        logger.debug("Error getting active collaborators for ", exc_info=True)
         return []
 
 
@@ -161,7 +161,7 @@ async def _broadcast_activity(
         return total_sent
 
     except Exception as e:
-        logger.error(f"Error broadcasting activity in project {project_id}: {e}")
+        logger.debug("Error broadcasting activity in project ", exc_info=True)
         return 0
 
 
@@ -304,7 +304,7 @@ async def add_collaborator_new(
                 raise
             except Exception as e:
                 logger.debug("Operation failed")
-                logger.warning(f"Error looking up user by email {request.email}: {e}")
+                logger.debug("Error looking up user by email {request.email}:")
                 # Fall back to using email prefix as username
                 resolved_username = request.email.split("@")[0]
                 logger.info(f"Could not resolve email, using prefix: {resolved_username}")
@@ -319,7 +319,7 @@ async def add_collaborator_new(
                     )
             except Exception as e:
                 logger.debug("Operation failed")
-                logger.warning(f"Could not verify user {resolved_username} exists: {e}")
+                logger.debug("Could not verify user {resolved_username} exists:")
 
         # Cannot add the owner as a team member
         if resolved_username == project.owner:
@@ -383,7 +383,7 @@ async def add_collaborator_new(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error adding collaborator: {e}")
+        logger.debug("Error adding collaborator", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error adding collaborator",
@@ -488,7 +488,7 @@ async def list_collaborators(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error listing collaborators: {e}")
+        logger.debug("Error listing collaborators", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error listing collaborators",
@@ -589,7 +589,7 @@ async def update_collaborator_role(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating role: {e}")
+        logger.debug("Error updating role", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error updating role",
@@ -681,7 +681,7 @@ async def remove_collaborator(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error removing collaborator: {e}")
+        logger.debug("Error removing collaborator", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error removing collaborator",
@@ -747,7 +747,7 @@ async def get_presence(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting presence: {e}")
+        logger.debug("Error getting presence", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error getting presence",
@@ -848,7 +848,7 @@ async def record_activity(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error recording activity: {e}")
+        logger.debug("Error recording activity", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error recording activity",
@@ -929,7 +929,7 @@ async def get_activities(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error fetching activities: {e}")
+        logger.debug("Error fetching activities", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error fetching activities",
@@ -1071,7 +1071,7 @@ async def create_project_invitation(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error creating invitation: {e}")
+        logger.debug("Error creating invitation", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error creating invitation",
@@ -1131,7 +1131,7 @@ async def get_project_invitations(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting invitations: {e}")
+        logger.debug("Error getting invitations", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving invitations",
@@ -1262,7 +1262,7 @@ async def accept_invitation(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error accepting invitation: {e}")
+        logger.debug("Error accepting invitation", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error accepting invitation",
@@ -1330,7 +1330,7 @@ async def cancel_invitation(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error cancelling invitation: {e}")
+        logger.debug("Error cancelling invitation", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error cancelling invitation",

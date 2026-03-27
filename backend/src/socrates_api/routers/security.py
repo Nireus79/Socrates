@@ -203,7 +203,7 @@ async def setup_2fa(
             qr_code_url = f"data:image/png;base64,{qr_code}"
         except Exception as e:
             logger.debug("Operation failed")
-            logger.warning(f"Could not generate QR code: {e}")
+            logger.debug("Could not generate QR code:")
             qr_code_url = ""
 
         # Generate backup codes (10 random codes)

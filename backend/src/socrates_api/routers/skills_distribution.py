@@ -78,7 +78,7 @@ async def distribute_skill(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error distributing skill: {e}", exc_info=True)
+        logger.debug("Error distributing skill", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -130,7 +130,7 @@ async def broadcast_skill(
             }
         )
     except Exception as e:
-        logger.error(f"Error broadcasting skill: {e}", exc_info=True)
+        logger.debug("Error broadcasting skill", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -170,7 +170,7 @@ async def get_adoption_status(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting adoption status: {e}", exc_info=True)
+        logger.debug("Error getting adoption status", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -206,7 +206,7 @@ async def get_agent_adoptions(
             }
         )
     except Exception as e:
-        logger.error(f"Error getting agent adoptions: {e}", exc_info=True)
+        logger.debug("Error getting agent adoptions", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -262,7 +262,7 @@ async def record_adoption(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error recording adoption: {e}", exc_info=True)
+        logger.debug("Error recording adoption", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -302,7 +302,7 @@ async def get_performance_comparison(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting performance comparison: {e}", exc_info=True)
+        logger.debug("Error getting performance comparison", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -346,7 +346,7 @@ async def get_skill_lineage(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting skill lineage: {e}", exc_info=True)
+        logger.debug("Error getting skill lineage", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -397,7 +397,7 @@ async def get_distribution_history(
             }
         )
     except Exception as e:
-        logger.error(f"Error getting distribution history: {e}", exc_info=True)
+        logger.debug("Error getting distribution history", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -428,5 +428,5 @@ async def get_distribution_metrics(
             data=metrics
         )
     except Exception as e:
-        logger.error(f"Error getting distribution metrics: {e}", exc_info=True)
+        logger.debug("Error getting distribution metrics", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

@@ -76,7 +76,7 @@ async def track_metric(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error tracking metric: {e}", exc_info=True)
+        logger.debug("Error tracking metric", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -120,7 +120,7 @@ async def analyze_performance(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error analyzing performance: {e}", exc_info=True)
+        logger.debug("Error analyzing performance", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -165,7 +165,7 @@ async def get_high_performers(
             }
         )
     except Exception as e:
-        logger.error(f"Error getting high performers: {e}", exc_info=True)
+        logger.debug("Error getting high performers", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -203,7 +203,7 @@ async def get_ecosystem_health(
             data=health
         )
     except Exception as e:
-        logger.error(f"Error getting ecosystem health: {e}", exc_info=True)
+        logger.debug("Error getting ecosystem health", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -238,5 +238,5 @@ async def get_performance_report(
             data=report
         )
     except Exception as e:
-        logger.error(f"Error generating report: {e}", exc_info=True)
+        logger.debug("Error generating report", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

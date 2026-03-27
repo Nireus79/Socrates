@@ -299,7 +299,7 @@ async def _handle_chat_message(
                     )
                 except Exception as e:
                     logger.debug("Operation failed")
-                    logger.warning(f"Failed to generate hint: {e}")
+                    logger.debug("Failed to generate hint:")
                     hint_text = "Try breaking this down into smaller parts."
 
             # Save message to conversation history
@@ -327,7 +327,7 @@ async def _handle_chat_message(
             db.save_project(project)
 
         except Exception as e:
-            logger.error(f"Error processing chat message with AI: {e}")
+            logger.debug("Error processing chat message with AI", exc_info=True)
             ai_response = f"I encountered an error: {str(e)}"
 
         response = {
@@ -599,7 +599,7 @@ async def send_chat_message(
                     question_response = question_result.get("question")
                     logger.info(f"Generated initial question for {project_id}")
             except Exception as e:
-                logger.error(f"Error generating initial question: {e}")
+                logger.debug("Error generating initial question", exc_info=True)
 
         # Process user response with orchestrator via routing (not direct call)
         try:
@@ -620,7 +620,7 @@ async def send_chat_message(
             )
             logger.info(f"[send_chat_message] Assistant response: {assistant_response[:50]}")
         except Exception as e:
-            logger.error(f"[send_chat_message] Error processing response: {e}", exc_info=True)
+            logger.debug("[send_chat_message] Error processing response", exc_info=True)
             assistant_response = "Thank you for your response. I'm processing your input."
 
         # Save updated project
@@ -646,7 +646,7 @@ async def send_chat_message(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error sending chat message: {e}")
+        logger.debug("Error sending chat message", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error processing message",
@@ -728,7 +728,7 @@ async def get_chat_history(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting chat history: {e}")
+        logger.debug("Error getting chat history", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving history",
@@ -799,7 +799,7 @@ async def switch_chat_mode(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error switching chat mode: {e}")
+        logger.debug("Error switching chat mode", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error switching mode",
@@ -865,7 +865,7 @@ async def request_hint(
                     question = question_result.get("question")
             except Exception as e:
                 logger.debug("Operation failed")
-                logger.warning(f"Failed to generate question for hint: {e}")
+                logger.debug("Failed to generate question for hint:")
                 question = f"How would you describe the goals for {project.name}?"
 
         # Generate hint using Claude
@@ -877,7 +877,7 @@ async def request_hint(
                 orchestrator = get_orchestrator()
                 hint = orchestrator.claude_client.generate_suggestions(question, project)
             except Exception as e:
-                logger.error(f"Error generating hint: {e}")
+                logger.debug("Error generating hint", exc_info=True)
                 hint = "Try thinking about the main objectives and requirements."
 
         if not hint:
@@ -898,7 +898,7 @@ async def request_hint(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error requesting hint: {e}")
+        logger.debug("Error requesting hint", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error generating hint",
@@ -957,7 +957,7 @@ async def clear_chat_history(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error clearing chat history: {e}")
+        logger.debug("Error clearing chat history", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error clearing history",
@@ -1039,7 +1039,7 @@ async def get_chat_summary(
                 logger.warning(f"Summary generation returned non-success status: {summary_result}")
         except Exception as e:
             logger.debug("Operation failed")
-            logger.warning(f"Failed to use orchestrator for summary, using Claude directly: {e}")
+            logger.debug("Failed to use orchestrator for summary, using Claude directly:")
             try:
                 from socrates_api.main import get_orchestrator
 
@@ -1098,7 +1098,7 @@ Provide response in JSON format:
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error generating summary: {e}")
+        logger.debug("Error generating summary", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error generating summary",
@@ -1176,7 +1176,7 @@ async def search_conversations(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error searching conversations: {e}")
+        logger.debug("Error searching conversations", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error searching conversations",
@@ -1306,7 +1306,7 @@ async def websocket_collaboration_endpoint(
                         db.save_activity(activity)
                         logger.debug(f"Recorded activity: {activity_type}")
                     except Exception as e:
-                        logger.error(f"Error saving activity: {e}")
+                        logger.debug("Error saving activity", exc_info=True)
 
                     # Broadcast activity to all collaborators
                     await connection_manager.broadcast_to_project(

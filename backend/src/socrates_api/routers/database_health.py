@@ -479,7 +479,7 @@ async def liveness_probe(
             data={"status": "alive"},
         )
     except Exception as e:
-        logger.error(f"Liveness probe failed: {e}")
+        logger.debug("Liveness probe failed", exc_info=True)
         raise HTTPException(status_code=503, detail="Operation failed. Please try again later.")
 
 
@@ -513,5 +513,5 @@ async def readiness_probe(
             data={"status": "ready"},
         )
     except Exception as e:
-        logger.error(f"Readiness probe failed: {e}")
+        logger.debug("Readiness probe failed", exc_info=True)
         raise HTTPException(status_code=503, detail="Operation failed. Please try again later.")

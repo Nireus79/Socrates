@@ -84,7 +84,7 @@ async def register_skill(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error registering skill: {e}", exc_info=True)
+        logger.debug("Error registering skill", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -144,7 +144,7 @@ async def discover_skills(
             }
         )
     except Exception as e:
-        logger.error(f"Error discovering skills: {e}", exc_info=True)
+        logger.debug("Error discovering skills", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -186,7 +186,7 @@ async def search_skills(
             }
         )
     except Exception as e:
-        logger.error(f"Error searching skills: {e}", exc_info=True)
+        logger.debug("Error searching skills", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -225,7 +225,7 @@ async def get_skill(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting skill metadata: {e}", exc_info=True)
+        logger.debug("Error getting skill metadata", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -261,7 +261,7 @@ async def get_skills_by_agent(
             }
         )
     except Exception as e:
-        logger.error(f"Error getting skills by agent: {e}", exc_info=True)
+        logger.debug("Error getting skills by agent", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -297,7 +297,7 @@ async def get_skills_by_type(
             }
         )
     except Exception as e:
-        logger.error(f"Error getting skills by type: {e}", exc_info=True)
+        logger.debug("Error getting skills by type", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -332,7 +332,7 @@ async def get_top_skills(
             }
         )
     except Exception as e:
-        logger.error(f"Error getting top skills: {e}", exc_info=True)
+        logger.debug("Error getting top skills", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -363,5 +363,5 @@ async def get_marketplace_stats(
             data=stats
         )
     except Exception as e:
-        logger.error(f"Error getting marketplace stats: {e}", exc_info=True)
+        logger.debug("Error getting marketplace stats", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

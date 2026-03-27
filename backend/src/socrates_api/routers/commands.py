@@ -135,7 +135,7 @@ def list_commands(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error listing commands: {e}")
+        logger.debug("Error listing commands", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -152,7 +152,7 @@ def list_categories() -> CategoriesResponse:
         categories = [cat.value for cat in registry.list_categories()]
         return CategoriesResponse(status="success", data=sorted(categories))
     except Exception as e:
-        logger.error(f"Error listing categories: {e}")
+        logger.debug("Error listing categories", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -172,7 +172,7 @@ def get_help(command: Optional[str] = Query(None, description="Optional command 
         help_text = registry.get_help(command)
         return GetHelpResponse(status="success", data=help_text)
     except Exception as e:
-        logger.error(f"Error getting help: {e}")
+        logger.debug("Error getting help", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -210,7 +210,7 @@ def execute_command(request: ExecuteCommandRequest) -> ExecuteCommandResponse:
         return ExecuteCommandResponse(status=status, data=data, message=message)
 
     except Exception as e:
-        logger.error(f"Error executing command: {e}")
+        logger.debug("Error executing command", exc_info=True)
         return ExecuteCommandResponse(
             status="error",
             message=str(e),
@@ -246,5 +246,5 @@ def get_command(command_name: str) -> CommandMetadataResponse:
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting command metadata: {e}")
+        logger.debug("Error getting command metadata", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

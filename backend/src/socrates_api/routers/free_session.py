@@ -151,7 +151,7 @@ Return ONLY a JSON array of topics (strings), like: ["web development", "python"
 
     except Exception as e:
         logger.debug("Operation failed")
-        logger.warning(f"Could not extract conversation topics: {e}")
+        logger.debug("Could not extract conversation topics:")
         return []
 
 
@@ -294,7 +294,7 @@ async def ask_question(
                     )
         except Exception as e:
             logger.debug("Operation failed")
-            logger.warning(f"Could not search knowledge base: {e}")
+            logger.debug("Could not search knowledge base:")
 
         # Build prompt with conversation history context
         logger.info("[free-session] Building prompt...")
@@ -483,7 +483,7 @@ async def list_free_session_sessions(
         )
 
     except Exception as e:
-        logger.error(f"Error listing free_session sessions for {current_user}: {e}", exc_info=True)
+        logger.debug("Error listing free_session sessions for ", exc_info=True)
         return APIResponse(
             success=False,
             status="error",
@@ -702,7 +702,7 @@ async def get_project_recommendations(
         )
 
     except Exception as e:
-        logger.error(f"Error generating recommendations for {current_user}: {e}", exc_info=True)
+        logger.debug("Error generating recommendations for ", exc_info=True)
         return APIResponse(
             success=False,
             status="error",

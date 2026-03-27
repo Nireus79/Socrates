@@ -665,7 +665,7 @@ async def get_available_commands(
         )
 
     except Exception as e:
-        logger.error(f"Error retrieving commands: {e}", exc_info=True)
+        logger.debug("Error retrieving commands", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve available commands",

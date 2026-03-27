@@ -200,7 +200,7 @@ def log_interaction(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error logging interaction: {e}")
+        logger.debug("Error logging interaction", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -247,7 +247,7 @@ def get_learning_progress(user_id: str) -> LearningProgressResponse:
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting learning progress: {e}")
+        logger.debug("Error getting learning progress", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -291,7 +291,7 @@ def get_concept_mastery(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting mastery levels: {e}")
+        logger.debug("Error getting mastery levels", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -320,7 +320,7 @@ def get_misconceptions(user_id: str) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error getting misconceptions: {e}")
+        logger.debug("Error getting misconceptions", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -367,7 +367,7 @@ def get_recommendations(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting recommendations: {e}")
+        logger.debug("Error getting recommendations", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -416,7 +416,7 @@ def get_learning_analytics(
         return analytics
 
     except Exception as e:
-        logger.error(f"Error getting learning analytics: {e}")
+        logger.debug("Error getting learning analytics", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -447,7 +447,7 @@ def get_learning_system_status() -> Dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error getting learning status: {e}")
+        logger.debug("Error getting learning status", exc_info=True)
         return {
             "status": "error",
             "message": str(e),

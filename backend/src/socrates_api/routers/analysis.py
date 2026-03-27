@@ -697,7 +697,7 @@ async def analyze_code(
         try:
             analyzer = AnalyzerIntegration()
         except Exception as e:
-            logger.error(f"Failed to initialize code analyzer: {e}")
+            logger.debug("Failed to initialize code analyzer", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Code analyzer is not available",

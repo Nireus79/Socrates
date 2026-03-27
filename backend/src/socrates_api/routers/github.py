@@ -510,7 +510,7 @@ async def pull_changes(
             )
 
         except NetworkSyncFailedError as e:
-            logger.error(f"Pull failed after retries: {e}")
+            logger.debug("Pull failed after retries", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Failed to pull from GitHub after multiple attempts",
@@ -551,7 +551,7 @@ async def pull_changes(
                         )
 
             except ConflictResolutionError as e:
-                logger.error(f"Failed to resolve conflicts: {e}")
+                logger.debug("Failed to resolve conflicts", exc_info=True)
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Merge conflicts detected and could not be automatically resolved",
@@ -574,14 +574,14 @@ async def pull_changes(
         raise
 
     except TokenExpiredError as e:
-        logger.warning(f"Token expired: {e}")
+        logger.debug("Token expired:")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="GitHub token has expired",
         )
 
     except RepositoryNotFoundError as e:
-        logger.warning(f"Repository not found: {e}")
+        logger.debug("Repository not found:")
         db.mark_project_github_sync_broken(project_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -589,7 +589,7 @@ async def pull_changes(
         )
 
     except PermissionDeniedError as e:
-        logger.warning(f"Permission denied: {e}")
+        logger.debug("Permission denied:")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access to repository denied",
@@ -714,7 +714,7 @@ async def push_changes(
 
             except Exception as e:
                 logger.debug("Operation failed")
-                logger.warning(f"Failed to get modified files: {e}")
+                logger.debug("Failed to get modified files:")
 
         # Validate file sizes
         if files_to_push:
@@ -740,7 +740,7 @@ async def push_changes(
                 raise
             except Exception as e:
                 logger.debug("Operation failed")
-                logger.warning(f"File validation failed: {e}")
+                logger.debug("File validation failed:")
                 # Continue anyway - this is a warning, not fatal
 
         # Step 3: Perform push with retry
@@ -760,7 +760,7 @@ async def push_changes(
             )
 
         except NetworkSyncFailedError as e:
-            logger.error(f"Push failed after retries: {e}")
+            logger.debug("Push failed after retries", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Failed to push to GitHub after multiple attempts",
@@ -784,14 +784,14 @@ async def push_changes(
         raise
 
     except TokenExpiredError as e:
-        logger.warning(f"Token expired: {e}")
+        logger.debug("Token expired:")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="GitHub token has expired",
         )
 
     except RepositoryNotFoundError as e:
-        logger.warning(f"Repository not found: {e}")
+        logger.debug("Repository not found:")
         db.mark_project_github_sync_broken(project_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -799,7 +799,7 @@ async def push_changes(
         )
 
     except PermissionDeniedError as e:
-        logger.warning(f"Permission denied: {e}")
+        logger.debug("Permission denied:")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access to repository denied",
@@ -904,7 +904,7 @@ async def sync_project(
                 )
 
         except RepositoryNotFoundError as e:
-            logger.warning(f"Repository not found or deleted: {e}")
+            logger.debug("Repository not found or deleted:")
             # Mark project as broken
             db.mark_project_github_sync_broken(project_id)
             raise HTTPException(
@@ -913,7 +913,7 @@ async def sync_project(
             )
 
         except PermissionDeniedError as e:
-            logger.warning(f"Permission denied for repository: {e}")
+            logger.debug("Permission denied for repository:")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access to repository has been revoked or denied",
@@ -939,7 +939,7 @@ async def sync_project(
             )
 
         except NetworkSyncFailedError as e:
-            logger.error(f"Network sync failed after retries: {e}")
+            logger.debug("Network sync failed after retries", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Repository sync failed after multiple attempts. Please try again later.",
@@ -966,7 +966,7 @@ async def sync_project(
                         )
 
             except ConflictResolutionError as e:
-                logger.error(f"Failed to resolve conflicts: {e}")
+                logger.debug("Failed to resolve conflicts", exc_info=True)
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Operation failed. Please try again later.",
@@ -1008,7 +1008,7 @@ async def sync_project(
 
             except Exception as e:
                 logger.debug("Operation failed")
-                logger.warning(f"Failed to validate file sizes: {e}")
+                logger.debug("Failed to validate file sizes:")
                 # Continue with push anyway - this is not a critical error
 
         # Return success response with detailed information
@@ -1038,14 +1038,14 @@ async def sync_project(
         raise
 
     except TokenExpiredError as e:
-        logger.warning(f"GitHub token expired: {e}")
+        logger.debug("GitHub token expired:")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="GitHub token has expired. Please re-authenticate.",
         )
 
     except PermissionDeniedError as e:
-        logger.warning(f"Permission denied: {e}")
+        logger.debug("Permission denied:")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access to repository has been revoked",

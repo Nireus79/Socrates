@@ -81,7 +81,7 @@ async def analyze_code_quality(
                 detail="Code analyzer is not available. Is socratic-analyzer installed?"
             )
     except Exception as e:
-        logger.error(f"Code analysis failed: {e}")
+        logger.debug("Code analysis failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -140,7 +140,7 @@ async def log_learning_interaction(
         )
         return result or {"status": "logged"}
     except Exception as e:
-        logger.error(f"Failed to log learning interaction: {e}")
+        logger.debug("Failed to log learning interaction", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -161,7 +161,7 @@ async def get_learning_status() -> Dict[str, Any]:
             "status": "operational" if status.get("learning") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get learning status: {e}")
+        logger.debug("Failed to get learning status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -199,7 +199,7 @@ async def detect_agent_conflicts(
         result = orchestrator.detect_agent_conflicts(field, agent_outputs, agents)
         return result or {"conflict_detected": False}
     except Exception as e:
-        logger.error(f"Conflict detection failed: {e}")
+        logger.debug("Conflict detection failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -220,7 +220,7 @@ async def get_conflict_status() -> Dict[str, Any]:
             "status": "operational" if status.get("conflict") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get conflict status: {e}")
+        logger.debug("Failed to get conflict status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -260,7 +260,7 @@ async def store_knowledge_item(
         result = orchestrator.store_knowledge(tenant_id, title, content, tags)
         return result or {"status": "stored"}
     except Exception as e:
-        logger.error(f"Failed to store knowledge: {e}")
+        logger.debug("Failed to store knowledge", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -289,7 +289,7 @@ async def search_knowledge(
         results = orchestrator.search_knowledge(tenant_id, query)
         return results[:limit] if results else []
     except Exception as e:
-        logger.error(f"Knowledge search failed: {e}")
+        logger.debug("Knowledge search failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -310,7 +310,7 @@ async def get_knowledge_status() -> Dict[str, Any]:
             "status": "operational" if status.get("knowledge") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get knowledge status: {e}")
+        logger.debug("Failed to get knowledge status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -344,7 +344,7 @@ async def generate_project_documentation(
         result = orchestrator.generate_documentation(project_info)
         return result or "# Documentation not available"
     except Exception as e:
-        logger.error(f"Documentation generation failed: {e}")
+        logger.debug("Documentation generation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -365,7 +365,7 @@ async def get_docs_status() -> Dict[str, Any]:
             "status": "operational" if status.get("docs") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get docs status: {e}")
+        logger.debug("Failed to get docs status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -387,7 +387,7 @@ async def generate_api_documentation(
         result = orchestrator.generate_api_documentation(code_structure)
         return result
     except Exception as e:
-        logger.error(f"API documentation generation failed: {e}")
+        logger.debug("API documentation generation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -409,7 +409,7 @@ async def generate_architecture_documentation(
         result = orchestrator.generate_architecture_docs(modules)
         return result
     except Exception as e:
-        logger.error(f"Architecture documentation generation failed: {e}")
+        logger.debug("Architecture documentation generation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -431,7 +431,7 @@ async def generate_setup_documentation(
         result = orchestrator.generate_setup_guide(project)
         return result
     except Exception as e:
-        logger.error(f"Setup guide generation failed: {e}")
+        logger.debug("Setup guide generation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -455,7 +455,7 @@ async def generate_all_documentation(
         result = orchestrator.generate_all_documentation(project, code_structure)
         return result
     except Exception as e:
-        logger.error(f"Complete documentation generation failed: {e}")
+        logger.debug("Complete documentation generation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -493,7 +493,7 @@ async def execute_workflow(
         )
         return result or {"success": False, "message": "Workflow execution failed"}
     except Exception as e:
-        logger.error(f"Workflow execution failed: {e}")
+        logger.debug("Workflow execution failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -514,7 +514,7 @@ async def get_workflow_status() -> Dict[str, Any]:
             "status": "operational" if status.get("workflow") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get workflow status: {e}")
+        logger.debug("Failed to get workflow status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -543,7 +543,7 @@ async def get_performance_metrics() -> Dict[str, Any]:
         stats = orchestrator.library_manager.performance.get_performance_stats()
         return stats or {"message": "No performance data available"}
     except Exception as e:
-        logger.error(f"Failed to get performance metrics: {e}")
+        logger.debug("Failed to get performance metrics", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -572,7 +572,7 @@ async def profile_execution(
         )
         return {"status": "profiled", "task_id": task_id}
     except Exception as e:
-        logger.error(f"Failed to profile execution: {e}")
+        logger.debug("Failed to profile execution", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -593,7 +593,7 @@ async def get_performance_status() -> Dict[str, Any]:
             "status": "operational" if status.get("performance") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get performance status: {e}")
+        logger.debug("Failed to get performance status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -610,7 +610,7 @@ async def get_cache_statistics() -> Dict[str, Any]:
         result = orchestrator.get_cache_stats()
         return result
     except Exception as e:
-        logger.error(f"Failed to get cache statistics: {e}")
+        logger.debug("Failed to get cache statistics", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -627,7 +627,7 @@ async def clear_cache() -> Dict[str, Any]:
         result = orchestrator.clear_cache()
         return result
     except Exception as e:
-        logger.error(f"Failed to clear cache: {e}")
+        logger.debug("Failed to clear cache", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -644,7 +644,7 @@ async def reset_profiler_stats() -> Dict[str, Any]:
         result = orchestrator.reset_profiler()
         return result
     except Exception as e:
-        logger.error(f"Failed to reset profiler: {e}")
+        logger.debug("Failed to reset profiler", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -661,7 +661,7 @@ async def get_performance_dashboard() -> Dict[str, Any]:
         result = orchestrator.get_performance_dashboard()
         return result
     except Exception as e:
-        logger.error(f"Failed to get performance dashboard: {e}")
+        logger.debug("Failed to get performance dashboard", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -704,7 +704,7 @@ async def index_rag_document(
             "message": "Document indexed for semantic search"
         }
     except Exception as e:
-        logger.error(f"Failed to index document: {e}")
+        logger.debug("Failed to index document", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -734,7 +734,7 @@ async def search_rag(
         results = orchestrator.search_rag(query, limit)
         return results or []
     except Exception as e:
-        logger.error(f"RAG search failed: {e}")
+        logger.debug("RAG search failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -756,7 +756,7 @@ async def get_rag_status() -> Dict[str, Any]:
             "status": "operational" if status.get("rag") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get RAG status: {e}")
+        logger.debug("Failed to get RAG status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -792,7 +792,7 @@ async def execute_agent(
         result = orchestrator.execute_agent(agent_name, request_data)
         return result or {"status": "failed", "message": f"Agent {agent_name} failed"}
     except Exception as e:
-        logger.error(f"Agent execution failed: {e}")
+        logger.debug("Agent execution failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -819,7 +819,7 @@ async def list_agents() -> Dict[str, Any]:
             "count": len(agents) if agents else 5
         }
     except Exception as e:
-        logger.error(f"Failed to list agents: {e}")
+        logger.debug("Failed to list agents", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -840,7 +840,7 @@ async def get_agents_status() -> Dict[str, Any]:
             "status": "operational" if status.get("agents") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get agents status: {e}")
+        logger.debug("Failed to get agents status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -874,7 +874,7 @@ async def validate_input(
         result = orchestrator.validate_security_input(user_input)
         return result or {"valid": True, "threats": []}
     except Exception as e:
-        logger.error(f"Input validation failed: {e}")
+        logger.debug("Input validation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -896,7 +896,7 @@ async def get_security_status() -> Dict[str, Any]:
             "status": "operational" if status.get("security") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get security status: {e}")
+        logger.debug("Failed to get security status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -941,7 +941,7 @@ async def call_llm(
         )
         return result or {"status": "failed", "message": "LLM call failed"}
     except Exception as e:
-        logger.error(f"LLM call failed: {e}")
+        logger.debug("LLM call failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -964,7 +964,7 @@ async def list_llm_models() -> Dict[str, Any]:
             }
         }
     except Exception as e:
-        logger.error(f"Failed to list models: {e}")
+        logger.debug("Failed to list models", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -985,7 +985,7 @@ async def get_llm_status() -> Dict[str, Any]:
             "status": "operational" if status.get("nexus") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get LLM status: {e}")
+        logger.debug("Failed to get LLM status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -1013,7 +1013,7 @@ async def get_system_info() -> Dict[str, Any]:
             "status": "operational"
         }
     except Exception as e:
-        logger.error(f"Failed to get system info: {e}")
+        logger.debug("Failed to get system info", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1036,7 +1036,7 @@ async def get_system_config() -> Dict[str, Any]:
             "log_level": "INFO"
         }
     except Exception as e:
-        logger.error(f"Failed to get system config: {e}")
+        logger.debug("Failed to get system config", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1057,7 +1057,7 @@ async def get_core_status() -> Dict[str, Any]:
             "status": "operational" if status.get("core") else "unavailable"
         }
     except Exception as e:
-        logger.error(f"Failed to get core status: {e}")
+        logger.debug("Failed to get core status", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -1091,7 +1091,7 @@ async def ingest_bulk_documents(
             results.append({"doc_id": doc_id, "status": "indexed"})
         return {"status": "success", "indexed_count": len(results), "results": results}
     except Exception as e:
-        logger.error(f"Bulk ingestion failed: {e}")
+        logger.debug("Bulk ingestion failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1112,7 +1112,7 @@ async def list_indexed_documents() -> Dict[str, Any]:
             "message": "RAG document retrieval requires RAG backend configuration"
         }
     except Exception as e:
-        logger.error(f"Failed to list documents: {e}")
+        logger.debug("Failed to list documents", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1134,7 +1134,7 @@ async def delete_indexed_document(doc_id: str) -> Dict[str, Any]:
             "message": "Document deletion requires RAG backend configuration"
         }
     except Exception as e:
-        logger.error(f"Failed to delete document: {e}")
+        logger.debug("Failed to delete document", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1165,7 +1165,7 @@ async def get_learner_summary(
             "recommended_topics": []
         }
     except Exception as e:
-        logger.error(f"Failed to get learner summary: {e}")
+        logger.debug("Failed to get learner summary", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1195,7 +1195,7 @@ async def get_learning_patterns(
             }
         }
     except Exception as e:
-        logger.error(f"Failed to get learning patterns: {e}")
+        logger.debug("Failed to get learning patterns", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1217,7 +1217,7 @@ async def get_personalized_recommendations(
     try:
         return []
     except Exception as e:
-        logger.error(f"Failed to get recommendations: {e}")
+        logger.debug("Failed to get recommendations", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1257,7 +1257,7 @@ async def perform_detailed_analysis(
             }
         }
     except Exception as e:
-        logger.error(f"Detailed analysis failed: {e}")
+        logger.debug("Detailed analysis failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1282,7 +1282,7 @@ async def detect_code_patterns(
             "improvement_suggestions": []
         }
     except Exception as e:
-        logger.error(f"Pattern detection failed: {e}")
+        logger.debug("Pattern detection failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1317,7 +1317,7 @@ async def execute_conflict_resolution(
             "confidence": 0.0
         }
     except Exception as e:
-        logger.error(f"Resolution execution failed: {e}")
+        logger.debug("Resolution execution failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1342,7 +1342,7 @@ async def get_conflict_resolution_history(
             "success_rate": 0.0
         }
     except Exception as e:
-        logger.error(f"Failed to get resolution history: {e}")
+        logger.debug("Failed to get resolution history", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1379,7 +1379,7 @@ async def create_workflow(
             "task_count": len(tasks) if tasks else 0
         }
     except Exception as e:
-        logger.error(f"Workflow creation failed: {e}")
+        logger.debug("Workflow creation failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1408,7 +1408,7 @@ async def execute_workflow(
             "total_cost_usd": 0.0
         }
     except Exception as e:
-        logger.error(f"Workflow execution failed: {e}")
+        logger.debug("Workflow execution failed", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1432,7 +1432,7 @@ async def get_workflow_status(workflow_id: str) -> Dict[str, Any]:
             "total_tasks": 0
         }
     except Exception as e:
-        logger.error(f"Failed to get workflow status: {e}")
+        logger.debug("Failed to get workflow status", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1458,7 +1458,7 @@ async def get_workflow_execution_history(
             "success_rate": 0.0
         }
     except Exception as e:
-        logger.error(f"Failed to get workflow history: {e}")
+        logger.debug("Failed to get workflow history", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -1498,5 +1498,5 @@ async def get_all_library_status() -> Dict[str, Any]:
             "message": f"{enabled_count}/{total_count} libraries enabled"
         }
     except Exception as e:
-        logger.error(f"Failed to get library status: {e}")
+        logger.debug("Failed to get library status", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

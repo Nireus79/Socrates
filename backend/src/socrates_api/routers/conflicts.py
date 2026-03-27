@@ -156,7 +156,7 @@ def detect_conflicts(request: ConflictDetectionRequest) -> ConflictDetectionResp
         )
 
     except Exception as e:
-        logger.error(f"Error detecting conflicts: {e}")
+        logger.debug("Error detecting conflicts", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -210,7 +210,7 @@ def resolve_conflict(request: ConflictResolutionRequest) -> ConflictResolutionRe
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error resolving conflict: {e}")
+        logger.debug("Error resolving conflict", exc_info=True)
         return ConflictResolutionResponse(
             status="error",
             message=str(e),
@@ -253,7 +253,7 @@ def get_conflict_history(
         }
 
     except Exception as e:
-        logger.error(f"Error retrieving conflict history: {e}")
+        logger.debug("Error retrieving conflict history", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -287,7 +287,7 @@ def analyze_project_conflicts(project_id: str) -> Dict[str, Any]:
         return analysis
 
     except Exception as e:
-        logger.error(f"Error analyzing conflicts: {e}")
+        logger.debug("Error analyzing conflicts", exc_info=True)
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -322,7 +322,7 @@ def get_conflict_system_status() -> Dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error getting conflict system status: {e}")
+        logger.debug("Error getting conflict system status", exc_info=True)
         return {
             "status": "error",
             "conflict_detector_available": False,

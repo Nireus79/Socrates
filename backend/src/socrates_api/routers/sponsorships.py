@@ -116,7 +116,7 @@ async def github_sponsors_webhook(
                     sponsorship_id = active_sponsorship.get("id") if active_sponsorship else None
                 except Exception as e:
                     logger.debug("Operation failed")
-                    logger.warning(f"Could not store sponsorship record: {e}")
+                    logger.debug("Could not store sponsorship record:")
 
                 # Record payment details
                 try:
@@ -137,7 +137,7 @@ async def github_sponsors_webhook(
                         logger.info(f"Recorded payment {payment_id} for user {github_username}")
                 except Exception as e:
                     logger.debug("Operation failed")
-                    logger.warning(f"Could not record payment details: {e}")
+                    logger.debug("Could not record payment details:")
 
                 # Record tier change if tier actually changed
                 try:
@@ -160,7 +160,7 @@ async def github_sponsors_webhook(
                         logger.info(f"Recorded tier change for user {github_username}: {previous_tier} → {granted_tier}")
                 except Exception as e:
                     logger.debug("Operation failed")
-                    logger.warning(f"Could not record tier change: {e}")
+                    logger.debug("Could not record tier change:")
 
                 return APIResponse(
                     success=True,

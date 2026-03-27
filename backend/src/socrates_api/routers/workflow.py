@@ -88,7 +88,7 @@ async def get_pending_approvals(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving pending approvals: {e}")
+        logger.debug("Error retrieving pending approvals", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve pending approvals",
@@ -184,7 +184,7 @@ async def approve_workflow(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error approving workflow: {e}")
+        logger.debug("Error approving workflow", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to approve workflow",
@@ -282,7 +282,7 @@ async def reject_workflow(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error rejecting workflow: {e}")
+        logger.debug("Error rejecting workflow", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to reject workflow",
@@ -363,7 +363,7 @@ async def get_workflow_info(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving workflow info: {e}")
+        logger.debug("Error retrieving workflow info", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve workflow information",
