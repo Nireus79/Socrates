@@ -407,7 +407,7 @@ async def validate_code(
             raise
         except Exception as e:
             logger.error(
-                f"Error validating subscription for code validation: {type(e).__name__}: {e}"
+                f"Error validating subscription for code validation"
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -686,7 +686,7 @@ async def refactor_code(
             raise
         except Exception as e:
             logger.error(
-                f"Error validating subscription for code refactoring: {type(e).__name__}: {e}"
+                f"Error validating subscription for code refactoring"
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

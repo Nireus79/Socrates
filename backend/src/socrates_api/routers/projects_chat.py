@@ -711,7 +711,7 @@ Provide a helpful, direct answer."""
                         logger.info(f"Detected {specs_count} specs in direct mode dialogue - modal will be shown to user")
 
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 logger.warning(f"Failed to extract insights in direct mode: {str(e)}")
                 # Continue without insights if extraction fails
                 insights = None
@@ -1883,7 +1883,7 @@ async def save_extracted_specs(
                     # Re-save project with updated maturity
                     db.save_project(project)
         except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
+            logger.debug("Operation failed")
             logger.warning(f"Failed to update maturity after saving specs: {str(e)}")
             # Don't fail the spec save if maturity update fails
 

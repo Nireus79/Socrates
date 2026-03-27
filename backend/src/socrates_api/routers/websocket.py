@@ -298,7 +298,7 @@ async def _handle_chat_message(
                         f"Current question context: {message.content}", project
                     )
                 except Exception as e:
-                    logger.error(f"Error: {type(e).__name__}")
+                    logger.debug("Operation failed")
                     logger.warning(f"Failed to generate hint: {e}")
                     hint_text = "Try breaking this down into smaller parts."
 
@@ -864,7 +864,7 @@ async def request_hint(
                 if question_result.get("status") == "success":
                     question = question_result.get("question")
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 logger.warning(f"Failed to generate question for hint: {e}")
                 question = f"How would you describe the goals for {project.name}?"
 
@@ -1038,7 +1038,7 @@ async def get_chat_summary(
             else:
                 logger.warning(f"Summary generation returned non-success status: {summary_result}")
         except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
+            logger.debug("Operation failed")
             logger.warning(f"Failed to use orchestrator for summary, using Claude directly: {e}")
             try:
                 from socrates_api.main import get_orchestrator

@@ -150,7 +150,7 @@ Return ONLY a JSON array of topics (strings), like: ["web development", "python"
             return []
 
     except Exception as e:
-        logger.error(f"Error: {type(e).__name__}")
+        logger.debug("Operation failed")
         logger.warning(f"Could not extract conversation topics: {e}")
         return []
 
@@ -293,7 +293,7 @@ async def ask_question(
                         [f"- {result.get('content', '')[:200]}..." for result in knowledge_results]
                     )
         except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
+            logger.debug("Operation failed")
             logger.warning(f"Could not search knowledge base: {e}")
 
         # Build prompt with conversation history context
@@ -357,7 +357,7 @@ async def ask_question(
 
     except Exception as e:
         logger.error(
-            f"[free-session] ERROR in ask_question: {type(e).__name__}: {e}", exc_info=True
+            f"[free-session] ERROR in ask_question", exc_info=True
         )
         import traceback
 

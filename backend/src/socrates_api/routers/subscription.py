@@ -527,7 +527,7 @@ async def toggle_testing_mode(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error toggling testing mode: {type(e).__name__}")
+        logger.debug("Toggle testing mode failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to toggle testing mode. Please try again later.",

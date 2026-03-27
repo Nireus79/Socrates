@@ -202,7 +202,7 @@ async def setup_2fa(
             qr_code = base64.b64encode(img_bytes.getvalue()).decode()
             qr_code_url = f"data:image/png;base64,{qr_code}"
         except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
+            logger.debug("Operation failed")
             logger.warning(f"Could not generate QR code: {e}")
             qr_code_url = ""
 
@@ -618,7 +618,7 @@ async def revoke_all_sessions(
                     db.delete_session(session_id)
                     revoked_count += 1
                 except Exception as e:
-                    logger.error(f"Error: {type(e).__name__}")
+                    logger.debug("Operation failed")
                     logger.warning(f"Failed to revoke session {session_id}: {str(e)}")
 
         logger.info(f"Revoked {revoked_count} sessions for user {current_user}")

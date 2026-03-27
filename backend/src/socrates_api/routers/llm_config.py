@@ -236,9 +236,9 @@ async def set_api_key(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error: {type(e).__name__}")
+        logger.debug("Operation failed")
         # SECURITY: Log the error for debugging but don't expose it to the client
-        logger.error(f"Error setting API key for {provider}: {type(e).__name__}")
+        logger.debug("API key configuration failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to set API key. Please try again later.",

@@ -528,9 +528,8 @@ async def login_mfa_verify(
                     "No API key configured. "
                     "Please save your API key in Settings > LLM > Anthropic to use AI features."
                 )
-        except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
-            logger.warning(f"Error checking API key for user {request.username}: {e}")
+        except Exception:
+            logger.debug("Error checking API key for user")
 
         return AuthResponse(
             user=_user_to_response(user),

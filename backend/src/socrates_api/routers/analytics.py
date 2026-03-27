@@ -114,8 +114,8 @@ async def get_analytics_summary(
             logger.info(f"Subscription validation passed for analytics access by {current_user}")
         except HTTPException:
             raise
-        except Exception as e:
-            logger.error(f"Error validating subscription for analytics: {type(e).__name__}: {e}")
+        except Exception:
+            logger.debug("Error validating subscription for analytics")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Operation failed. Please try again later.",
@@ -497,7 +497,7 @@ async def get_trends(
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error validating subscription for trends: {type(e).__name__}: {e}")
+            logger.debug("Subscription validation failed")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Operation failed. Please try again later.",
@@ -611,7 +611,7 @@ async def get_recommendations(
             raise
         except Exception as e:
             logger.error(
-                f"Error validating subscription for recommendations: {type(e).__name__}: {e}"
+                f"Error validating subscription for recommendations"
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

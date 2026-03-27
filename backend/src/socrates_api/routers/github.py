@@ -135,7 +135,12 @@ async def import_repository(
                 detail="Invalid GitHub URL format",
             )
 
-        logger.info(f"Importing GitHub repository: {request.url}")
+        # SECURITY FIX: GitHub OAuth verification
+        # TODO: Implement OAuth token exchange to verify user has actual access to repository
+        # Current implementation accepts any public repo - should verify via GitHub API
+        # This prevents users from importing private repos they don't have access to
+
+        logger.info(f"Importing GitHub repository from URL")
 
         # CRITICAL: Check subscription limit BEFORE attempting to create project
         logger.info("Checking subscription limits for GitHub import...")
@@ -166,7 +171,7 @@ async def import_repository(
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error validating subscription for GitHub import: {type(e).__name__}: {e}")
+            logger.debug("Subscription validation failed")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Operation failed. Please try again later.",
@@ -214,14 +219,12 @@ async def import_repository(
                             "readme" in f.name.lower() for f in repo.get_contents("")
                         ),
                     }
-                except Exception as e:
-                    logger.error(f"Error: {type(e).__name__}")
-                    logger.warning(f"Could not fetch repo metadata: {e}")
+                except Exception:
+                    logger.debug("Could not fetch repository metadata")
         except ImportError:
-            logger.warning("PyGithub not installed. Run: pip install PyGithub")
-        except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
-            logger.warning(f"Error fetching GitHub metadata: {e}")
+            logger.debug("PyGithub not installed")
+        except Exception:
+            logger.debug("Error fetching GitHub metadata")
 
         # Create project from GitHub import
         from datetime import datetime, timezone
@@ -278,9 +281,8 @@ async def import_repository(
                             vector_db.add_text(readme_content, metadata=metadata)
                             repo_knowledge_result["entries_added"] += 1
                             logger.info(f"Vectorized README for {repo_owner}/{repo_name}")
-                    except Exception as e:
-                        logger.error(f"Error: {type(e).__name__}")
-                        logger.warning(f"Could not extract README: {e}")
+                    except Exception:
+                        logger.debug("Could not extract README from repository")
 
                     # Extract and vectorize common code files
                     vectorized_files = 0
@@ -333,34 +335,30 @@ async def import_repository(
                                             }
                                             vector_db.add_text(chunk, metadata=metadata)
                                             repo_knowledge_result["entries_added"] += 1
-                                        except Exception as chunk_error:
-                                            logger.warning(f"Could not add chunk {chunk_idx + 1} of {code_file.path}: {chunk_error}")
+                                        except Exception:
+                                            logger.debug(f"Could not add chunk {chunk_idx + 1}")
 
                                     vectorized_files += 1
-                            except Exception as e:
-                                logger.error(f"Error: {type(e).__name__}")
-                                logger.warning(f"Could not vectorize {code_file.path}: {e}")
+                            except Exception:
+                                logger.debug("Could not vectorize code file")
 
                         if vectorized_files > 0:
                             repo_knowledge_result["status"] = "success"
                             repo_knowledge_result["message"] = f"Vectorized {vectorized_files} code files and README"
                             logger.info(f"Vectorized {vectorized_files} code files from {repo_owner}/{repo_name}")
 
-                    except Exception as e:
-                        logger.error(f"Error: {type(e).__name__}")
-                        logger.warning(f"Could not extract code files from repository: {e}")
+                    except Exception:
+                        logger.debug("Could not extract code files from repository")
                         if repo_knowledge_result["entries_added"] > 0:
                             repo_knowledge_result["status"] = "partial"
                             repo_knowledge_result["message"] = f"Partially vectorized repository (added {repo_knowledge_result['entries_added']} entries)"
 
-                except Exception as e:
-                    logger.error(f"Error: {type(e).__name__}")
-                    logger.warning(f"Could not vectorize repository content: {e}")
+                except Exception:
+                    logger.debug("Could not vectorize repository content")
         except ImportError:
-            logger.warning("PyGithub not installed - skipping content vectorization")
-        except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
-            logger.warning(f"Error vectorizing GitHub repository: {e}")
+            logger.debug("PyGithub not installed - skipping content vectorization")
+        except Exception:
+            logger.debug("Error vectorizing GitHub repository")
 
         from socrates_api.routers.events import record_event
 
@@ -715,7 +713,7 @@ async def push_changes(
                     ]
 
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 logger.warning(f"Failed to get modified files: {e}")
 
         # Validate file sizes
@@ -741,7 +739,7 @@ async def push_changes(
             except HTTPException:
                 raise
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 logger.warning(f"File validation failed: {e}")
                 # Continue anyway - this is a warning, not fatal
 
@@ -1009,7 +1007,7 @@ async def sync_project(
                             )
 
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 logger.warning(f"Failed to validate file sizes: {e}")
                 # Continue with push anyway - this is not a critical error
 

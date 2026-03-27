@@ -239,7 +239,7 @@ async def get_all_knowledge_sources(
                     "type": "document",
                 })
         except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
+            logger.debug("Operation failed")
             logger.warning(f"Error fetching documents: {e}")
 
         # 2. Get project notes
@@ -263,7 +263,7 @@ async def get_all_knowledge_sources(
                         "type": "note",
                     })
         except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
+            logger.debug("Operation failed")
             logger.warning(f"Error fetching notes: {e}")
 
         # 3. Get GitHub repositories
@@ -297,7 +297,7 @@ async def get_all_knowledge_sources(
                     "type": "repository",
                 })
         except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
+            logger.debug("Operation failed")
             logger.warning(f"Error fetching GitHub repo info: {e}")
 
         return APIResponse(
@@ -637,7 +637,7 @@ async def import_file(
                 )
                 logger.debug(f"Emitted DOCUMENT_IMPORTED event for {file.filename}")
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
                 # Don't fail the import if event emission fails
 
@@ -661,7 +661,7 @@ async def import_file(
             try:
                 temp_file.unlink()
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 logger.warning(f"Failed to delete temp file {temp_file}: {e}")
 
     except HTTPException:
@@ -772,7 +772,7 @@ async def import_url(
             )
             logger.debug(f"Emitted DOCUMENT_IMPORTED event for {url}")
         except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
+            logger.debug("Operation failed")
             logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
             # Don't fail the import if event emission fails
 
@@ -914,7 +914,7 @@ async def import_text(
             )
             logger.debug(f"Emitted DOCUMENT_IMPORTED event for {title}")
         except Exception as e:
-            logger.error(f"Error: {type(e).__name__}")
+            logger.debug("Operation failed")
             logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
             # Don't fail the import if event emission fails
 
@@ -1152,7 +1152,7 @@ async def bulk_delete_documents(
                 else:
                     failed.append({"id": doc_id, "reason": "Not found or access denied"})
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 failed.append({"id": doc_id, "reason": str(e)})
 
         logger.info(f"Bulk delete: {len(deleted)} deleted, {len(failed)} failed")
@@ -1277,7 +1277,7 @@ async def bulk_import_documents(
                         logger.warning(f"Failed to clean up temporary file {temp_path}: {str(e)}")
 
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 results.append(
                     {
                         "file": file.filename if hasattr(file, "filename") else "unknown",

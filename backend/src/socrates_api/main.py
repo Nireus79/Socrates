@@ -143,6 +143,7 @@ def conditional_rate_limit(limit_string: str) -> Any:
     """
     Conditional rate limit decorator that applies limit if limiter is available.
     Falls back to no limit if limiter is not initialized.
+    SECURITY: Logs alert if rate limiting is unavailable.
     """
 
     def decorator(func):
@@ -153,7 +154,12 @@ def conditional_rate_limit(limit_string: str) -> Any:
                 limited_func = limiter.limit(limit_string)(func)
                 return await limited_func(*args, **kwargs)
             else:
-                # No rate limiting
+                # SECURITY ALERT: Rate limiting is disabled/unavailable
+                logger.error(
+                    f"SECURITY ALERT: Rate limiting is NOT AVAILABLE for endpoint. "
+                    f"Redis may be down. Limit: {limit_string}. "
+                    f"Endpoint {func.__name__} is UNPROTECTED."
+                )
                 return await func(*args, **kwargs)
 
         return wrapper
@@ -266,7 +272,7 @@ async def lifespan(app: FastAPI):
             await app_state["service_orchestrator"].stop_all_services()
             logger.info("Phase 4 services shut down successfully")
         except Exception as e:
-            logger.error(f"Error shutting down Phase 4 services: {type(e).__name__}: {e}")
+            logger.debug("Phase 4 shutdown failed")
 
     # Cancel shutdown monitor task
     shutdown_monitor_task.cancel()

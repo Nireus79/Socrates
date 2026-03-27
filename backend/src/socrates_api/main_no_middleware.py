@@ -259,7 +259,7 @@ async def lifespan(app: FastAPI):
         logger.info("Socrates API orchestrator fully initialized and ready for per-user API keys")
 
     except Exception as e:
-        logger.error(f"Failed to auto-initialize orchestrator on startup: {type(e).__name__}: {e}")
+        logger.debug("Auto-initialize failed")
         import traceback
 
         logger.error(f"Traceback: {traceback.format_exc()}")
@@ -281,7 +281,7 @@ async def lifespan(app: FastAPI):
             await app_state["service_orchestrator"].stop_all_services()
             logger.info("Phase 4 services shut down successfully")
         except Exception as e:
-            logger.error(f"Error shutting down Phase 4 services: {type(e).__name__}: {e}")
+            logger.debug("Phase 4 shutdown failed")
 
     # Cancel shutdown monitor task
     shutdown_monitor_task.cancel()

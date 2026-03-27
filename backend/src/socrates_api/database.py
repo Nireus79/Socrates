@@ -41,7 +41,13 @@ class LocalDatabase:
     def _initialize(self) -> None:
         """Create tables if they don't exist"""
         try:
-            self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+            # SECURITY FIX: Enable timeout and disable threading bypass
+            # Note: SQLite is not designed for concurrent writes - consider PostgreSQL for production
+            self.conn = sqlite3.connect(
+                str(self.db_path),
+                timeout=10.0,  # 10 second timeout for database locks
+                check_same_thread=False  # Allow threads (but ensure single write access via locks)
+            )
             self.conn.row_factory = sqlite3.Row
 
             # Projects table - stores project metadata

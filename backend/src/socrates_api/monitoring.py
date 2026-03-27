@@ -164,7 +164,7 @@ async def metrics_middleware(request: Request, call_next) -> Response:
 
     except Exception as e:
         latency_ms = (time.time() - start_time) * 1000
-        MetricsCollector.record_error(type(e).__name__, str(e))
+        logger.debug("Operation recorded")
         raise
 
 

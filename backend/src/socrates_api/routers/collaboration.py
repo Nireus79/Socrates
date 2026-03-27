@@ -274,7 +274,7 @@ async def add_collaborator_new(
             raise
         except Exception as e:
             logger.error(
-                f"Error validating subscription for collaboration: {type(e).__name__}: {e}"
+                f"Error validating subscription for collaboration"
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -303,7 +303,7 @@ async def add_collaborator_new(
             except HTTPException:
                 raise
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 logger.warning(f"Error looking up user by email {request.email}: {e}")
                 # Fall back to using email prefix as username
                 resolved_username = request.email.split("@")[0]
@@ -318,7 +318,7 @@ async def add_collaborator_new(
                         f"User '{resolved_username}' not found in users table, will add as pending collaborator"
                     )
             except Exception as e:
-                logger.error(f"Error: {type(e).__name__}")
+                logger.debug("Operation failed")
                 logger.warning(f"Could not verify user {resolved_username} exists: {e}")
 
         # Cannot add the owner as a team member
@@ -1018,7 +1018,7 @@ async def create_project_invitation(
             raise
         except Exception as e:
             logger.error(
-                f"Error validating subscription for creating invitation: {type(e).__name__}: {e}"
+                f"Error validating subscription for creating invitation"
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1424,7 +1424,7 @@ async def invite_team_member(
             raise
         except Exception as e:
             logger.error(
-                f"Error validating subscription for team member invitation: {type(e).__name__}: {e}"
+                f"Error validating subscription for team member invitation"
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
