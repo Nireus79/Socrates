@@ -19,6 +19,7 @@ from typing import Optional, Dict, Any
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 from starlette.types import ASGIApp
 
 logger = logging.getLogger(__name__)
@@ -82,7 +83,7 @@ class AuditLogger:
         self.db = db
         self._ensure_audit_table()
 
-    def _ensure_audit_table(self):
+    def _ensure_audit_table(self) -> None:
         """Ensure audit log table exists in database"""
         if not self.db:
             return
@@ -271,7 +272,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp):
         super().__init__(app)
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next) -> Response:
         """Log request and response"""
         start_time = time.time()
 

@@ -24,7 +24,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
         self.profiler = None
         self._initialize_profiler()
 
-    def _initialize_profiler(self):
+    def _initialize_profiler(self) -> None:
         """Initialize profiler from socratic-performance"""
         try:
             from socratic_performance import QueryProfiler

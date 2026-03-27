@@ -108,7 +108,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     - Requests in progress
     """
 
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         """
         Initialize metrics middleware.
 
@@ -277,7 +277,7 @@ def add_metrics_middleware(app):
     logger.info("Metrics middleware added")
 
 
-def get_metrics_registry():
+def get_metrics_registry() -> CollectorRegistry:
     """
     Get the Prometheus metrics registry.
 
