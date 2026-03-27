@@ -240,6 +240,46 @@ class StorageQuotaManager:
         """Get detailed storage usage report"""
         return {"total_gb": 0.0, "breakdown": {}}
 
+    @staticmethod
+    def can_upload_document(user: Any, db: Any, content_bytes: int, testing_mode: bool = False) -> tuple:
+        """
+        Check if user can upload a document.
+
+        Args:
+            user: User object with subscription_tier
+            db: Database connection
+            content_bytes: Size of document in bytes
+            testing_mode: If True, unlimited uploads
+
+        Returns:
+            (can_upload: bool, message: str)
+        """
+        if testing_mode:
+            return True, "Testing mode: unlimited uploads"
+
+        # Get subscription tier from user
+        tier = getattr(user, "subscription_tier", "free").lower()
+
+        # Define limits per tier (in GB)
+        tier_limits = {
+            "free": 0.5,
+            "pro": 10.0,
+            "enterprise": -1,  # unlimited
+        }
+
+        max_storage_gb = tier_limits.get(tier, 0.5)
+
+        if max_storage_gb == -1:  # unlimited
+            return True, "Enterprise: unlimited storage"
+
+        # Calculate document size in GB
+        content_gb = StorageQuotaManager.bytes_to_gb(content_bytes)
+
+        if content_gb > max_storage_gb:
+            return False, f"Document size ({content_gb:.2f}GB) exceeds tier limit ({max_storage_gb}GB)"
+
+        return True, f"Within storage limit ({content_gb:.2f}GB / {max_storage_gb}GB)"
+
 
 class LearningIntegration:
     """Minimal LearningIntegration stub - USE socratic_learning FROM PyPI"""

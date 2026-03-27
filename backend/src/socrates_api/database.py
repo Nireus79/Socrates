@@ -834,6 +834,112 @@ class LocalDatabase:
             logger.debug(f"Failed to get user knowledge documents for {user_id}: {e}")
             return []
 
+    def add_team_member(self, project_id: str, username: str, role: str) -> bool:
+        """
+        Add a team member to a project.
+
+        Args:
+            project_id: Project ID
+            username: Username to add
+            role: Role (owner, editor, viewer)
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            member_id = f"tm_{project_id}_{username}"
+            now = datetime.now(timezone.utc).isoformat()
+
+            self.conn.execute(
+                "INSERT OR REPLACE INTO team_members "
+                "(id, project_id, username, role, joined_at, status, metadata) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (member_id, project_id, username, role, now, "active", "{}")
+            )
+            self.conn.commit()
+            logger.info(f"Added team member {username} to project {project_id} with role {role}")
+            return True
+        except Exception as e:
+            logger.debug(f"Failed to add team member: {e}")
+            return False
+
+    def remove_team_member(self, project_id: str, username: str) -> bool:
+        """
+        Remove a team member from a project.
+
+        Args:
+            project_id: Project ID
+            username: Username to remove
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.conn.execute(
+                "DELETE FROM team_members WHERE project_id = ? AND username = ?",
+                (project_id, username)
+            )
+            self.conn.commit()
+            logger.info(f"Removed team member {username} from project {project_id}")
+            return True
+        except Exception as e:
+            logger.debug(f"Failed to remove team member: {e}")
+            return False
+
+    def get_project_team_members(self, project_id: str) -> List[Dict[str, Any]]:
+        """
+        Get all team members for a project.
+
+        Args:
+            project_id: Project ID
+
+        Returns:
+            List of team member dictionaries
+        """
+        try:
+            cursor = self.conn.execute(
+                "SELECT id, project_id, username, role, joined_at, status, metadata "
+                "FROM team_members WHERE project_id = ? AND status = 'active' "
+                "ORDER BY joined_at DESC",
+                (project_id,)
+            )
+
+            members = []
+            for row in cursor.fetchall():
+                members.append({
+                    "id": row[0],
+                    "project_id": row[1],
+                    "username": row[2],
+                    "role": row[3],
+                    "joined_at": row[4],
+                    "status": row[5],
+                    "metadata": json.loads(row[6] or "{}"),
+                })
+            return members
+        except Exception as e:
+            logger.debug(f"Failed to get project team members: {e}")
+            return []
+
+    def get_user_projects_as_collaborator(self, username: str) -> List[str]:
+        """
+        Get project IDs where user is a collaborator (not owner).
+
+        Args:
+            username: Username to check
+
+        Returns:
+            List of project IDs
+        """
+        try:
+            cursor = self.conn.execute(
+                "SELECT project_id FROM team_members WHERE username = ? AND status = 'active'",
+                (username,)
+            )
+            return [row[0] for row in cursor.fetchall()]
+        except Exception as e:
+            logger.debug(f"Failed to get user collaborator projects: {e}")
+            return []
+
     def get_api_key(self, username: str, provider: str) -> Optional[str]:
         """Get API key for a user and provider (stub - not persisted)"""
         # In production, this would be stored in database
