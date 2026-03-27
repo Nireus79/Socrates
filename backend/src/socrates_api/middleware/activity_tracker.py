@@ -4,9 +4,10 @@ and manage server shutdown scheduling.
 """
 import time
 import logging
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ _shutdown_delay_seconds: int = 300  # 5 minutes for browser-close
 class ActivityTrackerMiddleware(BaseHTTPMiddleware):
     """Track last activity timestamp per authenticated user"""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Update activity timestamp for authenticated users
         if request.headers.get("authorization"):
             try:

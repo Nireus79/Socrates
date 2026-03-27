@@ -36,7 +36,7 @@ class APIOrchestrator:
         self._initialize_performance_monitoring()
         logger.info("API Orchestrator initialized with real agents")
 
-    def _create_llm_client(self):
+    def _create_llm_client(self) -> Optional[Any]:
         """Create LLM client if API key provided"""
         try:
             if not self.api_key:
@@ -367,7 +367,7 @@ class APIOrchestrator:
             logger.error(f"LLM call failed: {e}")
             return {"status": "error", "message": str(e)}
 
-    def list_llm_models(self) -> list:
+    def list_llm_models(self) -> List[str]:
         """List available LLM models"""
         return ["claude-3-sonnet", "claude-3-opus", "gpt-4", "gpt-3.5-turbo"]
 

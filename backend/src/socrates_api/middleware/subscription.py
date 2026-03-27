@@ -10,7 +10,7 @@ to maintain a single source of truth across CLI, API, and storage systems.
 
 import logging
 from functools import wraps
-from typing import Callable
+from typing import Any, Callable, Dict
 
 from fastapi import HTTPException, status
 
@@ -36,7 +36,7 @@ TIER_LIMITS = {
 
 # Build API-compatible feature matrix from central TIER_LIMITS
 # This maintains backward compatibility while using the centralized definitions
-def _build_tier_features():
+def _build_tier_features() -> Dict[str, Dict[str, Any]]:
     """Build TIER_FEATURES from central TIER_LIMITS for backward compatibility."""
     tier_features = {}
     for tier_name, tier_limits in TIER_LIMITS.items():

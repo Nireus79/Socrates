@@ -11,7 +11,7 @@ Provides:
 
 import logging
 import time
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 from functools import wraps
 
 from fastapi import Request, Response
@@ -170,10 +170,10 @@ async def metrics_middleware(request: Request, call_next) -> Response:
         raise
 
 
-def track_db_query(query_type: str):
+def track_db_query(query_type: str) -> Callable:
     """Decorator to track database query performance."""
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
             start_time = time.time()
