@@ -388,6 +388,56 @@ async def log_requests_debug(request: Request, call_next):
 logger.info(f"CORS configured for {environment} environment with origins: {allowed_origins}")
 
 
+# ============================================================================
+# Exception Handlers for Custom Exceptions
+# ============================================================================
+
+from socrates_api.exceptions import SocratesException, ProjectNotFoundError, UserNotFoundError
+from socrates_api.models import APIResponse
+
+
+@app.exception_handler(SocratesException)
+async def socrates_exception_handler(request: Request, exc: SocratesException):
+    """
+    Handle all Socrates custom exceptions.
+
+    Maps custom exceptions to appropriate HTTP status codes and error responses.
+    """
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=APIResponse(
+            success=False,
+            status="error",
+            message=exc.message,
+            error_code=exc.error_code,
+            data=exc.details if exc.details else None,
+        ).model_dump(exclude_none=True),
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """
+    Handle unexpected exceptions.
+
+    Logs the full exception and returns a generic error response to the client.
+    """
+    logger.error(f"Unhandled exception: {type(exc).__name__}: {exc}", exc_info=True)
+
+    return JSONResponse(
+        status_code=500,
+        content=APIResponse(
+            success=False,
+            status="error",
+            message="An unexpected error occurred",
+            error_code="INTERNAL_ERROR",
+        ).model_dump(exclude_none=True),
+    )
+
+
+logger.info("Exception handlers registered")
+
+
 # Helper to safely include routers (skip None routers)
 def _include_router_safe(router, name: str):
     if router is not None:

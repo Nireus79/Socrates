@@ -153,6 +153,73 @@ class LocalDatabase:
             # Don't raise - migration failure shouldn't crash initialization
             # The app can still work if migration partially succeeded
 
+    # ========================================================================
+    # Row Unpacking Helper Methods
+    # ========================================================================
+    # These helpers eliminate code duplication when converting database rows
+    # to domain objects. Row format: [0]=id, [1]=owner, [2]=name, [3]=desc,
+    # [4]=created_at, [5]=updated_at, [6]=phase, [7]=is_archived, [8]=metadata
+
+    def _row_to_project(self, row) -> ProjectContext:
+        """
+        Convert a database row to a ProjectContext object.
+
+        Row format: [id, owner, name, description, created_at, updated_at,
+                    phase, is_archived, metadata_json]
+
+        Args:
+            row: sqlite3.Row object from projects table
+
+        Returns:
+            ProjectContext object with all fields populated
+        """
+        project = ProjectContext(
+            project_id=row[0],
+            owner=row[1],
+            name=row[2],
+            description=row[3],
+            created_at=row[4],
+            updated_at=row[5],
+            phase=row[6],
+            is_archived=row[7] == 1,
+        )
+        project.metadata = json.loads(row[8] or "{}")
+        return project
+
+    # ========================================================================
+    # User row format: [0]=id, [1]=username, [2]=email, [3]=passcode_hash,
+    # [4]=subscription_tier, [5]=subscription_status, [6]=testing_mode,
+    # [7]=created_at, [8]=updated_at (skipped), [9]=metadata_json
+
+    def _row_to_user(self, row) -> User:
+        """
+        Convert a database row to a User object.
+
+        Row format: [id, username, email, passcode_hash, subscription_tier,
+                    subscription_status, testing_mode, created_at, updated_at,
+                    metadata_json]
+
+        Note: updated_at is not stored in User model but is in database row[8]
+
+        Args:
+            row: sqlite3.Row object from users table
+
+        Returns:
+            User object with all fields populated
+        """
+        user = User(
+            user_id=row[0],
+            username=row[1],
+            email=row[2],
+            passcode_hash=row[3],
+            subscription_tier=row[4],
+            subscription_status=row[5],
+            testing_mode=bool(row[6]),
+            created_at=row[7],
+        )
+        user.metadata = json.loads(row[9] or "{}")
+        return user
+
     def create_project(self, project_id: str, name: str, description: str = "", owner: str = None, metadata: Dict = None) -> Optional[ProjectContext]:
         """Create a new project"""
         try:
@@ -187,18 +254,7 @@ class LocalDatabase:
             cursor = self.conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
             row = cursor.fetchone()
             if row:
-                project = ProjectContext(
-                    project_id=row[0],
-                    owner=row[1],
-                    name=row[2],
-                    description=row[3],
-                    created_at=row[4],
-                    updated_at=row[5],
-                    phase=row[6],
-                    is_archived=row[7] == 1,
-                )
-                project.metadata = json.loads(row[8] or "{}")
-                return project
+                return self._row_to_project(row)
             return None
         except Exception as e:
             logger.error(f"Failed to get project: {e}")
@@ -210,18 +266,7 @@ class LocalDatabase:
             cursor = self.conn.execute("SELECT * FROM projects LIMIT ?", (limit,))
             projects = []
             for row in cursor.fetchall():
-                project = ProjectContext(
-                    project_id=row[0],
-                    owner=row[1],
-                    name=row[2],
-                    description=row[3],
-                    created_at=row[4],
-                    updated_at=row[5],
-                    phase=row[6],
-                    is_archived=row[7] == 1,
-                )
-                project.metadata = json.loads(row[8] or "{}")
-                projects.append(project)
+                projects.append(self._row_to_project(row))
             return projects
         except Exception as e:
             logger.error(f"Failed to list projects: {e}")
@@ -261,18 +306,7 @@ class LocalDatabase:
             cursor = self.conn.execute("SELECT * FROM users WHERE id = ?", (user_id,))
             row = cursor.fetchone()
             if row:
-                user = User(
-                    user_id=row[0],
-                    username=row[1],
-                    email=row[2],
-                    passcode_hash=row[3],
-                    subscription_tier=row[4],
-                    subscription_status=row[5],
-                    testing_mode=bool(row[6]),
-                    created_at=row[7],
-                )
-                user.metadata = json.loads(row[9] or "{}")
-                return user
+                return self._row_to_user(row)
             return None
         except Exception as e:
             logger.error(f"Failed to get user: {e}")
@@ -284,18 +318,7 @@ class LocalDatabase:
             cursor = self.conn.execute("SELECT * FROM users WHERE username = ?", (username,))
             row = cursor.fetchone()
             if row:
-                user = User(
-                    user_id=row[0],
-                    username=row[1],
-                    email=row[2],
-                    passcode_hash=row[3],
-                    subscription_tier=row[4],
-                    subscription_status=row[5],
-                    testing_mode=bool(row[6]),
-                    created_at=row[7],
-                )
-                user.metadata = json.loads(row[9] or "{}")
-                return user
+                return self._row_to_user(row)
             return None
         except Exception as e:
             logger.error(f"Failed to load user by username: {e}")
@@ -307,18 +330,7 @@ class LocalDatabase:
             cursor = self.conn.execute("SELECT * FROM users WHERE email = ?", (email,))
             row = cursor.fetchone()
             if row:
-                user = User(
-                    user_id=row[0],
-                    username=row[1],
-                    email=row[2],
-                    passcode_hash=row[3],
-                    subscription_tier=row[4],
-                    subscription_status=row[5],
-                    testing_mode=bool(row[6]),
-                    created_at=row[7],
-                )
-                user.metadata = json.loads(row[9] or "{}")
-                return user
+                return self._row_to_user(row)
             return None
         except Exception as e:
             logger.error(f"Failed to load user by email: {e}")

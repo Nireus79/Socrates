@@ -1,0 +1,350 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\themi\PycharmProjects\Socrates\tests
+configfile: pytest.ini
+plugins: anyio-4.13.0, Faker-40.11.1, locust-2.43.3, asyncio-1.3.0, cov-7.1.0, html-4.2.0, metadata-3.1.1, mock-3.15.1, timeout-2.4.0, xdist-3.8.0, requests-mock-1.12.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1234 items
+
+tests\api\test_finalization_endpoints.py ............................... [  2%]
+......................                                                   [  4%]
+tests\caching\test_ttl_cache.py ......................                   [  6%]
+tests\database\test_db_verification.py ........................          [  8%]
+tests\database\test_project_db_operations.py ........................... [ 10%]
+..                                                                       [ 10%]
+tests\database\test_vector_db_operations.py ............................ [ 12%]
+.                                                                        [ 12%]
+tests\e2e\journeys\test_complete_flow.py ........................F...    [ 14%]
+tests\e2e\test_api_workflows.py ssssss                                   [ 15%]
+tests\e2e\test_complete_workflows.py ...........                         [ 16%]
+tests\integration\test_api_comprehensive.py ss                           [ 16%]
+tests\integration\test_api_database_integration.py ssssssssssssssss      [ 17%]
+tests\integration\test_api_workflows.py ssssssssssssssssssssssssssssss   [ 20%]
+tests\integration\test_auth_workflows.py ssssssssssssssssssssssssss      [ 22%]
+tests\integration\test_chat_workflows.py ssssssssssssssssssssssssssss    [ 24%]
+tests\integration\test_database_operations.py sssssss                    [ 25%]
+tests\integration\test_end_to_end_scenarios.py sssssssss                 [ 25%]
+tests\integration\test_integration_workflows.py ss                       [ 26%]
+tests\integration\test_knowledge_workflows.py ssssssssssssssssssssssssss [ 28%]
+ssss                                                                     [ 28%]
+tests\integration\test_library_imports.py sssssssssss                    [ 29%]
+tests\integration\test_new_cli_commands.py sssssssssssssssssssssssssssss [ 31%]
+ssssssssssssss                                                           [ 32%]
+tests\integration\test_orchestrator_workflows.py ssssssssssss            [ 33%]
+tests\integration\test_project_management.py sssssssssssssssss           [ 35%]
+tests\integration\test_project_workflows.py ssssssssssssssssssssssssssss [ 37%]
+ss                                                                       [ 37%]
+tests\integration\test_subscription_enforcement.py ssssssssssssssssssss  [ 39%]
+tests\integration\test_websocket_database_integration.py ssssssss        [ 39%]
+tests\integration\workflows\test_full_flow.py s                          [ 40%]
+tests\integration\workflows\test_knowledge_management.py ssssssssssssss  [ 41%]
+tests\integration\workflows\test_knowledge_workflows.py sssssssssssss    [ 42%]
+tests\integration\workflows\test_phase4_verification.py ss               [ 42%]
+tests\unit\database\test_project_db_core.py ............................ [ 44%]
+...                                                                      [ 44%]
+tests\unit\database\test_read_write_split.py ........................... [ 47%]
+......                                                                   [ 47%]
+tests\unit\models\test_models.py ...............................         [ 50%]
+tests\unit\models\test_project_types.py ....                             [ 50%]
+tests\unit\orchestration\test_orchestrator_basic.py ssssssssssssssssssss [ 52%]
+ssssss                                                                   [ 52%]
+tests\unit\routers\test_analytics.py ............                        [ 53%]
+tests\unit\routers\test_auth.py ...................                      [ 55%]
+tests\unit\routers\test_chat_sessions.py ................                [ 56%]
+tests\unit\routers\test_collaboration.py ................                [ 57%]
+tests\unit\routers\test_knowledge.py ...................                 [ 59%]
+tests\unit\routers\test_nlu.py ......................................... [ 62%]
+.....                                                                    [ 62%]
+tests\unit\routers\test_projects.py .................................    [ 65%]
+tests\unit\routers\test_routing.py .....                                 [ 65%]
+tests\unit\services\test_orchestrator.py ..........................      [ 68%]
+tests\unit\services\test_orchestrator_expansion.py .xxx..F..XFX.....F.   [ 69%]
+tests\unit\services\test_orchestrator_integration.py ......X..........FX [ 71%]
+...FF                                                                    [ 71%]
+tests\unit\test_new_cli_commands_unit.py .............................   [ 73%]
+tests\unit\utils\test_code_extractor.py ................................ [ 76%]
+....                                                                     [ 76%]
+tests\unit\utils\test_dependency_validator.py .......................... [ 78%]
+...........                                                              [ 79%]
+tests\unit\utils\test_file_change_tracker.py ........................... [ 82%]
+......                                                                   [ 82%]
+tests\unit\utils\test_git_repository_manager.py ........................ [ 84%]
+.............                                                            [ 85%]
+tests\unit\utils\test_parsers.py ....................                    [ 87%]
+tests\unit\utils\test_syntax_validator.py .............................. [ 89%]
+.....                                                                    [ 89%]
+tests\utils\test_archive_builder.py .......................              [ 91%]
+tests\utils\test_code_extractor.py .............................         [ 94%]
+tests\utils\test_git_initializer.py .......................              [ 96%]
+tests\utils\test_project_templates.py ........................           [ 97%]
+tests\utils\test_utils.py .........................                      [100%]
+
+================================== FAILURES ===================================
+E   AssertionError: assert 'Load Test 1288934149440' == 'E2E Test Project'
+      
+      - E2E Test Project
+      + Load Test 1288934149440
+----------------------------- Captured log setup ------------------------------
+INFO     socrates.integrations:library_integrations.py:1208 Event emitter initialized
+INFO     socrates.integrations:library_integrations.py:1215 Performance monitor initialized
+INFO     socrates.integrations:library_integrations.py:1220 Core integration enabled
+INFO     socrates.integrations:library_integrations.py:1356 Nexus integration enabled
+INFO     socrates.integrations:library_integrations.py:1673 Agents integration enabled
+WARNING  socrates.integrations:library_integrations.py:1753 socratic-rag not available: No module named 'socratic_rag.embeddings'
+INFO     socrates.integrations:library_integrations.py:1910 Security integration enabled
+INFO     socrates.integrations:library_integrations.py:68 Learning integration enabled
+WARNING  socrates.integrations:library_integrations.py:308 socratic-analyzer not available
+INFO     socrates.integrations:library_integrations.py:471 Conflict integration enabled
+INFO     socrates.integrations:library_integrations.py:615 Knowledge integration enabled
+INFO     socrates.integrations:library_integrations.py:809 Workflow integration enabled
+DEBUG    socratic_docs.generation.documentation_generator:documentation_generator.py:13 DocumentationGenerator initialized
+INFO     socrates.integrations:library_integrations.py:999 Docs integration enabled
+DEBUG    socratic_performance.profiling.query_profiler:query_profiler.py:16 QueryProfiler initialized
+INFO     socrates.integrations:library_integrations.py:1080 Performance integration enabled with profiler and cache
+WARNING  socrates.integrations:library_integrations.py:2246 socrates-ai-langraph not available: No module named 'socrates_ai_langraph'
+WARNING  socrates.integrations:library_integrations.py:2337 socratic-openclaw-skill not available: No module named 'socratic_openclaw_skill'
+INFO     socrates.integrations:library_integrations.py:2445 API integration enabled
+INFO     socrates.library_manager:library_integrations.py:2664 Socratic Library Manager initialized with all 16 libraries + 1 interface
+DEBUG    socrates.events:emitter.py:142 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\pytest-of-themi\\pytest-456\\test_full_user_project_workflo0\\socrates_test', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2026-03-27T06:43:13.207998'}
+DEBUG    socratic_system.ui.commands.analytics_commands:analytics_commands.py:57 AnalyticsAnalyzeCommand initialized
+DEBUG    socratic_system.ui.commands.analytics_commands:analytics_commands.py:123 AnalyticsRecommendCommand initialized
+DEBUG    socratic_system.ui.commands.analytics_commands:analytics_commands.py:200 AnalyticsTrendsCommand initialized
+DEBUG    socratic_system.ui.commands.analytics_commands:analytics_commands.py:268 AnalyticsSummaryCommand initialized
+DEBUG    socratic_system.ui.commands.analytics_commands:analytics_commands.py:310 AnalyticsBreakdownCommand initialized
+DEBUG    socratic_system.ui.commands.analytics_commands:analytics_commands.py:347 AnalyticsStatusCommand initialized
+------------------------------ Captured log call ------------------------------
+DEBUG    ttl_cache:ttl_cache.py:91 Cached result for load_user (cache size: 7)
+DEBUG    socratic_system.utils.orchestrator_helper:orchestrator_helper.py:79 Executing orchestrator project_manager for create_project
+DEBUG    socrates.events:emitter.py:142 Event: agent.start - {'agent': 'project_manager', 'action': 'create_project', 'timestamp': '2026-03-27T06:43:13.475085'}
+DEBUG    socrates.events:emitter.py:142 Event: agent.complete - {'agent': 'project_manager', 'status': 'success', 'timestamp': '2026-03-27T06:43:13.475085'}
+DEBUG    socratic_system.utils.orchestrator_helper:orchestrator_helper.py:90 Orchestrator create_project completed successfully
+DEBUG    socratic_system.database.project_db.ProjectDatabase:project_db.py:264 Saved project proj_1
+DEBUG    socratic_system.database.project_db.ProjectDatabase:project_db.py:264 Saved project proj_1
+DEBUG    socratic_system.database.project_db.ProjectDatabase:project_db.py:264 Saved project proj_1
+DEBUG    socratic_system.database.project_db.ProjectDatabase:project_db.py:264 Saved project proj_1
+DEBUG    socratic_system.database.project_db.ProjectDatabase:project_db.py:264 Saved project proj_1
+DEBUG    ttl_cache:ttl_cache.py:73 Cache hit for load_project (age: 8.9s)
+C:\Users\themi\PycharmProjects\Socrates\tests\e2e\journeys\test_complete_flow.py:986: AssertionError: assert 'Load Test 1288934149440' == 'E2E Test Project'
+E   AssertionError: assert 'Build a test application' == 'Updated goals'
+      
+      - Updated goals
+      + Build a test application
+------------------------------ Captured log call ------------------------------
+INFO     socrates.database.vector:vector_db.py:41 Initializing vector database: C:\Users\themi\AppData\Local\Temp\pytest-of-themi\pytest-456\test_orchestrator_updates_exis0\socrates\vector_db
+INFO     socrates.database.vector:vector_db.py:344 Vector database closed
+INFO     socrates.integrations:library_integrations.py:1208 Event emitter initialized
+INFO     socrates.integrations:library_integrations.py:1215 Performance monitor initialized
+INFO     socrates.integrations:library_integrations.py:1220 Core integration enabled
+INFO     socrates.integrations:library_integrations.py:1356 Nexus integration enabled
+INFO     socrates.integrations:library_integrations.py:1673 Agents integration enabled
+WARNING  socrates.integrations:library_integrations.py:1753 socratic-rag not available: No module named 'socratic_rag.embeddings'
+INFO     socrates.integrations:library_integrations.py:1910 Security integration enabled
+INFO     socrates.integrations:library_integrations.py:68 Learning integration enabled
+WARNING  socrates.integrations:library_integrations.py:308 socratic-analyzer not available
+INFO     socrates.integrations:library_integrations.py:471 Conflict integration enabled
+INFO     socrates.integrations:library_integrations.py:615 Knowledge integration enabled
+INFO     socrates.integrations:library_integrations.py:809 Workflow integration enabled
+DEBUG    socratic_docs.generation.documentation_generator:documentation_generator.py:13 DocumentationGenerator initialized
+INFO     socrates.integrations:library_integrations.py:999 Docs integration enabled
+DEBUG    socratic_performance.profiling.query_profiler:query_profiler.py:16 QueryProfiler initialized
+INFO     socrates.integrations:library_integrations.py:1080 Performance integration enabled with profiler and cache
+WARNING  socrates.integrations:library_integrations.py:2246 socrates-ai-langraph not available: No module named 'socrates_ai_langraph'
+WARNING  socrates.integrations:library_integrations.py:2337 socratic-openclaw-skill not available: No module named 'socratic_openclaw_skill'
+INFO     socrates.integrations:library_integrations.py:2445 API integration enabled
+INFO     socrates.library_manager:library_integrations.py:2664 Socratic Library Manager initialized with all 16 libraries + 1 interface
+DEBUG    socrates.events:emitter.py:142 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\pytest-of-themi\\pytest-456\\test_orchestrator_updates_exis0\\socrates', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2026-03-27T06:46:03.999448'}
+DEBUG    socratic_system.database.project_db.ProjectDatabase:project_db.py:264 Saved project test_proj_001
+DEBUG    socratic_system.database.project_db.ProjectDatabase:project_db.py:264 Saved project test_proj_001
+DEBUG    ttl_cache:ttl_cache.py:73 Cache hit for load_project (age: 0.8s)
+C:\Users\themi\PycharmProjects\Socrates\tests\unit\services\test_orchestrator_expansion.py:141: AssertionError: assert 'Build a test application' == 'Updated goals'
+E   AssertionError: assert 'Build a test application' == 'Build API'
+      
+      - Build API
+      + Build a test application
+------------------------------ Captured log call ------------------------------
+INFO     socrates.database.vector:vector_db.py:41 Initializing vector database: C:\Users\themi\AppData\Local\Temp\pytest-of-themi\pytest-456\test_project_modification_work0\socrates\vector_db
+INFO     socrates.database.vector:vector_db.py:344 Vector database closed
+INFO     socrates.integrations:library_integrations.py:1208 Event emitter initialized
+INFO     socrates.integrations:library_integrations.py:1215 Performance monitor initialized
+INFO     socrates.integrations:library_integrations.py:1220 Core integration enabled
+INFO     socrates.integrations:library_integrations.py:1356 Nexus integration enabled
+INFO     socrates.integrations:library_integrations.py:1673 Agents integration enabled
+WARNING  socrates.integrations:library_integrations.py:1753 socratic-rag not available: No module named 'socratic_rag.embeddings'
+INFO     socrates.integrations:library_integrations.py:1910 Security integration enabled
+INFO     socrates.integrations:library_integrations.py:68 Learning integration enabled
+WARNING  socrates.integrations:library_integrations.py:308 socratic-analyzer not available
+INFO     socrates.integrations:library_integrations.py:471 Conflict integration enabled
+INFO     socrates.integrations:library_integrations.py:615 Knowledge integration enabled
+INFO     socrates.integrations:library_integrations.py:809 Workflow integration enabled
+DEBUG    socratic_docs.generation.documentation_generator:documentation_generator.py:13 DocumentationGenerator initialized
+INFO     socrates.integrations:library_integrations.py:999 Docs integration enabled
+DEBUG    socratic_performance.profiling.query_profiler:query_profiler.py:16 QueryProfiler initialized
+INFO     socrates.integrations:library_integrations.py:1080 Performance integration enabled with profiler and cache
+WARNING  socrates.integrations:library_integrations.py:2246 socrates-ai-langraph not available: No module named 'socrates_ai_langraph'
+WARNING  socrates.integrations:library_integrations.py:2337 socratic-openclaw-skill not available: No module named 'socratic_openclaw_skill'
+INFO     socrates.integrations:library_integrations.py:2445 API integration enabled
+INFO     socrates.library_manager:library_integrations.py:2664 Socratic Library Manager initialized with all 16 libraries + 1 interface
+DEBUG    socrates.events:emitter.py:142 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\pytest-of-themi\\pytest-456\\test_project_modification_work0\\socrates', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2026-03-27T06:46:05.724590'}
+DEBUG    socratic_system.database.project_db.ProjectDatabase:project_db.py:264 Saved project test_proj_001
+DEBUG    socratic_system.database.project_db.ProjectDatabase:project_db.py:264 Saved project test_proj_001
+DEBUG    ttl_cache:ttl_cache.py:73 Cache hit for load_project (age: 2.6s)
+C:\Users\themi\PycharmProjects\Socrates\tests\unit\services\test_orchestrator_expansion.py:225: AssertionError: assert 'Build a test application' == 'Build API'
+E   assert None is not None
+     +  where None = <socratic_system.orchestration.orchestrator.AgentOrchestrator object at 0x0000012C1A7EF9E0>.vector_db
+------------------------------ Captured log call ------------------------------
+INFO     socrates.database.vector:vector_db.py:41 Initializing vector database: C:\Users\themi\AppData\Local\Temp\pytest-of-themi\pytest-456\test_orchestrator_initializes_0\socrates\vector_db
+INFO     socrates.database.vector:vector_db.py:344 Vector database closed
+INFO     socrates.integrations:library_integrations.py:1208 Event emitter initialized
+INFO     socrates.integrations:library_integrations.py:1215 Performance monitor initialized
+INFO     socrates.integrations:library_integrations.py:1220 Core integration enabled
+INFO     socrates.integrations:library_integrations.py:1356 Nexus integration enabled
+INFO     socrates.integrations:library_integrations.py:1673 Agents integration enabled
+WARNING  socrates.integrations:library_integrations.py:1753 socratic-rag not available: No module named 'socratic_rag.embeddings'
+INFO     socrates.integrations:library_integrations.py:1910 Security integration enabled
+INFO     socrates.integrations:library_integrations.py:68 Learning integration enabled
+WARNING  socrates.integrations:library_integrations.py:308 socratic-analyzer not available
+INFO     socrates.integrations:library_integrations.py:471 Conflict integration enabled
+INFO     socrates.integrations:library_integrations.py:615 Knowledge integration enabled
+INFO     socrates.integrations:library_integrations.py:809 Workflow integration enabled
+DEBUG    socratic_docs.generation.documentation_generator:documentation_generator.py:13 DocumentationGenerator initialized
+INFO     socrates.integrations:library_integrations.py:999 Docs integration enabled
+DEBUG    socratic_performance.profiling.query_profiler:query_profiler.py:16 QueryProfiler initialized
+INFO     socrates.integrations:library_integrations.py:1080 Performance integration enabled with profiler and cache
+WARNING  socrates.integrations:library_integrations.py:2246 socrates-ai-langraph not available: No module named 'socrates_ai_langraph'
+WARNING  socrates.integrations:library_integrations.py:2337 socratic-openclaw-skill not available: No module named 'socratic_openclaw_skill'
+INFO     socrates.integrations:library_integrations.py:2445 API integration enabled
+INFO     socrates.library_manager:library_integrations.py:2664 Socratic Library Manager initialized with all 16 libraries + 1 interface
+DEBUG    socrates.events:emitter.py:142 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\pytest-of-themi\\pytest-456\\test_orchestrator_initializes_0\\socrates', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2026-03-27T06:46:08.447552'}
+C:\Users\themi\PycharmProjects\Socrates\tests\unit\services\test_orchestrator_expansion.py:355: assert None is not None
+E   assert None is not None
+     +  where None = <socratic_system.orchestration.orchestrator.AgentOrchestrator object at 0x0000012C1C307260>.vector_db
+------------------------------ Captured log call ------------------------------
+INFO     socrates.database.vector:vector_db.py:41 Initializing vector database: C:\Users\themi\AppData\Local\Temp\pytest-of-themi\pytest-456\test_orchestrator_initializes_1\socrates\vector_db
+INFO     socrates.database.vector:vector_db.py:344 Vector database closed
+INFO     socrates.integrations:library_integrations.py:1208 Event emitter initialized
+INFO     socrates.integrations:library_integrations.py:1215 Performance monitor initialized
+INFO     socrates.integrations:library_integrations.py:1220 Core integration enabled
+INFO     socrates.integrations:library_integrations.py:1356 Nexus integration enabled
+INFO     socrates.integrations:library_integrations.py:1673 Agents integration enabled
+WARNING  socrates.integrations:library_integrations.py:1753 socratic-rag not available: No module named 'socratic_rag.embeddings'
+INFO     socrates.integrations:library_integrations.py:1910 Security integration enabled
+INFO     socrates.integrations:library_integrations.py:68 Learning integration enabled
+WARNING  socrates.integrations:library_integrations.py:308 socratic-analyzer not available
+INFO     socrates.integrations:library_integrations.py:471 Conflict integration enabled
+INFO     socrates.integrations:library_integrations.py:615 Knowledge integration enabled
+INFO     socrates.integrations:library_integrations.py:809 Workflow integration enabled
+DEBUG    socratic_docs.generation.documentation_generator:documentation_generator.py:13 DocumentationGenerator initialized
+INFO     socrates.integrations:library_integrations.py:999 Docs integration enabled
+DEBUG    socratic_performance.profiling.query_profiler:query_profiler.py:16 QueryProfiler initialized
+INFO     socrates.integrations:library_integrations.py:1080 Performance integration enabled with profiler and cache
+WARNING  socrates.integrations:library_integrations.py:2246 socrates-ai-langraph not available: No module named 'socrates_ai_langraph'
+WARNING  socrates.integrations:library_integrations.py:2337 socratic-openclaw-skill not available: No module named 'socratic_openclaw_skill'
+INFO     socrates.integrations:library_integrations.py:2445 API integration enabled
+INFO     socrates.library_manager:library_integrations.py:2664 Socratic Library Manager initialized with all 16 libraries + 1 interface
+DEBUG    socrates.events:emitter.py:142 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\pytest-of-themi\\pytest-456\\test_orchestrator_initializes_1\\socrates', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2026-03-27T06:46:15.966768'}
+C:\Users\themi\PycharmProjects\Socrates\tests\unit\services\test_orchestrator_integration.py:262: assert None is not None
+E   AssertionError: assert 'C:\\Users\\t...\\projects.db' == 'C:\\Users\\t...\\projects.db'
+      
+      Skipping 56 identical leading characters in diff, use -v to show
+      - -456\test_orchestrator_config_affec1\socrates\projects.db
+      + -456\test_user_create_command0\socrates_test\projects.db
+------------------------------ Captured log call ------------------------------
+INFO     socrates.database.vector:vector_db.py:41 Initializing vector database: C:\Users\themi\AppData\Local\Temp\pytest-of-themi\pytest-456\test_orchestrator_config_affec1\socrates\vector_db
+INFO     socrates.database.vector:vector_db.py:344 Vector database closed
+INFO     socrates.integrations:library_integrations.py:1208 Event emitter initialized
+INFO     socrates.integrations:library_integrations.py:1215 Performance monitor initialized
+INFO     socrates.integrations:library_integrations.py:1220 Core integration enabled
+INFO     socrates.integrations:library_integrations.py:1356 Nexus integration enabled
+INFO     socrates.integrations:library_integrations.py:1673 Agents integration enabled
+WARNING  socrates.integrations:library_integrations.py:1753 socratic-rag not available: No module named 'socratic_rag.embeddings'
+INFO     socrates.integrations:library_integrations.py:1910 Security integration enabled
+INFO     socrates.integrations:library_integrations.py:68 Learning integration enabled
+WARNING  socrates.integrations:library_integrations.py:308 socratic-analyzer not available
+INFO     socrates.integrations:library_integrations.py:471 Conflict integration enabled
+INFO     socrates.integrations:library_integrations.py:615 Knowledge integration enabled
+INFO     socrates.integrations:library_integrations.py:809 Workflow integration enabled
+DEBUG    socratic_docs.generation.documentation_generator:documentation_generator.py:13 DocumentationGenerator initialized
+INFO     socrates.integrations:library_integrations.py:999 Docs integration enabled
+DEBUG    socratic_performance.profiling.query_profiler:query_profiler.py:16 QueryProfiler initialized
+INFO     socrates.integrations:library_integrations.py:1080 Performance integration enabled with profiler and cache
+WARNING  socrates.integrations:library_integrations.py:2246 socrates-ai-langraph not available: No module named 'socrates_ai_langraph'
+WARNING  socrates.integrations:library_integrations.py:2337 socratic-openclaw-skill not available: No module named 'socratic_openclaw_skill'
+INFO     socrates.integrations:library_integrations.py:2445 API integration enabled
+INFO     socrates.library_manager:library_integrations.py:2664 Socratic Library Manager initialized with all 16 libraries + 1 interface
+DEBUG    socrates.events:emitter.py:142 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\pytest-of-themi\\pytest-456\\test_orchestrator_config_affec1\\socrates', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2026-03-27T06:46:17.891763'}
+C:\Users\themi\PycharmProjects\Socrates\tests\unit\services\test_orchestrator_integration.py:327: AssertionError: assert 'C:\\Users\\t...\\projects.db' == 'C:\\Users\\t...\\projects.db'
+E   AttributeError: 'NoneType' object has no attribute 'db_path'
+------------------------------ Captured log call ------------------------------
+INFO     socrates.database.vector:vector_db.py:41 Initializing vector database: C:\Users\themi\AppData\Local\Temp\pytest-of-themi\pytest-456\test_orchestrator_config_affec2\socrates\vector_db
+INFO     socrates.database.vector:vector_db.py:344 Vector database closed
+INFO     socrates.integrations:library_integrations.py:1208 Event emitter initialized
+INFO     socrates.integrations:library_integrations.py:1215 Performance monitor initialized
+INFO     socrates.integrations:library_integrations.py:1220 Core integration enabled
+INFO     socrates.integrations:library_integrations.py:1356 Nexus integration enabled
+INFO     socrates.integrations:library_integrations.py:1673 Agents integration enabled
+WARNING  socrates.integrations:library_integrations.py:1753 socratic-rag not available: No module named 'socratic_rag.embeddings'
+INFO     socrates.integrations:library_integrations.py:1910 Security integration enabled
+INFO     socrates.integrations:library_integrations.py:68 Learning integration enabled
+WARNING  socrates.integrations:library_integrations.py:308 socratic-analyzer not available
+INFO     socrates.integrations:library_integrations.py:471 Conflict integration enabled
+INFO     socrates.integrations:library_integrations.py:615 Knowledge integration enabled
+INFO     socrates.integrations:library_integrations.py:809 Workflow integration enabled
+DEBUG    socratic_docs.generation.documentation_generator:documentation_generator.py:13 DocumentationGenerator initialized
+INFO     socrates.integrations:library_integrations.py:999 Docs integration enabled
+DEBUG    socratic_performance.profiling.query_profiler:query_profiler.py:16 QueryProfiler initialized
+INFO     socrates.integrations:library_integrations.py:1080 Performance integration enabled with profiler and cache
+WARNING  socrates.integrations:library_integrations.py:2246 socrates-ai-langraph not available: No module named 'socrates_ai_langraph'
+WARNING  socrates.integrations:library_integrations.py:2337 socratic-openclaw-skill not available: No module named 'socratic_openclaw_skill'
+INFO     socrates.integrations:library_integrations.py:2445 API integration enabled
+INFO     socrates.library_manager:library_integrations.py:2664 Socratic Library Manager initialized with all 16 libraries + 1 interface
+DEBUG    socrates.events:emitter.py:142 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\pytest-of-themi\\pytest-456\\test_orchestrator_config_affec2\\socrates', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2026-03-27T06:46:18.280780'}
+C:\Users\themi\PycharmProjects\Socrates\tests\unit\services\test_orchestrator_integration.py:334: AttributeError: 'NoneType' object has no attribute 'db_path'
+============================== warnings summary ===============================
+e2e/journeys/test_complete_flow.py: 169 warnings
+e2e/test_complete_workflows.py: 29 warnings
+unit/routers/test_nlu.py: 105 warnings
+unit/services/test_orchestrator_expansion.py: 159 warnings
+unit/services/test_orchestrator_integration.py: 225 warnings
+  C:\Users\themi\PycharmProjects\Socrates\.venv\Lib\site-packages\socratic_agents\agents\base.py:30: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    self.created_at = datetime.utcnow()
+
+unit/routers/test_routing.py::test_auth_endpoints
+  C:\Users\themi\PycharmProjects\Socrates\.venv\Lib\site-packages\_pytest\python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but unit/routers/test_routing.py::test_auth_endpoints returned <class 'tuple'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+unit/routers/test_routing.py::test_projects_endpoints
+  C:\Users\themi\PycharmProjects\Socrates\.venv\Lib\site-packages\_pytest\python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but unit/routers/test_routing.py::test_projects_endpoints returned <class 'tuple'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+unit/routers/test_routing.py::test_chat_endpoints
+  C:\Users\themi\PycharmProjects\Socrates\.venv\Lib\site-packages\_pytest\python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but unit/routers/test_routing.py::test_chat_endpoints returned <class 'tuple'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+unit/routers/test_routing.py::test_code_endpoints
+  C:\Users\themi\PycharmProjects\Socrates\.venv\Lib\site-packages\_pytest\python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but unit/routers/test_routing.py::test_code_endpoints returned <class 'tuple'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+unit/routers/test_routing.py::test_collaboration_endpoints
+  C:\Users\themi\PycharmProjects\Socrates\.venv\Lib\site-packages\_pytest\python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but unit/routers/test_routing.py::test_collaboration_endpoints returned <class 'tuple'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests\e2e\journeys\test_complete_flow.py::TestCompleteE2EWorkflow::test_full_user_project_workflow
+FAILED tests\unit\services\test_orchestrator_expansion.py::TestOrchestratorDataPersistence::test_orchestrator_updates_existing_data
+FAILED tests\unit\services\test_orchestrator_expansion.py::TestOrchestratorComplexWorkflows::test_project_modification_workflow
+FAILED tests\unit\services\test_orchestrator_expansion.py::TestOrchestratorResourceManagement::test_orchestrator_initializes_all_components
+FAILED tests\unit\services\test_orchestrator_integration.py::TestOrchestratorKnowledgeBase::test_orchestrator_initializes_knowledge_base
+FAILED tests\unit\services\test_orchestrator_integration.py::TestOrchestratorConfiguration::test_orchestrator_config_affects_database_path
+FAILED tests\unit\services\test_orchestrator_integration.py::TestOrchestratorConfiguration::test_orchestrator_config_affects_vector_db_path
+= 7 failed, 867 passed, 353 skipped, 3 xfailed, 4 xpassed, 692 warnings in 291.27s (0:04:51) =
