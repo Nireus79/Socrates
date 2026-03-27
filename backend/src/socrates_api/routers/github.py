@@ -128,8 +128,12 @@ async def import_repository(
                 detail="GitHub URL cannot be empty",
             )
 
-        # Validate GitHub URL format
-        if not ("github.com" in request.url or "git@github.com" in request.url):
+        # SECURITY: Validate GitHub URL format strictly to prevent SSRF
+        # Only allow github.com URLs (HTTPS or SSH format)
+        valid_https = request.url.startswith("https://github.com/") or request.url.startswith("http://github.com/")
+        valid_ssh = request.url.startswith("git@github.com:")
+
+        if not (valid_https or valid_ssh):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid GitHub URL format",
