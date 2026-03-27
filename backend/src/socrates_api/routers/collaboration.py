@@ -28,7 +28,7 @@ from socrates_api.models import (
     ErrorResponse,
 )
 from socrates_api.websocket import get_connection_manager
-from socrates_api.models_local import User, EventType
+from socrates_api.models_local import User, EventType, TeamMemberRole
 from socrates_api.utils import IDGenerator
 from socrates_api.auth.project_access import check_project_access
 

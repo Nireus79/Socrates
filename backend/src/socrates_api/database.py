@@ -9,7 +9,7 @@ All components should use get_database() to access the database.
 import json
 import logging
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -94,12 +94,64 @@ class LocalDatabase:
                 )
             """)
 
+            # Knowledge documents table - stores all knowledge base documents
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS knowledge_documents (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    source TEXT,
+                    document_type TEXT DEFAULT 'text',
+                    uploaded_at TEXT NOT NULL,
+                    chunk_count INTEGER DEFAULT 0,
+                    is_deleted INTEGER DEFAULT 0,
+                    metadata TEXT,
+                    FOREIGN KEY (project_id) REFERENCES projects(id),
+                    FOREIGN KEY (user_id) REFERENCES users(id),
+                    UNIQUE(project_id, id)
+                )
+            """)
+
+            # Team members table - stores project collaborators
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS team_members (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    username TEXT NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'viewer',
+                    joined_at TEXT NOT NULL,
+                    status TEXT DEFAULT 'active',
+                    skills TEXT,
+                    metadata TEXT,
+                    FOREIGN KEY (project_id) REFERENCES projects(id),
+                    FOREIGN KEY (username) REFERENCES users(username),
+                    UNIQUE(project_id, username)
+                )
+            """)
+
             # Create indexes separately (SQLite doesn't support inline indexes)
             self.conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_user_tokens ON refresh_tokens(user_id)"
             )
             self.conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_expires ON refresh_tokens(expires_at)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_kb_project ON knowledge_documents(project_id)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_kb_user ON knowledge_documents(user_id)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_kb_deleted ON knowledge_documents(is_deleted)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tm_project ON team_members(project_id)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tm_username ON team_members(username)"
             )
 
             self.conn.commit()
@@ -560,6 +612,23 @@ class LocalDatabase:
             logger.error(f"Failed to save user: {e}")
             raise DatabaseError(f"Failed to save user: {e}", operation="save_user") from e
 
+    def user_exists(self, username: str) -> bool:
+        """
+        Check if a user exists by username.
+
+        Args:
+            username: Username to check
+
+        Returns:
+            True if user exists, False otherwise
+        """
+        try:
+            cursor = self.conn.execute("SELECT 1 FROM users WHERE username = ? LIMIT 1", (username,))
+            return cursor.fetchone() is not None
+        except Exception as e:
+            logger.debug(f"Failed to check if user exists: {e}")
+            return False
+
     def load_project(self, project_id: str) -> Optional[ProjectContext]:
         """Get project by ID (alias for get_project for compatibility)"""
         return self.get_project(project_id)
@@ -664,33 +733,106 @@ class LocalDatabase:
         source: str,
         document_type: str,
     ) -> bool:
-        """Save a knowledge document for a project (stub - not implemented yet)"""
+        """Save a knowledge document to database"""
         try:
-            # Stub implementation - just log it
-            logger.info(f"Knowledge document {doc_id} received for project {project_id}: {title}")
-            # TODO: Implement actual storage of knowledge documents
+            now = datetime.now(timezone.utc).isoformat()
+            meta_json = json.dumps({})
+
+            self.conn.execute(
+                "INSERT OR REPLACE INTO knowledge_documents "
+                "(id, project_id, user_id, title, content, source, document_type, uploaded_at, metadata) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (doc_id, project_id, user_id, title, content, source, document_type, now, meta_json)
+            )
+            self.conn.commit()
+            logger.info(f"Knowledge document {doc_id} saved for project {project_id}: {title}")
             return True
         except Exception as e:
             logger.error(f"Failed to save knowledge document: {e}")
             return False
 
     def get_knowledge_document(self, document_id: str) -> Optional[Dict[str, Any]]:
-        """Get a single knowledge document by ID (stub implementation)"""
-        logger.debug(f"Retrieving knowledge document {document_id}")
-        # TODO: Implement actual knowledge document retrieval from database
-        return None
+        """Get a single knowledge document by ID from database"""
+        try:
+            cursor = self.conn.execute(
+                "SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at, metadata "
+                "FROM knowledge_documents WHERE id = ? AND is_deleted = 0",
+                (document_id,)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+
+            return {
+                "id": row[0],
+                "project_id": row[1],
+                "user_id": row[2],
+                "title": row[3],
+                "content": row[4],
+                "source": row[5],
+                "document_type": row[6],
+                "uploaded_at": row[7],
+                "metadata": json.loads(row[8] or "{}"),
+            }
+        except Exception as e:
+            logger.debug(f"Failed to get knowledge document {document_id}: {e}")
+            return None
 
     def get_project_knowledge_documents(self, project_id: str) -> List[Dict[str, Any]]:
-        """Get all knowledge documents for a project (stub implementation)"""
-        logger.debug(f"Retrieving knowledge documents for project {project_id}")
-        # TODO: Implement actual knowledge document retrieval from database
-        return []
+        """Get all knowledge documents for a project from database"""
+        try:
+            cursor = self.conn.execute(
+                "SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at, metadata "
+                "FROM knowledge_documents WHERE project_id = ? AND is_deleted = 0 "
+                "ORDER BY uploaded_at DESC",
+                (project_id,)
+            )
+
+            documents = []
+            for row in cursor.fetchall():
+                documents.append({
+                    "id": row[0],
+                    "project_id": row[1],
+                    "user_id": row[2],
+                    "title": row[3],
+                    "content": row[4],
+                    "source": row[5],
+                    "document_type": row[6],
+                    "uploaded_at": row[7],
+                    "metadata": json.loads(row[8] or "{}"),
+                })
+            return documents
+        except Exception as e:
+            logger.debug(f"Failed to get project knowledge documents for {project_id}: {e}")
+            return []
 
     def get_user_knowledge_documents(self, user_id: str) -> List[Dict[str, Any]]:
-        """Get all knowledge documents for a user (stub implementation)"""
-        logger.debug(f"Retrieving knowledge documents for user {user_id}")
-        # TODO: Implement actual knowledge document retrieval from database
-        return []
+        """Get all knowledge documents for a user from database"""
+        try:
+            cursor = self.conn.execute(
+                "SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at, metadata "
+                "FROM knowledge_documents WHERE user_id = ? AND is_deleted = 0 "
+                "ORDER BY uploaded_at DESC",
+                (user_id,)
+            )
+
+            documents = []
+            for row in cursor.fetchall():
+                documents.append({
+                    "id": row[0],
+                    "project_id": row[1],
+                    "user_id": row[2],
+                    "title": row[3],
+                    "content": row[4],
+                    "source": row[5],
+                    "document_type": row[6],
+                    "uploaded_at": row[7],
+                    "metadata": json.loads(row[8] or "{}"),
+                })
+            return documents
+        except Exception as e:
+            logger.debug(f"Failed to get user knowledge documents for {user_id}: {e}")
+            return []
 
     def get_api_key(self, username: str, provider: str) -> Optional[str]:
         """Get API key for a user and provider (stub - not persisted)"""

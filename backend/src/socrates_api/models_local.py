@@ -5,8 +5,42 @@ These are minimal placeholder models used by API routers.
 Routers should use get_database() and other local modules instead of relying on external model definitions.
 """
 
+from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
+
+
+@dataclass
+class TeamMemberRole:
+    """Team member with role and skills"""
+    username: str
+    role: str  # 'owner', 'editor', 'viewer'
+    skills: List[str] = field(default_factory=list)
+    joined_at: Optional[Any] = None
+    status: str = "active"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary"""
+        joined_str = self.joined_at.isoformat() if hasattr(self.joined_at, 'isoformat') else str(self.joined_at)
+        return {
+            "username": self.username,
+            "role": self.role,
+            "skills": self.skills,
+            "joined_at": joined_str,
+            "status": self.status,
+        }
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> 'TeamMemberRole':
+        """Create from dictionary"""
+        return TeamMemberRole(
+            username=data.get("username"),
+            role=data.get("role"),
+            skills=data.get("skills", []),
+            joined_at=data.get("joined_at"),
+            status=data.get("status", "active"),
+        )
 
 
 class EventType(str, Enum):
