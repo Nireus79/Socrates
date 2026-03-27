@@ -169,8 +169,7 @@ async def get_analytics_summary(
             }
         else:
             # Get summary across all user's projects
-            all_projects = [db.load_project(pid) for pid in db.list_projects(owner=current_user)]
-            all_projects = [p for p in all_projects if p]
+            all_projects = db.get_user_projects(current_user)
 
             total_code_quality = 0
             total_maturity = 0
