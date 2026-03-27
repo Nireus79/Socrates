@@ -601,8 +601,8 @@ async def delete_project(
                 detail=f"Project '{project_id}' not found",
             )
 
-        # SECURITY FIX: Allow team members with viewer+ role
-        await check_project_access(project_id, current_user, db, min_role="viewer")
+        # SECURITY: Only owner can delete projects (dangerous operation)
+        await check_project_access(project_id, current_user, db, min_role="owner")
 
         # Permanently delete the project from database
         project_name = project.name
