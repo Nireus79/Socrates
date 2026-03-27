@@ -22,8 +22,7 @@ def _import_router(name: str, module_name: str, router_var: str = "router"):
         logger.debug(f"Loaded router: {name}")
         return router
     except Exception as e:
-        logger.debug("Operation failed")
-        logger.debug("Failed to load {name} router:")
+        logger.warning(f"Failed to load {name} router: {e}")
         return None
 
 
