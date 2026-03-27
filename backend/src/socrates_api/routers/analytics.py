@@ -138,8 +138,8 @@ async def get_analytics_summary(
 
             # Calculate metrics from conversation history
             conversation = project.conversation_history or []
-            total_questions = len([m for m in conversation if m.get("type") == "user"])
-            total_answers = len([m for m in conversation if m.get("type") == "assistant"])
+            total_questions = len([m for m in conversation if m.get("role") == "user"])
+            total_answers = len([m for m in conversation if m.get("role") == "assistant"])
             code_generation_count = len([m for m in conversation if "```" in m.get("content", "")])
             code_lines_generated = sum(
                 len(parts[1].splitlines()) if len(parts) > 1 else 0

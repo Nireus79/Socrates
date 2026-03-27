@@ -306,7 +306,7 @@ async def _handle_chat_message(
             project.conversation_history.append(
                 {
                     "id": f"msg_{len(project.conversation_history)}",
-                    "type": "user",
+                    "role": "user",
                     "content": message.content,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "mode": mode,
@@ -317,7 +317,7 @@ async def _handle_chat_message(
             project.conversation_history.append(
                 {
                     "id": f"msg_{len(project.conversation_history)}",
-                    "type": "assistant",
+                    "role": "assistant",
                     "content": ai_response,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "hint": hint_text if hint_text else None,
@@ -573,7 +573,7 @@ async def send_chat_message(
         project.conversation_history.append(
             {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "type": "user",
+                "role": "user",
                 "content": message,
                 "mode": mode,
             }
@@ -581,7 +581,7 @@ async def send_chat_message(
 
         # Check if this is the first message - if so, generate initial question first
         assistant_messages = [
-            msg for msg in project.conversation_history if msg.get("type") == "assistant"
+            msg for msg in project.conversation_history if msg.get("role") == "assistant"
         ]
 
         question_response = None
@@ -704,7 +704,7 @@ async def get_chat_history(
             messages.append(
                 {
                     "id": msg.get("id", f"msg_{len(messages)}"),
-                    "role": msg.get("type", "user"),  # type -> role mapping
+                    "role": msg.get("role", "user"),
                     "content": msg.get("content", ""),
                     "timestamp": msg.get("timestamp"),
                 }
@@ -844,7 +844,7 @@ async def request_hint(
 
         # Get the latest assistant message or generate a new question
         assistant_messages = [
-            msg for msg in (project.conversation_history or []) if msg.get("type") == "assistant"
+            msg for msg in (project.conversation_history or []) if msg.get("role") == "assistant"
         ]
 
         question = None
@@ -1053,7 +1053,7 @@ async def get_chat_summary(
                 # Fallback: Use Claude directly to generate summary
                 conversation_text = "\n".join(
                     [
-                        f"{msg.get('type', 'unknown').upper()}: {msg.get('content', '')}"
+                        f"{msg.get('role', 'unknown').upper()}: {msg.get('content', '')}"
                         for msg in conversation_history[-20:]  # Last 20 messages
                     ]
                 )
@@ -1161,7 +1161,7 @@ async def search_conversations(
                 results.append(
                     {
                         "id": len(results),
-                        "role": msg.get("type"),
+                        "role": msg.get("role"),
                         "content": msg.get("content"),
                         "timestamp": msg.get("timestamp"),
                     }

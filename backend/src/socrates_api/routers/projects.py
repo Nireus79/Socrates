@@ -1340,7 +1340,7 @@ async def get_project_analytics(
 
         # Calculate comprehensive analytics from project data
         conversation = project.conversation_history or []
-        total_qa_sessions = len([m for m in conversation if m.get("type") == "user"])
+        total_qa_sessions = len([m for m in conversation if m.get("role") == "user"])
         maturity = project.overall_maturity or 0
 
         # Calculate velocity (sessions per day, average 0.5-5.0)
