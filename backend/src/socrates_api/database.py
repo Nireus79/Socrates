@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class LocalDatabase:
     """Minimal SQLite wrapper for API project and user data (local only)"""
 
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_path: str | None = None) -> None:
         """Initialize database connection"""
         if db_path is None:
             data_dir = Path.home() / ".socrates"
@@ -38,7 +38,7 @@ class LocalDatabase:
         self.conn = None
         self._initialize()
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         """Create tables if they don't exist"""
         try:
             self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
@@ -102,7 +102,7 @@ class LocalDatabase:
             logger.error(f"Failed to initialize database: {e}")
             raise
 
-    def _migrate_schema(self):
+    def _migrate_schema(self) -> None:
         """Add missing columns to existing tables from previous schema versions"""
         try:
             # Get existing columns in projects table
@@ -636,7 +636,7 @@ class LocalDatabase:
             raise DatabaseError(f"Failed to delete user {username}: {e}", operation="permanently_delete_user") from e
 
 
-    def close(self):
+    def close(self) -> None:
         """Close database connection"""
         if self.conn:
             self.conn.close()

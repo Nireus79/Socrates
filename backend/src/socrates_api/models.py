@@ -93,7 +93,7 @@ class CreateProjectRequest(BaseModel):
 
     @field_validator("name", "description")
     @classmethod
-    def validate_no_injection(cls, v):
+    def validate_no_injection(cls, v: str | None) -> str | None:
         """Validate input for SQL injection and XSS attacks (REQUIRED)"""
         if v is None:
             return v
@@ -119,7 +119,7 @@ class UpdateProjectRequest(BaseModel):
 
     @field_validator("name", "phase")
     @classmethod
-    def validate_no_injection(cls, v):
+    def validate_no_injection(cls, v: str | None) -> str | None:
         """Validate input for SQL injection and XSS attacks (REQUIRED)"""
         if v is None:
             return v
@@ -203,7 +203,7 @@ class AskQuestionRequest(BaseModel):
 
     @field_validator("topic", "difficulty_level")
     @classmethod
-    def validate_question_fields(cls, v):
+    def validate_question_fields(cls, v: str | None) -> str | None:
         """Validate question fields for injection attacks (REQUIRED)"""
         if v is None:
             return v
@@ -253,7 +253,7 @@ class ProcessResponseRequest(BaseModel):
 
     @field_validator("user_response")
     @classmethod
-    def validate_response(cls, v):
+    def validate_response(cls, v: str) -> str:
         """Validate user response for injection attacks (REQUIRED)"""
         if v is None:
             return v
@@ -416,7 +416,7 @@ class RegisterRequest(BaseModel):
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, v):
+    def validate_username(cls, v: str) -> str:
         """Validate username format and content (REQUIRED)"""
         if v is None:
             return v
@@ -445,7 +445,7 @@ class LoginRequest(BaseModel):
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, v):
+    def validate_username(cls, v: str) -> str:
         """Validate username for injection attacks (REQUIRED)"""
         if v is None:
             return v
@@ -723,7 +723,7 @@ class CreateChatSessionRequest(BaseModel):
 
     @field_validator("title")
     @classmethod
-    def validate_title(cls, v):
+    def validate_title(cls, v: str | None) -> str | None:
         """Validate title for injection attacks (REQUIRED)"""
         if v is None:
             return v
@@ -806,7 +806,7 @@ class ChatMessageRequest(BaseModel):
 
     @field_validator("message", "role", "mode")
     @classmethod
-    def validate_message_fields(cls, v):
+    def validate_message_fields(cls, v: str) -> str:
         """Validate message fields for injection attacks (REQUIRED)"""
         if v is None:
             return v

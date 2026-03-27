@@ -13,7 +13,7 @@ import signal
 import socket
 import time
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Any, Optional
 
 from dotenv import load_dotenv
 
@@ -129,12 +129,12 @@ def get_orchestrator() -> APIOrchestrator:
     return get_orchestrator_from_state()
 
 
-def get_rate_limiter_for_app():
+def get_rate_limiter_for_app() -> Any:
     """Get rate limiter instance from app state"""
     return app_state.get("limiter")
 
 
-def conditional_rate_limit(limit_string: str):
+def conditional_rate_limit(limit_string: str) -> Any:
     """
     Conditional rate limit decorator that applies limit if limiter is available.
     Falls back to no limit if limiter is not initialized.
@@ -156,7 +156,7 @@ def conditional_rate_limit(limit_string: str):
     return decorator
 
 
-def _setup_event_listeners(orchestrator: APIOrchestrator):
+def _setup_event_listeners(orchestrator: APIOrchestrator) -> None:
     """Setup listeners for orchestrator events"""
     if app_state["event_listeners_registered"]:
         return
