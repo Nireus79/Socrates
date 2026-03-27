@@ -19,6 +19,7 @@ from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.database import LocalDatabase, get_database
 from socrates_api.models import APIResponse
 from socrates_api.models_local import User
+from socrates_api.auth.project_access import check_project_access
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])
@@ -171,11 +172,8 @@ async def generate_code(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         logger.info(f"Code generation requested for {language} in project {project_id}")
 
@@ -431,11 +429,8 @@ async def validate_code(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Validate code with language-specific linters
         import subprocess
@@ -564,11 +559,8 @@ async def get_code_history(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Load code history from project
         all_generations = project.code_history or []
@@ -723,11 +715,8 @@ async def refactor_code(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         logger.info(f"Code refactoring ({refactor_type}) requested in project {project_id}")
 
@@ -918,11 +907,8 @@ async def generate_documentation(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Generate documentation using Claude AI
         try:

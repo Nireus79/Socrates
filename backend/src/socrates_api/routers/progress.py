@@ -54,8 +54,8 @@ async def get_progress(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Calculate progress metrics
         progress_data = {
@@ -214,8 +214,8 @@ async def get_progress_status(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Get maturity history
         maturity_history = getattr(project, "maturity_history", []) or []
@@ -373,8 +373,8 @@ async def get_project_stats(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Count conversation messages
         conversation_history = getattr(project, "conversation_history", []) or []

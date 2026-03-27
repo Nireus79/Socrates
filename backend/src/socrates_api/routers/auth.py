@@ -243,7 +243,7 @@ async def register(
             passcode_hash=password_hash,
             subscription_tier="free",  # Default to free tier
             subscription_status="active",
-            testing_mode=True,  # Testing mode enabled by default
+            testing_mode=False,  # SECURITY FIX: Testing mode disabled by default
             created_at=datetime.now(timezone.utc),
         )
 

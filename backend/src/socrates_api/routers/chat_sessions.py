@@ -16,6 +16,7 @@ from typing import Optional
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
+from socrates_api.auth.project_access import check_project_access
 from socrates_api.utils import IDGenerator
 from socrates_api.database import get_database
 from socrates_api.models import (
@@ -51,9 +52,10 @@ async def create_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+
+
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         if not hasattr(project, "chat_sessions"):
             project.chat_sessions = {}
@@ -124,9 +126,10 @@ async def list_chat_sessions(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+
+
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         sessions_list = []
@@ -201,9 +204,10 @@ async def get_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+
+
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
@@ -257,9 +261,10 @@ async def send_chat_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+
+
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
@@ -332,9 +337,10 @@ async def get_chat_messages(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+
+
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
@@ -409,9 +415,10 @@ async def update_chat_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+
+
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
@@ -484,9 +491,10 @@ async def delete_chat_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+
+
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
@@ -541,9 +549,10 @@ async def archive_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+
+
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
@@ -597,9 +606,10 @@ async def restore_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+
+
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)

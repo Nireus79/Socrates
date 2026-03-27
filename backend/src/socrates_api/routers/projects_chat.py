@@ -1790,8 +1790,8 @@ async def save_extracted_specs(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Check access
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         logger.info(f"User {current_user} is saving extracted specs to project {project_id}")
 

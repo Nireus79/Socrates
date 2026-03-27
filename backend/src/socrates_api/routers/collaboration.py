@@ -30,6 +30,7 @@ from socrates_api.models import (
 from socrates_api.websocket import get_connection_manager
 from socrates_api.models_local import User, EventType
 from socrates_api.utils import IDGenerator
+from socrates_api.auth.project_access import check_project_access
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["collaboration"])
@@ -217,11 +218,8 @@ async def add_collaborator_new(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only project owner can add collaborators",
-            )
+        # SECURITY FIX: Allow team members with owner+ role
+        await check_project_access(project_id, current_user, db, min_role="owner")
 
         # CRITICAL: Validate subscription before adding collaborators
         logger.info(f"Validating subscription for adding collaborator for user {current_user}")
@@ -539,11 +537,8 @@ async def update_collaborator_role(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only project owner can update roles",
-            )
+        # SECURITY FIX: Allow team members with owner+ role
+        await check_project_access(project_id, current_user, db, min_role="owner")
 
         # Find and update collaborator role
         if project.team_members:
@@ -634,11 +629,8 @@ async def remove_collaborator(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only project owner can remove collaborators",
-            )
+        # SECURITY FIX: Allow team members with owner+ role
+        await check_project_access(project_id, current_user, db, min_role="owner")
 
         # Prevent removing owner
         if username == project.owner:
@@ -987,11 +979,8 @@ async def create_project_invitation(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only project owner can invite collaborators",
-            )
+        # SECURITY FIX: Allow team members with owner+ role
+        await check_project_access(project_id, current_user, db, min_role="owner")
 
         # CRITICAL: Validate subscription before creating invitation
         logger.info(f"Validating subscription for creating invitation for user {current_user}")
@@ -1120,11 +1109,8 @@ async def get_project_invitations(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only project owner can view invitations",
-            )
+        # SECURITY FIX: Allow team members with owner+ role
+        await check_project_access(project_id, current_user, db, min_role="owner")
 
         # Load invitations
         invitations = db.get_project_invitations(project_id, status=status_filter)
@@ -1314,11 +1300,8 @@ async def cancel_invitation(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only project owner can cancel invitations",
-            )
+        # SECURITY FIX: Allow team members with owner+ role
+        await check_project_access(project_id, current_user, db, min_role="owner")
 
         # Get invitation to verify it belongs to this project
         invitations = db.get_project_invitations(project_id)

@@ -1091,12 +1091,8 @@ async def get_sync_status(
                 detail="Project not found",
             )
 
-        # Verify user owns project
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to access this project",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         is_linked = bool(project.repository_url)
 

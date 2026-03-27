@@ -64,8 +64,8 @@ async def set_skills(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Validate proficiency level
         valid_levels = ["beginner", "intermediate", "advanced", "expert"]
@@ -181,8 +181,8 @@ async def list_skills(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Get skills
         skills = getattr(project, "skills", []) or []

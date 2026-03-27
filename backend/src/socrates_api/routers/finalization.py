@@ -69,8 +69,8 @@ async def generate_final_artifacts(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Collect artifacts
         artifacts = {
@@ -230,8 +230,8 @@ async def generate_final_documentation(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Build documentation package using comprehensive generator
         doc_package = {
@@ -501,8 +501,8 @@ async def export_project(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Find generated project directory
         data_dir = Path.home() / ".socrates" / "generated" / project_id
@@ -657,8 +657,8 @@ async def publish_to_github(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Only project owner can publish")
+        # SECURITY FIX: Allow team members with owner+ role
+        await check_project_access(project_id, current_user, db, min_role="owner")
 
         # Get GitHub token from request or user settings
         if not github_token:

@@ -19,6 +19,7 @@ from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 from socrates_api.services.report_generator import get_report_generator
 from socrates_api.models_local import User
+from socrates_api.auth.project_access import check_project_access
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -129,11 +130,8 @@ async def get_analytics_summary(
                     detail="Project not found",
                 )
 
-            if project.owner != current_user:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied",
-                )
+            # SECURITY FIX: Allow team members with viewer+ role
+            await check_project_access(project_id, current_user, db, min_role="viewer")
 
             # Calculate metrics from conversation history
             conversation = project.conversation_history or []
@@ -256,11 +254,8 @@ async def get_project_analytics(
                 detail=f"Project '{project_id}' not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Extract real analytics from project
         analytics_metrics = getattr(project, "analytics_metrics", {}) or {}
@@ -755,14 +750,8 @@ async def export_analytics(
             )
 
         # Check authorization
-        if project.owner != current_user:
-            logger.warning(
-                f"User {current_user} attempted to export analytics for project {project_id} owned by {project.owner}"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Gather analytics data
         conversation = project.conversation_history or []

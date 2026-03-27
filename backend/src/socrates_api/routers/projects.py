@@ -55,6 +55,7 @@ from socrates_api.models import (
 )
 from socrates_api.models_local import User
 from socrates_api.utils import IDGenerator
+from socrates_api.auth.project_access import check_project_access
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -465,19 +466,8 @@ async def get_project(
 
         # Check access: user must be owner or team member
         is_team_member = False
-        if project.owner != current_user:
-            # Check if user is a team member
-            if project.team_members:
-                is_team_member = any(
-                    (m.get("username") if isinstance(m, dict) else getattr(m, "username", None)) == current_user
-                    for m in project.team_members
-                )
-
-            if not is_team_member:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied to this project",
-                )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         return APIResponse(
             success=True,
@@ -534,11 +524,8 @@ async def update_project(
                 detail=f"Project '{project_id}' not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Update fields
         if request.name:
@@ -610,11 +597,8 @@ async def delete_project(
                 detail=f"Project '{project_id}' not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Permanently delete the project from database
         project_name = project.name
@@ -675,11 +659,8 @@ async def restore_project(
                 detail=f"Project '{project_id}' not found",
             )
 
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
-            )
+        # SECURITY FIX: Allow team members with viewer+ role
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
         # Restore the project
         project.is_archived = False
