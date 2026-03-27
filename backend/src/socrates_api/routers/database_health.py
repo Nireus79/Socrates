@@ -252,8 +252,8 @@ async def database_health_detailed(
             "health_status": health.get("status", "unknown"),
             "latency_ms": health.get("latency_ms", 0),
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "pool_status": pool_status.model_dump() if pool_status else None,
-            "query_stats": query_stats.model_dump() if query_stats else None,
+            "pool_status": pool_status if pool_status else None,
+            "query_stats": query_stats if query_stats else None,
         },
     )
 
@@ -328,8 +328,8 @@ async def database_stats(
         status="success",
         message="Database statistics retrieved successfully",
         data={
-            "pool_status": pool_status.model_dump() if pool_status else None,
-            "query_stats": query_stats.model_dump() if query_stats else None,
+            "pool_status": pool_status if pool_status else None,
+            "query_stats": query_stats if query_stats else None,
             "file_info": file_info,
         },
     )

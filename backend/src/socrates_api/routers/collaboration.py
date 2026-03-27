@@ -474,7 +474,7 @@ async def list_collaborators(
                 project_id=project_id,
                 total=len(collaborators),
                 collaborators=collaborators,
-            ).dict(),
+            ),
         )
 
     except HTTPException:

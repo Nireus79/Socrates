@@ -121,7 +121,7 @@ async def list_projects(
         for project in projects:
             # Only include non-archived projects
             if not project.is_archived:
-                project_responses.append(_project_to_response(project).model_dump(mode='json'))
+                project_responses.append(_project_to_response(project))
 
         return APIResponse(
             success=True,
@@ -247,7 +247,7 @@ async def create_project(
                         success=True,
                         status="created",
                         message="Project created successfully",
-                        data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+                        data=_project_to_response(project),
                     )
                 else:
                     error_message = result.get("message", "Failed to create project")
@@ -397,7 +397,7 @@ async def create_project(
             success=True,
             status="created",
             message="Project created successfully",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=_project_to_response(project),
         )
 
     except HTTPException as e:
@@ -467,7 +467,7 @@ async def get_project(
             success=True,
             status="success",
             message="Project retrieved successfully",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=_project_to_response(project),
         )
 
     except HTTPException:
@@ -541,7 +541,7 @@ async def update_project(
             success=True,
             status="updated",
             message="Project updated successfully",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=_project_to_response(project),
         )
 
     except HTTPException:
@@ -680,7 +680,7 @@ async def restore_project(
             success=True,
             status="success",
             message="Project restored successfully",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=_project_to_response(project),
         )
 
     except HTTPException:
@@ -1158,7 +1158,7 @@ async def advance_phase(
             success=True,
             status="updated",
             message=f"Project phase advanced to {new_phase}",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=_project_to_response(project),
         )
 
     except HTTPException:
@@ -1244,7 +1244,7 @@ async def rollback_phase(
             success=True,
             status="updated",
             message=f"Project phase rolled back to {new_phase}",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=_project_to_response(project),
         )
 
     except HTTPException:
@@ -1355,7 +1355,7 @@ async def get_project_analytics(
                 project_id=project_id,
                 period="all_time",
                 metrics=analytics,
-            ).dict(),
+            ),
         )
 
     except HTTPException:
