@@ -244,8 +244,7 @@ async def _handle_chat_message(
 
             db = get_database()
 
-            project_dict = db.load_project(project_id)
-            project = project_dict
+            project = db.load_project(project_id)
             if not project:
                 logger.error(f"Project {project_id} not found")
                 return None
@@ -425,8 +424,7 @@ async def _route_command(
 
         db = get_database()
 
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             return {"status": "error", "message": f"Project {project_id} not found"}
 
@@ -561,8 +559,7 @@ async def send_chat_message(
             )
 
         # Verify project ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None or project.owner != current_user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -683,8 +680,7 @@ async def get_chat_history(
     """
     try:
         # Verify project ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None or project.owner != current_user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -774,8 +770,7 @@ async def switch_chat_mode(
             )
 
         # Verify project ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None or project.owner != current_user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -834,8 +829,7 @@ async def request_hint(
     """
     try:
         # Verify project ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None or project.owner != current_user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -933,8 +927,7 @@ async def clear_chat_history(
     """
     try:
         # Verify project ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None or project.owner != current_user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -993,8 +986,7 @@ async def get_chat_summary(
     """
     try:
         # Verify project ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None or project.owner != current_user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -1145,8 +1137,7 @@ async def search_conversations(
             )
 
         # Verify project ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None or project.owner != current_user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
