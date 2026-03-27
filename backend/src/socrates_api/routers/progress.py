@@ -83,7 +83,7 @@ async def get_progress(
             [
                 msg
                 for msg in getattr(project, "conversation_history", []) or []
-                if isinstance(msg, dict) and msg.get("type") == "code"
+                if isinstance(msg, dict) and msg.get("mode") == "code"
             ]
         )
         progress_data["code_generation_progress"] = {
@@ -387,12 +387,12 @@ async def get_project_stats(
 
         # Count questions (messages with type='question')
         question_count = len(
-            [msg for msg in conversation_history if msg.get("type") == "question"]
+            [msg for msg in conversation_history if msg.get("mode") == "question"]
         )
 
         # Count code blocks generated
         code_count = len(
-            [msg for msg in conversation_history if msg.get("type") == "code"]
+            [msg for msg in conversation_history if msg.get("mode") == "code"]
         )
 
         # Get current phase
