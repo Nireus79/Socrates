@@ -195,13 +195,65 @@ class APIClient {
    * Load tokens from localStorage
    */
   private loadTokens(): void {
-    this.accessToken = localStorage.getItem('access_token');
-    this.refreshToken = localStorage.getItem('refresh_token');
+    const accessToken = localStorage.getItem('access_token');
+    const refreshToken = localStorage.getItem('refresh_token');
+
+    // Validate token format and expiration before using
+    if (accessToken && this.isValidToken(accessToken)) {
+      this.accessToken = accessToken;
+    } else {
+      if (accessToken) {
+        console.warn('[APIClient] Access token is invalid or expired, clearing it');
+      }
+      localStorage.removeItem('access_token');
+      this.accessToken = null;
+    }
+
+    if (refreshToken && this.isValidToken(refreshToken)) {
+      this.refreshToken = refreshToken;
+    } else {
+      if (refreshToken) {
+        console.warn('[APIClient] Refresh token is invalid or expired, clearing it');
+      }
+      localStorage.removeItem('refresh_token');
+      this.refreshToken = null;
+    }
+
     console.log('[APIClient] Tokens loaded on init:', {
       hasAccessToken: !!this.accessToken,
       hasRefreshToken: !!this.refreshToken,
       tokenLength: this.accessToken?.length,
     });
+  }
+
+  /**
+   * Validate token format and structure
+   */
+  private isValidToken(token: string): boolean {
+    try {
+      // Check basic format (3 parts separated by dots)
+      const parts = token.split('.');
+      if (parts.length !== 3) return false;
+
+      // Validate each part is valid base64
+      for (const part of parts) {
+        if (!part || !/^[A-Za-z0-9_-]+$/.test(part)) return false;
+      }
+
+      // Validate payload can be parsed
+      const payload = JSON.parse(atob(parts[1]));
+      if (!payload || typeof payload !== 'object') return false;
+
+      // Check expiration
+      if (payload.exp) {
+        const expiresAt = payload.exp * 1000;
+        if (Date.now() > expiresAt) return false;
+      }
+
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   /**

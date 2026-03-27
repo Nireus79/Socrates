@@ -58,6 +58,9 @@ export const projectsAPI = {
    * Get project statistics
    */
   async getProjectStats(projectId: string): Promise<ProjectStats> {
+    if (!projectId || projectId.trim() === '') {
+      throw new Error('Invalid projectId: cannot be empty');
+    }
     return apiClient.get<ProjectStats>(`/projects/${projectId}/stats`);
   },
 

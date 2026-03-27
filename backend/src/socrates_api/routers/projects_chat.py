@@ -561,7 +561,15 @@ async def get_question(
 
         # Extract question from orchestrator result (nested in "data" key)
         question_data = result.get("data", {})
-        question = question_data.get("question", "")
+        question = question_data.get("question", "").strip() if question_data.get("question") else ""
+
+        # CRITICAL: Validate question is non-empty
+        if not question:
+            logger.warning(f"Orchestrator returned empty question for project {project_id}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="No questions available. Phase may be complete. Please check your project progress.",
+            )
 
         return APIResponse(
             success=True,

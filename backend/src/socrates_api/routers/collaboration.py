@@ -439,15 +439,24 @@ async def list_collaborators(
         # Load collaborators from project
         # Helper function to safely convert datetime to ISO format string
         def to_iso_string(dt_value):
-            if dt_value is None:
+            try:
+                if dt_value is None:
+                    return None
+                if isinstance(dt_value, str):
+                    # Validate it's proper ISO format
+                    from datetime import datetime as dt
+                    dt.fromisoformat(dt_value)
+                    return dt_value
+                if hasattr(dt_value, 'isoformat'):
+                    return dt_value.isoformat()
+                return str(dt_value) if dt_value else None
+            except Exception:
+                logger.debug(f"Failed to convert datetime: {dt_value}")
                 return None
-            if isinstance(dt_value, str):
-                return dt_value
-            return dt_value.isoformat() if hasattr(dt_value, 'isoformat') else str(dt_value)
 
         collaborators = [
             {
-                "username": project.owner,
+                "username": project.owner or "unknown",
                 "role": "owner",
                 "status": "active",
                 "joined_at": to_iso_string(project.created_at),
@@ -457,22 +466,32 @@ async def list_collaborators(
         # Add team members if present (excluding owner to avoid duplicates)
         if project.team_members:
             for member in project.team_members:
-                # Handle both dict and object types
-                member_username = member.get("username") if isinstance(member, dict) else getattr(member, "username", None)
-                member_role = member.get("role") if isinstance(member, dict) else getattr(member, "role", None)
-                member_joined = member.get("joined_at") if isinstance(member, dict) else getattr(member, "joined_at", None)
+                try:
+                    # Handle both dict and object types
+                    member_username = member.get("username") if isinstance(member, dict) else getattr(member, "username", None)
+                    member_role = member.get("role") if isinstance(member, dict) else getattr(member, "role", None)
+                    member_joined = member.get("joined_at") if isinstance(member, dict) else getattr(member, "joined_at", None)
 
-                # Skip if this member is the owner (avoid duplicates)
-                if member_username == project.owner:
+                    # Skip if username is missing or empty
+                    if not member_username or member_username.strip() == "":
+                        logger.warning("Skipping collaborator with empty username")
+                        continue
+
+                    # Skip if this member is the owner (avoid duplicates)
+                    if member_username == project.owner:
+                        continue
+
+                    collaborators.append(
+                        {
+                            "username": member_username,
+                            "role": member_role or "viewer",
+                            "status": "active",
+                            "joined_at": to_iso_string(member_joined),
+                        }
+                    )
+                except Exception as member_error:
+                    logger.warning(f"Error processing member: {member_error}")
                     continue
-                collaborators.append(
-                    {
-                        "username": member_username,
-                        "role": member_role,
-                        "status": "active",
-                        "joined_at": to_iso_string(member_joined),
-                    }
-                )
 
         return APIResponse(
             success=True,

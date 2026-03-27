@@ -34,11 +34,17 @@ export const DashboardPage: React.FC = () => {
       // Fetch stats for all projects
       for (const project of projects) {
         try {
+          // CRITICAL: Validate projectId before making API call
+          if (!project || !project.project_id || project.project_id.trim() === '') {
+            console.warn('Skipping project with missing or invalid ID:', project);
+            continue;
+          }
           const projectStats = await projectsAPI.getProjectStats(project.project_id);
           totalQuestions += projectStats.questions_asked || 0;
           totalCode += projectStats.code_generated || 0;
         } catch (_error) {
           // Continue if individual project fails
+          console.debug('Failed to fetch stats for project:', _error);
         }
       }
 
