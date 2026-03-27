@@ -395,10 +395,10 @@ async def get_document_details(
 
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error getting document details: {e}")
+    except Exception:
+        logger.debug("Error getting document details")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error retrieving document"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Operation failed. Please try again later."
         )
 
 

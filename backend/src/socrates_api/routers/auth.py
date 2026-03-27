@@ -624,11 +624,11 @@ async def refresh(request: RefreshTokenRequest, db: LocalDatabase = Depends(get_
 
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error during token refresh: {str(e)}")
+    except Exception:
+        logger.debug("Error during token refresh")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error refreshing token",
+            detail="Operation failed. Please try again later.",
         )
 
 
