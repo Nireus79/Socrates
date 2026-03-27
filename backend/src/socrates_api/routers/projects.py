@@ -948,7 +948,7 @@ async def get_maturity_analysis(
                                         (hasattr(cat, "percentage") and cat.percentage >= 100))
 
             # Estimate metrics for reaching milestones
-            current_score_sum = sum((cat.get("current_score", 0)
+            current_score_sum = sum((cat.get("current_score", 0) if isinstance(cat, dict) else (cat.current_score if hasattr(cat, "current_score") else 0))
                                    for cat in phase_categories.values())
 
             milestone_60 = max(0, 54.0 - current_score_sum)  # 60% of 90
