@@ -674,6 +674,24 @@ class LocalDatabase:
             logger.error(f"Failed to save knowledge document: {e}")
             return False
 
+    def get_knowledge_document(self, document_id: str) -> Optional[Dict[str, Any]]:
+        """Get a single knowledge document by ID (stub implementation)"""
+        logger.debug(f"Retrieving knowledge document {document_id}")
+        # TODO: Implement actual knowledge document retrieval from database
+        return None
+
+    def get_project_knowledge_documents(self, project_id: str) -> List[Dict[str, Any]]:
+        """Get all knowledge documents for a project (stub implementation)"""
+        logger.debug(f"Retrieving knowledge documents for project {project_id}")
+        # TODO: Implement actual knowledge document retrieval from database
+        return []
+
+    def get_user_knowledge_documents(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all knowledge documents for a user (stub implementation)"""
+        logger.debug(f"Retrieving knowledge documents for user {user_id}")
+        # TODO: Implement actual knowledge document retrieval from database
+        return []
+
     def get_api_key(self, username: str, provider: str) -> Optional[str]:
         """Get API key for a user and provider (stub - not persisted)"""
         # In production, this would be stored in database
