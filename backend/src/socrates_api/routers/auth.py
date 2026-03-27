@@ -61,6 +61,12 @@ lockout_manager = AccountLockoutManager()
 # Initialize MFA manager (REQUIRED)
 mfa_manager = get_mfa_manager()
 
+# SECURITY: MFA state (including recovery code usage) is currently stored in-memory only
+# TODO: Migrate MFA state to database for persistence across server restarts
+# Currently if server restarts, recovery code usage tracking is lost
+# Risk: Recovery codes could be reused after server restart
+# Mitigation: Implement persistent MFA state store in database with proper encryption
+
 
 def _get_rate_limit_decorator(limit_str: str):
     """Get rate limit decorator - handles both available and unavailable limiter."""
@@ -152,10 +158,10 @@ async def get_csrf_token(http_request: Request):
 @router.post(
     "/register",
     response_model=AuthResponse,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_201_CREATED,
     summary="Register a new user",
     responses={
-        200: {"description": "User registered successfully"},
+        201: {"description": "User registered successfully"},
         400: {"description": "Invalid request or username already exists", "model": ErrorResponse},
         500: {"description": "Server error during registration", "model": ErrorResponse},
     },
