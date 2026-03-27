@@ -191,7 +191,22 @@ async def set_api_key(
     try:
         from socrates_api.main import get_orchestrator
 
+        # SECURITY: Don't log or expose the API key in any way
         logger.info(f"Setting API key for {provider} for user: {current_user}")
+
+        # Validate provider is not empty
+        if not provider or not provider.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Provider name is required"
+            )
+
+        # Validate API key is not empty
+        if not api_key or not api_key.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="API key is required"
+            )
 
         orchestrator = get_orchestrator()
         result = orchestrator.process_request(
@@ -205,8 +220,10 @@ async def set_api_key(
         )
 
         if result["status"] != "success":
+            # SECURITY: Don't expose error details that might contain sensitive info
+            logger.warning(f"Failed to set API key for {provider}: {result.get('message')}")
             raise HTTPException(
-                status_code=500, detail=result.get("message", "Failed to set API key")
+                status_code=500, detail="Failed to set API key. Please verify the provider and try again."
             )
 
         return APIResponse(
@@ -219,10 +236,11 @@ async def set_api_key(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error setting API key: {str(e)}")
+        # SECURITY: Log the error for debugging but don't expose it to the client
+        logger.error(f"Error setting API key for {provider}: {type(e).__name__}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to set API key: {str(e)}",
+            detail="Failed to set API key. Please try again later.",
         )
 
 

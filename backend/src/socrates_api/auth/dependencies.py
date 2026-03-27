@@ -239,3 +239,28 @@ def require_project_role(required_role: str):
         return current_user
 
     return Depends(check_role)
+
+
+def is_testing_mode_enabled(user: Optional[User]) -> bool:
+    """
+    Check if testing mode is enabled for a user.
+
+    SECURITY: Always uses database flag, never HTTP headers.
+    This prevents header injection attacks that bypass subscription limits.
+
+    Args:
+        user: User object from database (can be None)
+
+    Returns:
+        bool: True if testing mode enabled, False otherwise
+    """
+    if user is None:
+        return False
+
+    # Always use the database flag, never HTTP headers
+    testing_mode = getattr(user, "testing_mode", False)
+
+    if testing_mode:
+        logger.info(f"Testing mode enabled for user: {user.username}")
+
+    return bool(testing_mode)

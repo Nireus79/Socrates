@@ -474,6 +474,17 @@ async def toggle_testing_mode(
         SuccessResponse with testing mode status and restrictions bypassed
     """
     try:
+        import os
+
+        # SECURITY: Prevent testing mode in production
+        environment = os.getenv("ENVIRONMENT", "development").lower()
+        if environment == "production":
+            logger.warning(f"Testing mode toggle attempted in production by user: {current_user}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Testing mode is not available in production environment",
+            )
+
         logger.info(f"Toggling testing mode to {enabled} for user: {current_user}")
 
         # Load user and update testing mode flag
@@ -516,8 +527,8 @@ async def toggle_testing_mode(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error toggling testing mode: {str(e)}")
+        logger.error(f"Error toggling testing mode: {type(e).__name__}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to toggle testing mode: {str(e)}",
+            detail="Failed to toggle testing mode. Please try again later.",
         )

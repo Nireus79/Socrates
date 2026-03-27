@@ -238,10 +238,9 @@ async def add_collaborator_new(
                     detail="Active subscription required to add collaborators",
                 )
 
-            # Check if testing mode is enabled via request headers
-            testing_mode_enabled = TestingModeChecker.is_testing_mode_enabled(
-                http_request.headers if http_request else {}
-            )
+            # Check if testing mode is enabled via database flag (NOT HTTP headers)
+            # SECURITY FIX: Use database flag instead of HTTP header to prevent bypass
+            testing_mode_enabled = getattr(user_object, "testing_mode", False)
 
             # Check subscription tier - collaboration feature requires pro or enterprise tier
             # NOTE: Free tier has collaboration=False in TIER_FEATURES, so free users cannot add team members
@@ -997,10 +996,9 @@ async def create_project_invitation(
         # CRITICAL: Validate subscription before creating invitation
         logger.info(f"Validating subscription for creating invitation for user {current_user}")
         try:
-            # Check if testing mode is enabled via request headers
-            testing_mode_enabled = TestingModeChecker.is_testing_mode_enabled(
-                http_request.headers if http_request else {}
-            )
+            # Check if testing mode is enabled via database flag (NOT HTTP headers)
+            # SECURITY FIX: Use database flag instead of HTTP header to prevent bypass
+            testing_mode_enabled = getattr(user_object, "testing_mode", False)
 
             subscription_tier = user_object.subscription_tier.lower()
 
@@ -1410,10 +1408,9 @@ async def invite_team_member(
         # CRITICAL: Validate subscription before inviting team member
         logger.info(f"Validating subscription for team member invitation for user {current_user}")
         try:
-            # Check if testing mode is enabled via request headers
-            testing_mode_enabled = TestingModeChecker.is_testing_mode_enabled(
-                http_request.headers if http_request else {}
-            )
+            # Check if testing mode is enabled via database flag (NOT HTTP headers)
+            # SECURITY FIX: Use database flag instead of HTTP header to prevent bypass
+            testing_mode_enabled = getattr(user_object, "testing_mode", False)
 
             subscription_tier = user_object.subscription_tier.lower()
 
