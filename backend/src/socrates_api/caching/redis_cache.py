@@ -31,7 +31,7 @@ except ImportError:
 class InMemoryCache:
     """Simple in-memory cache fallback."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache: Dict[str, Any] = {}
 
     async def get(self, key: str) -> Optional[Any]:
@@ -77,7 +77,7 @@ class RedisCache:
         self.client = None
         self._connect()
 
-    def _connect(self):
+    def _connect(self) -> None:
         """Establish Redis connection."""
         if not REDIS_AVAILABLE:
             logger.warning("Redis not available - using in-memory cache")

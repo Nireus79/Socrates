@@ -49,7 +49,7 @@ except ImportError:
 class ReportGenerator:
     """Generate PDF and CSV analytics reports."""
 
-    def __init__(self, output_dir: Optional[str] = None):
+    def __init__(self, output_dir: Optional[str] = None) -> None:
         """
         Initialize report generator.
 
