@@ -523,8 +523,7 @@ async def update_project(
         Updated ProjectResponse
     """
     try:
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -598,8 +597,7 @@ async def delete_project(
         SuccessResponse confirming deletion
     """
     try:
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             # Project not found
@@ -666,8 +664,7 @@ async def restore_project(
         Restored ProjectResponse
     """
     try:
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -737,8 +734,7 @@ async def get_project_stats(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -813,8 +809,7 @@ async def get_project_maturity(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -888,8 +883,7 @@ async def get_maturity_analysis(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -1154,8 +1148,7 @@ async def advance_phase(
         # Check project access - owner only for phase management
         await check_project_access(project_id, current_user, db, min_role="owner")
 
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -1244,8 +1237,7 @@ async def rollback_phase(
         # Check project access - owner only for phase management
         await check_project_access(project_id, current_user, db, min_role="owner")
 
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -1329,8 +1321,7 @@ async def get_project_analytics(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -1439,8 +1430,7 @@ async def get_project_files(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -1549,8 +1539,7 @@ async def get_file_content(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
@@ -1654,8 +1643,7 @@ async def delete_project_file(
         await check_project_access(project_id, current_user, db, min_role="editor")
 
         # Get and verify project exists
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
