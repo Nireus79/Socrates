@@ -109,3 +109,6 @@ socrates-api/
 socrates-cli/
 Socrates_oldbroken/
 Socrates8.0broken/
+logs/
+data/
+# Old phase tests
