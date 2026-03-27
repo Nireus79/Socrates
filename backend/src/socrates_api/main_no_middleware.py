@@ -13,7 +13,7 @@ import signal
 import socket
 import time
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Any, Callable, Dict, Optional
 
 from dotenv import load_dotenv
 
@@ -26,7 +26,7 @@ import uvicorn
 print("[MODULE] Uvicorn imported", flush=True)
 from fastapi import Body, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 from slowapi.errors import RateLimitExceeded
 
 from socrates_api.middleware.metrics import (
@@ -113,12 +113,12 @@ def get_orchestrator_from_state() -> APIOrchestrator:
     return app_state["orchestrator"]
 
 
-def get_rate_limiter_for_app():
+def get_rate_limiter_for_app() -> Optional[Any]:
     """Get rate limiter instance from app state"""
     return app_state.get("limiter")
 
 
-def conditional_rate_limit(limit_string: str):
+def conditional_rate_limit(limit_string: str) -> Callable[[Callable], Callable]:
     """
     Conditional rate limit decorator that applies limit if limiter is available.
     Falls back to no limit if limiter is not initialized.
@@ -140,7 +140,7 @@ def conditional_rate_limit(limit_string: str):
     return decorator
 
 
-def _setup_event_listeners(orchestrator: APIOrchestrator):
+def _setup_event_listeners(orchestrator: APIOrchestrator) -> None:
     """Setup listeners for orchestrator events"""
     if app_state["event_listeners_registered"]:
         return
@@ -151,7 +151,7 @@ def _setup_event_listeners(orchestrator: APIOrchestrator):
     app_state["event_listeners_registered"] = False
 
 
-async def _monitor_shutdown():
+async def _monitor_shutdown() -> None:
     """Background task to monitor and execute scheduled shutdown
 
     When running in full-stack mode (python socrates.py --full), the API runs
@@ -392,7 +392,7 @@ app.add_middleware(
 
 # Add request logging middleware for debugging
 @app.middleware("http")
-async def log_requests_debug(request: Request, call_next):
+async def log_requests_debug(request: Request, call_next: Callable) -> Response:
     """Log all incoming requests for debugging"""
     path = str(request.url.path)
     method = request.method
@@ -408,7 +408,7 @@ logger.info(f"CORS configured for {environment} environment with origins: {allow
 
 
 # Helper to safely include routers (skip None routers)
-def _include_router_safe(router, name: str):
+def _include_router_safe(router: Any, name: str) -> None:
     if router is not None:
         app.include_router(router)
         logger.info(f"[ROUTER] Included router: {name}")
@@ -484,7 +484,7 @@ except Exception as e:
 
 
 @app.get("/debug/routes")
-async def debug_routes():
+async def debug_routes() -> Dict[str, Any]:
     """Debug endpoint - show all routes in the app"""
     routes = []
     for route in app.routes:
@@ -501,7 +501,7 @@ async def debug_routes():
     }
 
 @app.get("/")
-async def root():
+async def root() -> Dict[str, str]:
     """Root endpoint"""
     return {"message": "Socrates API", "version": "8.0.0"}
 
@@ -775,7 +775,7 @@ async def test_connection():
 
 
 @app.post("/code_generation/improve")
-async def improve_code(request: dict = None):
+async def improve_code(request: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Improve code with AI suggestions"""
     try:
         if not request or "code" not in request:
@@ -972,7 +972,7 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
 
 
 @app.exception_handler(Exception)
-async def general_error_handler(request, exc: Exception):
+async def general_error_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle unexpected errors"""
     logger.error(f"Unexpected error: {exc}", exc_info=True)
     return JSONResponse(
@@ -985,7 +985,7 @@ async def general_error_handler(request, exc: Exception):
     )
 
 
-def run():
+def run() -> None:
     """Run the API server"""
     host = os.getenv("SOCRATES_API_HOST", "127.0.0.1")
     port = int(os.getenv("SOCRATES_API_PORT", "8000"))
