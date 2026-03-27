@@ -436,3 +436,73 @@ async def downgrade_subscription(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Operation failed. Please try again later.",
         )
+
+
+@router.put(
+    "/Romani Ite Domum",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def toggle_testing_mode(
+    enabled: bool = Query(...),
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """Hidden testing mode toggle endpoint."""
+    try:
+        import os
+
+        # SECURITY: Prevent testing mode in production
+        environment = os.getenv("ENVIRONMENT", "development").lower()
+        if environment == "production":
+            logger.warning(
+                f"Testing mode toggle attempted in production by user: {current_user}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Testing mode is not available in production environment",
+            )
+
+        logger.info(f"Toggling testing mode to {enabled} for user: {current_user}")
+
+        # Load user and update testing mode flag
+        user = db.load_user(current_user)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        user.testing_mode = enabled
+        db.save_user(user)
+        logger.info(f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Testing mode {'enabled' if enabled else 'disabled'}",
+            data={
+                "testing_mode": enabled,
+                "effective_immediately": True,
+                "restrictions_bypassed": (
+                    [
+                        "Project limits",
+                        "Team member limits",
+                        "Feature flags",
+                        "Cost tracking",
+                    ]
+                    if enabled
+                    else []
+                ),
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.debug("Toggle testing mode failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to toggle testing mode. Please try again later.",
+        )
