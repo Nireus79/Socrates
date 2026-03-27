@@ -9,7 +9,6 @@ Provides:
 """
 
 import logging
-from socrates_api.models_local import ProjectContext
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -17,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from socrates_api.auth import get_current_user, get_current_user_object
-from socrates_api.database import get_database, LocalDatabase
+from socrates_api.database import LocalDatabase, get_database
 from socrates_api.models import APIResponse
 from socrates_api.models_local import User
 
@@ -202,11 +201,19 @@ async def generate_code(
 
             # Extract code from orchestrator result
             # The artifact agent returns "artifact", not "code"
-            logger.info(f"Orchestrator result status: {result.get('status')}, has artifact: {'artifact' in result}, has code: {'code' in result}")
+            logger.info(
+                f"Orchestrator result status: {result.get('status')}, has artifact: {'artifact' in result}, has code: {'code' in result}"
+            )
             if result.get("status") != "success":
-                logger.warning(f"Code generation failed with status: {result.get('status')}, message: {result.get('message')}, error: {result.get('error')}")
+                logger.warning(
+                    f"Code generation failed with status: {result.get('status')}, message: {result.get('message')}, error: {result.get('error')}"
+                )
 
-            generated_code = result.get("artifact", result.get("code", "")).strip() if result.get("status") == "success" else ""
+            generated_code = (
+                result.get("artifact", result.get("code", "")).strip()
+                if result.get("status") == "success"
+                else ""
+            )
             explanation = result.get("explanation", "Code generated successfully")
             token_usage = result.get("token_usage", 0)
 
@@ -219,15 +226,17 @@ async def generate_code(
                     "python": "# Python code template\nprint('Hello, World!')",
                     "javascript": "// JavaScript code template\nconsole.log('Hello, World!');",
                     "typescript": "// TypeScript code template\nconsole.log('Hello, World!');",
-                    "java": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}",
-                    "csharp": "using System;\nclass Program {\n    static void Main() {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}",
-                    "go": "package main\nimport \"fmt\"\nfunc main() {\n    fmt.Println(\"Hello, World!\")\n}",
-                    "cpp": "#include <iostream>\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}",
-                    "rust": "fn main() {\n    println!(\"Hello, World!\");\n}",
+                    "java": 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
+                    "csharp": 'using System;\nclass Program {\n    static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}',
+                    "go": 'package main\nimport "fmt"\nfunc main() {\n    fmt.Println("Hello, World!")\n}',
+                    "cpp": '#include <iostream>\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}',
+                    "rust": 'fn main() {\n    println!("Hello, World!");\n}',
                     "sql": "SELECT 'Hello, World!' as greeting;",
                 }
 
-                generated_code = templates.get(language, f"// {language} code template\necho 'Hello, World!'")
+                generated_code = templates.get(
+                    language, f"// {language} code template\necho 'Hello, World!'"
+                )
                 explanation = f"Generated {language} code template"
                 token_usage = 0
 
@@ -258,7 +267,7 @@ async def generate_code(
             # Save generated code to file
             filename = f"generated_{generation_id}{file_ext}"
             file_path = generated_files_dir / filename
-            file_path.write_text(generated_code, encoding='utf-8')
+            file_path.write_text(generated_code, encoding="utf-8")
             logger.info(f"Code generated and saved to {file_path}")
 
             # Save to code history
@@ -727,9 +736,10 @@ async def refactor_code(
         logger.info(f"Code refactoring ({refactor_type}) requested in project {project_id}")
 
         try:
+            from pathlib import Path
+
             from socrates_api.main import get_orchestrator
             from socrates_api.routers.events import record_event
-            from pathlib import Path
 
             orchestrator = get_orchestrator()
 
@@ -748,7 +758,9 @@ async def refactor_code(
             )
 
             # Extract refactored code from orchestrator result
-            refactored_code = result.get("code", "").strip() if result.get("status") == "success" else ""
+            refactored_code = (
+                result.get("code", "").strip() if result.get("status") == "success" else ""
+            )
             explanation = result.get("explanation", f"Code refactored for {refactor_type}")
             changes = result.get("changes", [])
 
@@ -784,7 +796,7 @@ async def refactor_code(
             # Save refactored code to file
             filename = f"refactored_{generation_id}{file_ext}"
             file_path = refactored_files_dir / filename
-            file_path.write_text(refactored_code, encoding='utf-8')
+            file_path.write_text(refactored_code, encoding="utf-8")
             logger.info(f"Refactored code saved to {file_path}")
 
             # Save to code history
@@ -955,7 +967,7 @@ async def generate_documentation(
                 artifact=latest_artifact,
                 artifact_type=artifact_type,
                 user_auth_method=user_auth_method,
-                user_id=current_user
+                user_id=current_user,
             )
 
             logger.info(f"Documentation generated successfully ({len(documentation)} characters)")
@@ -997,9 +1009,7 @@ async def generate_documentation(
                 for code_item in project.code_history[:3]:  # Limit to first 3
                     language = code_item.get("language", "text")
                     code = code_item.get("code", "")
-                    doc_sections.append(
-                        f"\n### {code_item.get('explanation', 'Generated code')}"
-                    )
+                    doc_sections.append(f"\n### {code_item.get('explanation', 'Generated code')}")
                     doc_sections.append(f"```{language}")
                     doc_sections.append(code[:500])  # Limit code preview
                     doc_sections.append("```")

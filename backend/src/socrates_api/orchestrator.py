@@ -44,10 +44,9 @@ class APIOrchestrator:
                 return None
 
             from socrates_nexus import LLMClient
+
             llm_client = LLMClient(
-                provider="anthropic",
-                model="claude-3-sonnet",
-                api_key=self.api_key
+                provider="anthropic", model="claude-3-sonnet", api_key=self.api_key
             )
             logger.info("LLM client created successfully")
             return llm_client
@@ -59,11 +58,20 @@ class APIOrchestrator:
         """Initialize all agents from socratic-agents with LLM client"""
         try:
             from socratic_agents import (
-                CodeGenerator, CodeValidator, SocraticCounselor,
-                ProjectManager, QualityController, LearningAgent,
-                SkillGeneratorAgent, ContextAnalyzer, UserManager,
-                KnowledgeManager, DocumentProcessor, NoteManager,
-                SystemMonitor, AgentConflictDetector
+                AgentConflictDetector,
+                CodeGenerator,
+                CodeValidator,
+                ContextAnalyzer,
+                DocumentProcessor,
+                KnowledgeManager,
+                LearningAgent,
+                NoteManager,
+                ProjectManager,
+                QualityController,
+                SkillGeneratorAgent,
+                SocraticCounselor,
+                SystemMonitor,
+                UserManager,
             )
 
             # Initialize agents with LLM client
@@ -83,7 +91,9 @@ class APIOrchestrator:
                 "system_monitor": SystemMonitor(llm_client=self.llm_client),
                 "conflict_detector": AgentConflictDetector(llm_client=self.llm_client),
             }
-            logger.info(f"Initialized {len(self.agents)} agents from socratic-agents with LLM client")
+            logger.info(
+                f"Initialized {len(self.agents)} agents from socratic-agents with LLM client"
+            )
         except Exception as e:
             logger.warning(f"Failed to initialize agents: {e}")
             self.agents = {}
@@ -92,14 +102,14 @@ class APIOrchestrator:
         """Initialize skill, workflow, and pure orchestrators"""
         try:
             from socratic_agents.integrations.skill_orchestrator import SkillOrchestrator
-            from socratic_agents.skill_generation.workflow_orchestrator import WorkflowOrchestrator
             from socratic_agents.orchestration.orchestrator import PureOrchestrator
+            from socratic_agents.skill_generation.workflow_orchestrator import WorkflowOrchestrator
 
             # Initialize SkillOrchestrator
             self.skill_orchestrator = SkillOrchestrator(
                 quality_controller=self.agents.get("quality_controller"),
                 skill_generator=self.agents.get("skill_generator"),
-                learning_agent=self.agents.get("learning_agent")
+                learning_agent=self.agents.get("learning_agent"),
             )
 
             # Initialize WorkflowOrchestrator
@@ -110,7 +120,7 @@ class APIOrchestrator:
                 agents=self.agents,
                 get_maturity=self._get_maturity_score,
                 get_learning_effectiveness=self._get_learning_effectiveness,
-                on_event=self._on_coordination_event
+                on_event=self._on_coordination_event,
             )
 
             logger.info("Initialized skill, workflow, and pure orchestrators")
@@ -144,7 +154,7 @@ class APIOrchestrator:
     def _on_coordination_event(self, event, data: Dict[str, Any]) -> None:
         """Handle coordination events from PureOrchestrator"""
         try:
-            event_name = event.value if hasattr(event, 'value') else str(event)
+            event_name = event.value if hasattr(event, "value") else str(event)
             logger.info(f"Coordination event: {event_name}, data: {data}")
 
             # Event handlers can be extended here to:
@@ -167,7 +177,7 @@ class APIOrchestrator:
                 "skill_orchestrator": self.skill_orchestrator is not None,
                 "workflow_orchestrator": self.workflow_orchestrator is not None,
                 "pure_orchestrator": self.pure_orchestrator is not None,
-                "status": "operational"
+                "status": "operational",
             }
         except Exception as e:
             logger.error(f"Failed to get system info: {e}")
@@ -314,7 +324,9 @@ class APIOrchestrator:
             if not agent:
                 return {"status": "error", "message": "ProjectManager not available"}
 
-            result = agent.process({"action": "create", "project_name": name, "description": description})
+            result = agent.process(
+                {"action": "create", "project_name": name, "description": description}
+            )
             return result
         except Exception as e:
             logger.error(f"Project creation failed: {e}")
@@ -352,7 +364,10 @@ class APIOrchestrator:
         try:
             # Use existing LLM client if available
             if not self.llm_client:
-                return {"status": "error", "message": "LLM client not initialized. API key required."}
+                return {
+                    "status": "error",
+                    "message": "LLM client not initialized. API key required.",
+                }
 
             # Note: If a different model is requested, would need to create new client
             # For now, use the initialized client with its model
@@ -361,7 +376,7 @@ class APIOrchestrator:
             return {
                 "status": "success",
                 "response": str(response) if response else "",
-                "model": self.llm_client.model if hasattr(self.llm_client, 'model') else model
+                "model": self.llm_client.model if hasattr(self.llm_client, "model") else model,
             }
         except Exception as e:
             logger.error(f"LLM call failed: {e}")
@@ -380,39 +395,41 @@ class APIOrchestrator:
             logger.error(f"Code quality analysis failed: {e}")
             return {"status": "error", "message": str(e)}
 
-    def detect_agent_conflicts(self, field: str, agent_outputs: Dict[str, Any],
-                              agents: list) -> Dict[str, Any]:
+    def detect_agent_conflicts(
+        self, field: str, agent_outputs: Dict[str, Any], agents: list
+    ) -> Dict[str, Any]:
         """Detect conflicts between agent outputs"""
         try:
             agent = self.agents.get("conflict_detector")
             if not agent:
                 return {"status": "error", "message": "ConflictDetector not available"}
 
-            result = agent.process({
-                "field": field,
-                "agent_outputs": agent_outputs,
-                "agents": agents
-            })
+            result = agent.process(
+                {"field": field, "agent_outputs": agent_outputs, "agents": agents}
+            )
             return result
         except Exception as e:
             logger.error(f"Conflict detection failed: {e}")
             return {"status": "error", "message": str(e)}
 
-    def store_knowledge(self, tenant_id: str, title: str, content: str,
-                       tags: Optional[list] = None) -> Dict[str, Any]:
+    def store_knowledge(
+        self, tenant_id: str, title: str, content: str, tags: Optional[list] = None
+    ) -> Dict[str, Any]:
         """Store knowledge item (stub - requires socratic-knowledge)"""
         try:
             agent = self.agents.get("knowledge_manager")
             if not agent:
                 return {"status": "error", "message": "KnowledgeManager not available"}
 
-            result = agent.process({
-                "action": "store",
-                "title": title,
-                "content": content,
-                "tags": tags or [],
-                "tenant_id": tenant_id
-            })
+            result = agent.process(
+                {
+                    "action": "store",
+                    "title": title,
+                    "content": content,
+                    "tags": tags or [],
+                    "tenant_id": tenant_id,
+                }
+            )
             return result
         except Exception as e:
             logger.error(f"Knowledge storage failed: {e}")
@@ -425,12 +442,9 @@ class APIOrchestrator:
             if not agent:
                 return []
 
-            result = agent.process({
-                "action": "search",
-                "query": query,
-                "limit": limit,
-                "tenant_id": tenant_id
-            })
+            result = agent.process(
+                {"action": "search", "query": query, "limit": limit, "tenant_id": tenant_id}
+            )
             return result.get("results", []) if result else []
         except Exception as e:
             logger.error(f"Knowledge search failed: {e}")
@@ -440,7 +454,9 @@ class APIOrchestrator:
         """Generate project documentation (stub - requires socratic-docs)"""
         try:
             # Stub implementation
-            return f"# {project_info.get('name', 'Project')}\n\n{project_info.get('description', '')}"
+            return (
+                f"# {project_info.get('name', 'Project')}\n\n{project_info.get('description', '')}"
+            )
         except Exception as e:
             logger.error(f"Documentation generation failed: {e}")
             return "# Documentation generation failed"
@@ -450,6 +466,7 @@ class APIOrchestrator:
         try:
             # Stub implementation
             import uuid
+
             doc_id = str(uuid.uuid4())
             logger.info(f"RAG document indexed: {doc_id} from {source}")
             return doc_id
@@ -470,11 +487,7 @@ class APIOrchestrator:
         """Validate input for security issues (stub - requires socratic-security)"""
         try:
             # Basic validation stub
-            return {
-                "status": "success",
-                "is_safe": True,
-                "score": 1.0
-            }
+            return {"status": "success", "is_safe": True, "score": 1.0}
         except Exception as e:
             logger.error(f"Security validation failed: {e}")
             return {"status": "error", "message": str(e)}
@@ -487,27 +500,30 @@ class APIOrchestrator:
             "agents_count": len(self.agents),
             "skill_orchestrator_ready": self.skill_orchestrator is not None,
             "workflow_orchestrator_ready": self.workflow_orchestrator is not None,
-            "pure_orchestrator_ready": self.pure_orchestrator is not None
+            "pure_orchestrator_ready": self.pure_orchestrator is not None,
         }
 
-    def log_learning_interaction(self, session_id: str, agent_name: str,
-                                input_data: Dict, output_data: Dict, **kwargs) -> bool:
+    def log_learning_interaction(
+        self, session_id: str, agent_name: str, input_data: Dict, output_data: Dict, **kwargs
+    ) -> bool:
         """Log interaction to learning system"""
         try:
             agent = self.agents.get("learning_agent")
             if not agent:
                 return False
 
-            agent.process({
-                "action": "record",
-                "interaction": {
-                    "session_id": session_id,
-                    "agent_name": agent_name,
-                    "input": input_data,
-                    "output": output_data,
-                    **kwargs
+            agent.process(
+                {
+                    "action": "record",
+                    "interaction": {
+                        "session_id": session_id,
+                        "agent_name": agent_name,
+                        "input": input_data,
+                        "output": output_data,
+                        **kwargs,
+                    },
                 }
-            })
+            )
             return True
         except Exception as e:
             logger.error(f"Failed to log interaction: {e}")
@@ -517,6 +533,7 @@ class APIOrchestrator:
         """Initialize documentation generator"""
         try:
             from socratic_docs import DocumentationGenerator
+
             self.doc_generator = DocumentationGenerator()
             logger.info("Documentation generator initialized")
         except Exception as e:
@@ -527,6 +544,7 @@ class APIOrchestrator:
         """Initialize performance monitoring tools"""
         try:
             from socratic_performance import QueryProfiler, TTLCache
+
             self.profiler = QueryProfiler()
             self.cache = TTLCache(ttl_minutes=30)
             logger.info("Performance monitoring initialized")
@@ -553,7 +571,9 @@ class APIOrchestrator:
             if not self.doc_generator:
                 return "# Architecture Documentation\n\nDocumentation generator not available"
             result = self.doc_generator.generate_architecture_docs(modules)
-            return result if result else "# Architecture Documentation\n\nNo documentation generated"
+            return (
+                result if result else "# Architecture Documentation\n\nNo documentation generated"
+            )
         except Exception as e:
             logger.error(f"Architecture documentation generation failed: {e}")
             return f"# Architecture Documentation\n\nError: {str(e)}"
@@ -569,8 +589,9 @@ class APIOrchestrator:
             logger.error(f"Setup guide generation failed: {e}")
             return f"# Setup Guide\n\nError: {str(e)}"
 
-    def generate_all_documentation(self, project: Dict[str, Any],
-                                  code_structure: Dict[str, Any]) -> Dict[str, str]:
+    def generate_all_documentation(
+        self, project: Dict[str, Any], code_structure: Dict[str, Any]
+    ) -> Dict[str, str]:
         """Generate complete documentation set"""
         try:
             if not self.doc_generator:
@@ -666,13 +687,15 @@ class APIOrchestrator:
                 return {
                     "status": "success",
                     "data": {},
-                    "message": f"Handler for {router_name} not implemented"
+                    "message": f"Handler for {router_name} not implemented",
                 }
         except Exception as e:
             logger.error(f"Error processing request for {router_name}: {e}")
             return {"status": "error", "message": str(e)}
 
-    async def process_request_async(self, router_name: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def process_request_async(
+        self, router_name: str, request_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Async version of process_request for long-running operations.
         """
@@ -688,20 +711,34 @@ class APIOrchestrator:
             # Return available LLM providers
             providers = []
             if self.llm_client:
-                providers.append({
-                    "name": "anthropic",
-                    "model": "claude-3-sonnet",
-                    "configured": True,
-                    "status": "active"
-                })
-            providers.extend([
-                {"name": "openai", "model": "gpt-4", "configured": False, "status": "available"},
-                {"name": "google", "model": "gemini-pro", "configured": False, "status": "available"},
-            ])
+                providers.append(
+                    {
+                        "name": "anthropic",
+                        "model": "claude-3-sonnet",
+                        "configured": True,
+                        "status": "active",
+                    }
+                )
+            providers.extend(
+                [
+                    {
+                        "name": "openai",
+                        "model": "gpt-4",
+                        "configured": False,
+                        "status": "available",
+                    },
+                    {
+                        "name": "google",
+                        "model": "gemini-pro",
+                        "configured": False,
+                        "status": "available",
+                    },
+                ]
+            )
             return {
                 "status": "success",
                 "data": {"providers": providers},
-                "message": "Providers retrieved"
+                "message": "Providers retrieved",
             }
 
         elif action == "get_provider_config":
@@ -711,9 +748,9 @@ class APIOrchestrator:
                 "data": {
                     "default_provider": "anthropic",
                     "api_key_configured": bool(self.llm_client),
-                    "current_model": "claude-3-sonnet" if self.llm_client else None
+                    "current_model": "claude-3-sonnet" if self.llm_client else None,
                 },
-                "message": "Config retrieved"
+                "message": "Config retrieved",
             }
 
         elif action == "set_default_provider":
@@ -722,7 +759,7 @@ class APIOrchestrator:
             return {
                 "status": "success",
                 "data": {"default_provider": provider},
-                "message": f"Default provider set to {provider}"
+                "message": f"Default provider set to {provider}",
             }
 
         elif action == "update_api_key":
@@ -736,7 +773,7 @@ class APIOrchestrator:
             return {
                 "status": "success",
                 "data": {"provider": provider, "configured": bool(api_key)},
-                "message": "API key updated"
+                "message": "API key updated",
             }
 
         elif action == "get_usage_stats":
@@ -749,16 +786,13 @@ class APIOrchestrator:
                     "total_requests": 0,
                     "total_tokens": 0,
                     "total_cost": 0.0,
-                    "by_provider": {}
+                    "by_provider": {},
                 },
-                "message": "Usage stats retrieved"
+                "message": "Usage stats retrieved",
             }
 
         else:
-            return {
-                "status": "error",
-                "message": f"Unknown action: {action}"
-            }
+            return {"status": "error", "message": f"Unknown action: {action}"}
 
     def _handle_socratic_counselor(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle Socratic counselor requests for generating questions"""
@@ -776,16 +810,10 @@ class APIOrchestrator:
             try:
                 if counselor and self.llm_client:
                     # Use real agent to generate question
-                    result = counselor.process({
-                        "project": project,
-                        "user_id": user_id,
-                        "force_refresh": force_refresh
-                    })
-                    return {
-                        "status": "success",
-                        "data": result,
-                        "message": "Question generated"
-                    }
+                    result = counselor.process(
+                        {"project": project, "user_id": user_id, "force_refresh": force_refresh}
+                    )
+                    return {"status": "success", "data": result, "message": "Question generated"}
             except Exception as e:
                 logger.warning(f"Failed to use socratic_counselor agent: {e}")
 
@@ -804,7 +832,11 @@ class APIOrchestrator:
             ]
 
             # Generate a question based on project phase
-            phase = getattr(project, "phase", "discovery") if hasattr(project, "phase") else project.get("phase", "discovery")
+            phase = (
+                getattr(project, "phase", "discovery")
+                if hasattr(project, "phase")
+                else project.get("phase", "discovery")
+            )
             question_idx = hash((user_id, phase, force_refresh)) % len(questions)
 
             return {
@@ -813,16 +845,13 @@ class APIOrchestrator:
                     "question": questions[question_idx],
                     "project_id": getattr(project, "project_id", project.get("id", "unknown")),
                     "phase": phase,
-                    "suggested_response": "I will think about this carefully..."
+                    "suggested_response": "I will think about this carefully...",
                 },
-                "message": "Question generated"
+                "message": "Question generated",
             }
 
         else:
-            return {
-                "status": "error",
-                "message": f"Unknown action: {action}"
-            }
+            return {"status": "error", "message": f"Unknown action: {action}"}
 
 
 # Global instance

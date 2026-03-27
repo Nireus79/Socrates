@@ -11,15 +11,15 @@ import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
-from socrates_api.utils import IDGenerator
-from socrates_api.models_local import User, ProjectContext
 from socrates_api.exceptions import (
+    DatabaseError,
     ProjectNotFoundError,
     UserNotFoundError,
-    DatabaseError,
 )
+from socrates_api.models_local import ProjectContext, User
+from socrates_api.utils import IDGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +89,12 @@ class LocalDatabase:
             """)
 
             # Create indexes separately (SQLite doesn't support inline indexes)
-            self.conn.execute("CREATE INDEX IF NOT EXISTS idx_user_tokens ON refresh_tokens(user_id)")
-            self.conn.execute("CREATE INDEX IF NOT EXISTS idx_expires ON refresh_tokens(expires_at)")
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_user_tokens ON refresh_tokens(user_id)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_expires ON refresh_tokens(expires_at)"
+            )
 
             self.conn.commit()
 
@@ -111,9 +115,9 @@ class LocalDatabase:
 
             # Define required columns for projects table
             projects_required = {
-                'owner': 'ALTER TABLE projects ADD COLUMN owner TEXT',
-                'phase': "ALTER TABLE projects ADD COLUMN phase TEXT DEFAULT 'discovery'",
-                'is_archived': 'ALTER TABLE projects ADD COLUMN is_archived INTEGER DEFAULT 0',
+                "owner": "ALTER TABLE projects ADD COLUMN owner TEXT",
+                "phase": "ALTER TABLE projects ADD COLUMN phase TEXT DEFAULT 'discovery'",
+                "is_archived": "ALTER TABLE projects ADD COLUMN is_archived INTEGER DEFAULT 0",
             }
 
             # Add any missing columns to projects
@@ -125,7 +129,7 @@ class LocalDatabase:
                         self.conn.commit()
                     except sqlite3.OperationalError as e:
                         # Column already exists (race condition in concurrent access)
-                        if 'duplicate column' not in str(e).lower():
+                        if "duplicate column" not in str(e).lower():
                             raise
 
             # Get existing columns in users table
@@ -134,10 +138,10 @@ class LocalDatabase:
 
             # Define required columns with their SQL definitions
             required_columns = {
-                'passcode_hash': 'ALTER TABLE users ADD COLUMN passcode_hash TEXT',
-                'subscription_tier': "ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT 'free'",
-                'subscription_status': "ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'active'",
-                'testing_mode': 'ALTER TABLE users ADD COLUMN testing_mode INTEGER DEFAULT 0',
+                "passcode_hash": "ALTER TABLE users ADD COLUMN passcode_hash TEXT",
+                "subscription_tier": "ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT 'free'",
+                "subscription_status": "ALTER TABLE users ADD COLUMN subscription_status TEXT DEFAULT 'active'",
+                "testing_mode": "ALTER TABLE users ADD COLUMN testing_mode INTEGER DEFAULT 0",
             }
 
             # Add any missing columns
@@ -149,7 +153,7 @@ class LocalDatabase:
                         self.conn.commit()
                     except sqlite3.OperationalError as e:
                         # Column already exists (race condition in concurrent access)
-                        if 'duplicate column' not in str(e).lower():
+                        if "duplicate column" not in str(e).lower():
                             raise
 
             logger.info("Schema migration completed successfully")
@@ -225,7 +229,14 @@ class LocalDatabase:
         user.metadata = json.loads(row[9] or "{}")
         return user
 
-    def create_project(self, project_id: str, name: str, description: str = "", owner: str = None, metadata: Dict = None) -> ProjectContext:
+    def create_project(
+        self,
+        project_id: str,
+        name: str,
+        description: str = "",
+        owner: str = None,
+        metadata: Dict = None,
+    ) -> ProjectContext:
         """
         Create a new project.
 
@@ -248,7 +259,7 @@ class LocalDatabase:
 
             self.conn.execute(
                 "INSERT INTO projects (id, owner, name, description, created_at, updated_at, phase, is_archived, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (project_id, owner, name, description, now, now, "discovery", 0, meta_json)
+                (project_id, owner, name, description, now, now, "discovery", 0, meta_json),
             )
             self.conn.commit()
 
@@ -266,7 +277,9 @@ class LocalDatabase:
             return project
         except Exception as e:
             logger.error(f"Failed to create project: {e}")
-            raise DatabaseError(f"Failed to create project {project_id}: {e}", operation="create_project") from e
+            raise DatabaseError(
+                f"Failed to create project {project_id}: {e}", operation="create_project"
+            ) from e
 
     def get_project(self, project_id: str) -> ProjectContext:
         """
@@ -292,7 +305,9 @@ class LocalDatabase:
             raise
         except Exception as e:
             logger.error(f"Failed to get project: {e}")
-            raise DatabaseError(f"Failed to get project {project_id}: {e}", operation="get_project") from e
+            raise DatabaseError(
+                f"Failed to get project {project_id}: {e}", operation="get_project"
+            ) from e
 
     def list_projects(self, limit: int = 100) -> List[ProjectContext]:
         """
@@ -317,7 +332,14 @@ class LocalDatabase:
             logger.error(f"Failed to list projects: {e}")
             raise DatabaseError(f"Failed to list projects: {e}", operation="list_projects") from e
 
-    def create_user(self, user_id: str, username: str, email: str = "", passcode_hash: str = "", metadata: Dict = None) -> Optional[User]:
+    def create_user(
+        self,
+        user_id: str,
+        username: str,
+        email: str = "",
+        passcode_hash: str = "",
+        metadata: Dict = None,
+    ) -> Optional[User]:
         """Create a new user"""
         try:
             now = datetime.utcnow().isoformat()
@@ -325,7 +347,18 @@ class LocalDatabase:
 
             self.conn.execute(
                 "INSERT INTO users (id, username, email, passcode_hash, subscription_tier, subscription_status, testing_mode, created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (user_id, username, email, passcode_hash or "", "free", "active", 0, now, now, meta_json),
+                (
+                    user_id,
+                    username,
+                    email,
+                    passcode_hash or "",
+                    "free",
+                    "active",
+                    0,
+                    now,
+                    now,
+                    meta_json,
+                ),
             )
             self.conn.commit()
 
@@ -395,7 +428,9 @@ class LocalDatabase:
             raise
         except Exception as e:
             logger.error(f"Failed to load user by username: {e}")
-            raise DatabaseError(f"Failed to load user {username}: {e}", operation="load_user") from e
+            raise DatabaseError(
+                f"Failed to load user {username}: {e}", operation="load_user"
+            ) from e
 
     def load_user_by_email(self, email: str) -> User:
         """
@@ -421,7 +456,9 @@ class LocalDatabase:
             raise
         except Exception as e:
             logger.error(f"Failed to load user by email: {e}")
-            raise DatabaseError(f"Failed to load user by email {email}: {e}", operation="load_user_by_email") from e
+            raise DatabaseError(
+                f"Failed to load user by email {email}: {e}", operation="load_user_by_email"
+            ) from e
 
     def save_user(self, user_data: Union[Dict, User]) -> User:
         """
@@ -473,16 +510,41 @@ class LocalDatabase:
                 # Update existing user
                 self.conn.execute(
                     "UPDATE users SET username = ?, email = ?, passcode_hash = ?, subscription_tier = ?, subscription_status = ?, testing_mode = ?, updated_at = ?, metadata = ? WHERE id = ?",
-                    (username, email, passcode_hash, subscription_tier, subscription_status, testing_mode, now, meta_json, user_id)
+                    (
+                        username,
+                        email,
+                        passcode_hash,
+                        subscription_tier,
+                        subscription_status,
+                        testing_mode,
+                        now,
+                        meta_json,
+                        user_id,
+                    ),
                 )
             else:
                 # Create new user
                 if not user_id:
                     user_id = IDGenerator.user()
-                created_at = user_data.get("created_at", now) if isinstance(user_data, dict) else (user_data.created_at or now)
+                created_at = (
+                    user_data.get("created_at", now)
+                    if isinstance(user_data, dict)
+                    else (user_data.created_at or now)
+                )
                 self.conn.execute(
                     "INSERT INTO users (id, username, email, passcode_hash, subscription_tier, subscription_status, testing_mode, created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (user_id, username, email, passcode_hash, subscription_tier, subscription_status, testing_mode, created_at, now, meta_json)
+                    (
+                        user_id,
+                        username,
+                        email,
+                        passcode_hash,
+                        subscription_tier,
+                        subscription_status,
+                        testing_mode,
+                        created_at,
+                        now,
+                        meta_json,
+                    ),
                 )
             self.conn.commit()
             return self.get_user(user_id)
@@ -510,13 +572,11 @@ class LocalDatabase:
             DatabaseError: If database operation fails
         """
         try:
-            from socrates_api.models_local import ProjectContext
 
             # For now, return all projects owned by the user
             # Collaboration support can be added later with a separate table
             cursor = self.conn.execute(
-                "SELECT * FROM projects WHERE owner = ? ORDER BY updated_at DESC",
-                (username,)
+                "SELECT * FROM projects WHERE owner = ? ORDER BY updated_at DESC", (username,)
             )
             projects = []
             for row in cursor.fetchall():
@@ -524,7 +584,9 @@ class LocalDatabase:
             return projects
         except Exception as e:
             logger.error(f"Failed to get user projects: {e}")
-            raise DatabaseError(f"Failed to get projects for user {username}: {e}", operation="get_user_projects") from e
+            raise DatabaseError(
+                f"Failed to get projects for user {username}: {e}", operation="get_user_projects"
+            ) from e
 
     def save_project(self, project) -> ProjectContext:
         """
@@ -542,12 +604,12 @@ class LocalDatabase:
         try:
             now = datetime.utcnow().isoformat()
             project_id = project.project_id
-            owner = getattr(project, 'owner', None)
+            owner = getattr(project, "owner", None)
             name = project.name
-            description = getattr(project, 'description', '')
-            phase = getattr(project, 'phase', 'discovery')
-            is_archived = int(getattr(project, 'is_archived', False))
-            metadata = json.dumps(getattr(project, 'metadata', {}))
+            description = getattr(project, "description", "")
+            phase = getattr(project, "phase", "discovery")
+            is_archived = int(getattr(project, "is_archived", False))
+            metadata = json.dumps(getattr(project, "metadata", {}))
 
             # Check if project exists
             cursor = self.conn.execute("SELECT id FROM projects WHERE id = ?", (project_id,))
@@ -557,14 +619,24 @@ class LocalDatabase:
                 # Update
                 self.conn.execute(
                     "UPDATE projects SET owner = ?, name = ?, description = ?, phase = ?, is_archived = ?, updated_at = ?, metadata = ? WHERE id = ?",
-                    (owner, name, description, phase, is_archived, now, metadata, project_id)
+                    (owner, name, description, phase, is_archived, now, metadata, project_id),
                 )
             else:
                 # Insert
-                created_at = getattr(project, 'created_at', now)
+                created_at = getattr(project, "created_at", now)
                 self.conn.execute(
                     "INSERT INTO projects (id, owner, name, description, phase, is_archived, created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (project_id, owner, name, description, phase, is_archived, created_at, now, metadata)
+                    (
+                        project_id,
+                        owner,
+                        name,
+                        description,
+                        phase,
+                        is_archived,
+                        created_at,
+                        now,
+                        metadata,
+                    ),
                 )
             self.conn.commit()
             return self.get_project(project_id)
@@ -572,9 +644,20 @@ class LocalDatabase:
             raise
         except Exception as e:
             logger.error(f"Failed to save project: {e}")
-            raise DatabaseError(f"Failed to save project {project.project_id}: {e}", operation="save_project") from e
+            raise DatabaseError(
+                f"Failed to save project {project.project_id}: {e}", operation="save_project"
+            ) from e
 
-    def save_knowledge_document(self, user_id: str, project_id: str, doc_id: str, title: str, content: str, source: str, document_type: str) -> bool:
+    def save_knowledge_document(
+        self,
+        user_id: str,
+        project_id: str,
+        doc_id: str,
+        title: str,
+        content: str,
+        source: str,
+        document_type: str,
+    ) -> bool:
         """Save a knowledge document for a project (stub - not implemented yet)"""
         try:
             # Stub implementation - just log it
@@ -602,15 +685,14 @@ class LocalDatabase:
             DatabaseError: If delete operation fails
         """
         try:
-            self.conn.execute(
-                "UPDATE projects SET is_archived = 1 WHERE id = ?",
-                (project_id,)
-            )
+            self.conn.execute("UPDATE projects SET is_archived = 1 WHERE id = ?", (project_id,))
             self.conn.commit()
             logger.info(f"Project {project_id} archived")
         except Exception as e:
             logger.error(f"Failed to archive project {project_id}: {e}")
-            raise DatabaseError(f"Failed to delete project {project_id}: {e}", operation="delete_project") from e
+            raise DatabaseError(
+                f"Failed to delete project {project_id}: {e}", operation="delete_project"
+            ) from e
 
     def permanently_delete_user(self, username: str) -> None:
         """
@@ -633,8 +715,9 @@ class LocalDatabase:
             logger.info(f"User {username} permanently deleted")
         except Exception as e:
             logger.error(f"Failed to permanently delete user {username}: {e}")
-            raise DatabaseError(f"Failed to delete user {username}: {e}", operation="permanently_delete_user") from e
-
+            raise DatabaseError(
+                f"Failed to delete user {username}: {e}", operation="permanently_delete_user"
+            ) from e
 
     def close(self) -> None:
         """Close database connection"""

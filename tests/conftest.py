@@ -19,6 +19,11 @@ _project_root = Path(__file__).parent.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
+# Add backend/src to path for socrates_api imports
+_backend_src = _project_root / "backend" / "src"
+if str(_backend_src) not in sys.path:
+    sys.path.insert(0, str(_backend_src))
+
 # Check if running in PyCharm (IDE) or other test runners
 # PyCharm sets PYCHARM_MATPLOTLIB_INTERACTIVE or has specific pytest mode indicators
 _is_pycharm = (

@@ -20,9 +20,13 @@ from dotenv import load_dotenv
 # Load environment variables from .env FIRST, before any other imports
 print("[MODULE] Loading environment variables...", flush=True)
 load_dotenv()
-print("[MODULE] Environment loaded. JWT_SECRET_KEY set: %s" % (bool(os.getenv("JWT_SECRET_KEY"))), flush=True)
+print(
+    "[MODULE] Environment loaded. JWT_SECRET_KEY set: %s" % (bool(os.getenv("JWT_SECRET_KEY"))),
+    flush=True,
+)
 
 import uvicorn
+
 print("[MODULE] Uvicorn imported", flush=True)
 from fastapi import Body, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,7 +42,8 @@ from socrates_api.middleware.rate_limit import (
     initialize_limiter,
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware
-from socrates_api.orchestrator import APIOrchestrator, get_orchestrator as create_orchestrator
+from socrates_api.orchestrator import APIOrchestrator
+from socrates_api.orchestrator import get_orchestrator as create_orchestrator
 
 from .models import (
     AskQuestionRequest,
@@ -77,14 +82,14 @@ from .routers import (
     projects_router,
     query_router,
     security_router,
-    skills_router,
-    sponsorships_router,
-    subscription_router,
-    system_router,
     skills_analytics,
     skills_composition,
     skills_distribution,
     skills_marketplace,
+    skills_router,
+    sponsorships_router,
+    subscription_router,
+    system_router,
 )
 
 # Configure logging
@@ -246,6 +251,7 @@ async def lifespan(app: FastAPI):
     # Close database connection
     try:
         from socrates_api.database import close_database
+
         close_database()
     except Exception as e:
         logger.warning(f"Failed to close database: {e}")
@@ -285,7 +291,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-print(f"[MODULE] FastAPI app created (id={id(app)}) with {len(app.routes)} routes at this point", flush=True)
+print(
+    f"[MODULE] FastAPI app created (id={id(app)}) with {len(app.routes)} routes at this point",
+    flush=True,
+)
 
 # Add security headers middleware
 # Auto-detect environment: if ENVIRONMENT is not explicitly set and running on local machine, use development
@@ -314,7 +323,7 @@ from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
 app.add_middleware(ActivityTrackerMiddleware)
 
 # Add audit logging middleware
-from socrates_api.middleware.audit import AuditMiddleware, initialize_audit_logger
+from socrates_api.middleware.audit import AuditMiddleware
 
 app.add_middleware(AuditMiddleware)
 
@@ -371,6 +380,7 @@ app.add_middleware(
     max_age=3600,  # Cache preflight requests for 1 hour
 )
 
+
 # Add request logging middleware for debugging
 @app.middleware("http")
 async def log_requests_debug(request: Request, call_next):
@@ -385,6 +395,7 @@ async def log_requests_debug(request: Request, call_next):
         print(f"[MIDDLEWARE] Response: {path} -> {response.status_code}", flush=True)
     return response
 
+
 logger.info(f"CORS configured for {environment} environment with origins: {allowed_origins}")
 
 
@@ -392,7 +403,7 @@ logger.info(f"CORS configured for {environment} environment with origins: {allow
 # Exception Handlers for Custom Exceptions
 # ============================================================================
 
-from socrates_api.exceptions import SocratesException, ProjectNotFoundError, UserNotFoundError
+from socrates_api.exceptions import SocratesException
 from socrates_api.models import APIResponse
 
 
@@ -446,6 +457,7 @@ def _include_router_safe(router, name: str):
     else:
         logger.warning(f"[ROUTER] Skipped router (not available): {name}")
 
+
 # Include API routers
 print(f"[MODULE] About to include routers, app has {len(app.routes)} routes", flush=True)
 logger.info(f"[STARTUP] Starting router inclusion, auth_router={auth_router is not None}")
@@ -481,31 +493,25 @@ _include_router_safe(chat_sessions_router, "chat_sessions")
 
 # Phase 4: Skills Ecosystem Routers
 app.include_router(
-    skills_marketplace.router,
-    prefix="/api/skills/marketplace",
-    tags=["Skills Marketplace"]
+    skills_marketplace.router, prefix="/api/skills/marketplace", tags=["Skills Marketplace"]
 )
 app.include_router(
-    skills_analytics.router,
-    prefix="/api/skills/analytics",
-    tags=["Skills Analytics"]
+    skills_analytics.router, prefix="/api/skills/analytics", tags=["Skills Analytics"]
 )
 app.include_router(
-    skills_distribution.router,
-    prefix="/api/skills/distribution",
-    tags=["Skills Distribution"]
+    skills_distribution.router, prefix="/api/skills/distribution", tags=["Skills Distribution"]
 )
 app.include_router(
-    skills_composition.router,
-    prefix="/api/skills/composition",
-    tags=["Skills Composition"]
+    skills_composition.router, prefix="/api/skills/composition", tags=["Skills Composition"]
 )
 
-print(f"[MODULE] All routers included (id={id(app)}) with {len(app.routes)} routes total", flush=True)
+print(
+    f"[MODULE] All routers included (id={id(app)}) with {len(app.routes)} routes total", flush=True
+)
 
 # CRITICAL: Force Starlette router compilation
 # This ensures routes are properly compiled before uvicorn serves
-print(f"[MODULE] Compiling Starlette router...", flush=True)
+print("[MODULE] Compiling Starlette router...", flush=True)
 try:
     # Force route table compilation
     compiled_routes = list(app.routes)
@@ -520,16 +526,19 @@ async def debug_routes():
     routes = []
     for route in app.routes:
         if hasattr(route, "path"):
-            routes.append({
-                "path": route.path,
-                "type": type(route).__name__,
-                "methods": list(getattr(route, "methods", []))
-            })
+            routes.append(
+                {
+                    "path": route.path,
+                    "type": type(route).__name__,
+                    "methods": list(getattr(route, "methods", [])),
+                }
+            )
     return {
         "total_routes": len(app.routes),
         "routes": sorted(routes, key=lambda r: r["path"])[:20],
-        "note": "Showing first 20 routes"
+        "note": "Showing first 20 routes",
     }
+
 
 @app.get("/")
 async def root():
@@ -568,7 +577,8 @@ async def detailed_health_check():
     Returns comprehensive system status including database, cache, and service details.
     """
     from socrates_api.caching import get_cache
-# REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
+
+    # REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
 
     try:
         cache = get_cache()
@@ -682,7 +692,7 @@ async def query_metrics():
             ...
         }
     """
-# REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
+    # REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
 
     profiler = get_profiler()
     return profiler.get_stats()
@@ -699,7 +709,7 @@ async def slow_query_metrics(min_count: int = 1):
     Returns:
         List of slow queries sorted by slow execution count
     """
-# REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
+    # REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
 
     profiler = get_profiler()
     return profiler.get_slow_queries(min_slow_count=min_count)
@@ -716,7 +726,7 @@ async def slowest_query_metrics(limit: int = 10):
     Returns:
         List of slowest queries sorted by average execution time
     """
-# REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
+    # REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
 
     profiler = get_profiler()
     return profiler.get_slowest_queries(limit=limit)
@@ -743,7 +753,9 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
 
         # Create orchestrator with provided API key or placeholder
         logger.info("Creating APIOrchestrator...")
-        orchestrator = create_orchestrator(api_key=api_key or "placeholder-key-will-use-user-specific-keys")
+        orchestrator = create_orchestrator(
+            api_key=api_key or "placeholder-key-will-use-user-specific-keys"
+        )
 
         # Test that orchestrator initialized properly
         system_info = orchestrator.get_system_info()
@@ -1035,7 +1047,7 @@ def run():
     logger.info(f"Starting Socrates API on {host}:{port}")
 
     # Verify app has routes before starting
-    auth_routes = [r for r in app.routes if '/auth' in r.path]
+    auth_routes = [r for r in app.routes if "/auth" in r.path]
     logger.info(f"API app has {len(app.routes)} total routes, {len(auth_routes)} auth routes")
     print(f"[RUN] App object id: {id(app)}, Routes: {len(app.routes)}", flush=True)
 

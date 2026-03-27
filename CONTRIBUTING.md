@@ -60,9 +60,19 @@ isort backend/src/
 
 ### Type Hints
 
-All functions should have type hints:
+**All public functions MUST have type hints** on both parameters and return values. This is enforced as of Phase 4.
+
+#### Requirements
+
+1. **Parameters**: Every parameter must have a type hint
+2. **Return values**: Every function must specify a return type
+3. **Specific types**: Use specific types, not `Any` or generic `dict`
+4. **Optional values**: Use `Optional[T]` or `T | None` (Python 3.10+)
+
+#### Examples
 
 ```python
+# ✅ GOOD: Complete type hints
 def calculate_score(
     user_id: str,
     interactions: List[Dict[str, Any]],
@@ -70,7 +80,76 @@ def calculate_score(
 ) -> float:
     """Calculate user engagement score."""
     ...
+
+# ✅ GOOD: Clear return types
+def load_project(project_id: str) -> ProjectContext:
+    """Load project from database or raise ProjectNotFoundError."""
+    ...
+
+# ✅ GOOD: Optional handling
+def get_user_email(user_id: str) -> Optional[str]:
+    """Return user's email or None if not set."""
+    ...
+
+# ❌ BAD: Missing return type
+def calculate_score(user_id: str, interactions: List):
+    """What does this return?"""
+    ...
+
+# ❌ BAD: Too generic
+def process_data(data: Any) -> Any:
+    """No type information at all."""
+    ...
+
+# ❌ BAD: Missing parameter types
+def create_project(name, owner, description=None) -> ProjectContext:
+    """Parameters lack type hints."""
+    ...
 ```
+
+#### Type Hint Patterns
+
+```python
+from typing import Optional, List, Dict, Callable, Literal
+
+# Required vs Optional parameters
+def create_user(username: str, email: Optional[str] = None) -> User:
+    """username required, email optional."""
+    ...
+
+# Collections
+def get_projects() -> List[ProjectContext]:
+    """Always return a list - even if empty."""
+    ...
+
+def get_project_map() -> Dict[str, ProjectContext]:
+    """Return mapping of project ID to ProjectContext."""
+    ...
+
+# Callables
+def register_handler(handler: Callable[[Event], None]) -> None:
+    """Handler is a function taking Event, returning None."""
+    ...
+
+# Literals for restricted values
+def set_log_level(level: Literal["DEBUG", "INFO", "WARNING", "ERROR"]) -> None:
+    """Only these log levels allowed."""
+    ...
+
+# Modern syntax (Python 3.10+)
+def find_user(user_id: str) -> ProjectContext | None:
+    """Use | instead of Union/Optional."""
+    ...
+```
+
+#### For More Details
+
+See `/docs/guides/CODE_QUALITY.md` for comprehensive type safety standards including:
+- Type hint syntax and conventions
+- Function contracts and documentation
+- Error handling patterns
+- Object serialization practices
+- Code review checklist
 
 ### Docstrings
 

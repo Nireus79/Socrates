@@ -10,9 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # Import input validation utilities (REQUIRED)
 from socratic_security.input_validation import (
     validate_no_sql_injection,
-    validate_no_xss,
 )
-
 
 # ============================================================================
 # Standardized API Response Model
@@ -38,12 +36,9 @@ class APIResponse(BaseModel):
                 "success": True,
                 "status": "success",
                 "message": "Operation completed successfully",
-                "data": {
-                    "project_id": "proj_abc123",
-                    "name": "My Project"
-                },
+                "data": {"project_id": "proj_abc123", "name": "My Project"},
                 "error_code": None,
-                "timestamp": "2026-01-08T12:30:45.123456Z"
+                "timestamp": "2026-01-08T12:30:45.123456Z",
             }
         }
     )
@@ -407,7 +402,10 @@ class RegisterRequest(BaseModel):
     )
 
     username: str = Field(
-        ..., min_length=3, max_length=100, description="Username (3-100 characters, alphanumeric + underscore)"
+        ...,
+        min_length=3,
+        max_length=100,
+        description="Username (3-100 characters, alphanumeric + underscore)",
     )
     email: Optional[str] = Field(None, description="User email address (optional)")
     password: str = Field(
@@ -421,7 +419,7 @@ class RegisterRequest(BaseModel):
         if v is None:
             return v
         # Check for valid characters (alphanumeric + underscore)
-        if not all(c.isalnum() or c == '_' for c in v):
+        if not all(c.isalnum() or c == "_" for c in v):
             raise ValueError("Username must contain only alphanumeric characters and underscores")
         validate_no_sql_injection(v)  # REQUIRED
         return v
@@ -800,7 +798,9 @@ class ChatMessageRequest(BaseModel):
         },
     )
 
-    message: str = Field(..., min_length=1, max_length=5000, description="Message content (max 5000 characters)")
+    message: str = Field(
+        ..., min_length=1, max_length=5000, description="Message content (max 5000 characters)"
+    )
     role: str = Field(default="user", description="Message role (user or assistant)")
     mode: str = Field(default="socratic", description="Chat mode (socratic or direct)")
 
@@ -1066,7 +1066,9 @@ class SkillMetadataResponse(BaseModel):
     agent: str = Field(..., description="Creating agent")
     usage_count: int = Field(default=0, description="Number of times used")
     tags: List[str] = Field(default_factory=list, description="Skill tags")
-    adoption_stats: Optional[Dict[str, Any]] = Field(default=None, description="Adoption statistics")
+    adoption_stats: Optional[Dict[str, Any]] = Field(
+        default=None, description="Adoption statistics"
+    )
 
 
 class MarketplaceStatsResponse(BaseModel):
@@ -1134,7 +1136,9 @@ class CreateCompositionRequest(BaseModel):
     composition_id: str = Field(..., description="Unique composition ID")
     name: str = Field(..., description="Composition name")
     skills: List[str] = Field(..., description="List of skill IDs in order")
-    execution_type: str = Field(default="sequential", description="Execution type: sequential, parallel, or conditional")
+    execution_type: str = Field(
+        default="sequential", description="Execution type: sequential, parallel, or conditional"
+    )
 
 
 class ExecuteCompositionRequest(BaseModel):
@@ -1208,7 +1212,9 @@ class EcosystemHealthResponse(BaseModel):
     total_skills: int = Field(..., description="Total skills in ecosystem")
     total_agents: int = Field(..., description="Total agents")
     average_effectiveness: float = Field(..., description="Average effectiveness")
-    ecosystem_health: str = Field(..., description="Health status: excellent, good, fair, poor, no_data")
+    ecosystem_health: str = Field(
+        ..., description="Health status: excellent, good, fair, poor, no_data"
+    )
 
 
 # ============================================================================
@@ -1249,4 +1255,6 @@ class MFAStatusResponse(BaseModel):
     """Response showing MFA status"""
 
     mfa_enabled: bool = Field(..., description="Whether MFA is enabled")
-    mfa_methods: List[str] = Field(default_factory=lambda: ["totp"], description="Enabled MFA methods")
+    mfa_methods: List[str] = Field(
+        default_factory=lambda: ["totp"], description="Enabled MFA methods"
+    )

@@ -11,8 +11,8 @@ Provides:
 
 import logging
 import time
-from typing import Callable, Dict, Optional
 from functools import wraps
+from typing import Callable, Dict, Optional
 
 from fastapi import Request, Response
 
@@ -89,9 +89,7 @@ class MetricsCollector:
             logger.warning(f"Slow database query: {query_type} took {latency_ms:.2f}ms")
 
     @classmethod
-    def record_subscription_usage(
-        cls, tier: str, feature: str, usage_amount: int = 1
-    ) -> None:
+    def record_subscription_usage(cls, tier: str, feature: str, usage_amount: int = 1) -> None:
         """Record subscription usage metrics."""
         if tier not in cls._metrics["subscriptions"]:
             cls._metrics["subscriptions"][tier] = {}
@@ -211,12 +209,14 @@ class HealthMetrics:
         avg_latencies = {k: v["avg_ms"] for k, v in latencies.items()}
 
         return {
-            "status": "healthy" if error_rate < 5 else "degraded" if error_rate < 10 else "unhealthy",
+            "status": (
+                "healthy" if error_rate < 5 else "degraded" if error_rate < 10 else "unhealthy"
+            ),
             "error_rate": error_rate,
             "total_requests": total_requests,
             "total_errors": error_count,
             "active_users": metrics["active_users"],
-            "avg_latency_ms": sum(avg_latencies.values()) / len(avg_latencies)
-            if avg_latencies
-            else 0,
+            "avg_latency_ms": (
+                sum(avg_latencies.values()) / len(avg_latencies) if avg_latencies else 0
+            ),
         }
