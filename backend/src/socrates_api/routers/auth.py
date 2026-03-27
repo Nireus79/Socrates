@@ -348,8 +348,8 @@ async def login(
             )
 
         # Load user from database
-        user_dict = db.load_user(login_request.username)
-        if user_dict is None:
+        user = db.load_user(login_request.username)
+        if user is None:
             logger.warning(f"Login attempt for non-existent user: {login_request.username}")
             # Record failed attempt for security tracking (REQUIRED)
             lockout_manager.record_attempt(login_request.username, "unknown", success=False)
@@ -357,9 +357,6 @@ async def login(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or access code",
             )
-
-        # Convert dict to User object
-        user = User(**user_dict)
 
         # Verify password
         if not verify_password(login_request.password, user.passcode_hash):
@@ -674,15 +671,12 @@ async def change_password(
             )
 
         # Load user
-        user_dict = db.load_user(current_user)
-        if user_dict is None:
+        user = db.load_user(current_user)
+        if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
             )
-
-        # Convert to User object
-        user = user_dict
 
         # Verify old password
         if not verify_password(request.old_password, user.passcode_hash):
@@ -899,15 +893,12 @@ async def mfa_disable(
     """
     try:
         # Load user and verify password
-        user_dict = db.load_user(current_user)
-        if user_dict is None:
+        user = db.load_user(current_user)
+        if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
             )
-
-        # Convert to User object
-        user = user_dict
 
         if not verify_password(request.password, user.passcode_hash):
             logger.warning(f"MFA disable attempt with invalid password for user {current_user}")
@@ -1088,29 +1079,12 @@ async def get_me(
             )
 
         # Load user from database
-        user_data = db.load_user(current_user)
-        if user_data is None:
+        user = db.load_user(current_user)
+        if user is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
-
-        # Convert dict to User object if needed
-        if isinstance(user_data, dict):
-            user = User(
-                user_id=user_data.get("id", ""),
-                username=user_data.get("username", ""),
-                email=user_data.get("email", ""),
-                passcode_hash=user_data.get("passcode_hash", ""),
-                subscription_tier=user_data.get("subscription_tier", "free"),
-                subscription_status=user_data.get("subscription_status", "active"),
-                testing_mode=user_data.get("testing_mode", False),
-                created_at=user_data.get("created_at"),
-                archived=user_data.get("archived", False),
-                archived_at=user_data.get("archived_at"),
-            )
-        else:
-            user = user_data
 
         return _user_to_response(user)
 
@@ -1322,18 +1296,12 @@ async def set_testing_mode(
         HTTPException: If user not found or not authenticated
     """
     try:
-        user_data = db.load_user(current_user)
-        if user_data is None:
+        user = db.load_user(current_user)
+        if user is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
-
-        # Convert dict to User object if needed
-        if isinstance(user_data, dict):
-            user = User(**user_data)
-        else:
-            user = user_data
 
         # Any authenticated user can toggle testing mode for their own account
         # This is NOT an admin-only feature - aligns with owner-based authorization model
