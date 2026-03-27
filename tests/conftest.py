@@ -468,3 +468,23 @@ def api_server_available():
         return result == 0
     except Exception:
         return False
+
+
+@pytest.fixture(autouse=True)
+def reset_database_singleton():
+    """Reset DatabaseSingleton between tests to prevent state leakage."""
+    try:
+        from socratic_system.database import DatabaseSingleton
+        # Reset before test
+        DatabaseSingleton._instance = None
+    except ImportError:
+        pass
+
+    yield
+
+    try:
+        from socratic_system.database import DatabaseSingleton
+        # Reset after test
+        DatabaseSingleton._instance = None
+    except ImportError:
+        pass
