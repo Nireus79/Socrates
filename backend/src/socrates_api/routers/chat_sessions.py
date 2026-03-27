@@ -47,8 +47,7 @@ async def create_chat_session(
     logger.debug(f"Creating chat session for project {project_id}")
     try:
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -121,8 +120,7 @@ async def list_chat_sessions(
     """
     try:
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -199,8 +197,7 @@ async def get_chat_session(
     """Get details of a specific chat session."""
     try:
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -256,8 +253,7 @@ async def send_chat_message(
     """Send a message in a chat session."""
     try:
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -332,8 +328,7 @@ async def get_chat_messages(
     """
     try:
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -410,8 +405,7 @@ async def update_chat_message(
     """Update a chat message's content and metadata."""
     try:
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -486,8 +480,7 @@ async def delete_chat_message(
     """Delete a chat message."""
     try:
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -544,8 +537,7 @@ async def archive_chat_session(
     """Archive a chat session."""
     try:
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -601,8 +593,7 @@ async def restore_chat_session(
     """Restore an archived chat session."""
     try:
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

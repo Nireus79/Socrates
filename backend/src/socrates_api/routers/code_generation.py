@@ -164,8 +164,7 @@ async def generate_code(
             )
 
         # Verify project access
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -425,8 +424,7 @@ async def validate_code(
             )
 
         # Verify project access
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -559,8 +557,7 @@ async def get_code_history(
     """
     try:
         # Verify project access
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -719,8 +716,7 @@ async def refactor_code(
             )
 
         # Verify project access
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -915,8 +911,7 @@ async def generate_documentation(
 
         # Verify project access
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

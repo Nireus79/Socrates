@@ -65,8 +65,7 @@ async def generate_final_artifacts(
         await check_project_access(project_id, current_user, db, min_role="editor")
 
         logger.info(f"Generating final artifacts for project: {project_id}")
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -227,8 +226,7 @@ async def generate_final_documentation(
         await check_project_access(project_id, current_user, db, min_role="editor")
 
         logger.info(f"Generating final documentation for project: {project_id}")
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -499,8 +497,7 @@ async def export_project(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         logger.info(f"Exporting project: {project_id} as {format}")
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -656,8 +653,7 @@ async def publish_to_github(
         await check_project_access(project_id, current_user, db, min_role="owner")
 
         logger.info(f"Publishing project to GitHub: {project_id}")
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

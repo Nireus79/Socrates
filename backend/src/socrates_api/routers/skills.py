@@ -59,8 +59,7 @@ async def set_skills(
         await check_project_access(project_id, current_user, db, min_role="editor")
 
         logger.info(f"Setting skill '{skill_name}' for project {project_id}")
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -177,8 +176,7 @@ async def list_skills(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         logger.info(f"Listing skills for project {project_id}")
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")

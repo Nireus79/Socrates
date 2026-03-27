@@ -73,8 +73,7 @@ async def add_note(
         logger.info(f"Adding note to project: {project_id}")
 
         # Load project
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -146,8 +145,7 @@ async def list_notes(
         logger.info(f"Listing notes for project: {project_id}")
 
         # Load project
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -215,8 +213,7 @@ async def search_notes(
         logger.info(f"Searching notes for project: {project_id} with query: {query}")
 
         # Load project
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -282,8 +279,7 @@ async def delete_note(
         logger.info(f"Deleting note {note_id} from project: {project_id}")
 
         # Load project
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

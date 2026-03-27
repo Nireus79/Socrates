@@ -167,8 +167,7 @@ async def assess_maturity(
         logger.info(f"Assessing maturity for project: {project_id}")
 
         # Load project
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -266,8 +265,7 @@ async def run_tests(
         logger.info(f"Running tests for project: {project_id}")
 
         # Load project
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -360,8 +358,7 @@ async def analyze_structure(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -443,8 +440,7 @@ async def review_code(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -527,8 +523,7 @@ async def auto_fix_issues(
         logger.info(f"Auto-fixing issues for project: {project_id}")
 
         # Load project
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
@@ -612,8 +607,7 @@ async def get_analysis_report(
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 

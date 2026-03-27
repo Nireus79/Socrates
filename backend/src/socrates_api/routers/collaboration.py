@@ -210,8 +210,7 @@ async def add_collaborator_new(
             )
 
         # Verify project exists and user is owner
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -413,8 +412,7 @@ async def list_collaborators(
     """
     try:
         # Verify project access
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -524,8 +522,7 @@ async def update_collaborator_role(
             )
 
         # Verify project and ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -616,8 +613,7 @@ async def remove_collaborator(
     """
     try:
         # Verify project and ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -713,8 +709,7 @@ async def get_presence(
     """
     try:
         # Verify project access
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -784,8 +779,7 @@ async def record_activity(
         import uuid
 
         # Verify project access
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -878,8 +872,7 @@ async def get_activities(
     """
     try:
         # Verify project access
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -966,8 +959,7 @@ async def create_project_invitation(
         from datetime import timedelta
 
         # Verify project exists and user is owner
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1101,8 +1093,7 @@ async def get_project_invitations(
     """
     try:
         # Verify project access
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1195,8 +1186,7 @@ async def accept_invitation(
             )
 
         # Load project
-        project_dict = db.load_project(invitation["project_id"])
-        project = project_dict
+        project = db.load_project(invitation["project_id"])
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -1294,8 +1284,7 @@ async def cancel_invitation(
     """
     try:
         # Verify project ownership
-        project_dict = db.load_project(project_id)
-        project = project_dict
+        project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
