@@ -22,6 +22,7 @@ def _import_router(name: str, module_name: str, router_var: str = "router"):
         logger.debug(f"Loaded router: {name}")
         return router
     except Exception as e:
+        logger.error(f"Error: {type(e).__name__}")
         logger.warning(f"Failed to load {name} router: {e}")
         return None
 
@@ -63,6 +64,7 @@ try:
     from socrates_api.routers.collaboration import collab_router
     _routers["collab_router"] = collab_router
 except Exception as e:
+    logger.error(f"Error: {type(e).__name__}")
     logger.warning(f"Failed to load collab_router: {e}")
     collab_router = None
 

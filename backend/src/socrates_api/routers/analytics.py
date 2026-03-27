@@ -118,7 +118,7 @@ async def get_analytics_summary(
             logger.error(f"Error validating subscription for analytics: {type(e).__name__}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         if project_id:
@@ -215,7 +215,7 @@ async def get_analytics_summary(
         logger.error(f"Error getting analytics summary: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get summary: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -340,7 +340,7 @@ async def get_project_analytics(
         logger.error(f"Error getting project analytics: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get analytics: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -387,7 +387,7 @@ async def get_code_metrics():
         logger.error(f"Error getting code metrics: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get metrics: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -436,7 +436,7 @@ async def get_usage_analytics():
         logger.error(f"Error getting usage analytics: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get usage analytics: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -500,7 +500,7 @@ async def get_trends(
             logger.error(f"Error validating subscription for trends: {type(e).__name__}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         from socrates_api.main import get_orchestrator
@@ -549,7 +549,7 @@ async def get_trends(
         logger.error(f"Error getting trends: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get trends: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -615,7 +615,7 @@ async def get_recommendations(
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         from socrates_api.main import get_orchestrator
@@ -669,7 +669,7 @@ async def get_recommendations(
         logger.error(f"Error getting recommendations: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get recommendations: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -835,7 +835,7 @@ async def export_analytics(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Report generation failed: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1007,7 +1007,7 @@ async def compare_projects(
         logger.error(f"Error comparing projects: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to compare: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1091,7 +1091,7 @@ async def generate_report(
         logger.error(f"Error generating report: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate report: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1164,7 +1164,7 @@ async def analyze_project(
         logger.error(f"Error analyzing project: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to analyze: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1293,7 +1293,7 @@ async def get_dashboard_analytics(
         logger.error(f"Error getting dashboard: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get dashboard: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1396,7 +1396,7 @@ async def get_analytics_breakdown(
         logger.error(f"Error getting analytics breakdown: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get breakdown: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1487,5 +1487,5 @@ async def get_analytics_status(
         logger.error(f"Error getting analytics status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get status: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

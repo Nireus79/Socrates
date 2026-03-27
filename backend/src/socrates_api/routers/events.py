@@ -117,7 +117,7 @@ async def get_event_history(
         logger.error(f"Error getting event history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get event history: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -189,5 +189,5 @@ async def stream_events(
         logger.error(f"Error establishing event stream: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to establish event stream: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

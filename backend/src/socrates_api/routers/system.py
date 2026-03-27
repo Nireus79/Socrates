@@ -191,7 +191,7 @@ async def get_help(
         logger.error(f"Error retrieving help: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve help: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -312,7 +312,7 @@ async def get_info(
         logger.error(f"Error retrieving system info: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve system info: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -407,7 +407,7 @@ async def get_status(
         logger.error(f"Error retrieving system status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve system status: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -497,7 +497,7 @@ async def get_logs(
         logger.error(f"Error retrieving logs: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve logs: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -587,7 +587,7 @@ async def get_context(
         logger.error(f"Error retrieving system context: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve system context: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -648,7 +648,7 @@ async def toggle_debug_mode(
         logger.error(f"Error toggling debug mode: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to toggle debug mode: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -718,7 +718,7 @@ async def schedule_server_shutdown(
         logger.error(f"Error scheduling server shutdown: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to schedule shutdown: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -752,7 +752,7 @@ async def cancel_server_shutdown():
         logger.error(f"Error cancelling server shutdown: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to cancel shutdown: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -794,5 +794,5 @@ async def get_shutdown_status():
         logger.error(f"Error retrieving shutdown status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve shutdown status: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

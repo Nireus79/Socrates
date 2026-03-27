@@ -111,7 +111,7 @@ async def explain_concept(
         logger.error(f"Error explaining concept: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to explain concept: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -212,7 +212,7 @@ async def search_knowledge(
         logger.error(f"Error searching knowledge: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to search knowledge: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -280,5 +280,5 @@ async def find_similar_concepts(
         logger.error(f"Error finding similar concepts: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to find similar concepts: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

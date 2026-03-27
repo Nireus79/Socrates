@@ -140,7 +140,7 @@ async def set_skills(
         logger.error(f"Error setting skill: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to set skill: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -254,5 +254,5 @@ async def list_skills(
         logger.error(f"Error listing skills: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list skills: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

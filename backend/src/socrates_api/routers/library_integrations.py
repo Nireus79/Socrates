@@ -82,7 +82,7 @@ async def analyze_code_quality(
             )
     except Exception as e:
         logger.error(f"Code analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 # ============================================================================
@@ -141,7 +141,7 @@ async def log_learning_interaction(
         return result or {"status": "logged"}
     except Exception as e:
         logger.error(f"Failed to log learning interaction: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/learning/status")
@@ -200,7 +200,7 @@ async def detect_agent_conflicts(
         return result or {"conflict_detected": False}
     except Exception as e:
         logger.error(f"Conflict detection failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/conflict/status")
@@ -261,7 +261,7 @@ async def store_knowledge_item(
         return result or {"status": "stored"}
     except Exception as e:
         logger.error(f"Failed to store knowledge: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/knowledge/search")
@@ -290,7 +290,7 @@ async def search_knowledge(
         return results[:limit] if results else []
     except Exception as e:
         logger.error(f"Knowledge search failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/knowledge/status")
@@ -345,7 +345,7 @@ async def generate_project_documentation(
         return result or "# Documentation not available"
     except Exception as e:
         logger.error(f"Documentation generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/docs/status")
@@ -388,7 +388,7 @@ async def generate_api_documentation(
         return result
     except Exception as e:
         logger.error(f"API documentation generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/docs/generate-architecture")
@@ -410,7 +410,7 @@ async def generate_architecture_documentation(
         return result
     except Exception as e:
         logger.error(f"Architecture documentation generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/docs/generate-setup")
@@ -432,7 +432,7 @@ async def generate_setup_documentation(
         return result
     except Exception as e:
         logger.error(f"Setup guide generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/docs/generate-all")
@@ -456,7 +456,7 @@ async def generate_all_documentation(
         return result
     except Exception as e:
         logger.error(f"Complete documentation generation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 # ============================================================================
@@ -494,7 +494,7 @@ async def execute_workflow(
         return result or {"success": False, "message": "Workflow execution failed"}
     except Exception as e:
         logger.error(f"Workflow execution failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/workflow/status")
@@ -544,7 +544,7 @@ async def get_performance_metrics() -> Dict[str, Any]:
         return stats or {"message": "No performance data available"}
     except Exception as e:
         logger.error(f"Failed to get performance metrics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/performance/profile")
@@ -573,7 +573,7 @@ async def profile_execution(
         return {"status": "profiled", "task_id": task_id}
     except Exception as e:
         logger.error(f"Failed to profile execution: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/performance/status")
@@ -611,7 +611,7 @@ async def get_cache_statistics() -> Dict[str, Any]:
         return result
     except Exception as e:
         logger.error(f"Failed to get cache statistics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/performance/cache-clear")
@@ -628,7 +628,7 @@ async def clear_cache() -> Dict[str, Any]:
         return result
     except Exception as e:
         logger.error(f"Failed to clear cache: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/performance/profiler-reset")
@@ -645,7 +645,7 @@ async def reset_profiler_stats() -> Dict[str, Any]:
         return result
     except Exception as e:
         logger.error(f"Failed to reset profiler: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/performance/dashboard")
@@ -662,7 +662,7 @@ async def get_performance_dashboard() -> Dict[str, Any]:
         return result
     except Exception as e:
         logger.error(f"Failed to get performance dashboard: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 # ============================================================================
@@ -705,7 +705,7 @@ async def index_rag_document(
         }
     except Exception as e:
         logger.error(f"Failed to index document: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/rag/search")
@@ -735,7 +735,7 @@ async def search_rag(
         return results or []
     except Exception as e:
         logger.error(f"RAG search failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/rag/status")
@@ -793,7 +793,7 @@ async def execute_agent(
         return result or {"status": "failed", "message": f"Agent {agent_name} failed"}
     except Exception as e:
         logger.error(f"Agent execution failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/agents/list")
@@ -820,7 +820,7 @@ async def list_agents() -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Failed to list agents: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/agents/status")
@@ -875,7 +875,7 @@ async def validate_input(
         return result or {"valid": True, "threats": []}
     except Exception as e:
         logger.error(f"Input validation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/security/status")
@@ -942,7 +942,7 @@ async def call_llm(
         return result or {"status": "failed", "message": "LLM call failed"}
     except Exception as e:
         logger.error(f"LLM call failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/llm/models")
@@ -965,7 +965,7 @@ async def list_llm_models() -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Failed to list models: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/llm/status")
@@ -1014,7 +1014,7 @@ async def get_system_info() -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Failed to get system info: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/core/config")
@@ -1037,7 +1037,7 @@ async def get_system_config() -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Failed to get system config: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/core/status")
@@ -1092,7 +1092,7 @@ async def ingest_bulk_documents(
         return {"status": "success", "indexed_count": len(results), "results": results}
     except Exception as e:
         logger.error(f"Bulk ingestion failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/rag/indexed-documents")
@@ -1113,7 +1113,7 @@ async def list_indexed_documents() -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Failed to list documents: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.delete("/rag/delete/{doc_id}")
@@ -1135,7 +1135,7 @@ async def delete_indexed_document(doc_id: str) -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Failed to delete document: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 # ============================================================================
@@ -1166,7 +1166,7 @@ async def get_learner_summary(
         }
     except Exception as e:
         logger.error(f"Failed to get learner summary: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/learning/patterns")
@@ -1196,7 +1196,7 @@ async def get_learning_patterns(
         }
     except Exception as e:
         logger.error(f"Failed to get learning patterns: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/learning/recommendations")
@@ -1218,7 +1218,7 @@ async def get_personalized_recommendations(
         return []
     except Exception as e:
         logger.error(f"Failed to get recommendations: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 # ============================================================================
@@ -1258,7 +1258,7 @@ async def perform_detailed_analysis(
         }
     except Exception as e:
         logger.error(f"Detailed analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/analyzer/detect-patterns")
@@ -1283,7 +1283,7 @@ async def detect_code_patterns(
         }
     except Exception as e:
         logger.error(f"Pattern detection failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 # ============================================================================
@@ -1318,7 +1318,7 @@ async def execute_conflict_resolution(
         }
     except Exception as e:
         logger.error(f"Resolution execution failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/conflict/resolution-history")
@@ -1343,7 +1343,7 @@ async def get_conflict_resolution_history(
         }
     except Exception as e:
         logger.error(f"Failed to get resolution history: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 # ============================================================================
@@ -1380,7 +1380,7 @@ async def create_workflow(
         }
     except Exception as e:
         logger.error(f"Workflow creation failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/workflow/execute")
@@ -1409,7 +1409,7 @@ async def execute_workflow(
         }
     except Exception as e:
         logger.error(f"Workflow execution failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/workflow/status/{workflow_id}")
@@ -1433,7 +1433,7 @@ async def get_workflow_status(workflow_id: str) -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Failed to get workflow status: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/workflow/history")
@@ -1459,7 +1459,7 @@ async def get_workflow_execution_history(
         }
     except Exception as e:
         logger.error(f"Failed to get workflow history: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 # ============================================================================
@@ -1499,4 +1499,4 @@ async def get_all_library_status() -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Failed to get library status: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

@@ -278,7 +278,7 @@ async def add_collaborator_new(
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         # Initialize team_members if not present
@@ -303,6 +303,7 @@ async def add_collaborator_new(
             except HTTPException:
                 raise
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Error looking up user by email {request.email}: {e}")
                 # Fall back to using email prefix as username
                 resolved_username = request.email.split("@")[0]
@@ -317,6 +318,7 @@ async def add_collaborator_new(
                         f"User '{resolved_username}' not found in users table, will add as pending collaborator"
                     )
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Could not verify user {resolved_username} exists: {e}")
 
         # Cannot add the owner as a team member
@@ -1020,7 +1022,7 @@ async def create_project_invitation(
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         # Validate email
@@ -1426,7 +1428,7 @@ async def invite_team_member(
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         logger.info(f"Sending team invitation to {email} with role {role}")
@@ -1449,7 +1451,7 @@ async def invite_team_member(
         logger.error(f"Error sending invitation: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to send invitation: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1487,7 +1489,7 @@ async def list_team_members():
         logger.error(f"Error listing team members: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list team members: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1533,7 +1535,7 @@ async def update_member_role(
         logger.error(f"Error updating member role: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update member role: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1573,5 +1575,5 @@ async def remove_team_member(
         logger.error(f"Error removing team member: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to remove team member: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

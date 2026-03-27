@@ -115,6 +115,7 @@ async def github_sponsors_webhook(
                     active_sponsorship = db.get_active_sponsorship(github_username)
                     sponsorship_id = active_sponsorship.get("id") if active_sponsorship else None
                 except Exception as e:
+                    logger.error(f"Error: {type(e).__name__}")
                     logger.warning(f"Could not store sponsorship record: {e}")
 
                 # Record payment details
@@ -135,6 +136,7 @@ async def github_sponsors_webhook(
                         )
                         logger.info(f"Recorded payment {payment_id} for user {github_username}")
                 except Exception as e:
+                    logger.error(f"Error: {type(e).__name__}")
                     logger.warning(f"Could not record payment details: {e}")
 
                 # Record tier change if tier actually changed
@@ -157,6 +159,7 @@ async def github_sponsors_webhook(
                         )
                         logger.info(f"Recorded tier change for user {github_username}: {previous_tier} → {granted_tier}")
                 except Exception as e:
+                    logger.error(f"Error: {type(e).__name__}")
                     logger.warning(f"Could not record tier change: {e}")
 
                 return APIResponse(
@@ -195,7 +198,7 @@ async def github_sponsors_webhook(
         logger.error(f"Error processing GitHub Sponsors webhook: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process webhook: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -279,7 +282,7 @@ async def verify_sponsorship(
         logger.error(f"Error verifying sponsorship: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to verify sponsorship: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -321,7 +324,7 @@ async def get_sponsorship_history(
         logger.error(f"Error retrieving sponsorship history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve sponsorship history: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -378,7 +381,7 @@ async def get_payment_history(
         logger.error(f"Error retrieving payment history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve payment history: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -430,7 +433,7 @@ async def get_refund_history(
         logger.error(f"Error retrieving refund history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve refund history: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -480,7 +483,7 @@ async def get_tier_change_history(
         logger.error(f"Error retrieving tier change history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve tier change history: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -520,7 +523,7 @@ async def get_sponsorship_analytics(
         logger.error(f"Error retrieving sponsorship analytics: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve sponsorship analytics: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -576,7 +579,7 @@ async def get_payment_methods(
         logger.error(f"Error retrieving payment methods: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve payment methods: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -704,7 +707,7 @@ async def get_sponsorship_info():
         logger.error(f"Error retrieving sponsorship info: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve sponsorship info: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -831,5 +834,5 @@ async def get_admin_dashboard(
         logger.error(f"Error retrieving admin dashboard: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve admin dashboard: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

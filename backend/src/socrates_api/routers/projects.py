@@ -220,7 +220,7 @@ async def create_project(
             logger.error(f"Error validating subscription: {type(e).__name__}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         # Try to use orchestrator if available, but don't require it
@@ -272,6 +272,7 @@ async def create_project(
             logger.warning("HTTPException in orchestrator block, re-raising")
             raise
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(
                 f"Exception in orchestrator block, using fallback: {type(e).__name__}: {e}"
             )
@@ -335,6 +336,7 @@ async def create_project(
                         _apply_initial_insights_to_project(project, insights)
                         logger.info("Initial specifications extracted and applied to project")
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Could not analyze project context: {str(e)}")
                 # Continue without analysis - non-fatal
 
@@ -375,6 +377,7 @@ async def create_project(
                     f"Successfully added initial knowledge base content to project {project_id}"
                 )
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Failed to add initial knowledge base content: {str(e)}")
                 # Don't fail the project creation if knowledge base save fails
                 # The project is already created successfully
@@ -403,6 +406,7 @@ async def create_project(
                     db.save_project(project)
                     logger.info(f"Initial maturity calculated: {project.overall_maturity}%")
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Could not calculate initial maturity: {str(e)}")
                 # Continue without maturity calculation - non-fatal
 
@@ -421,7 +425,7 @@ async def create_project(
         logger.error(f"Exception in create_project: {type(e).__name__}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating project: {str(e)[:100]}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1688,7 +1692,7 @@ async def delete_project_file(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error deleting file: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1729,6 +1733,7 @@ def _apply_initial_insights_to_project(project, insights: dict) -> None:
             _update_list_field(project.constraints, constraint_list)
 
     except Exception as e:
+        logger.error(f"Error: {type(e).__name__}")
         logger.warning(f"Error applying insights to project: {e}")
 
 

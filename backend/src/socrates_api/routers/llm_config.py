@@ -59,7 +59,7 @@ async def list_providers(
         logger.error(f"Error listing providers: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list providers: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -109,7 +109,7 @@ async def get_config(
         logger.error(f"Error getting config: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get config: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -162,7 +162,7 @@ async def set_default_provider(
         logger.error(f"Error setting provider: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to set provider: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -236,6 +236,7 @@ async def set_api_key(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error: {type(e).__name__}")
         # SECURITY: Log the error for debugging but don't expose it to the client
         logger.error(f"Error setting API key for {provider}: {type(e).__name__}")
         raise HTTPException(
@@ -292,5 +293,5 @@ async def get_usage_stats(
         logger.error(f"Error getting usage stats: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get usage stats: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

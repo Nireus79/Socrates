@@ -157,7 +157,7 @@ def detect_conflicts(request: ConflictDetectionRequest) -> ConflictDetectionResp
 
     except Exception as e:
         logger.error(f"Error detecting conflicts: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/resolve", response_model=ConflictResolutionResponse)
@@ -254,7 +254,7 @@ def get_conflict_history(
 
     except Exception as e:
         logger.error(f"Error retrieving conflict history: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/analysis/{project_id}")
@@ -288,7 +288,7 @@ def analyze_project_conflicts(project_id: str) -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error analyzing conflicts: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/status")

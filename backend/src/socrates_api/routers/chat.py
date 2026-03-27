@@ -89,7 +89,7 @@ async def get_next_question(
         logger.error(f"Error getting next question: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get next question: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -149,7 +149,7 @@ async def get_conversation_history(
         logger.error(f"Error getting conversation history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get conversation history: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -217,5 +217,5 @@ async def get_conversation_summary(
         logger.error(f"Error generating summary: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate summary: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

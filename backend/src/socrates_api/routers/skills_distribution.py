@@ -79,7 +79,7 @@ async def distribute_skill(
         raise
     except Exception as e:
         logger.error(f"Error distributing skill: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post(
@@ -131,7 +131,7 @@ async def broadcast_skill(
         )
     except Exception as e:
         logger.error(f"Error broadcasting skill: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -171,7 +171,7 @@ async def get_adoption_status(
         raise
     except Exception as e:
         logger.error(f"Error getting adoption status: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -207,7 +207,7 @@ async def get_agent_adoptions(
         )
     except Exception as e:
         logger.error(f"Error getting agent adoptions: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post(
@@ -263,7 +263,7 @@ async def record_adoption(
         raise
     except Exception as e:
         logger.error(f"Error recording adoption: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -303,7 +303,7 @@ async def get_performance_comparison(
         raise
     except Exception as e:
         logger.error(f"Error getting performance comparison: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -347,7 +347,7 @@ async def get_skill_lineage(
         raise
     except Exception as e:
         logger.error(f"Error getting skill lineage: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -398,7 +398,7 @@ async def get_distribution_history(
         )
     except Exception as e:
         logger.error(f"Error getting distribution history: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -429,4 +429,4 @@ async def get_distribution_metrics(
         )
     except Exception as e:
         logger.error(f"Error getting distribution metrics: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

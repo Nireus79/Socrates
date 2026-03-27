@@ -104,6 +104,7 @@ Respond ONLY with valid JSON."""
                 "confidence": 0.0,
             }
     except Exception as e:
+        logger.error(f"Error: {type(e).__name__}")
         logger.warning(f"Error extracting entities: {str(e)}")
         return {
             "action": None,
@@ -191,6 +192,7 @@ Respond ONLY with valid JSON."""
             logger.warning(f"Failed to parse AI suggestions: {response}")
             return []
     except Exception as e:
+        logger.error(f"Error: {type(e).__name__}")
         logger.warning(f"Error getting AI suggestions: {str(e)}")
         return []
 
@@ -250,6 +252,7 @@ async def interpret_input(
                     db.save_project(project)
                     logger.debug(f"Saved NLU dialogue as note for project {project_id}")
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.debug(f"Could not save NLU dialogue as note: {str(e)}")
                 # Don't fail the request if note saving fails
 

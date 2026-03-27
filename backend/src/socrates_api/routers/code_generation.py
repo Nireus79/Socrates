@@ -411,7 +411,7 @@ async def validate_code(
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         # Validate language
@@ -690,7 +690,7 @@ async def refactor_code(
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         # Validate inputs
@@ -847,7 +847,7 @@ async def refactor_code(
             logger.error(f"Error in code refactoring: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to refactor code: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
     except HTTPException:

@@ -164,7 +164,7 @@ async def list_documents(
         logger.error(f"Error listing documents: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list documents: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -239,6 +239,7 @@ async def get_all_knowledge_sources(
                     "type": "document",
                 })
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Error fetching documents: {e}")
 
         # 2. Get project notes
@@ -262,6 +263,7 @@ async def get_all_knowledge_sources(
                         "type": "note",
                     })
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Error fetching notes: {e}")
 
         # 3. Get GitHub repositories
@@ -295,6 +297,7 @@ async def get_all_knowledge_sources(
                     "type": "repository",
                 })
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Error fetching GitHub repo info: {e}")
 
         return APIResponse(
@@ -634,6 +637,7 @@ async def import_file(
                 )
                 logger.debug(f"Emitted DOCUMENT_IMPORTED event for {file.filename}")
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
                 # Don't fail the import if event emission fails
 
@@ -657,6 +661,7 @@ async def import_file(
             try:
                 temp_file.unlink()
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Failed to delete temp file {temp_file}: {e}")
 
     except HTTPException:
@@ -665,7 +670,7 @@ async def import_file(
         logger.error(f"Error importing file: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to import file: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -767,6 +772,7 @@ async def import_url(
             )
             logger.debug(f"Emitted DOCUMENT_IMPORTED event for {url}")
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
             # Don't fail the import if event emission fails
 
@@ -787,7 +793,7 @@ async def import_url(
         logger.error(f"Error importing URL: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to import URL: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -908,6 +914,7 @@ async def import_text(
             )
             logger.debug(f"Emitted DOCUMENT_IMPORTED event for {title}")
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
             # Don't fail the import if event emission fails
 
@@ -929,7 +936,7 @@ async def import_text(
         logger.error(f"Error importing text: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to import text: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1031,7 +1038,7 @@ async def search_knowledge(
         logger.error(f"Error searching knowledge base: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to search: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1102,7 +1109,7 @@ async def delete_document(
         logger.error(f"Error deleting document: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete document: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1145,6 +1152,7 @@ async def bulk_delete_documents(
                 else:
                     failed.append({"id": doc_id, "reason": "Not found or access denied"})
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 failed.append({"id": doc_id, "reason": str(e)})
 
         logger.info(f"Bulk delete: {len(deleted)} deleted, {len(failed)} failed")
@@ -1269,6 +1277,7 @@ async def bulk_import_documents(
                         logger.warning(f"Failed to clean up temporary file {temp_path}: {str(e)}")
 
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 results.append(
                     {
                         "file": file.filename if hasattr(file, "filename") else "unknown",
@@ -1465,7 +1474,7 @@ async def add_knowledge_entry(
         logger.error(f"Error adding knowledge entry: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add entry: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1514,5 +1523,5 @@ async def debug_get_vector_db_chunks(
         logger.error(f"Error getting vector db debug info: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get debug info: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

@@ -132,7 +132,7 @@ async def change_password(
         logger.error(f"Error changing password: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to change password: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -202,6 +202,7 @@ async def setup_2fa(
             qr_code = base64.b64encode(img_bytes.getvalue()).decode()
             qr_code_url = f"data:image/png;base64,{qr_code}"
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Could not generate QR code: {e}")
             qr_code_url = ""
 
@@ -240,7 +241,7 @@ async def setup_2fa(
         logger.error(f"Error setting up 2FA: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to setup 2FA: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -339,7 +340,7 @@ async def verify_2fa(
         logger.error(f"Error verifying 2FA: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to verify 2FA: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -435,7 +436,7 @@ async def disable_2fa(
         logger.error(f"Error disabling 2FA: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to disable 2FA: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -493,7 +494,7 @@ async def list_sessions(
         logger.error(f"Error listing sessions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list sessions: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -569,7 +570,7 @@ async def revoke_session(
         logger.error(f"Error revoking session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to revoke session: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -617,6 +618,7 @@ async def revoke_all_sessions(
                     db.delete_session(session_id)
                     revoked_count += 1
                 except Exception as e:
+                    logger.error(f"Error: {type(e).__name__}")
                     logger.warning(f"Failed to revoke session {session_id}: {str(e)}")
 
         logger.info(f"Revoked {revoked_count} sessions for user {current_user}")
@@ -643,5 +645,5 @@ async def revoke_all_sessions(
         logger.error(f"Error revoking all sessions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to revoke sessions: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

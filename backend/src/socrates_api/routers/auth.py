@@ -529,6 +529,7 @@ async def login_mfa_verify(
                     "Please save your API key in Settings > LLM > Anthropic to use AI features."
                 )
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Error checking API key for user {request.username}: {e}")
 
         return AuthResponse(
@@ -1242,7 +1243,7 @@ async def delete_account(
         logger.error(f"Error deleting account: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete account: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1324,7 +1325,7 @@ async def set_testing_mode(
         logger.error(f"Error updating testing mode: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update testing mode: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1384,7 +1385,7 @@ async def archive_account(
         logger.error(f"Error archiving account: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to archive account: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1445,7 +1446,7 @@ async def restore_account(
         logger.error(f"Error restoring account: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to restore account: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 

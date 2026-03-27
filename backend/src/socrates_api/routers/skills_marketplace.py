@@ -85,7 +85,7 @@ async def register_skill(
         raise
     except Exception as e:
         logger.error(f"Error registering skill: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -145,7 +145,7 @@ async def discover_skills(
         )
     except Exception as e:
         logger.error(f"Error discovering skills: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -187,7 +187,7 @@ async def search_skills(
         )
     except Exception as e:
         logger.error(f"Error searching skills: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -226,7 +226,7 @@ async def get_skill(
         raise
     except Exception as e:
         logger.error(f"Error getting skill metadata: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -262,7 +262,7 @@ async def get_skills_by_agent(
         )
     except Exception as e:
         logger.error(f"Error getting skills by agent: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -298,7 +298,7 @@ async def get_skills_by_type(
         )
     except Exception as e:
         logger.error(f"Error getting skills by type: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -333,7 +333,7 @@ async def get_top_skills(
         )
     except Exception as e:
         logger.error(f"Error getting top skills: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -364,4 +364,4 @@ async def get_marketplace_stats(
         )
     except Exception as e:
         logger.error(f"Error getting marketplace stats: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

@@ -179,7 +179,7 @@ async def get_progress(
         logger.error(f"Error getting progress: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get progress: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -306,7 +306,7 @@ async def get_progress_status(
         logger.error(f"Error getting progress status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get progress status: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -432,5 +432,5 @@ async def get_project_stats(
         logger.error(f"Error getting stats for project {project_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get project stats: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

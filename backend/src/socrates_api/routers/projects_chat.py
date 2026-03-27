@@ -153,7 +153,7 @@ async def create_chat_session(
         logger.error(f"Error creating chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create chat session: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -219,7 +219,7 @@ async def list_chat_sessions(
         logger.error(f"Error listing chat sessions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list chat sessions: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -284,7 +284,7 @@ async def get_chat_session(
         logger.error(f"Error getting chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get chat session: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -339,7 +339,7 @@ async def delete_chat_session(
         logger.error(f"Error deleting chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete chat session: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -418,7 +418,7 @@ async def send_chat_message(
         logger.error(f"Error sending chat message: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to send chat message: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -500,7 +500,7 @@ async def get_chat_messages(
         logger.error(f"Error getting chat messages: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get chat messages: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -578,7 +578,7 @@ async def get_question(
         logger.error(f"Error getting question: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get question: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -711,6 +711,7 @@ Provide a helpful, direct answer."""
                         logger.info(f"Detected {specs_count} specs in direct mode dialogue - modal will be shown to user")
 
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Failed to extract insights in direct mode: {str(e)}")
                 # Continue without insights if extraction fails
                 insights = None
@@ -828,7 +829,7 @@ Provide a helpful, direct answer."""
         logger.error(f"Error sending message: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to send message: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -890,7 +891,7 @@ async def get_history(
         logger.error(f"Error getting history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get history: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -944,7 +945,7 @@ async def switch_mode(
         logger.error(f"Error switching mode: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to switch mode: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1011,7 +1012,7 @@ async def get_hint(
         logger.error(f"Error getting hint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get hint: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1061,7 +1062,7 @@ async def clear_history(
         logger.error(f"Error clearing history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to clear history: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1128,7 +1129,7 @@ async def get_summary(
         logger.error(f"Error generating summary: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate summary: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1179,7 +1180,7 @@ async def search_conversations(
         logger.error(f"Error searching conversations: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to search conversations: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1249,7 +1250,7 @@ async def finish_session(
         logger.error(f"Error finishing session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to finish session: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1318,7 +1319,7 @@ async def get_maturity_history(
         logger.error(f"Error getting maturity history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get maturity history: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1409,7 +1410,7 @@ async def get_maturity_status(
         logger.error(f"Error getting maturity status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get maturity status: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1473,7 +1474,7 @@ async def get_questions(
         logger.error(f"Error getting questions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get questions: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1531,7 +1532,7 @@ async def reopen_question(
         logger.error(f"Error reopening question: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to reopen question: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1593,7 +1594,7 @@ async def skip_question(
         logger.error(f"Error skipping question: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to skip question: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1749,7 +1750,7 @@ async def get_answer_suggestions(
         logger.error(f"Error getting suggestions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get suggestions: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1882,6 +1883,7 @@ async def save_extracted_specs(
                     # Re-save project with updated maturity
                     db.save_project(project)
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Failed to update maturity after saving specs: {str(e)}")
             # Don't fail the spec save if maturity update fails
 
@@ -1908,7 +1910,7 @@ async def save_extracted_specs(
         logger.error(f"Error saving extracted specs: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to save specs: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -2072,5 +2074,5 @@ async def resolve_conflicts(
         logger.error(f"Error resolving conflicts: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to resolve conflicts: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

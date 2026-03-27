@@ -784,7 +784,7 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
         raise
     except Exception as e:
         logger.error(f"Initialization failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @app.get("/info", response_model=SystemInfoResponse)
@@ -814,7 +814,7 @@ async def test_connection():
         return {"status": "ok", "message": "API is running and orchestrator is initialized"}
     except Exception as e:
         logger.error(f"Connection test failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Connection test failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @app.post("/code_generation/improve")
@@ -842,7 +842,7 @@ async def improve_code(request: dict = None):
         raise
     except Exception as e:
         logger.error(f"Error improving code: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to improve code: {str(e)}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @app.post("/projects/{project_id}/question", response_model=QuestionResponse)
@@ -890,7 +890,7 @@ async def ask_question(project_id: str, request: AskQuestionRequest):
         raise
     except Exception as e:
         logger.error(f"Error generating question: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @app.post("/projects/{project_id}/response", response_model=ProcessResponseResponse)
@@ -938,7 +938,7 @@ async def process_response(project_id: str, request: ProcessResponseRequest):
         raise
     except Exception as e:
         logger.error(f"Error processing response: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @app.post("/code/generate", response_model=CodeGenerationResponse)
@@ -997,7 +997,7 @@ async def generate_code(request: GenerateCodeRequest):
         raise
     except Exception as e:
         logger.error(f"Error generating code: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @app.exception_handler(RateLimitExceeded)

@@ -100,7 +100,7 @@ async def get_connection_pool():
     except RuntimeError as e:
         raise HTTPException(
             status_code=503,
-            detail=f"Database pool not initialized: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -480,7 +480,7 @@ async def liveness_probe(
         )
     except Exception as e:
         logger.error(f"Liveness probe failed: {e}")
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail="Operation failed. Please try again later.")
 
 
 @router.get("/ready", response_model=APIResponse, tags=["health"])
@@ -514,4 +514,4 @@ async def readiness_probe(
         )
     except Exception as e:
         logger.error(f"Readiness probe failed: {e}")
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail="Operation failed. Please try again later.")

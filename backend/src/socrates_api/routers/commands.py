@@ -136,7 +136,7 @@ def list_commands(
         raise
     except Exception as e:
         logger.error(f"Error listing commands: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/categories", response_model=CategoriesResponse)
@@ -153,7 +153,7 @@ def list_categories() -> CategoriesResponse:
         return CategoriesResponse(status="success", data=sorted(categories))
     except Exception as e:
         logger.error(f"Error listing categories: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/help", response_model=GetHelpResponse)
@@ -173,7 +173,7 @@ def get_help(command: Optional[str] = Query(None, description="Optional command 
         return GetHelpResponse(status="success", data=help_text)
     except Exception as e:
         logger.error(f"Error getting help: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/execute", response_model=ExecuteCommandResponse)
@@ -247,4 +247,4 @@ def get_command(command_name: str) -> CommandMetadataResponse:
         raise
     except Exception as e:
         logger.error(f"Error getting command metadata: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

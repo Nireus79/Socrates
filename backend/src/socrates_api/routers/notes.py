@@ -108,7 +108,7 @@ async def add_note(
         logger.error(f"Error adding note: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add note: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -178,7 +178,7 @@ async def list_notes(
         logger.error(f"Error listing notes: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list notes: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -244,7 +244,7 @@ async def search_notes(
         logger.error(f"Error searching notes: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to search notes: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -307,5 +307,5 @@ async def delete_note(
         logger.error(f"Error deleting note: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete note: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

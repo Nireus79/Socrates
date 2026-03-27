@@ -124,7 +124,7 @@ async def validate_code(
         logger.error(f"Error validating code: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to validate code: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -225,7 +225,7 @@ async def assess_maturity(
         logger.error(f"Error assessing maturity: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to assess maturity: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -317,7 +317,7 @@ async def run_tests(
         logger.error(f"Error running tests: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to run tests: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -399,7 +399,7 @@ async def analyze_structure(
         logger.error(f"Error analyzing structure: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to analyze structure: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -483,7 +483,7 @@ async def review_code(
         logger.error(f"Error getting code statistics: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get code statistics: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -566,7 +566,7 @@ async def auto_fix_issues(
         logger.error(f"Error applying fixes: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to apply fixes: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -650,7 +650,7 @@ async def get_analysis_report(
         logger.error(f"Error generating report: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate report: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -737,5 +737,5 @@ async def analyze_code(
         logger.error(f"Error analyzing code: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to analyze code: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

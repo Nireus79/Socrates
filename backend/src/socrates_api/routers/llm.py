@@ -27,7 +27,8 @@ async def list_providers(current_user: str = Depends(get_current_user)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/config", response_model=APIResponse)
@@ -46,7 +47,8 @@ async def get_config(current_user: str = Depends(get_current_user)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.put("/default-provider", response_model=APIResponse)
@@ -68,7 +70,8 @@ async def set_default_provider(provider: str, current_user: str = Depends(get_cu
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.put("/model", response_model=APIResponse)
@@ -93,7 +96,8 @@ async def set_model(provider: str, model: str, current_user: str = Depends(get_c
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post("/api-key", response_model=APIResponse)
@@ -122,7 +126,8 @@ async def set_api_key(provider: str, api_key: str, current_user: str = Depends(g
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.delete("/api-key/{provider}", response_model=APIResponse)
@@ -145,7 +150,8 @@ async def remove_api_key(provider: str, current_user: str = Depends(get_current_
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.put("/auth-method", response_model=APIResponse)
@@ -175,7 +181,8 @@ async def set_auth_method(provider: str, auth_method: str, current_user: str = D
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/models/{provider}", response_model=APIResponse)
@@ -194,7 +201,8 @@ async def get_models(provider: str, current_user: str = Depends(get_current_user
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/usage-stats", response_model=APIResponse)
@@ -214,4 +222,5 @@ async def get_stats(time_period: str = "month", current_user: str = Depends(get_
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {type(e).__name__}")
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

@@ -77,7 +77,7 @@ async def track_metric(
         raise
     except Exception as e:
         logger.error(f"Error tracking metric: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -121,7 +121,7 @@ async def analyze_performance(
         raise
     except Exception as e:
         logger.error(f"Error analyzing performance: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -166,7 +166,7 @@ async def get_high_performers(
         )
     except Exception as e:
         logger.error(f"Error getting high performers: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -204,7 +204,7 @@ async def get_ecosystem_health(
         )
     except Exception as e:
         logger.error(f"Error getting ecosystem health: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -239,4 +239,4 @@ async def get_performance_report(
         )
     except Exception as e:
         logger.error(f"Error generating report: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

@@ -201,7 +201,7 @@ def log_interaction(
         raise
     except Exception as e:
         logger.error(f"Error logging interaction: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/progress/{user_id}", response_model=LearningProgressResponse)
@@ -248,7 +248,7 @@ def get_learning_progress(user_id: str) -> LearningProgressResponse:
         raise
     except Exception as e:
         logger.error(f"Error getting learning progress: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/mastery/{user_id}")
@@ -292,7 +292,7 @@ def get_concept_mastery(
         raise
     except Exception as e:
         logger.error(f"Error getting mastery levels: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/misconceptions/{user_id}")
@@ -321,7 +321,7 @@ def get_misconceptions(user_id: str) -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting misconceptions: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/recommendations/{user_id}")
@@ -368,7 +368,7 @@ def get_recommendations(
         raise
     except Exception as e:
         logger.error(f"Error getting recommendations: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/analytics/{user_id}")
@@ -417,7 +417,7 @@ def get_learning_analytics(
 
     except Exception as e:
         logger.error(f"Error getting learning analytics: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get("/status")

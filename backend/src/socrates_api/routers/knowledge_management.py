@@ -127,7 +127,7 @@ async def add_knowledge_document(
         logger.error(f"Error adding knowledge document: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add knowledge document: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -230,7 +230,7 @@ async def add_knowledge(
         logger.error(f"Error adding knowledge: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add knowledge: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -322,7 +322,7 @@ async def list_knowledge(
         logger.error(f"Error listing knowledge: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list knowledge: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -404,7 +404,7 @@ async def search_knowledge(
         logger.error(f"Error searching knowledge: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to search knowledge: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -475,7 +475,7 @@ async def remember_knowledge(
         logger.error(f"Error remembering knowledge: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to remember knowledge: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -541,7 +541,7 @@ async def remove_knowledge(
         logger.error(f"Error removing knowledge: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to remove knowledge: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -637,7 +637,7 @@ async def export_knowledge(
         logger.error(f"Error exporting knowledge: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to export knowledge: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -722,5 +722,5 @@ async def import_knowledge(
         logger.error(f"Error importing knowledge: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to import knowledge: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

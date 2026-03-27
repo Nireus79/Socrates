@@ -80,7 +80,7 @@ async def create_composition(
         raise
     except Exception as e:
         logger.error(f"Error creating composition: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post(
@@ -134,7 +134,7 @@ async def add_parameter_mapping(
         raise
     except Exception as e:
         logger.error(f"Error adding parameter mapping: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post(
@@ -190,7 +190,7 @@ async def add_condition(
         raise
     except Exception as e:
         logger.error(f"Error adding condition: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post(
@@ -244,7 +244,7 @@ async def add_error_handler(
         raise
     except Exception as e:
         logger.error(f"Error adding error handler: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.post(
@@ -285,7 +285,7 @@ async def execute_composition(
         )
     except Exception as e:
         logger.error(f"Error executing composition: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -324,7 +324,7 @@ async def get_composition(
         raise
     except Exception as e:
         logger.error(f"Error getting composition: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -363,7 +363,7 @@ async def get_composition_metrics(
         raise
     except Exception as e:
         logger.error(f"Error getting composition metrics: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -402,7 +402,7 @@ async def get_execution_history(
         )
     except Exception as e:
         logger.error(f"Error getting execution history: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -435,7 +435,7 @@ async def list_compositions(
         )
     except Exception as e:
         logger.error(f"Error listing compositions: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
 @router.get(
@@ -465,4 +465,4 @@ async def get_composition_stats(
         )
     except Exception as e:
         logger.error(f"Error getting composition stats: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")

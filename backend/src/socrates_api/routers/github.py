@@ -169,7 +169,7 @@ async def import_repository(
             logger.error(f"Error validating subscription for GitHub import: {type(e).__name__}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                detail="Operation failed. Please try again later.",
             )
 
         # Extract repository information from URL
@@ -215,10 +215,12 @@ async def import_repository(
                         ),
                     }
                 except Exception as e:
+                    logger.error(f"Error: {type(e).__name__}")
                     logger.warning(f"Could not fetch repo metadata: {e}")
         except ImportError:
             logger.warning("PyGithub not installed. Run: pip install PyGithub")
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Error fetching GitHub metadata: {e}")
 
         # Create project from GitHub import
@@ -277,6 +279,7 @@ async def import_repository(
                             repo_knowledge_result["entries_added"] += 1
                             logger.info(f"Vectorized README for {repo_owner}/{repo_name}")
                     except Exception as e:
+                        logger.error(f"Error: {type(e).__name__}")
                         logger.warning(f"Could not extract README: {e}")
 
                     # Extract and vectorize common code files
@@ -335,6 +338,7 @@ async def import_repository(
 
                                     vectorized_files += 1
                             except Exception as e:
+                                logger.error(f"Error: {type(e).__name__}")
                                 logger.warning(f"Could not vectorize {code_file.path}: {e}")
 
                         if vectorized_files > 0:
@@ -343,16 +347,19 @@ async def import_repository(
                             logger.info(f"Vectorized {vectorized_files} code files from {repo_owner}/{repo_name}")
 
                     except Exception as e:
+                        logger.error(f"Error: {type(e).__name__}")
                         logger.warning(f"Could not extract code files from repository: {e}")
                         if repo_knowledge_result["entries_added"] > 0:
                             repo_knowledge_result["status"] = "partial"
                             repo_knowledge_result["message"] = f"Partially vectorized repository (added {repo_knowledge_result['entries_added']} entries)"
 
                 except Exception as e:
+                    logger.error(f"Error: {type(e).__name__}")
                     logger.warning(f"Could not vectorize repository content: {e}")
         except ImportError:
             logger.warning("PyGithub not installed - skipping content vectorization")
         except Exception as e:
+            logger.error(f"Error: {type(e).__name__}")
             logger.warning(f"Error vectorizing GitHub repository: {e}")
 
         from socrates_api.routers.events import record_event
@@ -404,7 +411,7 @@ async def import_repository(
         logger.error(f"Error importing GitHub repository: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to import repository: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -594,7 +601,7 @@ async def pull_changes(
         logger.error(f"Error pulling from GitHub: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to pull from GitHub: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -708,6 +715,7 @@ async def push_changes(
                     ]
 
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Failed to get modified files: {e}")
 
         # Validate file sizes
@@ -733,6 +741,7 @@ async def push_changes(
             except HTTPException:
                 raise
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"File validation failed: {e}")
                 # Continue anyway - this is a warning, not fatal
 
@@ -802,7 +811,7 @@ async def push_changes(
         logger.error(f"Error pushing to GitHub: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to push to GitHub: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -962,7 +971,7 @@ async def sync_project(
                 logger.error(f"Failed to resolve conflicts: {e}")
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Failed to automatically resolve conflicts: {str(e)}",
+                    detail="Operation failed. Please try again later.",
                 )
 
         # Step 4: Validate file sizes before push
@@ -1000,6 +1009,7 @@ async def sync_project(
                             )
 
             except Exception as e:
+                logger.error(f"Error: {type(e).__name__}")
                 logger.warning(f"Failed to validate file sizes: {e}")
                 # Continue with push anyway - this is not a critical error
 
@@ -1047,7 +1057,7 @@ async def sync_project(
         logger.error(f"Error syncing with GitHub: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to sync with GitHub: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1118,7 +1128,7 @@ async def get_sync_status(
         logger.error(f"Error getting sync status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get sync status: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1167,7 +1177,7 @@ async def pull_github_changes(
         logger.error(f"Error pulling from GitHub: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to pull from GitHub: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1222,7 +1232,7 @@ async def push_github_changes(
         logger.error(f"Error pushing to GitHub: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to push to GitHub: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1272,7 +1282,7 @@ async def get_github_status(
         logger.error(f"Error getting sync status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get sync status: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -1320,7 +1330,7 @@ async def disconnect_github(
         logger.error(f"Error disconnecting GitHub: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to disconnect GitHub: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 

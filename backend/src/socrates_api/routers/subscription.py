@@ -207,7 +207,7 @@ async def get_subscription_status(
         logger.error(f"Error getting subscription status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get subscription status: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -262,7 +262,7 @@ async def get_storage_usage(
         logger.error(f"Error getting storage usage: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get storage usage: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -313,7 +313,7 @@ async def list_subscription_plans(
         logger.error(f"Error listing plans: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list plans: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -373,7 +373,7 @@ async def upgrade_subscription(
         logger.error(f"Error upgrading subscription: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to upgrade subscription: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -434,7 +434,7 @@ async def downgrade_subscription(
         logger.error(f"Error downgrading subscription: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to downgrade subscription: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 

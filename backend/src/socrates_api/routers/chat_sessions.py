@@ -94,7 +94,7 @@ async def create_chat_session(
         logger.error(f"Error creating chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create chat session: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -182,7 +182,7 @@ async def list_chat_sessions(
         logger.error(f"Error listing chat sessions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list chat sessions: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -238,7 +238,7 @@ async def get_chat_session(
         logger.error(f"Error getting chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get chat session: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -306,7 +306,7 @@ async def send_chat_message(
         logger.error(f"Error sending chat message: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to send chat message: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -391,7 +391,7 @@ async def get_chat_messages(
         logger.error(f"Error getting chat messages: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get chat messages: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -469,7 +469,7 @@ async def update_chat_message(
         logger.error(f"Error updating chat message: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update chat message: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -527,7 +527,7 @@ async def delete_chat_message(
         logger.error(f"Error deleting chat message: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete chat message: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -584,7 +584,7 @@ async def archive_chat_session(
         logger.error(f"Error archiving chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to archive chat session: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -641,5 +641,5 @@ async def restore_chat_session(
         logger.error(f"Error restoring chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to restore chat session: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )

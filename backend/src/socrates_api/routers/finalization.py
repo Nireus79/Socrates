@@ -185,7 +185,7 @@ async def generate_final_artifacts(
         logger.error(f"Error generating final artifacts: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate artifacts: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -456,7 +456,7 @@ For deployment issues:
         logger.error(f"Error generating final documentation: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate documentation: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -606,7 +606,7 @@ async def export_project(
         logger.error(f"Error exporting project: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to export project: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
 
 
@@ -815,5 +815,5 @@ async def publish_to_github(
         logger.error(f"Error publishing to GitHub: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to publish project: {str(e)}",
+            detail="Operation failed. Please try again later.",
         )
