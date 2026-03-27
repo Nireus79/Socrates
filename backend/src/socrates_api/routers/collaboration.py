@@ -330,7 +330,10 @@ async def add_collaborator_new(
             )
 
         # Check if collaborator already exists
-        existing = any(m.username == resolved_username for m in project.team_members)
+        existing = any(
+            (m.get("username") if isinstance(m, dict) else getattr(m, "username", None)) == resolved_username
+            for m in project.team_members
+        )
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -423,7 +426,10 @@ async def list_collaborators(
         is_owner = project.owner == current_user
         is_collaborator = False
         if project.team_members:
-            is_collaborator = any(member.username == current_user for member in project.team_members)
+            is_collaborator = any(
+                (member.get("username") if isinstance(member, dict) else member.username) == current_user
+                for member in project.team_members
+            )
 
         if not (is_owner or is_collaborator):
             raise HTTPException(
@@ -452,15 +458,20 @@ async def list_collaborators(
         # Add team members if present (excluding owner to avoid duplicates)
         if project.team_members:
             for member in project.team_members:
+                # Handle both dict and object types
+                member_username = member.get("username") if isinstance(member, dict) else getattr(member, "username", None)
+                member_role = member.get("role") if isinstance(member, dict) else getattr(member, "role", None)
+                member_joined = member.get("joined_at") if isinstance(member, dict) else getattr(member, "joined_at", None)
+
                 # Skip if this member is the owner (avoid duplicates)
-                if member.username == project.owner:
+                if member_username == project.owner:
                     continue
                 collaborators.append(
                     {
-                        "username": member.username,
-                        "role": member.role,
+                        "username": member_username,
+                        "role": member_role,
                         "status": "active",
-                        "joined_at": to_iso_string(getattr(member, "joined_at", None)),
+                        "joined_at": to_iso_string(member_joined),
                     }
                 )
 
@@ -538,8 +549,12 @@ async def update_collaborator_role(
         # Find and update collaborator role
         if project.team_members:
             for member in project.team_members:
-                if member.username == username:
-                    member.role = role
+                member_username = member.get("username") if isinstance(member, dict) else getattr(member, "username", None)
+                if member_username == username:
+                    if isinstance(member, dict):
+                        member["role"] = role
+                    else:
+                        member.role = role
                     db.save_project(project)
 
                     from socrates_api.routers.events import record_event
@@ -637,7 +652,8 @@ async def remove_collaborator(
         removed = False
         if project.team_members:
             for i, member in enumerate(project.team_members):
-                if member.username == username:
+                member_username = member.get("username") if isinstance(member, dict) else getattr(member, "username", None)
+                if member_username == username:
                     project.team_members.pop(i)
                     db.save_project(project)
                     removed = True
@@ -788,7 +804,10 @@ async def record_activity(
 
         # Verify user is project member or owner
         is_owner = project.owner == current_user
-        is_member = any(m.username == current_user for m in (project.team_members or []))
+        is_member = any(
+            (m.get("username") if isinstance(m, dict) else getattr(m, "username", None)) == current_user
+            for m in (project.team_members or [])
+        )
 
         if not (is_owner or is_member):
             raise HTTPException(
@@ -881,7 +900,10 @@ async def get_activities(
 
         # Verify user is project member or owner
         is_owner = project.owner == current_user
-        is_member = any(m.username == current_user for m in (project.team_members or []))
+        is_member = any(
+            (m.get("username") if isinstance(m, dict) else getattr(m, "username", None)) == current_user
+            for m in (project.team_members or [])
+        )
 
         if not (is_owner or is_member):
             raise HTTPException(
@@ -1199,7 +1221,10 @@ async def accept_invitation(
         project.team_members = project.team_members or []
 
         # Check if already a member
-        if any(m.username == current_user for m in project.team_members):
+        if any(
+            (m.get("username") if isinstance(m, dict) else getattr(m, "username", None)) == current_user
+            for m in project.team_members
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User is already a collaborator on this project",

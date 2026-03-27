@@ -468,7 +468,10 @@ async def get_project(
         if project.owner != current_user:
             # Check if user is a team member
             if project.team_members:
-                is_team_member = any(m.username == current_user for m in project.team_members)
+                is_team_member = any(
+                    (m.get("username") if isinstance(m, dict) else getattr(m, "username", None)) == current_user
+                    for m in project.team_members
+                )
 
             if not is_team_member:
                 raise HTTPException(
