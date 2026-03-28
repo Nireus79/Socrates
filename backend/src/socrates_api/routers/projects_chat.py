@@ -78,23 +78,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
 
 
-def _ensure_project_topic(project: ProjectContext) -> ProjectContext:
-    """
-    Ensure ProjectContext has the 'topic' attribute that the orchestrator agent expects.
-
-    The socratic_agents library's SocraticCounselor expects the project object
-    to have a 'topic' attribute. This function adds it if missing.
-
-    Args:
-        project: ProjectContext object
-
-    Returns:
-        ProjectContext object with 'topic' attribute set
-    """
-    # Add topic attribute if not present (use description as topic)
-    if not hasattr(project, 'topic') or not project.topic:
-        project.topic = project.description
-    return project
 
 
 # ============================================================================
@@ -575,15 +558,15 @@ async def get_question(
                 detail=f"Failed to initialize orchestrator: {str(e)}"
             )
 
-        # Ensure project has 'topic' attribute (required by orchestrator agent)
-        project = _ensure_project_topic(project)
-        logger.info(f"Project prepared with topic: {project.topic[:50] if project.topic else 'EMPTY'}")
+        # Pass topic directly to orchestrator (SocraticCounselor expects it at top level)
+        logger.info(f"Project topic from description: {project.description[:50] if project.description else 'EMPTY'}")
 
         result = orchestrator.process_request(
             "socratic_counselor",
             {
                 "action": "generate_question",
                 "project": project,
+                "topic": project.description,  # SocraticCounselor.process() expects topic at top level
                 "current_user": current_user,
                 "user_id": current_user,
                 "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
@@ -801,8 +784,6 @@ Provide a helpful, direct answer."""
             # Socratic mode: Use the existing Socratic questioning approach
             logger.info("Processing message in SOCRATIC mode")
 
-            # Ensure project has 'topic' attribute for orchestrator
-            project = _ensure_project_topic(project)
 
             # Call socratic_counselor to process response
             # Pre-extracted insights caching and async processing happen internally

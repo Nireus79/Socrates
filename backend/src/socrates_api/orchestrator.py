@@ -801,13 +801,11 @@ class APIOrchestrator:
         if action == "generate_question":
             # Generate a Socratic question for a project
             project = request_data.get("project", {})
+            topic = request_data.get("topic", "")
             user_id = request_data.get("user_id", "")
             force_refresh = request_data.get("force_refresh", False)
 
-            # Log what we're receiving
-            project_topic = project.get("topic") if isinstance(project, dict) else getattr(project, "topic", "UNKNOWN")
-            logger.info(f"_handle_socratic_counselor generate_question: project has topic={bool(project_topic)}")
-            logger.debug(f"Project topic: {project_topic[:50] if project_topic else 'EMPTY'}")
+            logger.info(f"_handle_socratic_counselor generate_question: topic={topic[:50] if topic else 'EMPTY'}")
 
             # Try to use the actual agent if available
             counselor = self.agents.get("socratic_counselor")
@@ -815,10 +813,9 @@ class APIOrchestrator:
             try:
                 if counselor and self.llm_client:
                     # Use real agent to generate question
-                    logger.info(f"Calling counselor.process() with project object")
-                    result = counselor.process(
-                        {"project": project, "user_id": user_id, "force_refresh": force_refresh}
-                    )
+                    # SocraticCounselor expects topic at top level
+                    logger.info(f"Calling counselor.process() with topic: {topic[:50] if topic else 'EMPTY'}")
+                    result = counselor.process({"topic": topic})
                     logger.info(f"counselor.process() returned: {result}")
                     return {"status": "success", "data": result, "message": "Question generated"}
             except Exception as e:
