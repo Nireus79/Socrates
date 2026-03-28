@@ -507,10 +507,10 @@ async def list_collaborators(
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Error listing collaborators", exc_info=True)
+        logger.error(f"Error listing collaborators: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error listing collaborators",
+            detail=f"Error listing collaborators: {str(e)}",
         )
 
 
