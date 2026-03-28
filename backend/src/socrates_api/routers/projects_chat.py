@@ -704,9 +704,30 @@ User Question: {request.message}
 
 Provide a helpful, direct answer."""
 
-            answer = orchestrator.claude_client.generate_response(
-                prompt, user_auth_method=user_auth_method, user_id=current_user
+            # Use orchestrator to generate direct answer
+            result = orchestrator.process_request(
+                "direct_chat",
+                {
+                    "action": "generate_answer",
+                    "prompt": prompt,
+                    "user_id": current_user,
+                    "project": project,
+                }
             )
+
+            if result.get("status") != "success":
+                raise HTTPException(
+                    status_code=500,
+                    detail=result.get("message", "Failed to generate answer")
+                )
+
+            answer = result.get("data", {}).get("answer", "")
+
+            if not answer:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Generated empty answer"
+                )
 
             # Save to conversation history
             project.conversation_history.append({
@@ -730,13 +751,23 @@ Provide a helpful, direct answer."""
                 # Extract potential specs from both the user's question and the assistant's answer
                 # Combine both for more comprehensive spec extraction
                 combined_text = f"User Input:\n{request.message}\n\nAssistant Answer:\n{answer}"
-                insights = orchestrator.claude_client.extract_insights(
-                    combined_text,
-                    project,  # Required parameter: ProjectContext
-                    user_auth_method=user_auth_method,
-                    user_id=current_user
+
+                # Use orchestrator to extract insights
+                insights_result = orchestrator.process_request(
+                    "direct_chat",
+                    {
+                        "action": "extract_insights",
+                        "text": combined_text,
+                        "project": project,
+                        "user_id": current_user,
+                    }
                 )
-                logger.debug(f"Extracted insights from user input and assistant answer: {insights}")
+
+                if insights_result.get("status") == "success":
+                    insights = insights_result.get("data", {})
+                    logger.debug(f"Extracted insights from user input and assistant answer: {insights}")
+                else:
+                    logger.debug(f"Insight extraction returned non-success status: {insights_result.get('message')}")
 
                 # If there are any extracted specs, format debug message and prepare for modal
                 if insights:

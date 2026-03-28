@@ -768,6 +768,8 @@ class APIOrchestrator:
                 return self._handle_multi_llm(request_data)
             elif router_name == "socratic_counselor":
                 return self._handle_socratic_counselor(request_data)
+            elif router_name == "direct_chat":
+                return self._handle_direct_chat(request_data)
             else:
                 # Generic fallback for unknown routers - return sensible defaults
                 logger.warning(f"Unknown router: {router_name}, returning generic response")
@@ -1087,6 +1089,189 @@ class APIOrchestrator:
                 },
                 "message": "Response processed",
             }
+
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def _handle_direct_chat(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle direct chat mode requests for generating answers"""
+        action = request_data.get("action", "")
+
+        if action == "generate_answer":
+            # Generate a direct answer to user's question
+            prompt = request_data.get("prompt", "")
+            user_id = request_data.get("user_id", "")
+
+            if not prompt:
+                return {
+                    "status": "error",
+                    "message": "Prompt is required"
+                }
+
+            try:
+                # Try to get user's API key
+                from socrates_api.database import get_database
+                db = get_database()
+                user_api_key = db.get_api_key(user_id, "anthropic")
+
+                # Create LLM client with user's key if available
+                llm_client_to_use = None
+                if user_api_key:
+                    try:
+                        from socrates_nexus import LLMClient
+                        llm_client_to_use = LLMClient(
+                            provider="anthropic",
+                            model="claude-3-sonnet",
+                            api_key=user_api_key
+                        )
+                        logger.info(f"Using user API key for user {user_id} in direct mode")
+                    except Exception as e:
+                        logger.warning(f"Failed to create LLMClient with user key: {e}")
+                        llm_client_to_use = self.llm_client
+                else:
+                    llm_client_to_use = self.llm_client
+                    if llm_client_to_use:
+                        logger.info(f"No user API key for {user_id}, using global API key in direct mode")
+                    else:
+                        logger.warning(f"No user API key and no global API key for user {user_id}")
+
+                if not llm_client_to_use:
+                    return {
+                        "status": "error",
+                        "message": "No API key available for response generation"
+                    }
+
+                # Generate answer using the appropriate LLM client
+                answer = llm_client_to_use.generate_response(prompt)
+
+                if not answer:
+                    return {
+                        "status": "error",
+                        "message": "Failed to generate answer"
+                    }
+
+                logger.info(f"Generated direct answer for user {user_id}")
+                return {
+                    "status": "success",
+                    "data": {
+                        "answer": answer,
+                        "user_id": user_id
+                    },
+                    "message": "Answer generated"
+                }
+
+            except Exception as e:
+                logger.error(f"Failed to generate direct answer: {e}", exc_info=True)
+                return {
+                    "status": "error",
+                    "message": str(e)
+                }
+
+        elif action == "extract_insights":
+            # Extract specs/insights from text
+            text = request_data.get("text", "")
+            user_id = request_data.get("user_id", "")
+            project = request_data.get("project", {})
+
+            if not text:
+                return {
+                    "status": "error",
+                    "message": "Text is required for insight extraction"
+                }
+
+            try:
+                # Try to get user's API key
+                from socrates_api.database import get_database
+                db = get_database()
+                user_api_key = db.get_api_key(user_id, "anthropic")
+
+                # Create LLM client with user's key if available
+                llm_client_to_use = None
+                if user_api_key:
+                    try:
+                        from socrates_nexus import LLMClient
+                        llm_client_to_use = LLMClient(
+                            provider="anthropic",
+                            model="claude-3-sonnet",
+                            api_key=user_api_key
+                        )
+                        logger.info(f"Using user API key for insights extraction for user {user_id}")
+                    except Exception as e:
+                        logger.warning(f"Failed to create LLMClient with user key: {e}")
+                        llm_client_to_use = self.llm_client
+                else:
+                    llm_client_to_use = self.llm_client
+
+                if not llm_client_to_use:
+                    logger.warning("No API key available for insight extraction")
+                    return {
+                        "status": "success",
+                        "data": {},
+                        "message": "No API key for insight extraction (non-critical)"
+                    }
+
+                # Extract insights/specs using Claude
+                # This is a simplified version - in production would be more sophisticated
+                extraction_prompt = f"""Extract structured information from the following text.
+
+Identify and extract:
+1. Goals: What are the project/task goals?
+2. Requirements: What are the functional requirements?
+3. Tech Stack: What technologies/tools are mentioned?
+4. Constraints: What are the constraints or limitations?
+
+Text to analyze:
+{text}
+
+Respond in JSON format:
+{{
+  "goals": ["goal1", "goal2"],
+  "requirements": ["req1", "req2"],
+  "tech_stack": ["tech1", "tech2"],
+  "constraints": ["constraint1", "constraint2"]
+}}
+
+If a category has no items, use an empty array."""
+
+                response = llm_client_to_use.generate_response(extraction_prompt)
+
+                # Parse JSON response
+                try:
+                    import json
+                    # Find JSON in response
+                    start_idx = response.find('{')
+                    end_idx = response.rfind('}') + 1
+                    if start_idx >= 0 and end_idx > start_idx:
+                        json_str = response[start_idx:end_idx]
+                        insights = json.loads(json_str)
+                        logger.info(f"Extracted insights for user {user_id}")
+                        return {
+                            "status": "success",
+                            "data": insights,
+                            "message": "Insights extracted"
+                        }
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.warning(f"Failed to parse insights JSON: {e}")
+
+                # If parsing failed, return empty insights
+                return {
+                    "status": "success",
+                    "data": {
+                        "goals": [],
+                        "requirements": [],
+                        "tech_stack": [],
+                        "constraints": []
+                    },
+                    "message": "No structured insights extracted"
+                }
+
+            except Exception as e:
+                logger.error(f"Failed to extract insights: {e}", exc_info=True)
+                return {
+                    "status": "success",
+                    "data": {},
+                    "message": "Insight extraction failed (non-critical)"
+                }
 
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
