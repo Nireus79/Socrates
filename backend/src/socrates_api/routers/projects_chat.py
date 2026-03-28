@@ -591,12 +591,13 @@ async def get_question(
         request_data = {
             "action": "generate_question",
             "project": project_dict,
+            "topic": project.description,  # Pass topic at top level (agent may expect it here)
             "current_user": current_user,
             "user_id": current_user,
             "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
         }
-        logger.info(f"Calling orchestrator.process_request with project keys: {list(project_dict.keys())}")
-        logger.debug(f"Full request data: {request_data}")
+        logger.info(f"Calling orchestrator.process_request with project keys: {list(project_dict.keys())}, topic={project.description[:50] if project.description else 'EMPTY'}")
+        logger.debug(f"Full request data keys: {list(request_data.keys())}")
 
         result = orchestrator.process_request("socratic_counselor", request_data)
         logger.info(f"Orchestrator result for {project_id}: status={result.get('status')}, has_data={bool(result.get('data'))}")
