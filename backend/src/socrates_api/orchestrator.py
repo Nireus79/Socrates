@@ -755,16 +755,40 @@ class APIOrchestrator:
             }
 
         elif action == "get_provider_config":
-            # Return current provider configuration
-            return {
-                "status": "success",
-                "data": {
-                    "default_provider": "anthropic",
-                    "api_key_configured": bool(self.llm_client),
-                    "current_model": "claude-3-sonnet" if self.llm_client else None,
-                },
-                "message": "Config retrieved",
-            }
+            # Return user's current provider configuration
+            user_id = request_data.get("user_id", "")
+
+            if not user_id:
+                return {
+                    "status": "error",
+                    "message": "user_id is required"
+                }
+
+            try:
+                from socrates_api.database import get_database
+                db = get_database()
+
+                # Get user's actual provider preferences
+                default_provider = db.get_user_default_provider(user_id)
+                current_model = db.get_provider_model(user_id, default_provider)
+                user_api_key = db.get_api_key(user_id, default_provider)
+
+                return {
+                    "status": "success",
+                    "data": {
+                        "default_provider": default_provider,
+                        "current_model": current_model,
+                        "api_key_configured": bool(user_api_key),
+                        "using_global_key": not bool(user_api_key),
+                    },
+                    "message": "Config retrieved",
+                }
+            except Exception as e:
+                logger.error(f"Failed to get provider config: {e}", exc_info=True)
+                return {
+                    "status": "error",
+                    "message": str(e)
+                }
 
         elif action == "set_default_provider":
             # Set user's default LLM provider
