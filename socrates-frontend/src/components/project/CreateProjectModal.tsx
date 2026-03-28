@@ -86,7 +86,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         if (Object.keys(newErrors).length > 0) {
           setErrors(newErrors);
         } else {
-          setApiError(errorMessage);
+          // Format error message for better readability
+          let displayMessage = errorMessage;
+          if (errorMessage.includes('limit') && errorMessage.includes('free tier')) {
+            displayMessage = `${errorMessage}\n\nUpgrade your account to create more projects or delete an existing project.`;
+          }
+          setApiError(displayMessage);
         }
 
         showError('Failed to Create Project', errorMessage);
