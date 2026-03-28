@@ -10,85 +10,9 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# Import base class for custom subclass
+# Import SocraticCounselor from the fixed library
 try:
-    from socratic_agents import SocraticCounselor as BaseSocraticCounselor
-
-    class SocraticCounselor(BaseSocraticCounselor):
-        """
-        Enhanced SocraticCounselor that uses LLM for dynamic question generation.
-
-        The base socratic_agents.SocraticCounselor only uses hardcoded templates.
-        This subclass overrides it to use Claude for context-aware Socratic questions.
-        """
-
-        def _generate_guiding_questions(self, topic: str, level: str) -> list:
-            """
-            Generate Socratic questions using Claude if available,
-            fall back to templates if LLM is unavailable.
-            """
-            # If LLM client is available, use it for dynamic generation
-            if self.llm_client:
-                return self._generate_dynamic_questions(topic, level)
-
-            # Otherwise fall back to hardcoded templates
-            return super()._generate_guiding_questions(topic, level)
-
-    def _generate_dynamic_questions(self, topic: str, level: str) -> list:
-        """Generate dynamic Socratic questions using Claude."""
-        try:
-            level_guidance = {
-                "beginner": "beginner level - basic foundational concepts",
-                "intermediate": "intermediate level - deeper understanding and applications",
-                "advanced": "advanced level - expert-level analysis and implications",
-            }
-
-            level_desc = level_guidance.get(level, level_guidance["beginner"])
-
-            prompt = f"""Generate 3 thoughtful Socratic questions for someone learning about: "{topic}"
-
-Level: {level_desc}
-
-Requirements:
-- Each question should guide deeper thinking about the topic
-- Questions should be open-ended, not yes/no questions
-- Questions should build on each other progressively
-- Avoid questions they've likely already been asked
-- Make questions specific to this topic, not generic
-
-Format your response as a simple JSON array of strings:
-["Question 1?", "Question 2?", "Question 3?"]"""
-
-            response = self.llm_client.generate_response(prompt)
-
-            # Try to parse as JSON array
-            try:
-                import json
-                # Find JSON array in response
-                start_idx = response.find('[')
-                end_idx = response.rfind(']') + 1
-                if start_idx >= 0 and end_idx > start_idx:
-                    json_str = response[start_idx:end_idx]
-                    questions = json.loads(json_str)
-                    if isinstance(questions, list) and len(questions) > 0:
-                        logger.info(f"Generated {len(questions)} dynamic questions using Claude")
-                        return questions
-            except (json.JSONDecodeError, ValueError) as e:
-                logger.warning(f"Failed to parse Claude response as JSON: {e}")
-
-            # If parsing failed, split by newlines and clean up
-            lines = [q.strip().strip('- "').rstrip('"') for q in response.split('\n') if q.strip()]
-            questions = [q for q in lines if q and len(q) > 10][:3]
-            if questions:
-                logger.info(f"Generated {len(questions)} dynamic questions by parsing Claude response")
-                return questions
-
-        except Exception as e:
-            logger.warning(f"Failed to generate dynamic questions with Claude: {e}")
-
-        # Fall back to template questions
-        logger.info("Falling back to template questions")
-        return super()._generate_guiding_questions(topic, level)
+    from socratic_agents import SocraticCounselor
 
 except ImportError:
     logger.warning("socratic_agents library not available, SocraticCounselor stub will be used")
