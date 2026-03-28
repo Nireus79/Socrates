@@ -53,6 +53,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     if (!formData.type) {
       newErrors.type = 'Project type is required';
     }
+    if (!formData.description.trim()) {
+      newErrors.description = 'Project description/topic is required to generate questions';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -67,8 +70,25 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         showSuccess('Success', 'Project created successfully');
         onClose();
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to create project';
-        setApiError(errorMessage);
+        let errorMessage = error instanceof Error ? error.message : 'Failed to create project';
+        const newErrors: Record<string, string> = {};
+
+        // Parse error message to identify which field failed
+        if (errorMessage.includes('name') || errorMessage.includes('Project name')) {
+          newErrors.name = 'Project name is required';
+        } else if (errorMessage.includes('description') || errorMessage.includes('topic')) {
+          newErrors.description = 'Project description/topic is required to generate questions';
+        } else if (errorMessage.includes('type')) {
+          newErrors.type = 'Project type is required';
+        }
+
+        // If we identified field errors, show them; otherwise show generic error
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors);
+        } else {
+          setApiError(errorMessage);
+        }
+
         showError('Failed to Create Project', errorMessage);
         console.error('Error creating project:', error);
       }
@@ -128,7 +148,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
         <FormField
           label="Description"
-          help="Brief description of your project"
+          required
+          help="Brief description of your project topic (needed to generate questions)"
+          error={errors.description}
         >
           <TextArea
             placeholder="Describe your project goals and context..."
