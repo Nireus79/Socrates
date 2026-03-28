@@ -131,6 +131,20 @@ class LocalDatabase:
                 )
             """)
 
+            # User API keys table - stores user's API keys for different providers
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS user_api_keys (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    api_key TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(username),
+                    UNIQUE(user_id, provider)
+                )
+            """)
+
             # Create indexes separately (SQLite doesn't support inline indexes)
             self.conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_user_tokens ON refresh_tokens(user_id)"
@@ -152,6 +166,9 @@ class LocalDatabase:
             )
             self.conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tm_username ON team_members(username)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_api_keys_user ON user_api_keys(user_id)"
             )
 
             self.conn.commit()
@@ -940,11 +957,100 @@ class LocalDatabase:
             logger.debug(f"Failed to get user collaborator projects: {e}")
             return []
 
-    def get_api_key(self, username: str, provider: str) -> Optional[str]:
-        """Get API key for a user and provider (stub - not persisted)"""
-        # In production, this would be stored in database
-        # For now, return None (API key not found)
-        return None
+    def save_api_key(self, user_id: str, provider: str, api_key: str) -> bool:
+        """
+        Save or update a user's API key for a provider.
+
+        Args:
+            user_id: User ID (username)
+            provider: LLM provider name (e.g., 'anthropic', 'openai')
+            api_key: The API key to store
+
+        Returns:
+            True if saved successfully
+
+        Raises:
+            DatabaseError: If save operation fails
+        """
+        try:
+            from socrates_api.utils import IDGenerator
+            now = datetime.now(timezone.utc).isoformat()
+            key_id = IDGenerator.generate_id("apikey")
+
+            self.conn.execute(
+                """
+                INSERT OR REPLACE INTO user_api_keys (id, user_id, provider, api_key, created_at, updated_at)
+                VALUES (
+                    COALESCE((SELECT id FROM user_api_keys WHERE user_id = ? AND provider = ?), ?),
+                    ?,
+                    ?,
+                    ?,
+                    COALESCE((SELECT created_at FROM user_api_keys WHERE user_id = ? AND provider = ?), ?),
+                    ?
+                )
+                """,
+                (user_id, provider, key_id, user_id, provider, api_key, user_id, provider, now, now)
+            )
+            self.conn.commit()
+            logger.info(f"API key saved for user {user_id} provider {provider}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save API key: {e}")
+            raise DatabaseError(
+                f"Failed to save API key for {provider}: {e}", operation="save_api_key"
+            ) from e
+
+    def get_api_key(self, user_id: str, provider: str) -> Optional[str]:
+        """
+        Get a user's API key for a provider.
+
+        Args:
+            user_id: User ID (username)
+            provider: LLM provider name (e.g., 'anthropic', 'openai')
+
+        Returns:
+            The API key if found, None otherwise
+        """
+        try:
+            cursor = self.conn.execute(
+                "SELECT api_key FROM user_api_keys WHERE user_id = ? AND provider = ?",
+                (user_id, provider)
+            )
+            result = cursor.fetchone()
+            if result:
+                return result[0]
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get API key: {e}")
+            return None
+
+    def delete_api_key(self, user_id: str, provider: str) -> bool:
+        """
+        Delete a user's API key for a provider.
+
+        Args:
+            user_id: User ID (username)
+            provider: LLM provider name (e.g., 'anthropic', 'openai')
+
+        Returns:
+            True if deleted successfully or key didn't exist
+
+        Raises:
+            DatabaseError: If delete operation fails
+        """
+        try:
+            self.conn.execute(
+                "DELETE FROM user_api_keys WHERE user_id = ? AND provider = ?",
+                (user_id, provider)
+            )
+            self.conn.commit()
+            logger.info(f"API key deleted for user {user_id} provider {provider}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete API key: {e}")
+            raise DatabaseError(
+                f"Failed to delete API key for {provider}: {e}", operation="delete_api_key"
+            ) from e
 
     def delete_project(self, project_id: str) -> bool:
         """

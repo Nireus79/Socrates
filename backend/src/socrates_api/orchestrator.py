@@ -868,6 +868,100 @@ class APIOrchestrator:
                 "message": "Usage stats retrieved",
             }
 
+        elif action == "add_api_key":
+            # Save user's API key for a provider
+            user_id = request_data.get("user_id", "")
+            provider = request_data.get("provider", "anthropic")
+            api_key = request_data.get("api_key", "")
+
+            if not user_id or not api_key:
+                return {
+                    "status": "error",
+                    "message": "user_id and api_key are required"
+                }
+
+            try:
+                from socrates_api.database import get_database
+                db = get_database()
+                success = db.save_api_key(user_id, provider, api_key)
+
+                if success:
+                    logger.info(f"API key saved for user {user_id} provider {provider}")
+                    return {
+                        "status": "success",
+                        "data": {"provider": provider},
+                        "message": f"API key saved for {provider}"
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "message": "Failed to save API key"
+                    }
+            except Exception as e:
+                logger.error(f"Failed to handle add_api_key: {e}", exc_info=True)
+                return {
+                    "status": "error",
+                    "message": str(e)
+                }
+
+        elif action == "remove_api_key":
+            # Delete user's API key for a provider
+            user_id = request_data.get("user_id", "")
+            provider = request_data.get("provider", "anthropic")
+
+            if not user_id:
+                return {
+                    "status": "error",
+                    "message": "user_id is required"
+                }
+
+            try:
+                from socrates_api.database import get_database
+                db = get_database()
+                success = db.delete_api_key(user_id, provider)
+
+                if success:
+                    logger.info(f"API key removed for user {user_id} provider {provider}")
+                    return {
+                        "status": "success",
+                        "message": f"API key removed for {provider}"
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "message": "API key not found"
+                    }
+            except Exception as e:
+                logger.error(f"Failed to handle remove_api_key: {e}", exc_info=True)
+                return {
+                    "status": "error",
+                    "message": str(e)
+                }
+
+        elif action == "set_auth_method":
+            # Set authentication method for a provider (e.g., API key vs subscription)
+            user_id = request_data.get("user_id", "")
+            provider = request_data.get("provider", "anthropic")
+            auth_method = request_data.get("auth_method", "api_key")
+
+            if not user_id:
+                return {
+                    "status": "error",
+                    "message": "user_id is required"
+                }
+
+            # For now, just acknowledge the setting
+            # In a full implementation, this would be stored and used
+            logger.info(f"Auth method set for user {user_id} provider {provider}: {auth_method}")
+            return {
+                "status": "success",
+                "data": {
+                    "provider": provider,
+                    "auth_method": auth_method
+                },
+                "message": f"Auth method updated for {provider}"
+            }
+
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
 
@@ -888,13 +982,47 @@ class APIOrchestrator:
             counselor = self.agents.get("socratic_counselor")
 
             try:
-                if counselor and self.llm_client:
-                    # Use real agent to generate question
-                    # SocraticCounselor expects topic at top level
-                    logger.info(f"Calling counselor.process() with topic: {topic[:50] if topic else 'EMPTY'}")
-                    result = counselor.process({"topic": topic})
-                    logger.info(f"counselor.process() returned: {result}")
-                    return {"status": "success", "data": result, "message": "Question generated"}
+                # Try to get user's API key
+                from socrates_api.database import get_database
+                db = get_database()
+                user_api_key = db.get_api_key(user_id, "anthropic")
+
+                # Create LLM client with user's key if available
+                llm_client_to_use = None
+                if user_api_key:
+                    try:
+                        from socrates_nexus import LLMClient
+                        llm_client_to_use = LLMClient(
+                            provider="anthropic",
+                            model="claude-3-sonnet",
+                            api_key=user_api_key
+                        )
+                        logger.info(f"Using user API key for user {user_id}")
+                    except Exception as e:
+                        logger.warning(f"Failed to create LLMClient with user key: {e}")
+                        llm_client_to_use = self.llm_client
+                else:
+                    llm_client_to_use = self.llm_client
+                    if llm_client_to_use:
+                        logger.info(f"No user API key for {user_id}, using global API key")
+                    else:
+                        logger.warning(f"No user API key and no global API key for user {user_id}")
+
+                if counselor and llm_client_to_use:
+                    # Temporarily assign the correct LLM client
+                    original_llm_client = counselor.llm_client
+                    counselor.llm_client = llm_client_to_use
+
+                    try:
+                        # Use real agent to generate question
+                        # SocraticCounselor expects topic at top level
+                        logger.info(f"Calling counselor.process() with topic: {topic[:50] if topic else 'EMPTY'}")
+                        result = counselor.process({"topic": topic})
+                        logger.info(f"counselor.process() returned: {result}")
+                        return {"status": "success", "data": result, "message": "Question generated"}
+                    finally:
+                        # Restore original client
+                        counselor.llm_client = original_llm_client
             except Exception as e:
                 logger.warning(f"Failed to use socratic_counselor agent: {e}", exc_info=True)
 
