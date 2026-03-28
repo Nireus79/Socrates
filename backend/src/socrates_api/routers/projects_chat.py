@@ -596,7 +596,15 @@ async def get_question(
                 detail=question_data.get("message", "Failed to generate question"),
             )
 
+        # Extract question from either 'question' (single) or 'questions' (array) field
         question = question_data.get("question", "").strip() if question_data.get("question") else ""
+
+        # If no single question, try to get first question from questions array
+        if not question:
+            questions = question_data.get("questions", [])
+            if questions and len(questions) > 0:
+                question = questions[0].strip()
+                logger.info(f"Extracted first question from questions array: {question[:50]}...")
 
         # CRITICAL: Validate question is non-empty
         if not question:
