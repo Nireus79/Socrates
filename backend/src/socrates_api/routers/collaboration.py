@@ -493,15 +493,17 @@ async def list_collaborators(
                     logger.warning(f"Error processing member: {member_error}")
                     continue
 
+        # Create response data and convert to dict for APIResponse (which expects Dict[str, Any])
+        collab_data = CollaboratorListData(
+            project_id=project_id,
+            total=len(collaborators),
+            collaborators=collaborators,
+        )
         return APIResponse(
             success=True,
             status="success",
             message="Collaborators retrieved successfully",
-            data=CollaboratorListData(
-                project_id=project_id,
-                total=len(collaborators),
-                collaborators=collaborators,
-            ),
+            data=collab_data.model_dump(),
         )
 
     except HTTPException:
