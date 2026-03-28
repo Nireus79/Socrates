@@ -635,7 +635,7 @@ class LocalDatabase:
 
     def get_user_projects(self, username: str) -> List[ProjectContext]:
         """
-        Get all projects for a user (both owned and collaborated).
+        Get all non-archived projects for a user (both owned and collaborated).
 
         Args:
             username: Username to get projects for
@@ -648,10 +648,10 @@ class LocalDatabase:
         """
         try:
 
-            # For now, return all projects owned by the user
-            # Collaboration support can be added later with a separate table
+            # Return only active (non-archived) projects owned by the user
+            # Archived projects should not count toward subscription limits
             cursor = self.conn.execute(
-                "SELECT * FROM projects WHERE owner = ? ORDER BY updated_at DESC", (username,)
+                "SELECT * FROM projects WHERE owner = ? AND is_archived = 0 ORDER BY updated_at DESC", (username,)
             )
             projects = []
             for row in cursor.fetchall():
