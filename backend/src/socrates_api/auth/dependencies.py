@@ -62,6 +62,11 @@ async def get_current_user(
     # 401 when token is invalid/expired (including fingerprint mismatch)
     payload = verify_access_token(token, ip_address=client_ip, user_agent=user_agent)
     if payload is None:
+        # Log details about why token failed
+        import logging as auth_logger
+        auth_logger.getLogger(__name__).warning(
+            f"Token verification failed. IP: {client_ip}, User-Agent: {user_agent[:50] if user_agent else 'None'}"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
