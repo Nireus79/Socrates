@@ -537,7 +537,16 @@ async def get_question(
 
         # Call socratic_counselor to generate question
         # Question caching happens internally to avoid redundant Claude calls
-        orchestrator = get_orchestrator()
+        try:
+            orchestrator = get_orchestrator()
+            logger.debug("Orchestrator initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize orchestrator: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to initialize orchestrator: {str(e)}"
+            )
+
         result = orchestrator.process_request(
             "socratic_counselor",
             {
@@ -548,8 +557,10 @@ async def get_question(
                 "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
             },
         )
+        logger.debug(f"Orchestrator result for {project_id}: {result}")
 
         if result.get("status") != "success":
+            logger.error(f"Orchestrator returned non-success status: {result}")
             raise HTTPException(
                 status_code=500, detail=result.get("message", "Failed to generate question")
             )
@@ -565,10 +576,10 @@ async def get_question(
 
         # CRITICAL: Validate question is non-empty
         if not question:
-            logger.warning(f"Orchestrator returned empty question for project {project_id}")
+            logger.error(f"Orchestrator returned empty question. Result: {result}, Data: {question_data}, Question: '{question}'")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="No questions available. Phase may be complete. Please check your project progress.",
+                detail=f"Failed to generate question. Orchestrator result: {result.get('message', 'Unknown error')}",
             )
 
         return APIResponse(
