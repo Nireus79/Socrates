@@ -10,26 +10,29 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+# Import base class for custom subclass
+try:
+    from socratic_agents import SocraticCounselor as BaseSocraticCounselor
 
-class SocraticCounselor(BaseSocraticCounselor):
-    """
-    Enhanced SocraticCounselor that uses LLM for dynamic question generation.
-
-    The base socratic_agents.SocraticCounselor only uses hardcoded templates.
-    This subclass overrides it to use Claude for context-aware Socratic questions.
-    """
-
-    def _generate_guiding_questions(self, topic: str, level: str) -> list:
+    class SocraticCounselor(BaseSocraticCounselor):
         """
-        Generate Socratic questions using Claude if available,
-        fall back to templates if LLM is unavailable.
-        """
-        # If LLM client is available, use it for dynamic generation
-        if self.llm_client:
-            return self._generate_dynamic_questions(topic, level)
+        Enhanced SocraticCounselor that uses LLM for dynamic question generation.
 
-        # Otherwise fall back to hardcoded templates
-        return super()._generate_guiding_questions(topic, level)
+        The base socratic_agents.SocraticCounselor only uses hardcoded templates.
+        This subclass overrides it to use Claude for context-aware Socratic questions.
+        """
+
+        def _generate_guiding_questions(self, topic: str, level: str) -> list:
+            """
+            Generate Socratic questions using Claude if available,
+            fall back to templates if LLM is unavailable.
+            """
+            # If LLM client is available, use it for dynamic generation
+            if self.llm_client:
+                return self._generate_dynamic_questions(topic, level)
+
+            # Otherwise fall back to hardcoded templates
+            return super()._generate_guiding_questions(topic, level)
 
     def _generate_dynamic_questions(self, topic: str, level: str) -> list:
         """Generate dynamic Socratic questions using Claude."""
@@ -86,6 +89,13 @@ Format your response as a simple JSON array of strings:
         # Fall back to template questions
         logger.info("Falling back to template questions")
         return super()._generate_guiding_questions(topic, level)
+
+except ImportError:
+    logger.warning("socratic_agents library not available, SocraticCounselor stub will be used")
+    class SocraticCounselor:
+        """Stub when library unavailable"""
+        def __init__(self, **kwargs):
+            self.llm_client = kwargs.get('llm_client')
 
 
 class APIOrchestrator:
