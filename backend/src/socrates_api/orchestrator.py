@@ -803,15 +803,11 @@ class APIOrchestrator:
             project = request_data.get("project", {})
             user_id = request_data.get("user_id", "")
             force_refresh = request_data.get("force_refresh", False)
-            topic = request_data.get("topic")  # Topic may be passed at top level
 
             # Log what we're receiving
-            project_desc = project.get("description") if isinstance(project, dict) else getattr(project, "description", "UNKNOWN")
             project_topic = project.get("topic") if isinstance(project, dict) else getattr(project, "topic", "UNKNOWN")
-            logger.info(f"_handle_socratic_counselor generate_question: project has description={bool(project_desc)}, topic={bool(project_topic)}, top_level_topic={bool(topic)}")
-            logger.debug(f"Project description: {project_desc[:50] if project_desc else 'EMPTY'}, topic: {project_topic[:50] if project_topic else 'EMPTY'}, top_level_topic: {topic[:50] if topic else 'EMPTY'}")
-            if isinstance(project, dict):
-                logger.debug(f"Project dict keys: {list(project.keys())}")
+            logger.info(f"_handle_socratic_counselor generate_question: project has topic={bool(project_topic)}")
+            logger.debug(f"Project topic: {project_topic[:50] if project_topic else 'EMPTY'}")
 
             # Try to use the actual agent if available
             counselor = self.agents.get("socratic_counselor")
@@ -819,17 +815,10 @@ class APIOrchestrator:
             try:
                 if counselor and self.llm_client:
                     # Use real agent to generate question
-                    # Pass topic at top level as well as in project, in case agent expects it at top level
-                    agent_request = {
-                        "project": project,
-                        "user_id": user_id,
-                        "force_refresh": force_refresh,
-                    }
-                    # Add topic at top level if available
-                    if topic:
-                        agent_request["topic"] = topic
-                    logger.info(f"Calling counselor.process() with keys: {list(agent_request.keys())}")
-                    result = counselor.process(agent_request)
+                    logger.info(f"Calling counselor.process() with project object")
+                    result = counselor.process(
+                        {"project": project, "user_id": user_id, "force_refresh": force_refresh}
+                    )
                     logger.info(f"counselor.process() returned: {result}")
                     return {"status": "success", "data": result, "message": "Question generated"}
             except Exception as e:

@@ -78,32 +78,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
 
 
-def _project_to_dict(project: ProjectContext) -> dict:
+def _ensure_project_topic(project: ProjectContext) -> ProjectContext:
     """
-    Convert ProjectContext object to dict for orchestrator compatibility.
+    Ensure ProjectContext has the 'topic' attribute that the orchestrator agent expects.
 
-    The orchestrator may expect a dict with both 'description' and 'topic' fields.
-    This function ensures all necessary fields are present.
+    The socratic_agents library's SocraticCounselor expects the project object
+    to have a 'topic' attribute. This function adds it if missing.
 
     Args:
         project: ProjectContext object
 
     Returns:
-        Dictionary with all project fields
+        ProjectContext object with 'topic' attribute set
     """
-    return {
-        "project_id": project.project_id,
-        "name": project.name,
-        "description": project.description,
-        "topic": project.description,  # Some agents use "topic" instead of "description"
-        "phase": project.phase,
-        "owner": project.owner,
-        "goals": project.goals,
-        "requirements": project.requirements or [],
-        "tech_stack": project.tech_stack or [],
-        "constraints": project.constraints or [],
-        "conversation_history": project.conversation_history or [],
-    }
+    # Add topic attribute if not present (use description as topic)
+    if not hasattr(project, 'topic') or not project.topic:
+        project.topic = project.description
+    return project
 
 
 # ============================================================================
@@ -584,24 +575,21 @@ async def get_question(
                 detail=f"Failed to initialize orchestrator: {str(e)}"
             )
 
-        # Convert ProjectContext to dict for orchestrator (ensure compatibility)
-        project_dict = _project_to_dict(project)
-        logger.info(f"Project dict prepared: id={project_dict.get('project_id')}, description={project_dict.get('description')[:50] if project_dict.get('description') else 'EMPTY'}, topic={project_dict.get('topic')[:50] if project_dict.get('topic') else 'EMPTY'}")
+        # Ensure project has 'topic' attribute (required by orchestrator agent)
+        project = _ensure_project_topic(project)
+        logger.info(f"Project prepared with topic: {project.topic[:50] if project.topic else 'EMPTY'}")
 
-        request_data = {
-            "action": "generate_question",
-            "project": project_dict,
-            "topic": project.description,  # Pass topic at top level (agent may expect it here)
-            "current_user": current_user,
-            "user_id": current_user,
-            "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
-        }
-        logger.info(f"Calling orchestrator.process_request with project keys: {list(project_dict.keys())}, topic={project.description[:50] if project.description else 'EMPTY'}")
-        logger.debug(f"Full request data keys: {list(request_data.keys())}")
-
-        result = orchestrator.process_request("socratic_counselor", request_data)
-        logger.info(f"Orchestrator result for {project_id}: status={result.get('status')}, has_data={bool(result.get('data'))}")
-        logger.debug(f"Full orchestrator result: {result}")
+        result = orchestrator.process_request(
+            "socratic_counselor",
+            {
+                "action": "generate_question",
+                "project": project,
+                "current_user": current_user,
+                "user_id": current_user,
+                "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
+            },
+        )
+        logger.debug(f"Orchestrator result for {project_id}: {result}")
 
         if result.get("status") != "success":
             logger.error(f"Orchestrator returned non-success status: {result}")
@@ -813,8 +801,8 @@ Provide a helpful, direct answer."""
             # Socratic mode: Use the existing Socratic questioning approach
             logger.info("Processing message in SOCRATIC mode")
 
-            # Convert ProjectContext to dict for orchestrator (ensure compatibility)
-            project_dict = _project_to_dict(project)
+            # Ensure project has 'topic' attribute for orchestrator
+            project = _ensure_project_topic(project)
 
             # Call socratic_counselor to process response
             # Pre-extracted insights caching and async processing happen internally
@@ -822,7 +810,7 @@ Provide a helpful, direct answer."""
                 "socratic_counselor",
                 {
                     "action": "process_response",
-                    "project": project_dict,
+                    "project": project,
                     "response": request.message,
                     "current_user": current_user,
                     "is_api_mode": True,  # Indicate API mode to handle conflicts differently
@@ -1058,14 +1046,14 @@ async def get_hint(
         # Call orchestrator to generate context-aware hint
         orchestrator = get_orchestrator()
 
-        # Convert ProjectContext to dict for orchestrator
-        project_dict = _project_to_dict(project)
+        # Ensure project has 'topic' attribute for orchestrator
+        project = _ensure_project_topic(project)
 
         result = orchestrator.process_request(
             "socratic_counselor",
             {
                 "action": "generate_hint",
-                "project": project_dict,
+                "project": project,
                 "current_user": current_user,
             },
         )
@@ -1179,14 +1167,14 @@ async def get_summary(
         # Call context analyzer to generate summary
         orchestrator = get_orchestrator()
 
-        # Convert ProjectContext to dict for orchestrator
-        project_dict = _project_to_dict(project)
+        # Ensure project has 'topic' attribute for orchestrator
+        project = _ensure_project_topic(project)
 
         result = orchestrator.process_request(
             "context_analyzer",
             {
                 "action": "generate_summary",
-                "project": project_dict,
+                "project": project,
                 "user_id": current_user,
             },
         )
@@ -1587,14 +1575,14 @@ async def reopen_question(
 
         orchestrator = get_orchestrator()
 
-        # Convert ProjectContext to dict for orchestrator
-        project_dict = _project_to_dict(project)
+        # Ensure project has 'topic' attribute for orchestrator
+        project = _ensure_project_topic(project)
 
         result = orchestrator.process_request(
             "socratic_counselor",
             {
                 "action": "reopen_question",
-                "project": project_dict,
+                "project": project,
                 "question_id": question_id,
             },
         )
@@ -1761,14 +1749,14 @@ async def get_answer_suggestions(
 
         orchestrator = get_orchestrator()
 
-        # Convert ProjectContext to dict for orchestrator
-        project_dict = _project_to_dict(project)
+        # Ensure project has 'topic' attribute for orchestrator
+        project = _ensure_project_topic(project)
 
         result = orchestrator.process_request(
             "socratic_counselor",
             {
                 "action": "generate_answer_suggestions",
-                "project": project_dict,
+                "project": project,
                 "current_question": current_question,
                 "current_user": current_user,
             },
@@ -1957,14 +1945,14 @@ async def save_extracted_specs(
 
             # Only update maturity if specs were actually saved
             if any(specs_saved.values()):
-                # Convert ProjectContext to dict for orchestrator
-                project_dict = _project_to_dict(project)
+                # Ensure project has 'topic' attribute for orchestrator
+                project = _ensure_project_topic(project)
 
                 maturity_result = orchestrator.process_request(
                     "quality_controller",
                     {
                         "action": "update_after_response",
-                        "project": project_dict,
+                        "project": project,
                         "insights": insights,
                         "current_user": current_user,
                     },
