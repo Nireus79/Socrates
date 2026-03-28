@@ -854,6 +854,25 @@ class APIOrchestrator:
                 "message": "Question generated",
             }
 
+        elif action == "process_response":
+            # Process user's response to a Socratic question
+            response = request_data.get("response", "")
+            project = request_data.get("project", {})
+            current_user = request_data.get("current_user", "")
+
+            logger.info(f"Processing response in Socratic mode: {response[:50]}...")
+
+            # For now, return a success response
+            # In a full implementation, this would analyze the response and provide feedback
+            return {
+                "status": "success",
+                "data": {
+                    "feedback": "Thank you for your response. Let me guide you further...",
+                    "next_action": "generate_question",
+                },
+                "message": "Response processed",
+            }
+
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
 
