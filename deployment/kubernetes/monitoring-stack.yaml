@@ -199,8 +199,11 @@ metadata:
   namespace: monitoring
 type: Opaque
 data:
-  # Base64 encoded password - change this!
-  admin-password: YWRtaW4xMjM=  # admin123
+  # WARNING: DO NOT commit credentials to version control!
+  # Use kubectl create secret generic grafana-credentials --from-literal=admin-password=<your-secure-password> -n monitoring
+  # Or provide via environment variables/secrets management (e.g., Sealed Secrets, Vault)
+  # Placeholder - MUST be set before deployment
+  admin-password: "" # CONFIGURE BEFORE DEPLOYMENT
 
 ---
 # Node Exporter DaemonSet

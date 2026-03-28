@@ -106,8 +106,8 @@ def main():
     # Test 5: Login endpoint
     print("5. Testing login endpoint...")
     result = test_endpoint("POST", "/auth/login", {
-        "username": "testuser",
-        "password": "testpass"
+        "username": "nonexistent_user_12345",
+        "password": "SomePassword123!"
     })
     passed_5 = not ("error" in result)  # We expect this to fail (user doesn't exist), but not crash
     if "error" in result:

@@ -15,7 +15,7 @@
 
 ```
 Endpoint: POST /auth/login
-Request: {"username":"testuser","password":"testpass"}
+Request: {"username":"<your_username>","password":"<your_password>"}
 Response: 200 OK
 ```
 
@@ -25,10 +25,8 @@ Response includes:
 - ✅ Refresh token
 - ✅ Token expiration info
 
-**Test Credentials Created:**
-- Username: `testuser` / Password: `testpass`
-- Username: `admin` / Password: `adminpass`
-- Username: `collaborator` / Password: `collabpass`
+**Test Credentials:**
+Run `python init_test_data.py` to generate test users with secure randomly-generated passwords.
 
 ---
 
@@ -51,7 +49,7 @@ Returns:
       {
         "project_id": "proj_64b61d847657",
         "name": "Test Project 1",
-        "owner": "testuser",
+        "owner": "<project_owner>",
         "description": "First test project with collaborators",
         "phase": "discovery",
         "created_at": "2026-03-28T06:40:21.748933Z",
@@ -110,7 +108,7 @@ return APIResponse(data=collab_data.model_dump())  # ← Convert to dict
     "total": 1,
     "collaborators": [
       {
-        "username": "testuser",
+        "username": "<username>",
         "role": "owner",
         "status": "active",
         "joined_at": "2026-03-28T06:40:21.748933+00:00"
@@ -209,7 +207,7 @@ The orchestrator is initialized successfully but returns an empty question becau
 # Login and get token
 curl -X POST http://127.0.0.1:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"testpass"}'
+  -d '{"username":"<username>","password":"<password>"}'
 
 # Test projects (with token from above)
 curl -H "Authorization: Bearer YOUR_TOKEN" \

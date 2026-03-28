@@ -31,6 +31,9 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
+# Fingerprinting configuration
+ENABLE_FINGERPRINTING = os.getenv("JWT_ENABLE_FINGERPRINTING", "false").lower() == "true"
+
 
 class JWTHandler:
     """Manages JWT token creation, validation, and refresh."""
@@ -87,8 +90,8 @@ class JWTHandler:
             "type": "access",
         }
 
-        # Add token fingerprint if IP and User-Agent provided
-        if ip_address and user_agent:
+        # Add token fingerprint if IP and User-Agent provided AND fingerprinting is enabled
+        if ENABLE_FINGERPRINTING and ip_address and user_agent:
             fingerprint = JWTHandler.create_token_fingerprint(ip_address, user_agent)
             claims["fingerprint"] = fingerprint
 

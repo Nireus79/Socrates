@@ -535,6 +535,13 @@ async def get_question(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        # Project must have a description (enforced at creation time)
+        if not project.description:
+            raise HTTPException(
+                status_code=400,
+                detail="Project must have a description/topic. Please edit your project and add one.",
+            )
+
         # Call socratic_counselor to generate question
         # Question caching happens internally to avoid redundant Claude calls
         try:
@@ -572,14 +579,23 @@ async def get_question(
 
         # Extract question from orchestrator result (nested in "data" key)
         question_data = result.get("data", {})
+
+        # Check if data contains an error status (nested error in successful response)
+        if question_data.get("status") == "error":
+            logger.warning(f"Orchestrator returned error in data: {question_data.get('message', 'Unknown error')}")
+            raise HTTPException(
+                status_code=400,
+                detail=question_data.get("message", "Failed to generate question"),
+            )
+
         question = question_data.get("question", "").strip() if question_data.get("question") else ""
 
         # CRITICAL: Validate question is non-empty
         if not question:
             logger.error(f"Orchestrator returned empty question. Result: {result}, Data: {question_data}, Question: '{question}'")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to generate question. Orchestrator result: {result.get('message', 'Unknown error')}",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=question_data.get("message", "Failed to generate question"),
             )
 
         return APIResponse(

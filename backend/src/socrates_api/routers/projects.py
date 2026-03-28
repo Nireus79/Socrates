@@ -186,6 +186,19 @@ async def create_project(
     try:
         logger.info(f"Creating project: {request.name} for user {current_user}")
 
+        # Validate required fields
+        if not request.name or not request.name.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Project name is required",
+            )
+
+        if not request.description or not request.description.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Project description/topic is required to generate questions",
+            )
+
         # CRITICAL: Check subscription limit BEFORE attempting to create project
         # This must happen regardless of whether orchestrator is used
         logger.info("Checking subscription limits...")

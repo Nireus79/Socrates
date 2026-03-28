@@ -210,23 +210,35 @@ async def register(
             email = f"{register_request.username}+{str(uuid.uuid4())[:8]}@socrates.local"
 
         # Check if user already exists
-        existing_user = db.load_user(register_request.username)
-        if existing_user is not None:
+        try:
+            db.load_user(register_request.username)
+            # If load_user succeeds, user exists
             logger.warning(f"Registration attempt for existing username: {register_request.username}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already exists",
             )
+        except HTTPException:
+            raise
+        except Exception:
+            # User doesn't exist (expected for new registration)
+            pass
 
         # Check if email already exists (only if email was explicitly provided)
         if register_request.email:
-            existing_email_user = db.load_user_by_email(email)
-            if existing_email_user is not None:
+            try:
+                db.load_user_by_email(email)
+                # If load_user_by_email succeeds, email exists
                 logger.warning(f"Registration attempt with existing email: {email}")
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Email already registered",
                 )
+            except HTTPException:
+                raise
+            except Exception:
+                # Email doesn't exist (expected for new registration)
+                pass
 
         # Check if password has been breached (REQUIRED security check)
         is_breached, breach_count = await check_password_breach(register_request.password)
@@ -354,8 +366,9 @@ async def login(
             )
 
         # Load user from database
-        user = db.load_user(login_request.username)
-        if user is None:
+        try:
+            user = db.load_user(login_request.username)
+        except Exception:
             logger.warning(f"Login attempt for non-existent user: {login_request.username}")
             # Record failed attempt for security tracking (REQUIRED)
             lockout_manager.record_attempt(login_request.username, "unknown", success=False)
