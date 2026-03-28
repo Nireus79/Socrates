@@ -843,13 +843,75 @@ class APIOrchestrator:
             }
 
         elif action == "set_default_provider":
-            # Set default LLM provider
+            # Set user's default LLM provider
+            user_id = request_data.get("user_id", "")
             provider = request_data.get("provider", "anthropic")
-            return {
-                "status": "success",
-                "data": {"default_provider": provider},
-                "message": f"Default provider set to {provider}",
-            }
+
+            if not user_id:
+                return {
+                    "status": "error",
+                    "message": "user_id is required"
+                }
+
+            try:
+                from socrates_api.database import get_database
+                db = get_database()
+                success = db.set_user_default_provider(user_id, provider)
+
+                if success:
+                    logger.info(f"Default provider set to {provider} for user {user_id}")
+                    return {
+                        "status": "success",
+                        "data": {"default_provider": provider},
+                        "message": f"Default provider set to {provider}"
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "message": "Failed to set default provider"
+                    }
+            except Exception as e:
+                logger.error(f"Failed to set default provider: {e}", exc_info=True)
+                return {
+                    "status": "error",
+                    "message": str(e)
+                }
+
+        elif action == "set_provider_model":
+            # Set user's preferred model for a provider
+            user_id = request_data.get("user_id", "")
+            provider = request_data.get("provider", "anthropic")
+            model = request_data.get("model", "")
+
+            if not user_id or not model:
+                return {
+                    "status": "error",
+                    "message": "user_id and model are required"
+                }
+
+            try:
+                from socrates_api.database import get_database
+                db = get_database()
+                success = db.set_provider_model(user_id, provider, model)
+
+                if success:
+                    logger.info(f"Model set to {model} for {provider} for user {user_id}")
+                    return {
+                        "status": "success",
+                        "data": {"provider": provider, "model": model},
+                        "message": f"Model set to {model} for {provider}"
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "message": "Failed to set provider model"
+                    }
+            except Exception as e:
+                logger.error(f"Failed to set provider model: {e}", exc_info=True)
+                return {
+                    "status": "error",
+                    "message": str(e)
+                }
 
         elif action == "update_api_key":
             # Update API key for provider
@@ -997,7 +1059,11 @@ class APIOrchestrator:
                 # Try to get user's API key
                 from socrates_api.database import get_database
                 db = get_database()
-                user_api_key = db.get_api_key(user_id, "anthropic")
+
+                # Get user's preferred provider and model
+                provider = db.get_user_default_provider(user_id)
+                model = db.get_provider_model(user_id, provider)
+                user_api_key = db.get_api_key(user_id, provider)
 
                 # Create LLM client with user's key if available
                 llm_client_to_use = None
@@ -1005,11 +1071,11 @@ class APIOrchestrator:
                     try:
                         from socrates_nexus import LLMClient
                         llm_client_to_use = LLMClient(
-                            provider="anthropic",
-                            model="claude-3-sonnet",
+                            provider=provider,
+                            model=model,
                             api_key=user_api_key
                         )
-                        logger.info(f"Using user API key for user {user_id}")
+                        logger.info(f"Using user API key for user {user_id} with provider {provider}/{model}")
                     except Exception as e:
                         logger.warning(f"Failed to create LLMClient with user key: {e}")
                         llm_client_to_use = self.llm_client
@@ -1112,7 +1178,11 @@ class APIOrchestrator:
                 # Try to get user's API key
                 from socrates_api.database import get_database
                 db = get_database()
-                user_api_key = db.get_api_key(user_id, "anthropic")
+
+                # Get user's preferred provider and model
+                provider = db.get_user_default_provider(user_id)
+                model = db.get_provider_model(user_id, provider)
+                user_api_key = db.get_api_key(user_id, provider)
 
                 # Create LLM client with user's key if available
                 llm_client_to_use = None
@@ -1120,11 +1190,11 @@ class APIOrchestrator:
                     try:
                         from socrates_nexus import LLMClient
                         llm_client_to_use = LLMClient(
-                            provider="anthropic",
-                            model="claude-3-sonnet",
+                            provider=provider,
+                            model=model,
                             api_key=user_api_key
                         )
-                        logger.info(f"Using user API key for user {user_id} in direct mode")
+                        logger.info(f"Using user API key for user {user_id} in direct mode with provider {provider}/{model}")
                     except Exception as e:
                         logger.warning(f"Failed to create LLMClient with user key: {e}")
                         llm_client_to_use = self.llm_client

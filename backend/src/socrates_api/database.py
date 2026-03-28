@@ -1052,6 +1052,111 @@ class LocalDatabase:
                 f"Failed to delete API key for {provider}: {e}", operation="delete_api_key"
             ) from e
 
+    def set_user_default_provider(self, user_id: str, provider: str) -> bool:
+        """
+        Set user's default LLM provider.
+
+        Args:
+            user_id: User ID (username)
+            provider: Provider name (anthropic, openai, google, etc.)
+
+        Returns:
+            True if set successfully
+        """
+        try:
+            user = self.load_user(user_id)
+            if user:
+                if not user.metadata:
+                    user.metadata = {}
+                user.metadata["default_provider"] = provider
+                self.save_user(user)
+                logger.info(f"Default provider set to {provider} for user {user_id}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to set default provider: {e}")
+            return False
+
+    def get_user_default_provider(self, user_id: str) -> str:
+        """
+        Get user's default LLM provider.
+
+        Args:
+            user_id: User ID (username)
+
+        Returns:
+            Provider name, defaults to "anthropic" if not set
+        """
+        try:
+            user = self.load_user(user_id)
+            if user and user.metadata:
+                provider = user.metadata.get("default_provider")
+                if provider:
+                    return provider
+            return "anthropic"  # Default fallback
+        except Exception as e:
+            logger.error(f"Failed to get default provider: {e}")
+            return "anthropic"
+
+    def set_provider_model(self, user_id: str, provider: str, model: str) -> bool:
+        """
+        Set user's preferred model for a specific provider.
+
+        Args:
+            user_id: User ID (username)
+            provider: Provider name (anthropic, openai, google, etc.)
+            model: Model name (e.g., claude-3-sonnet, gpt-4, gemini-pro)
+
+        Returns:
+            True if set successfully
+        """
+        try:
+            user = self.load_user(user_id)
+            if user:
+                if not user.metadata:
+                    user.metadata = {}
+                if "provider_models" not in user.metadata:
+                    user.metadata["provider_models"] = {}
+                user.metadata["provider_models"][provider] = model
+                self.save_user(user)
+                logger.info(f"Model set to {model} for {provider} for user {user_id}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to set provider model: {e}")
+            return False
+
+    def get_provider_model(self, user_id: str, provider: str) -> str:
+        """
+        Get user's preferred model for a specific provider.
+
+        Args:
+            user_id: User ID (username)
+            provider: Provider name (anthropic, openai, google, etc.)
+
+        Returns:
+            Model name, defaults based on provider if not set
+        """
+        try:
+            user = self.load_user(user_id)
+            if user and user.metadata:
+                provider_models = user.metadata.get("provider_models", {})
+                if provider_models:
+                    model = provider_models.get(provider)
+                    if model:
+                        return model
+
+            # Fallback to sensible defaults
+            defaults = {
+                "anthropic": "claude-3-sonnet",
+                "openai": "gpt-4",
+                "google": "gemini-pro"
+            }
+            return defaults.get(provider, "claude-3-sonnet")
+        except Exception as e:
+            logger.error(f"Failed to get provider model: {e}")
+            return "claude-3-sonnet"
+
     def delete_project(self, project_id: str) -> bool:
         """
         Delete (archive) a project.
