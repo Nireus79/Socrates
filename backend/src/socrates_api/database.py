@@ -254,6 +254,61 @@ class LocalDatabase:
                 "CREATE INDEX IF NOT EXISTS idx_decision_by_conflict ON conflict_decisions(conflict_id)"
             )
 
+            # Spec Extraction Logging Table
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS spec_extraction_log (
+                    log_id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    spec_id TEXT,
+                    extraction_method TEXT NOT NULL,
+                    spec_category TEXT,
+                    spec_value TEXT,
+                    confidence REAL DEFAULT 0.0,
+                    success INTEGER DEFAULT 1,
+                    extracted_at TEXT NOT NULL,
+                    user_feedback TEXT,
+                    feedback_correct INTEGER,
+                    feedback_timestamp TEXT,
+                    metadata TEXT,
+                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_extraction_by_project ON spec_extraction_log(project_id)"
+            )
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_extraction_by_method ON spec_extraction_log(project_id, extraction_method)"
+            )
+
+            # Spec Extraction Patterns Table (from socratic-learning PatternDetector)
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS spec_extraction_patterns (
+                    pattern_id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    pattern_type TEXT NOT NULL,
+                    pattern_name TEXT,
+                    description TEXT,
+                    confidence REAL DEFAULT 0.0,
+                    occurrence_count INTEGER DEFAULT 1,
+                    first_detected TEXT NOT NULL,
+                    last_detected TEXT NOT NULL,
+                    evidence TEXT,
+                    tags TEXT,
+                    metadata TEXT,
+                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_pattern_by_project ON spec_extraction_patterns(project_id)"
+            )
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_pattern_by_type ON spec_extraction_patterns(project_id, pattern_type)"
+            )
+
             self.conn.commit()
 
             # Perform schema migration for existing databases
@@ -1752,6 +1807,233 @@ class LocalDatabase:
         except Exception as e:
             logger.error(f"Failed to get conflict statistics: {e}")
             return {}
+
+    # ========================================================================
+    # SPEC EXTRACTION METRICS & CONFIDENCE SCORING
+    # ========================================================================
+
+    def log_spec_extraction(
+        self,
+        project_id: str,
+        spec_id: Optional[str],
+        extraction_method: str,
+        spec_category: Optional[str] = None,
+        spec_value: Optional[str] = None,
+        confidence: float = 0.0,
+        success: bool = True,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Log a spec extraction attempt with confidence score"""
+        try:
+            log_id = IDGenerator.generate_id("log")
+            metadata_str = json.dumps(metadata or {})
+            now = datetime.now(timezone.utc).isoformat()
+
+            self.conn.execute(
+                """INSERT INTO spec_extraction_log
+                   (log_id, project_id, spec_id, extraction_method, spec_category,
+                    spec_value, confidence, success, extracted_at, metadata)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (log_id, project_id, spec_id, extraction_method, spec_category,
+                 spec_value, confidence, 1 if success else 0, now, metadata_str),
+            )
+            self.conn.commit()
+            logger.debug(f"Logged spec extraction {log_id} with confidence {confidence}")
+            return log_id
+        except Exception as e:
+            logger.error(f"Failed to log spec extraction: {e}")
+            return ""
+
+    def record_extraction_feedback(
+        self,
+        log_id: str,
+        feedback: str,
+        is_correct: bool,
+    ) -> bool:
+        """Record user feedback on a spec extraction"""
+        try:
+            now = datetime.now(timezone.utc).isoformat()
+
+            self.conn.execute(
+                """UPDATE spec_extraction_log
+                   SET user_feedback = ?, feedback_correct = ?, feedback_timestamp = ?
+                   WHERE log_id = ?""",
+                (feedback, 1 if is_correct else 0, now, log_id),
+            )
+            self.conn.commit()
+            logger.debug(f"Recorded feedback for extraction {log_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to record extraction feedback: {e}")
+            return False
+
+    def get_extraction_metrics(
+        self, project_id: str, extraction_method: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Get extraction metrics for a project"""
+        try:
+            # Total extractions
+            if extraction_method:
+                query = """SELECT COUNT(*) FROM spec_extraction_log
+                          WHERE project_id = ? AND extraction_method = ?"""
+                cursor = self.conn.execute(query, (project_id, extraction_method))
+            else:
+                query = """SELECT COUNT(*) FROM spec_extraction_log WHERE project_id = ?"""
+                cursor = self.conn.execute(query, (project_id,))
+
+            total_extractions = cursor.fetchone()[0]
+
+            # Successful extractions
+            if extraction_method:
+                query = """SELECT COUNT(*) FROM spec_extraction_log
+                          WHERE project_id = ? AND extraction_method = ? AND success = 1"""
+                cursor = self.conn.execute(query, (project_id, extraction_method))
+            else:
+                query = """SELECT COUNT(*) FROM spec_extraction_log
+                          WHERE project_id = ? AND success = 1"""
+                cursor = self.conn.execute(query, (project_id,))
+
+            successful = cursor.fetchone()[0]
+
+            # Average confidence
+            if extraction_method:
+                query = """SELECT AVG(confidence) FROM spec_extraction_log
+                          WHERE project_id = ? AND extraction_method = ?"""
+                cursor = self.conn.execute(query, (project_id, extraction_method))
+            else:
+                query = """SELECT AVG(confidence) FROM spec_extraction_log WHERE project_id = ?"""
+                cursor = self.conn.execute(query, (project_id,))
+
+            avg_confidence = cursor.fetchone()[0] or 0.0
+
+            # Feedback accuracy
+            if extraction_method:
+                query = """SELECT COUNT(*), SUM(CASE WHEN feedback_correct = 1 THEN 1 ELSE 0 END)
+                          FROM spec_extraction_log
+                          WHERE project_id = ? AND extraction_method = ? AND feedback_correct IS NOT NULL"""
+                cursor = self.conn.execute(query, (project_id, extraction_method))
+            else:
+                query = """SELECT COUNT(*), SUM(CASE WHEN feedback_correct = 1 THEN 1 ELSE 0 END)
+                          FROM spec_extraction_log
+                          WHERE project_id = ? AND feedback_correct IS NOT NULL"""
+                cursor = self.conn.execute(query, (project_id,))
+
+            row = cursor.fetchone()
+            feedback_count = row[0] if row and row[0] else 0
+            correct_count = row[1] if row and row[1] else 0
+            feedback_accuracy = correct_count / feedback_count if feedback_count > 0 else 0.0
+
+            return {
+                "total_extractions": total_extractions,
+                "successful_extractions": successful,
+                "success_rate": successful / total_extractions if total_extractions > 0 else 0.0,
+                "average_confidence": round(avg_confidence, 3),
+                "feedback_count": feedback_count,
+                "feedback_accuracy": round(feedback_accuracy, 3),
+                "extraction_method": extraction_method,
+            }
+        except Exception as e:
+            logger.error(f"Failed to get extraction metrics: {e}")
+            return {}
+
+    def save_extraction_pattern(
+        self,
+        project_id: str,
+        pattern_type: str,
+        pattern_name: str,
+        description: str,
+        confidence: float,
+        occurrence_count: int,
+        evidence: List[str],
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Save an extraction pattern using socratic-learning Pattern model"""
+        try:
+            pattern_id = IDGenerator.generate_id("pat")
+            now = datetime.now(timezone.utc).isoformat()
+            evidence_str = json.dumps(evidence)
+            tags_str = json.dumps(tags or [])
+            metadata_str = json.dumps(metadata or {})
+
+            self.conn.execute(
+                """INSERT INTO spec_extraction_patterns
+                   (pattern_id, project_id, pattern_type, pattern_name, description,
+                    confidence, occurrence_count, first_detected, last_detected,
+                    evidence, tags, metadata)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (pattern_id, project_id, pattern_type, pattern_name, description,
+                 confidence, occurrence_count, now, now, evidence_str, tags_str, metadata_str),
+            )
+            self.conn.commit()
+            logger.debug(f"Saved extraction pattern {pattern_id} with confidence {confidence}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save extraction pattern: {e}")
+            return False
+
+    def get_extraction_patterns(
+        self, project_id: str, pattern_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get extraction patterns for a project"""
+        try:
+            if pattern_type:
+                query = """SELECT * FROM spec_extraction_patterns
+                          WHERE project_id = ? AND pattern_type = ?
+                          ORDER BY confidence DESC"""
+                cursor = self.conn.execute(query, (project_id, pattern_type))
+            else:
+                query = """SELECT * FROM spec_extraction_patterns
+                          WHERE project_id = ?
+                          ORDER BY confidence DESC"""
+                cursor = self.conn.execute(query, (project_id,))
+
+            patterns = []
+            for row in cursor.fetchall():
+                pattern = {
+                    "pattern_id": row[0],
+                    "project_id": row[1],
+                    "pattern_type": row[2],
+                    "pattern_name": row[3],
+                    "description": row[4],
+                    "confidence": row[5],
+                    "occurrence_count": row[6],
+                    "first_detected": row[7],
+                    "last_detected": row[8],
+                    "evidence": json.loads(row[9]),
+                    "tags": json.loads(row[10]),
+                    "metadata": json.loads(row[11]),
+                }
+                patterns.append(pattern)
+            return patterns
+        except Exception as e:
+            logger.error(f"Failed to get extraction patterns: {e}")
+            return []
+
+    def calculate_extraction_confidence(
+        self, project_id: str, extraction_method: str
+    ) -> float:
+        """
+        Calculate confidence score for an extraction method.
+
+        Uses PatternDetector algorithm:
+        confidence = min(0.95, success_rate)
+        """
+        try:
+            metrics = self.get_extraction_metrics(project_id, extraction_method)
+            success_rate = metrics.get("success_rate", 0.0)
+
+            # PatternDetector algorithm from socratic-learning
+            confidence = min(0.95, success_rate)
+
+            logger.debug(
+                f"Calculated confidence for {extraction_method}: {confidence} "
+                f"(success_rate: {success_rate})"
+            )
+            return confidence
+        except Exception as e:
+            logger.error(f"Failed to calculate extraction confidence: {e}")
+            return 0.0
 
     def close(self) -> None:
         """Close database connection"""

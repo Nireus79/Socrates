@@ -1489,3 +1489,307 @@ async def get_analytics_status(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Operation failed. Please try again later.",
         )
+
+
+# ============================================================================
+# SPEC EXTRACTION ANALYTICS (Task 3.4)
+# ============================================================================
+
+
+@router.get(
+    "/specs/{project_id}/extraction-metrics",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get spec extraction metrics",
+    responses={
+        200: {"description": "Extraction metrics retrieved"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_extraction_metrics(
+    project_id: str,
+    extraction_method: Optional[str] = None,
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """
+    Get spec extraction metrics and statistics for a project.
+
+    Shows extraction success rates, average confidence, and feedback accuracy.
+
+    Args:
+        project_id: Project identifier
+        extraction_method: Optional filter by extraction method
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with extraction metrics
+    """
+    try:
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        metrics = db.get_extraction_metrics(project_id, extraction_method)
+
+        logger.info(
+            f"Retrieved extraction metrics for {project_id} "
+            f"(method: {extraction_method}, success_rate: {metrics.get('success_rate', 0):.1%})"
+        )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Extraction metrics retrieved",
+            data=metrics,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting extraction metrics: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve extraction metrics",
+        )
+
+
+@router.post(
+    "/specs/{project_id}/{spec_id}/feedback",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Record spec extraction feedback",
+    responses={
+        200: {"description": "Feedback recorded"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def record_extraction_feedback(
+    project_id: str,
+    spec_id: str,
+    feedback: str = Body(..., embed=True),
+    is_correct: bool = Body(..., embed=True),
+    log_id: Optional[str] = Body(None, embed=True),
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """
+    Record user feedback on a spec extraction.
+
+    Allows users to mark specs as correct or incorrect, which improves
+    the extraction accuracy model over time.
+
+    Args:
+        project_id: Project identifier
+        spec_id: Spec identifier
+        feedback: Feedback description
+        is_correct: Whether the extraction was correct
+        log_id: Optional log ID from extraction attempt
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with feedback status
+    """
+    try:
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        # Record feedback if log_id provided
+        if log_id:
+            db.record_extraction_feedback(log_id, feedback, is_correct)
+
+        logger.info(
+            f"Recorded extraction feedback for spec {spec_id} in project {project_id} "
+            f"(correct: {is_correct})"
+        )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Feedback recorded successfully",
+            data={
+                "project_id": project_id,
+                "spec_id": spec_id,
+                "is_correct": is_correct,
+                "log_id": log_id,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error recording extraction feedback: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to record feedback",
+        )
+
+
+@router.get(
+    "/specs/{project_id}/patterns",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get spec extraction patterns",
+    responses={
+        200: {"description": "Patterns retrieved"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_extraction_patterns(
+    project_id: str,
+    pattern_type: Optional[str] = None,
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """
+    Get detected patterns in spec extraction for a project.
+
+    Shows high-confidence extraction patterns using the PatternDetector
+    algorithm from socratic-learning.
+
+    Args:
+        project_id: Project identifier
+        pattern_type: Optional filter by pattern type
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with extraction patterns
+    """
+    try:
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        patterns = db.get_extraction_patterns(project_id, pattern_type)
+
+        logger.info(
+            f"Retrieved extraction patterns for {project_id} "
+            f"(type: {pattern_type}, count: {len(patterns)})"
+        )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Extraction patterns retrieved",
+            data={
+                "project_id": project_id,
+                "pattern_type_filter": pattern_type,
+                "total_patterns": len(patterns),
+                "patterns": patterns,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting extraction patterns: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve extraction patterns",
+        )
+
+
+@router.get(
+    "/specs/{project_id}/confidence-trends",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get spec extraction confidence trends",
+    responses={
+        200: {"description": "Confidence trends retrieved"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_confidence_trends(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """
+    Get confidence score trends for spec extraction methods.
+
+    Shows how extraction confidence has evolved over time and by method.
+
+    Args:
+        project_id: Project identifier
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with confidence trends and method comparison
+    """
+    try:
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        # Get metrics for major extraction methods
+        methods = ["context_analyzer", "llm", "hardcoded", "agent"]
+        method_confidence = {}
+
+        for method in methods:
+            confidence = db.calculate_extraction_confidence(project_id, method)
+            if confidence > 0:  # Only include if there's data
+                metrics = db.get_extraction_metrics(project_id, method)
+                method_confidence[method] = {
+                    "confidence": confidence,
+                    "success_rate": metrics.get("success_rate", 0.0),
+                    "total_extractions": metrics.get("total_extractions", 0),
+                    "feedback_accuracy": metrics.get("feedback_accuracy", 0.0),
+                }
+
+        logger.info(
+            f"Retrieved confidence trends for {project_id} "
+            f"(methods: {list(method_confidence.keys())})"
+        )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Confidence trends retrieved",
+            data={
+                "project_id": project_id,
+                "extraction_methods": method_confidence,
+                "best_performing_method": max(
+                    method_confidence.items(), key=lambda x: x[1]["confidence"]
+                )[0]
+                if method_confidence
+                else None,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting confidence trends: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve confidence trends",
+        )
