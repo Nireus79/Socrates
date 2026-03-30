@@ -393,7 +393,7 @@ jobs:
 
     steps:
       - name: Send Slack notification
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v3
         if: env.SLACK_WEBHOOK_URL != ''
         with:
           payload: |
