@@ -582,8 +582,6 @@ async def get_question(
 
         # Persist any project state changes (including conversation history)
         db.save_project(project)
-        if project.conversation_history:
-            db.save_conversation_history(project_id, project.conversation_history)
 
         # Extract question from orchestrator result (nested in "data" key)
         question_data = result.get("data", {})
@@ -741,8 +739,6 @@ Provide a helpful, direct answer."""
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             })
             db.save_project(project)
-            if project.conversation_history:
-                db.save_conversation_history(project_id, project.conversation_history)
 
             # Extract specs from both user message and assistant answer
             insights = None
@@ -844,8 +840,6 @@ Provide a helpful, direct answer."""
 
             # Persist project changes to database (conversation history, maturity, etc.)
             db.save_project(project)
-            if project.conversation_history:
-                db.save_conversation_history(project_id, project.conversation_history)
 
             # Check if conflicts detected - if so, return them for frontend resolution
             if result.get("conflicts_pending") and result.get("conflicts"):
@@ -1135,7 +1129,6 @@ async def clear_history(
         # Clear history
         project.conversation_history = []
         db.save_project(project)
-        db.save_conversation_history(project_id, [])
 
         return APIResponse(
             success=True,
@@ -1315,8 +1308,6 @@ async def finish_session(
 
         # Save final project state (including conversation history)
         db.save_project(project)
-        if project.conversation_history:
-            db.save_conversation_history(project_id, project.conversation_history)
 
         return APIResponse(
             success=True,
