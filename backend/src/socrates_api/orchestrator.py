@@ -22,6 +22,109 @@ except ImportError:
             self.llm_client = kwargs.get('llm_client')
 
 
+def _get_valid_model_for_provider(provider: str, preferred_model: Optional[str] = None) -> str:
+    """Get a valid model name for the given provider"""
+    # Map of provider to valid model names (ordered by preference)
+    valid_models = {
+        "claude": ["claude-haiku-4-5-20251001", "claude-3-5-sonnet-20241022", "claude-opus-4-20250514"],
+        "anthropic": ["claude-haiku-4-5-20251001", "claude-3-5-sonnet-20241022", "claude-opus-4-20250514"],
+        "openai": ["gpt-4o-mini", "gpt-4-turbo", "gpt-4o"],
+        "gemini": ["gemini-1.5-flash", "gemini-pro", "gemini-1.5-pro"],
+        "ollama": ["llama2", "mistral", "neural-chat"],
+    }
+
+    # If preferred model is valid for this provider, use it
+    if preferred_model and preferred_model in valid_models.get(provider, []):
+        return preferred_model
+
+    # Otherwise, use the first valid model for this provider (fastest/cheapest)
+    return valid_models.get(provider, ["claude-haiku-4-5-20251001"])[0]
+
+
+class LLMClientAdapter:
+    """Adapter to bridge LLMClient interface (chat/stream) to SocraticCounselor interface (generate_response)"""
+
+    def __init__(self, llm_client):
+        """Wrap an LLMClient instance"""
+        self.llm_client = llm_client
+        # Delegate attribute access to wrapped client
+        self.provider = getattr(llm_client, 'provider', None)
+
+    def generate_response(self, prompt: str) -> str:
+        """
+        Adapt LLMClient.chat() to generate_response() interface.
+        SocraticCounselor expects this method.
+        """
+        try:
+            # Use the chat method that LLMClient actually provides
+            # LLMClient.chat() expects a string prompt, not a list
+            response = self.llm_client.chat(prompt)
+
+            # Extract text from response
+            if isinstance(response, str):
+                # If response is already a string
+                return response
+            elif isinstance(response, dict):
+                # If response is a dict, look for content field
+                if 'content' in response:
+                    content = response['content']
+                    if isinstance(content, str):
+                        return content
+                    elif isinstance(content, list):
+                        # If content is a list, extract text from each item
+                        texts = []
+                        for item in content:
+                            if isinstance(item, dict) and 'text' in item:
+                                texts.append(item['text'])
+                            elif isinstance(item, str):
+                                texts.append(item)
+                        return ' '.join(texts) if texts else str(response)
+                # Fallback: convert entire dict to string
+                return str(response)
+            elif hasattr(response, 'content'):
+                # If response has content attribute
+                content = response.content
+                if isinstance(content, str):
+                    return content
+                elif isinstance(content, list):
+                    # Extract text from list items
+                    texts = []
+                    for item in content:
+                        if isinstance(item, dict) and 'text' in item:
+                            texts.append(item['text'])
+                        elif isinstance(item, str):
+                            texts.append(item)
+                    return ' '.join(texts) if texts else str(response)
+                else:
+                    return str(response)
+            else:
+                # Otherwise convert to string
+                return str(response)
+        except Exception as e:
+            logger.error(f"Failed to generate response using LLMClient.chat(): {e}", exc_info=True)
+            raise
+
+    def chat(self, messages, **kwargs):
+        """Delegate to wrapped client's chat method, filtering incompatible params"""
+        # Remove parameters that conflict for certain models
+        # Claude Haiku doesn't allow both temperature and top_p
+        if 'temperature' in kwargs and 'top_p' in kwargs:
+            # Prefer temperature for Haiku
+            del kwargs['top_p']
+        return self.llm_client.chat(messages, **kwargs)
+
+    def stream(self, messages, **kwargs):
+        """Delegate to wrapped client's stream method, filtering incompatible params"""
+        # Remove parameters that conflict for certain models
+        if 'temperature' in kwargs and 'top_p' in kwargs:
+            del kwargs['top_p']
+        return self.llm_client.stream(messages, **kwargs)
+
+    def __getattr__(self, name):
+        """Delegate unknown attributes to wrapped client"""
+        return getattr(self.llm_client, name)
+
+
 class APIOrchestrator:
     """Orchestrates real agents from socratic-agents for REST API"""
 
@@ -1063,16 +1166,30 @@ class APIOrchestrator:
                 model = db.get_provider_model(user_id, provider)
                 user_api_key = db.get_api_key(user_id, provider)
 
+                # If default provider doesn't have a key, try to find any provider with a key
+                if not user_api_key:
+                    for fallback_provider in ["claude", "openai", "gemini", "ollama", "anthropic"]:
+                        fallback_key = db.get_api_key(user_id, fallback_provider)
+                        if fallback_key:
+                            provider = fallback_provider
+                            user_api_key = fallback_key
+                            stored_model = db.get_provider_model(user_id, provider)
+                            model = _get_valid_model_for_provider(provider, stored_model)
+                            logger.info(f"No key for default provider, using fallback provider: {provider}/{model}")
+                            break
+
                 # Create LLM client with user's key if available
                 llm_client_to_use = None
                 if user_api_key:
                     try:
                         from socrates_nexus import LLMClient
-                        llm_client_to_use = LLMClient(
+                        raw_client = LLMClient(
                             provider=provider,
                             model=model,
                             api_key=user_api_key
                         )
+                        # Wrap with adapter for SocraticCounselor compatibility
+                        llm_client_to_use = LLMClientAdapter(raw_client)
                         logger.info(f"Using user API key for user {user_id} with provider {provider}/{model}")
                     except Exception as e:
                         logger.warning(f"Failed to create LLMClient with user key: {e}")
@@ -1182,16 +1299,30 @@ class APIOrchestrator:
                 model = db.get_provider_model(user_id, provider)
                 user_api_key = db.get_api_key(user_id, provider)
 
+                # If default provider doesn't have a key, try to find any provider with a key
+                if not user_api_key:
+                    for fallback_provider in ["claude", "openai", "gemini", "ollama", "anthropic"]:
+                        fallback_key = db.get_api_key(user_id, fallback_provider)
+                        if fallback_key:
+                            provider = fallback_provider
+                            user_api_key = fallback_key
+                            stored_model = db.get_provider_model(user_id, provider)
+                            model = _get_valid_model_for_provider(provider, stored_model)
+                            logger.info(f"No key for default provider, using fallback provider: {provider}/{model}")
+                            break
+
                 # Create LLM client with user's key if available
                 llm_client_to_use = None
                 if user_api_key:
                     try:
                         from socrates_nexus import LLMClient
-                        llm_client_to_use = LLMClient(
+                        raw_client = LLMClient(
                             provider=provider,
                             model=model,
                             api_key=user_api_key
                         )
+                        # Wrap with adapter for compatibility
+                        llm_client_to_use = LLMClientAdapter(raw_client)
                         logger.info(f"Using user API key for user {user_id} in direct mode with provider {provider}/{model}")
                     except Exception as e:
                         logger.warning(f"Failed to create LLMClient with user key: {e}")
@@ -1252,17 +1383,36 @@ class APIOrchestrator:
                 from socrates_api.database import get_database
                 db = get_database()
                 user_api_key = db.get_api_key(user_id, "anthropic")
+                provider = "anthropic"
+
+                # If anthropic key not found, try to find any provider with a key
+                if not user_api_key:
+                    fallback_models = {
+                        "claude": "claude-3-5-sonnet-20241022",
+                        "openai": "gpt-4-turbo",
+                        "gemini": "gemini-pro",
+                        "ollama": "llama2"
+                    }
+                    for fallback_provider in ["claude", "openai", "gemini", "ollama"]:
+                        fallback_key = db.get_api_key(user_id, fallback_provider)
+                        if fallback_key:
+                            provider = fallback_provider
+                            user_api_key = fallback_key
+                            logger.info(f"No anthropic key, using fallback provider for insights: {provider}")
+                            break
 
                 # Create LLM client with user's key if available
                 llm_client_to_use = None
                 if user_api_key:
                     try:
                         from socrates_nexus import LLMClient
-                        llm_client_to_use = LLMClient(
-                            provider="anthropic",
+                        raw_client = LLMClient(
+                            provider=provider,
                             model="claude-3-sonnet",
                             api_key=user_api_key
                         )
+                        # Wrap with adapter for compatibility
+                        llm_client_to_use = LLMClientAdapter(raw_client)
                         logger.info(f"Using user API key for insights extraction for user {user_id}")
                     except Exception as e:
                         logger.warning(f"Failed to create LLMClient with user key: {e}")

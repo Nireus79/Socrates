@@ -146,7 +146,10 @@ class ProviderMetadata:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
-        return asdict(self)
+        data = asdict(self)
+        # Add 'name' as an alias for 'provider' for frontend compatibility
+        data['name'] = data.get('provider')
+        return data
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "ProviderMetadata":
