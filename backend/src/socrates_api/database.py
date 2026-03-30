@@ -190,6 +190,70 @@ class LocalDatabase:
                 "CREATE INDEX IF NOT EXISTS idx_question_cache_lookup ON question_cache(project_id, phase, category)"
             )
 
+            # Conflict History Tables
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS conflict_history (
+                    conflict_id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    conflict_type TEXT NOT NULL,
+                    title TEXT,
+                    description TEXT,
+                    severity TEXT DEFAULT 'medium',
+                    related_agents TEXT,
+                    detected_at TEXT NOT NULL,
+                    context TEXT,
+                    metadata TEXT,
+                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_conflict_by_project ON conflict_history(project_id)"
+            )
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_conflict_by_type ON conflict_history(project_id, conflict_type)"
+            )
+
+            # Conflict Resolutions Table
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS conflict_resolutions (
+                    resolution_id TEXT PRIMARY KEY,
+                    conflict_id TEXT NOT NULL,
+                    strategy TEXT NOT NULL,
+                    confidence REAL DEFAULT 0.0,
+                    rationale TEXT,
+                    created_at TEXT NOT NULL,
+                    metadata TEXT,
+                    FOREIGN KEY (conflict_id) REFERENCES conflict_history(conflict_id) ON DELETE CASCADE
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_resolution_by_conflict ON conflict_resolutions(conflict_id)"
+            )
+
+            # Conflict Decisions Table (for versioning)
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS conflict_decisions (
+                    decision_id TEXT PRIMARY KEY,
+                    conflict_id TEXT NOT NULL,
+                    resolution_id TEXT,
+                    chosen_proposal_id TEXT,
+                    decided_by TEXT,
+                    rationale TEXT,
+                    version INTEGER DEFAULT 1,
+                    created_at TEXT NOT NULL,
+                    metadata TEXT,
+                    FOREIGN KEY (conflict_id) REFERENCES conflict_history(conflict_id) ON DELETE CASCADE,
+                    FOREIGN KEY (resolution_id) REFERENCES conflict_resolutions(resolution_id) ON DELETE SET NULL
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_decision_by_conflict ON conflict_decisions(conflict_id)"
+            )
+
             self.conn.commit()
 
             # Perform schema migration for existing databases
@@ -1451,6 +1515,243 @@ class LocalDatabase:
             raise DatabaseError(
                 f"Failed to prune question cache: {e}", operation="prune_question_cache"
             ) from e
+
+    # ========================================================================
+    # CONFLICT HISTORY MANAGEMENT
+    # ========================================================================
+
+    def save_conflict(
+        self,
+        project_id: str,
+        conflict_id: str,
+        conflict_type: str,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        severity: str = "medium",
+        related_agents: Optional[List[str]] = None,
+        context: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Save a conflict to history"""
+        try:
+            agents_str = json.dumps(related_agents or [])
+            context_str = json.dumps(context or {})
+            metadata_str = json.dumps(metadata or {})
+            now = datetime.now(timezone.utc).isoformat()
+
+            self.conn.execute(
+                """INSERT OR REPLACE INTO conflict_history
+                   (conflict_id, project_id, conflict_type, title, description, severity,
+                    related_agents, detected_at, context, metadata)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (conflict_id, project_id, conflict_type, title, description, severity,
+                 agents_str, now, context_str, metadata_str),
+            )
+            self.conn.commit()
+            logger.debug(f"Saved conflict {conflict_id} for project {project_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save conflict: {e}")
+            return False
+
+    def get_conflict_history(
+        self, project_id: str, conflict_type: Optional[str] = None, limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """Get conflict history for a project"""
+        try:
+            if conflict_type:
+                query = """SELECT * FROM conflict_history
+                          WHERE project_id = ? AND conflict_type = ?
+                          ORDER BY detected_at DESC LIMIT ?"""
+                cursor = self.conn.execute(query, (project_id, conflict_type, limit))
+            else:
+                query = """SELECT * FROM conflict_history
+                          WHERE project_id = ?
+                          ORDER BY detected_at DESC LIMIT ?"""
+                cursor = self.conn.execute(query, (project_id, limit))
+
+            conflicts = []
+            for row in cursor.fetchall():
+                conflict = {
+                    "conflict_id": row[0],
+                    "project_id": row[1],
+                    "conflict_type": row[2],
+                    "title": row[3],
+                    "description": row[4],
+                    "severity": row[5],
+                    "related_agents": json.loads(row[6]),
+                    "detected_at": row[7],
+                    "context": json.loads(row[8]),
+                    "metadata": json.loads(row[9]),
+                }
+                conflicts.append(conflict)
+            return conflicts
+        except Exception as e:
+            logger.error(f"Failed to get conflict history: {e}")
+            return []
+
+    def save_resolution(
+        self,
+        resolution_id: str,
+        conflict_id: str,
+        strategy: str,
+        confidence: float = 0.0,
+        rationale: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Save a conflict resolution"""
+        try:
+            metadata_str = json.dumps(metadata or {})
+            now = datetime.now(timezone.utc).isoformat()
+
+            self.conn.execute(
+                """INSERT OR REPLACE INTO conflict_resolutions
+                   (resolution_id, conflict_id, strategy, confidence, rationale, created_at, metadata)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (resolution_id, conflict_id, strategy, confidence, rationale, now, metadata_str),
+            )
+            self.conn.commit()
+            logger.debug(f"Saved resolution {resolution_id} for conflict {conflict_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save resolution: {e}")
+            return False
+
+    def get_conflict_resolutions(self, conflict_id: str) -> List[Dict[str, Any]]:
+        """Get all resolutions for a conflict"""
+        try:
+            query = """SELECT * FROM conflict_resolutions WHERE conflict_id = ? ORDER BY created_at ASC"""
+            cursor = self.conn.execute(query, (conflict_id,))
+
+            resolutions = []
+            for row in cursor.fetchall():
+                resolution = {
+                    "resolution_id": row[0],
+                    "conflict_id": row[1],
+                    "strategy": row[2],
+                    "confidence": row[3],
+                    "rationale": row[4],
+                    "created_at": row[5],
+                    "metadata": json.loads(row[6]),
+                }
+                resolutions.append(resolution)
+            return resolutions
+        except Exception as e:
+            logger.error(f"Failed to get conflict resolutions: {e}")
+            return []
+
+    def save_decision(
+        self,
+        decision_id: str,
+        conflict_id: str,
+        resolution_id: Optional[str] = None,
+        chosen_proposal_id: Optional[str] = None,
+        decided_by: Optional[str] = None,
+        rationale: Optional[str] = None,
+        version: int = 1,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Save a conflict decision (with versioning)"""
+        try:
+            metadata_str = json.dumps(metadata or {})
+            now = datetime.now(timezone.utc).isoformat()
+
+            self.conn.execute(
+                """INSERT INTO conflict_decisions
+                   (decision_id, conflict_id, resolution_id, chosen_proposal_id,
+                    decided_by, rationale, version, created_at, metadata)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (decision_id, conflict_id, resolution_id, chosen_proposal_id,
+                 decided_by, rationale, version, now, metadata_str),
+            )
+            self.conn.commit()
+            logger.debug(f"Saved decision {decision_id} for conflict {conflict_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save decision: {e}")
+            return False
+
+    def get_conflict_decisions(self, conflict_id: str) -> List[Dict[str, Any]]:
+        """Get all decisions for a conflict (with versions)"""
+        try:
+            query = """SELECT * FROM conflict_decisions WHERE conflict_id = ? ORDER BY version ASC"""
+            cursor = self.conn.execute(query, (conflict_id,))
+
+            decisions = []
+            for row in cursor.fetchall():
+                decision = {
+                    "decision_id": row[0],
+                    "conflict_id": row[1],
+                    "resolution_id": row[2],
+                    "chosen_proposal_id": row[3],
+                    "decided_by": row[4],
+                    "rationale": row[5],
+                    "version": row[6],
+                    "created_at": row[7],
+                    "metadata": json.loads(row[8]),
+                }
+                decisions.append(decision)
+            return decisions
+        except Exception as e:
+            logger.error(f"Failed to get conflict decisions: {e}")
+            return []
+
+    def get_conflict_statistics(self, project_id: str) -> Dict[str, Any]:
+        """Get conflict statistics for a project"""
+        try:
+            # Total conflicts
+            cursor = self.conn.execute(
+                "SELECT COUNT(*) FROM conflict_history WHERE project_id = ?",
+                (project_id,),
+            )
+            total_conflicts = cursor.fetchone()[0]
+
+            # By type
+            cursor = self.conn.execute(
+                """SELECT conflict_type, COUNT(*) FROM conflict_history
+                   WHERE project_id = ? GROUP BY conflict_type""",
+                (project_id,),
+            )
+            conflict_types = {row[0]: row[1] for row in cursor.fetchall()}
+
+            # By severity
+            cursor = self.conn.execute(
+                """SELECT severity, COUNT(*) FROM conflict_history
+                   WHERE project_id = ? GROUP BY severity""",
+                (project_id,),
+            )
+            severities = {row[0]: row[1] for row in cursor.fetchall()}
+
+            # Resolution strategies used
+            cursor = self.conn.execute(
+                """SELECT r.strategy, COUNT(*) FROM conflict_resolutions r
+                   JOIN conflict_history c ON r.conflict_id = c.conflict_id
+                   WHERE c.project_id = ? GROUP BY r.strategy""",
+                (project_id,),
+            )
+            strategies = {row[0]: row[1] for row in cursor.fetchall()}
+
+            # Resolved count (has at least one decision)
+            cursor = self.conn.execute(
+                """SELECT COUNT(DISTINCT c.conflict_id) FROM conflict_history c
+                   WHERE c.project_id = ? AND EXISTS
+                   (SELECT 1 FROM conflict_decisions d WHERE d.conflict_id = c.conflict_id)""",
+                (project_id,),
+            )
+            resolved_count = cursor.fetchone()[0]
+
+            return {
+                "total_conflicts": total_conflicts,
+                "resolved_conflicts": resolved_count,
+                "unresolved_conflicts": total_conflicts - resolved_count,
+                "resolution_rate": resolved_count / total_conflicts if total_conflicts > 0 else 0.0,
+                "conflict_types": conflict_types,
+                "severities": severities,
+                "strategies_used": strategies,
+            }
+        except Exception as e:
+            logger.error(f"Failed to get conflict statistics: {e}")
+            return {}
 
     def close(self) -> None:
         """Close database connection"""

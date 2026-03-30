@@ -236,20 +236,36 @@ def get_conflict_history(
     - conflict_type: Filter by conflict type (optional)
 
     Returns:
-    - List of conflict history entries
+    - List of conflict history entries with resolutions
     """
     try:
-        logger.info(f"Retrieving conflict history for project {project_id}")
+        from socrates_api.database import get_database
 
-        # This would load conflict history from database
-        # Filtered by project_id and optionally by conflict_type
-        entries = []  # Would be populated from database
+        db = get_database()
+        logger.info(f"Retrieving conflict history for project {project_id}, limit={limit}")
+
+        # Get conflict history from database
+        entries = db.get_conflict_history(project_id, conflict_type=conflict_type, limit=limit)
+
+        # Enrich each entry with resolutions and decisions
+        enriched_entries = []
+        for conflict in entries:
+            resolutions = db.get_conflict_resolutions(conflict["conflict_id"])
+            decisions = db.get_conflict_decisions(conflict["conflict_id"])
+
+            enriched_entries.append({
+                **conflict,
+                "resolutions": resolutions,
+                "decisions": decisions,
+                "is_resolved": len(decisions) > 0,
+            })
 
         return {
             "status": "success",
             "project_id": project_id,
-            "total_entries": len(entries),
-            "entries": entries,
+            "total_entries": len(enriched_entries),
+            "conflict_type_filter": conflict_type,
+            "entries": enriched_entries,
         }
 
     except Exception as e:
@@ -271,17 +287,53 @@ def analyze_project_conflicts(project_id: str) -> Dict[str, Any]:
     - Conflict analysis including statistics and patterns
     """
     try:
-        detector = get_conflict_detector()
+        from socrates_api.database import get_database
+
+        db = get_database()
         logger.info(f"Analyzing conflicts for project {project_id}")
+
+        # Get detailed statistics
+        stats = db.get_conflict_statistics(project_id)
+
+        # Get recent conflicts for pattern analysis
+        recent_conflicts = db.get_conflict_history(project_id, limit=100)
+
+        # Generate recommendations based on patterns
+        recommendations = []
+        if stats.get("total_conflicts", 0) > 5:
+            recommendations.append(
+                "High conflict frequency detected. Review project specifications and ensure clarity."
+            )
+
+        high_severity = stats.get("severities", {}).get("critical", 0) or stats.get("severities", {}).get("high", 0)
+        if high_severity > 0:
+            recommendations.append(
+                f"Found {high_severity} high/critical conflicts. Prioritize resolution of these issues."
+            )
+
+        if stats.get("resolution_rate", 0) < 0.5:
+            recommendations.append(
+                "Low resolution rate. Implement strategies to address unresolved conflicts."
+            )
+
+        # Identify most common conflict type
+        most_common_type = None
+        max_count = 0
+        for conflict_type, count in stats.get("conflict_types", {}).items():
+            if count > max_count:
+                max_count = count
+                most_common_type = conflict_type
 
         analysis = {
             "project_id": project_id,
             "status": "success",
-            "total_conflicts": 0,
-            "conflict_types": {},
-            "resolution_rates": {},
-            "common_resolutions": [],
-            "recommendations": [],
+            "statistics": stats,
+            "most_common_conflict_type": most_common_type,
+            "most_used_strategy": max(
+                stats.get("strategies_used", {}).items(), key=lambda x: x[1]
+            )[0] if stats.get("strategies_used") else None,
+            "recent_conflicts_count": len(recent_conflicts),
+            "recommendations": recommendations,
         }
 
         return analysis
@@ -328,3 +380,88 @@ def get_conflict_system_status() -> Dict[str, Any]:
             "conflict_detector_available": False,
             "message": str(e),
         }
+
+
+@router.get("/{project_id}/conflicts/{conflict_id}")
+def get_conflict_details(project_id: str, conflict_id: str) -> Dict[str, Any]:
+    """
+    Get detailed information about a specific conflict.
+
+    Path Parameters:
+    - project_id: Project identifier
+    - conflict_id: Conflict identifier
+
+    Returns:
+    - Complete conflict details with all resolutions and decisions
+    """
+    try:
+        from socrates_api.database import get_database
+
+        db = get_database()
+        logger.info(f"Retrieving details for conflict {conflict_id} in project {project_id}")
+
+        # Get the specific conflict
+        history = db.get_conflict_history(project_id, limit=1000)
+        conflict = next((c for c in history if c["conflict_id"] == conflict_id), None)
+
+        if not conflict:
+            raise HTTPException(status_code=404, detail="Conflict not found")
+
+        # Get resolutions and decisions
+        resolutions = db.get_conflict_resolutions(conflict_id)
+        decisions = db.get_conflict_decisions(conflict_id)
+
+        return {
+            "status": "success",
+            "conflict": conflict,
+            "resolutions": resolutions,
+            "decisions": decisions,
+            "is_resolved": len(decisions) > 0,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.debug("Error getting conflict details", exc_info=True)
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
+
+
+@router.get("/{project_id}/conflicts/{conflict_id}/decisions/versions")
+def get_conflict_decision_versions(project_id: str, conflict_id: str) -> Dict[str, Any]:
+    """
+    Get all decision versions for a conflict.
+
+    Shows the complete history of decisions with version tracking.
+
+    Path Parameters:
+    - project_id: Project identifier
+    - conflict_id: Conflict identifier
+
+    Returns:
+    - List of all decision versions in chronological order
+    """
+    try:
+        from socrates_api.database import get_database
+
+        db = get_database()
+        logger.info(f"Retrieving decision versions for conflict {conflict_id} in project {project_id}")
+
+        # Get all decisions (which are stored with version numbers)
+        decisions = db.get_conflict_decisions(conflict_id)
+
+        if not decisions:
+            raise HTTPException(status_code=404, detail="No decisions found for conflict")
+
+        return {
+            "status": "success",
+            "project_id": project_id,
+            "conflict_id": conflict_id,
+            "total_versions": len(decisions),
+            "versions": decisions,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.debug("Error getting decision versions", exc_info=True)
+        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
