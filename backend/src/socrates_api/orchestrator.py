@@ -1153,6 +1153,54 @@ class APIOrchestrator:
 
             logger.info(f"_handle_socratic_counselor generate_question: topic={topic[:50] if topic else 'EMPTY'}")
 
+            # Get project ID and phase for caching
+            project_id = getattr(project, "project_id", None) or project.get("project_id")
+            phase = (
+                getattr(project, "phase", "discovery")
+                if hasattr(project, "phase")
+                else project.get("phase", "discovery")
+            )
+
+            # TRY CACHE FIRST (unless force_refresh)
+            if not force_refresh and project_id:
+                try:
+                    from socrates_api.database import get_database
+                    db = get_database()
+                    cached_questions = db.get_cached_questions(
+                        project_id=project_id,
+                        phase=phase,
+                        exclude_recent=3
+                    )
+
+                    if cached_questions:
+                        # Use a random cached question
+                        import random
+                        question_data = random.choice(cached_questions)
+                        question_text = question_data.get("question_text")
+                        cache_id = question_data.get("cache_id")
+
+                        # Increment usage counter
+                        try:
+                            db.increment_question_usage(cache_id)
+                        except Exception as e:
+                            logger.warning(f"Failed to increment question usage: {e}")
+
+                        logger.info(f"Returning cached question (cache_id: {cache_id})")
+                        return {
+                            "status": "success",
+                            "data": {
+                                "question": question_text,
+                                "project_id": project_id,
+                                "phase": phase,
+                                "from_cache": True,
+                                "cache_id": cache_id,
+                            },
+                            "message": "Question retrieved from cache",
+                        }
+                except Exception as e:
+                    logger.warning(f"Failed to retrieve from cache: {e}")
+                    # Continue to generate new question
+
             # Try to use the actual agent if available
             counselor = self.agents.get("socratic_counselor")
 
@@ -1212,6 +1260,25 @@ class APIOrchestrator:
                         logger.info(f"Calling counselor.process() with topic: {topic[:50] if topic else 'EMPTY'}")
                         result = counselor.process({"topic": topic})
                         logger.info(f"counselor.process() returned: {result}")
+
+                        # CACHE THE GENERATED QUESTION
+                        if project_id and result.get("question"):
+                            try:
+                                from socrates_api.database import get_database
+                                db = get_database()
+                                db.save_cached_question(
+                                    project_id=project_id,
+                                    phase=phase,
+                                    category=None,
+                                    question_text=result.get("question")
+                                )
+                                logger.info(f"Cached new question for project {project_id}")
+
+                                # Prune cache if too large
+                                db.prune_question_cache(project_id, max_questions=50)
+                            except Exception as e:
+                                logger.warning(f"Failed to cache generated question: {e}")
+
                         return {"status": "success", "data": result, "message": "Question generated"}
                     finally:
                         # Restore original client

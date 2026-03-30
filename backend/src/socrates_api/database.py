@@ -171,6 +171,25 @@ class LocalDatabase:
                 "CREATE INDEX IF NOT EXISTS idx_api_keys_user ON user_api_keys(user_id)"
             )
 
+            # Question cache table - stores cached Socratic questions for performance
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS question_cache (
+                    cache_id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    phase TEXT,
+                    category TEXT,
+                    question_text TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    used_count INTEGER DEFAULT 0,
+                    last_used_at TEXT,
+                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_question_cache_lookup ON question_cache(project_id, phase, category)"
+            )
+
             self.conn.commit()
 
             # Perform schema migration for existing databases
@@ -1208,6 +1227,229 @@ class LocalDatabase:
             logger.error(f"Failed to permanently delete user {username}: {e}")
             raise DatabaseError(
                 f"Failed to delete user {username}: {e}", operation="permanently_delete_user"
+            ) from e
+
+    # ============ Question Cache Methods ============
+
+    def save_cached_question(
+        self, project_id: str, phase: str, category: Optional[str], question_text: str
+    ) -> str:
+        """
+        Save a question to the cache.
+
+        Args:
+            project_id: Project ID
+            phase: Project phase (e.g., 'discovery', 'design')
+            category: Question category (optional)
+            question_text: The question text to cache
+
+        Returns:
+            cache_id of the saved question
+
+        Raises:
+            DatabaseError: If save fails
+        """
+        try:
+            cache_id = IDGenerator.generate("cache")
+            now = datetime.now(timezone.utc).isoformat()
+
+            self.conn.execute(
+                """
+                INSERT INTO question_cache
+                (cache_id, project_id, phase, category, question_text, created_at, used_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (cache_id, project_id, phase, category, question_text, now, 0),
+            )
+            self.conn.commit()
+
+            logger.debug(f"Cached question {cache_id} for project {project_id}")
+            return cache_id
+
+        except Exception as e:
+            logger.error(f"Failed to cache question: {e}")
+            raise DatabaseError(f"Failed to cache question: {e}", operation="save_cached_question") from e
+
+    def get_cached_questions(
+        self,
+        project_id: str,
+        phase: Optional[str] = None,
+        category: Optional[str] = None,
+        exclude_recent: int = 3,
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieve cached questions for a project.
+
+        Args:
+            project_id: Project ID
+            phase: Filter by phase (optional)
+            category: Filter by category (optional)
+            exclude_recent: Exclude N most recently used questions
+
+        Returns:
+            List of cached question dicts with cache_id, question_text, used_count
+
+        Raises:
+            DatabaseError: If query fails
+        """
+        try:
+            query = """
+                SELECT cache_id, question_text, used_count, created_at
+                FROM question_cache
+                WHERE project_id = ?
+            """
+            params = [project_id]
+
+            if phase:
+                query += " AND phase = ?"
+                params.append(phase)
+
+            if category:
+                query += " AND category = ?"
+                params.append(category)
+
+            # Order by used_count (prefer less-used questions)
+            query += " ORDER BY used_count ASC, created_at DESC LIMIT 100"
+
+            cursor = self.conn.execute(query, params)
+            rows = cursor.fetchall()
+
+            # Convert to dicts and exclude recent ones
+            questions = []
+            for i, row in enumerate(rows):
+                if i < exclude_recent:
+                    continue  # Skip recent questions
+                questions.append(
+                    {
+                        "cache_id": row["cache_id"],
+                        "question_text": row["question_text"],
+                        "used_count": row["used_count"],
+                        "created_at": row["created_at"],
+                    }
+                )
+
+            logger.debug(
+                f"Retrieved {len(questions)} cached questions for project {project_id}"
+            )
+            return questions
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve cached questions: {e}")
+            raise DatabaseError(
+                f"Failed to retrieve cached questions: {e}", operation="get_cached_questions"
+            ) from e
+
+    def increment_question_usage(self, cache_id: str) -> bool:
+        """
+        Increment usage count and update last_used_at for a cached question.
+
+        Args:
+            cache_id: Cache ID of the question
+
+        Returns:
+            True if successful
+
+        Raises:
+            DatabaseError: If update fails
+        """
+        try:
+            now = datetime.now(timezone.utc).isoformat()
+            self.conn.execute(
+                """
+                UPDATE question_cache
+                SET used_count = used_count + 1, last_used_at = ?
+                WHERE cache_id = ?
+                """,
+                (now, cache_id),
+            )
+            self.conn.commit()
+
+            logger.debug(f"Incremented usage for cached question {cache_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to increment question usage: {e}")
+            raise DatabaseError(
+                f"Failed to increment question usage: {e}", operation="increment_question_usage"
+            ) from e
+
+    def clear_question_cache(self, project_id: str, phase: Optional[str] = None) -> int:
+        """
+        Clear cached questions for a project.
+
+        Args:
+            project_id: Project ID
+            phase: Optional phase to filter (clear only that phase)
+
+        Returns:
+            Number of questions deleted
+
+        Raises:
+            DatabaseError: If delete fails
+        """
+        try:
+            query = "DELETE FROM question_cache WHERE project_id = ?"
+            params = [project_id]
+
+            if phase:
+                query += " AND phase = ?"
+                params.append(phase)
+
+            cursor = self.conn.execute(query, params)
+            count = cursor.rowcount
+            self.conn.commit()
+
+            logger.info(f"Cleared {count} cached questions for project {project_id}, phase={phase}")
+            return count
+
+        except Exception as e:
+            logger.error(f"Failed to clear question cache: {e}")
+            raise DatabaseError(
+                f"Failed to clear question cache: {e}", operation="clear_question_cache"
+            ) from e
+
+    def prune_question_cache(self, project_id: str, max_questions: int = 50) -> int:
+        """
+        Prune question cache to keep only most recent questions.
+
+        Args:
+            project_id: Project ID
+            max_questions: Maximum questions to keep per project
+
+        Returns:
+            Number of questions deleted
+
+        Raises:
+            DatabaseError: If delete fails
+        """
+        try:
+            # Find questions to delete (keep newest ones)
+            cursor = self.conn.execute(
+                """
+                SELECT cache_id FROM question_cache
+                WHERE project_id = ?
+                ORDER BY created_at DESC
+                LIMIT -1 OFFSET ?
+                """,
+                (project_id, max_questions),
+            )
+            to_delete = [row["cache_id"] for row in cursor.fetchall()]
+
+            if to_delete:
+                placeholders = ",".join("?" * len(to_delete))
+                self.conn.execute(
+                    f"DELETE FROM question_cache WHERE cache_id IN ({placeholders})",
+                    to_delete,
+                )
+                self.conn.commit()
+
+            logger.debug(f"Pruned {len(to_delete)} questions from cache for project {project_id}")
+            return len(to_delete)
+
+        except Exception as e:
+            logger.error(f"Failed to prune question cache: {e}")
+            raise DatabaseError(
+                f"Failed to prune question cache: {e}", operation="prune_question_cache"
             ) from e
 
     def close(self) -> None:

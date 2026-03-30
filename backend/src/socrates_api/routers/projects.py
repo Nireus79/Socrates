@@ -1186,6 +1186,13 @@ async def advance_phase(
         # Save changes
         db.save_project(project)
 
+        # CLEAR QUESTION CACHE FOR OLD PHASE (questions are phase-specific)
+        try:
+            cleared = db.clear_question_cache(project_id, phase=old_phase)
+            logger.info(f"Cleared {cleared} cached questions for phase {old_phase}")
+        except Exception as e:
+            logger.warning(f"Failed to clear question cache for old phase: {e}")
+
         logger.info(f"Project {project_id} phase advanced from {old_phase} to {new_phase}")
 
         return APIResponse(
@@ -1288,6 +1295,76 @@ async def rollback_phase(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error rolling back project phase",
+        )
+
+
+@router.delete(
+    "/{project_id}/cache/questions",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Clear cached questions for a project",
+    responses={
+        200: {"description": "Cache cleared successfully"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        403: {"description": "Access denied", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def clear_question_cache(
+    project_id: str,
+    phase: Optional[str] = None,
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """
+    Clear cached questions for a project.
+
+    Optionally filter by phase to clear only questions from a specific phase.
+
+    Args:
+        project_id: Project identifier
+        phase: Optional phase filter (discovery, analysis, design, implementation)
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with number of questions cleared
+    """
+    try:
+        # Check project access - owner/editor can clear cache
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
+        # Verify project exists
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        # Clear cache
+        cleared_count = db.clear_question_cache(project_id, phase=phase)
+
+        logger.info(f"Cleared {cleared_count} cached questions for project {project_id}, phase={phase}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Cleared {cleared_count} cached questions",
+            data={
+                "project_id": project_id,
+                "phase": phase,
+                "questions_cleared": cleared_count,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error clearing question cache for project {project_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to clear question cache",
         )
 
 
