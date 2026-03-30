@@ -65,6 +65,54 @@ class APIOrchestrator:
             logger.warning(f"Failed to create LLM client: {e}")
             return None
 
+    def _create_user_llm_client(self, user_id: str, provider: str = "claude") -> Optional[Any]:
+        """
+        Create LLM client with user's stored API key.
+
+        Args:
+            user_id: User identifier
+            provider: LLM provider (default: claude)
+
+        Returns:
+            LLMClient instance or None if no API key available
+        """
+        try:
+            from socrates_api.database import get_database
+            from socratic_system.models.llm_provider import get_provider_metadata
+            from socrates_nexus import LLMClient
+
+            db = get_database()
+
+            # Get user's stored API key
+            api_key = db.get_api_key(user_id, provider)
+
+            if not api_key:
+                logger.debug(f"No API key stored for user {user_id} provider {provider}")
+                return None
+
+            # Get provider metadata to determine model
+            provider_meta = get_provider_metadata(provider)
+            if not provider_meta:
+                logger.error(f"Unknown provider: {provider}")
+                return None
+
+            # Get user's preferred model for this provider
+            user_model = db.get_provider_model(user_id, provider)
+            model = user_model or provider_meta.models[0]
+
+            # Create LLM client with user's API key
+            llm_client = LLMClient(
+                provider=provider,
+                model=model,
+                api_key=api_key
+            )
+            logger.info(f"LLM client created for user {user_id} with provider {provider}")
+            return llm_client
+
+        except Exception as e:
+            logger.warning(f"Failed to create user LLM client: {e}")
+            return None
+
     def _initialize_agents(self) -> None:
         """Initialize all agents from socratic-agents with LLM client"""
         try:
@@ -721,38 +769,40 @@ class APIOrchestrator:
         action = request_data.get("action", "")
 
         if action == "list_providers":
-            # Return available LLM providers
+            # Return available LLM providers with complete metadata
+            from socratic_system.models.llm_provider import list_available_providers
+
+            user_id = request_data.get("user_id", "")
             providers = []
-            if self.llm_client:
-                providers.append(
-                    {
-                        "name": "anthropic",
-                        "model": "claude-3-sonnet",
-                        "configured": True,
-                        "status": "active",
-                    }
-                )
-            providers.extend(
-                [
-                    {
-                        "name": "openai",
-                        "model": "gpt-4",
-                        "configured": False,
-                        "status": "available",
-                    },
-                    {
-                        "name": "google",
-                        "model": "gemini-pro",
-                        "configured": False,
-                        "status": "available",
-                    },
-                ]
-            )
-            return {
-                "status": "success",
-                "data": {"providers": providers},
-                "message": "Providers retrieved",
-            }
+
+            try:
+                from socrates_api.database import get_database
+                db = get_database()
+
+                # Get all available providers with metadata
+                for provider_meta in list_available_providers():
+                    provider_dict = provider_meta.to_dict()
+
+                    # Check if user has configured this provider (has API key stored)
+                    if user_id:
+                        user_api_key = db.get_api_key(user_id, provider_meta.provider)
+                        provider_dict["is_configured"] = bool(user_api_key)
+                    else:
+                        provider_dict["is_configured"] = False
+
+                    providers.append(provider_dict)
+
+                return {
+                    "status": "success",
+                    "data": {"providers": providers},
+                    "message": "Providers retrieved",
+                }
+            except Exception as e:
+                logger.error(f"Failed to list providers: {e}", exc_info=True)
+                return {
+                    "status": "error",
+                    "message": str(e)
+                }
 
         elif action == "get_provider_config":
             # Return user's current provider configuration
