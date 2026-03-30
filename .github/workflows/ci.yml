@@ -42,7 +42,7 @@ jobs:
           pytest tests/ -v --tb=short --timeout=10 || true
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
