@@ -10,6 +10,13 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+# Import MaturityCalculator from socratic-maturity library
+try:
+    from socrates_maturity import MaturityCalculator
+except ImportError:
+    logger.warning("socrates-maturity not available, maturity calculations will be limited")
+    MaturityCalculator = None
+
 # Import SocraticCounselor from the fixed library
 try:
     from socratic_agents import SocraticCounselor
@@ -410,6 +417,111 @@ class APIOrchestrator:
         except Exception as e:
             logger.error(f"Weak area detection failed: {e}")
             return {"status": "error", "message": str(e)}
+
+    def calculate_phase_maturity(self, project: Any) -> Dict[str, Any]:
+        """
+        Calculate maturity for a project phase using MaturityCalculator.
+
+        Args:
+            project: ProjectContext object with phase and categorized_specs
+
+        Returns:
+            Dictionary with maturity calculation results
+        """
+        try:
+            if not MaturityCalculator:
+                return {
+                    "status": "error",
+                    "message": "MaturityCalculator not available"
+                }
+
+            # Initialize calculator
+            calculator = MaturityCalculator(project_type=getattr(project, "project_type", "software"))
+
+            # Get current phase
+            phase = getattr(project, "phase", "discovery")
+
+            # Get categorized specs for the phase
+            categorized_specs = getattr(project, "categorized_specs", {}) or {}
+            phase_specs = categorized_specs.get(phase, [])
+
+            # Calculate maturity for this phase
+            maturity_result = calculator.calculate_phase_maturity(phase_specs, phase)
+
+            logger.info(
+                f"Calculated maturity for {project.project_id} phase {phase}: "
+                f"{maturity_result.get('maturity_percentage')}%"
+            )
+
+            return {
+                "status": "success",
+                "phase": phase,
+                "maturity": maturity_result,
+                "phase_readiness": {
+                    "is_ready": maturity_result.get("is_ready", False),
+                    "ready_threshold": 20.0,
+                    "current_maturity": maturity_result.get("maturity_percentage", 0.0),
+                    "warnings": maturity_result.get("warnings", []),
+                }
+            }
+        except Exception as e:
+            logger.error(f"Failed to calculate phase maturity: {e}")
+            return {
+                "status": "error",
+                "message": str(e),
+                "phase": getattr(project, "phase", "unknown")
+            }
+
+    def get_all_phases_maturity(self, project: Any) -> Dict[str, Any]:
+        """
+        Get maturity scores for all phases of a project.
+
+        Args:
+            project: ProjectContext object
+
+        Returns:
+            Dictionary with maturity for all phases
+        """
+        try:
+            if not MaturityCalculator:
+                return {
+                    "status": "error",
+                    "message": "MaturityCalculator not available"
+                }
+
+            calculator = MaturityCalculator(project_type=getattr(project, "project_type", "software"))
+            categorized_specs = getattr(project, "categorized_specs", {}) or {}
+
+            # Valid phases
+            phases = ["discovery", "analysis", "design", "implementation"]
+            phase_maturity = {}
+
+            for phase in phases:
+                phase_specs = categorized_specs.get(phase, [])
+                maturity_result = calculator.calculate_phase_maturity(phase_specs, phase)
+                phase_maturity[phase] = {
+                    "maturity_percentage": maturity_result.get("maturity_percentage", 0.0),
+                    "is_ready": maturity_result.get("is_ready", False),
+                    "category_scores": maturity_result.get("category_scores", {}),
+                    "warnings": maturity_result.get("warnings", [])
+                }
+
+            # Get current phase for emphasis
+            current_phase = getattr(project, "phase", "discovery")
+
+            return {
+                "status": "success",
+                "current_phase": current_phase,
+                "all_phases": phase_maturity,
+                "ready_threshold": 20.0,
+                "complete_threshold": 100.0
+            }
+        except Exception as e:
+            logger.error(f"Failed to get all phases maturity: {e}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
 
     def guide_learning(self, topic: str, level: str = "beginner") -> Dict[str, Any]:
         """Guide learning using SocraticCounselor agent"""

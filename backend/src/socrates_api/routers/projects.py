@@ -1369,6 +1369,151 @@ async def clear_question_cache(
 
 
 @router.get(
+    "/{project_id}/maturity/{phase}",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get phase maturity details",
+    responses={
+        200: {"description": "Phase maturity retrieved"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_phase_maturity(
+    project_id: str,
+    phase: str,
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """
+    Get maturity details for a specific project phase.
+
+    Shows maturity percentage, readiness status, category scores, and warnings.
+
+    Args:
+        project_id: Project identifier
+        phase: Phase name (discovery, analysis, design, implementation)
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with phase maturity details
+    """
+    try:
+        # Check project access
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        # Load project
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        # Validate phase
+        valid_phases = ["discovery", "analysis", "design", "implementation"]
+        if phase not in valid_phases:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid phase '{phase}'. Valid phases: {', '.join(valid_phases)}",
+            )
+
+        # Get orchestrator and calculate maturity
+        from socrates_api.main import get_orchestrator
+        orchestrator = get_orchestrator()
+
+        result = orchestrator.calculate_phase_maturity(project)
+
+        logger.info(
+            f"Retrieved maturity for {project_id} phase {phase}: "
+            f"{result.get('maturity', {}).get('maturity_percentage')}%"
+        )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Phase '{phase}' maturity retrieved",
+            data=result.get("maturity", {}),
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting phase maturity: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve phase maturity",
+        )
+
+
+@router.get(
+    "/{project_id}/maturity",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get maturity for all phases",
+    responses={
+        200: {"description": "Maturity summary retrieved"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_all_phases_maturity(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """
+    Get maturity summary for all project phases.
+
+    Shows readiness status and maturity for all 4 phases.
+
+    Args:
+        project_id: Project identifier
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with maturity for all phases
+    """
+    try:
+        # Check project access
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        # Load project
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        # Get orchestrator and calculate maturity for all phases
+        from socrates_api.main import get_orchestrator
+        orchestrator = get_orchestrator()
+
+        result = orchestrator.get_all_phases_maturity(project)
+
+        logger.info(f"Retrieved all phases maturity for {project_id}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="All phases maturity retrieved",
+            data=result.get("all_phases", {}),
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting all phases maturity: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve all phases maturity",
+        )
+
+
+@router.get(
     "/{project_id}/analytics",
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,

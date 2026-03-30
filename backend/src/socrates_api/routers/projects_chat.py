@@ -925,6 +925,38 @@ Provide a helpful, direct answer."""
             # This keeps the Socratic dialogue clean and uninterrupted
             # (Unless debug mode is enabled, specs are returned in debugInfo field)
 
+            # Calculate phase maturity and add readiness status
+            try:
+                from socrates_api.main import get_orchestrator
+                orchestrator = get_orchestrator()
+
+                maturity_result = orchestrator.calculate_phase_maturity(project)
+                if maturity_result.get("status") == "success":
+                    maturity_data = maturity_result.get("maturity", {})
+                    phase_readiness = maturity_result.get("phase_readiness", {})
+
+                    # Include maturity in debug info
+                    if debug_enabled and response_data.get("debugInfo"):
+                        response_data["debugInfo"]["phase_maturity"] = {
+                            "percentage": maturity_data.get("maturity_percentage", 0.0),
+                            "is_ready": phase_readiness.get("is_ready", False),
+                            "warnings": maturity_data.get("warnings", []),
+                        }
+
+                    # If phase becomes ready or complete, notify user
+                    if phase_readiness.get("is_ready") and maturity_data.get("maturity_percentage", 0.0) >= 20.0:
+                        response_data["phase_readiness"] = {
+                            "status": "ready",
+                            "current_maturity": maturity_data.get("maturity_percentage", 0.0),
+                            "message": f"Phase '{project.phase}' has reached {maturity_data.get('maturity_percentage', 0.0):.1f}% maturity and is ready for advancement.",
+                            "category_scores": maturity_data.get("category_scores", {})
+                        }
+
+                        logger.info(f"Phase {project.phase} is READY for project {project_id} ({maturity_data.get('maturity_percentage', 0.0):.1f}% maturity)")
+            except Exception as maturity_error:
+                logger.warning(f"Failed to calculate phase maturity: {maturity_error}")
+                # Don't fail the entire response if maturity calculation fails
+
             # Check if phase is complete and add recommendation
             try:
                 if result_data.get("phase_complete"):

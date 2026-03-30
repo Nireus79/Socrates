@@ -15,8 +15,8 @@ import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axio
 // 1. Try to load from API's port-config endpoint (dynamic port allocation)
 // 2. Try to load from server-config.json (written by full-stack startup)
 // 3. Fall back to environment variable
-// 4. Final fallback to localhost:8000
-let API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// 4. Final fallback to localhost:8001 (default for full-stack mode)
+let API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
 
 // Store callback for when config is loaded
 let onConfigLoaded: ((url: string) => void) | null = null;
@@ -36,7 +36,7 @@ const tryPort = async (port: number): Promise<boolean> => {
 const loadServerConfig = async () => {
   // Strategy 1: Try to load from API's /health endpoint on common ports
   console.log('[APIClient] Attempting to discover API port from /health endpoint...');
-  const commonPorts = [8000, 8001, 8008, 8009, 8010, 8015, 8020];
+  const commonPorts = [8001, 8000, 8008, 8009, 8010, 8015, 8020];  // Try 8001 first (default for full-stack)
   for (const port of commonPorts) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/health`, {
