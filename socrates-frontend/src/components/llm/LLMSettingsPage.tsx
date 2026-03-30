@@ -257,29 +257,27 @@ export const LLMSettingsPage: React.FC = () => {
                           <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                             {provider.label}
                           </h3>
-                          {[
-                            isDefault && (
-                              <Badge key="default" variant="success">
-                                <Check className="h-3 w-3 mr-1" /> Default
-                              </Badge>
-                            ),
-                            isConfigured && (
-                              <Badge key="active" variant="success">
-                                <Check className="h-3 w-3 mr-1" /> Active
-                              </Badge>
-                            ),
-                            <Badge key="type" variant={isApiRequired ? 'info' : 'secondary'}>
-                              {isApiRequired ? (
-                                <>
-                                  <CreditCard className="h-3 w-3 mr-1" /> API-Based
-                                </>
-                              ) : (
-                                <>
-                                  <Plug className="h-3 w-3 mr-1" /> Built-in
-                                </>
-                              )}
+                          {isDefault && (
+                            <Badge key={`${provider.name}-default`} variant="success">
+                              <Check className="h-3 w-3 mr-1" /> Default
                             </Badge>
-                          ].filter(Boolean)}
+                          )}
+                          {isConfigured && (
+                            <Badge key={`${provider.name}-active`} variant="success">
+                              <Check className="h-3 w-3 mr-1" /> Active
+                            </Badge>
+                          )}
+                          <Badge key={`${provider.name}-type`} variant={isApiRequired ? 'info' : 'secondary'}>
+                            {isApiRequired ? (
+                              <>
+                                <CreditCard className="h-3 w-3 mr-1" /> API-Based
+                              </>
+                            ) : (
+                              <>
+                                <Plug className="h-3 w-3 mr-1" /> Built-in
+                              </>
+                            )}
+                          </Badge>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {provider.description || 'Language model provider'}
@@ -305,8 +303,8 @@ export const LLMSettingsPage: React.FC = () => {
                     {/* Expanded Details */}
                     {isExpanded && (
                       <>
-                        {/* API Key Section (for API-based providers or Claude) */}
-                        {((isApiRequired || provider.name === 'claude')) && (
+                        {/* API Key Section - Show for all providers that accept API keys */}
+                        {(isApiRequired || provider.auth_methods?.length > 0 || provider.name === 'claude') && (
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-2">API Key</h4>
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">

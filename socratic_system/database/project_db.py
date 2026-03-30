@@ -1709,6 +1709,177 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    def set_user_default_provider(self, user_id: str, provider: str) -> bool:
+        """
+        Set the default LLM provider for a user.
+
+        Args:
+            user_id: Username
+            provider: Provider name (e.g., 'claude', 'openai')
+
+        Returns:
+            True if successful, False otherwise
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Create table if it doesn't exist
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS llm_provider_config (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    default_provider TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                )
+            """)
+
+            # Upsert the default provider
+            now = datetime.now()
+            cursor.execute("""
+                INSERT OR REPLACE INTO llm_provider_config
+                (id, user_id, default_provider, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                f"{user_id}:default",
+                user_id,
+                provider,
+                serialize_datetime(now),
+                serialize_datetime(now),
+            ))
+
+            conn.commit()
+            self.logger.debug(f"Set default provider to {provider} for {user_id}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error setting default provider for {user_id}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_user_default_provider(self, user_id: str) -> str:
+        """
+        Get the default LLM provider for a user.
+
+        Args:
+            user_id: Username
+
+        Returns:
+            Provider name or 'claude' (default) if not set
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                SELECT default_provider FROM llm_provider_config
+                WHERE user_id = ?
+                LIMIT 1
+            """, (user_id,))
+
+            row = cursor.fetchone()
+            if row and row["default_provider"]:
+                return row["default_provider"]
+            return "claude"  # Default to Claude
+
+        except Exception as e:
+            self.logger.debug(f"Error getting default provider for {user_id}: {e}")
+            return "claude"  # Default to Claude on error
+        finally:
+            conn.close()
+
+    def set_provider_model(self, user_id: str, provider: str, model: str) -> bool:
+        """
+        Set the preferred model for a provider.
+
+        Args:
+            user_id: Username
+            provider: Provider name (e.g., 'claude', 'openai')
+            model: Model name (e.g., 'gpt-4-turbo', 'claude-3-5-sonnet-20241022')
+
+        Returns:
+            True if successful, False otherwise
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Create table if it doesn't exist
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS llm_provider_models (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    model TEXT NOT NULL,
+                    created_at TEXT,
+                    updated_at TEXT,
+                    UNIQUE(user_id, provider)
+                )
+            """)
+
+            # Upsert the model
+            now = datetime.now()
+            cursor.execute("""
+                INSERT OR REPLACE INTO llm_provider_models
+                (id, user_id, provider, model, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                f"{user_id}:{provider}:model",
+                user_id,
+                provider,
+                model,
+                serialize_datetime(now),
+                serialize_datetime(now),
+            ))
+
+            conn.commit()
+            self.logger.debug(f"Set model to {model} for {provider} for {user_id}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error setting provider model for {user_id}/{provider}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_provider_model(self, user_id: str, provider: str) -> str | None:
+        """
+        Get the preferred model for a provider.
+
+        Args:
+            user_id: Username
+            provider: Provider name (e.g., 'claude', 'openai')
+
+        Returns:
+            Model name or None if not set
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("""
+                SELECT model FROM llm_provider_models
+                WHERE user_id = ? AND provider = ?
+                LIMIT 1
+            """, (user_id, provider))
+
+            row = cursor.fetchone()
+            if row and row["model"]:
+                return row["model"]
+            return None
+
+        except Exception as e:
+            self.logger.debug(f"Error getting provider model for {user_id}/{provider}: {e}")
+            return None
+        finally:
+            conn.close()
+
     def save_knowledge_document(
         self,
         user_id: str,
