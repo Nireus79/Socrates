@@ -23,17 +23,77 @@ from socrates_api.models_local import User
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/system", tags=["system"])
 
-# Local debug mode flag
-_debug_mode = False
+# Debug mode tracking system
+# Supports both global and per-user debug settings
+_debug_mode_global = False  # Global debug mode (for backwards compatibility)
+_debug_mode_users = {}  # Per-user debug mode: {user_id: bool}
 
-def set_debug_mode(enabled: bool):
-    """Set debug mode locally"""
-    global _debug_mode
-    _debug_mode = enabled
+def set_debug_mode(enabled: bool, user_id: Optional[str] = None):
+    """
+    Set debug mode locally.
 
-def is_debug_mode() -> bool:
-    """Check if debug mode is enabled"""
-    return _debug_mode
+    Args:
+        enabled: Whether to enable debug mode
+        user_id: Optional user ID for per-user setting. If None, sets global mode.
+    """
+    global _debug_mode_global, _debug_mode_users
+
+    if user_id:
+        # Set per-user debug mode
+        _debug_mode_users[user_id] = enabled
+        logger.debug(f"Set debug mode to {enabled} for user {user_id}")
+    else:
+        # Set global debug mode
+        _debug_mode_global = enabled
+        logger.debug(f"Set global debug mode to {enabled}")
+
+def is_debug_mode(user_id: Optional[str] = None) -> bool:
+    """
+    Check if debug mode is enabled.
+
+    Args:
+        user_id: Optional user ID to check per-user setting.
+                If None, checks global mode.
+
+    Returns:
+        True if debug mode is enabled for the user or globally
+    """
+    if user_id and user_id in _debug_mode_users:
+        # Return per-user setting if it exists
+        return _debug_mode_users[user_id]
+
+    # Fall back to global setting
+    return _debug_mode_global
+
+def get_debug_mode_status(user_id: Optional[str] = None) -> dict:
+    """
+    Get comprehensive debug mode status.
+
+    Args:
+        user_id: Optional user ID for per-user information
+
+    Returns:
+        Dictionary with debug mode status information
+    """
+    status = {
+        "global_enabled": _debug_mode_global,
+        "user_specific_enabled": None,
+        "active_debug_mode": is_debug_mode(user_id),
+        "total_users_with_debug": len(_debug_mode_users),
+    }
+
+    if user_id:
+        status["user_id"] = user_id
+        status["user_specific_enabled"] = _debug_mode_users.get(user_id, None)
+
+    return status
+
+def clear_user_debug_mode(user_id: str):
+    """Clear per-user debug mode setting, reverting to global mode."""
+    global _debug_mode_users
+    if user_id in _debug_mode_users:
+        del _debug_mode_users[user_id]
+        logger.debug(f"Cleared debug mode setting for user {user_id}")
 
 
 @router.get(
@@ -598,19 +658,28 @@ async def get_context(
 )
 async def toggle_debug_mode(
     enabled: Optional[bool] = Query(None),
+    scope: Optional[str] = Query("user", description="Scope: 'global' for all users, 'user' for current user only"),
     current_user: str = Depends(get_current_user),
 ):
     """
-    Toggle debug mode on/off for the server.
+    Toggle debug mode on/off for the server or for a specific user.
 
-    This controls the actual server logging level:
-    - When enabled: Shows DEBUG level logs and above
-    - When disabled: Shows only INFO, WARNING, ERROR, and CRITICAL level logs
+    **Global Scope:**
+    - Enables/disables debug mode for all users
+    - Affects server-wide logging level
+    - Useful for system administrators
+
+    **User Scope:**
+    - Enables/disables debug mode only for the current user
+    - Other users unaffected
+    - Useful for debugging specific user issues
+    - Overrides global setting when enabled
 
     If enabled is not provided, toggles the current state.
 
     Args:
         enabled: Optional boolean to set debug mode (None = toggle)
+        scope: "global" for all users, "user" for current user only (default: "user")
         current_user: Authenticated user making the request
 
     Returns:
@@ -618,29 +687,39 @@ async def toggle_debug_mode(
     """
     try:
         import sys
-        print(f"[ENDPOINT] toggle_debug_mode called with enabled={enabled}", file=sys.stderr)
+        print(f"[ENDPOINT] toggle_debug_mode called with enabled={enabled}, scope={scope}", file=sys.stderr)
 
-        current_state = is_debug_mode()
+        # Determine whether we're setting global or per-user mode
+        is_global = scope == "global"
+        user_id_for_setting = None if is_global else current_user
 
+        # Get current state
+        current_state = is_debug_mode(user_id=user_id_for_setting)
+
+        # Determine new state
         if enabled is not None:
             new_state = enabled
         else:
             new_state = not current_state
 
-        print(f"[ENDPOINT] Calling set_debug_mode({new_state})", file=sys.stderr)
-        # Apply debug mode change to the logger
-        set_debug_mode(new_state)
+        print(f"[ENDPOINT] Calling set_debug_mode({new_state}, user_id={user_id_for_setting})", file=sys.stderr)
+        # Apply debug mode change
+        set_debug_mode(new_state, user_id=user_id_for_setting)
         print("[ENDPOINT] set_debug_mode completed", file=sys.stderr)
 
-        logger.info(f"Debug mode {('ENABLED' if new_state else 'DISABLED')} by {current_user}")
+        scope_label = "global" if is_global else f"user {current_user}"
+        logger.info(f"Debug mode {('ENABLED' if new_state else 'DISABLED')} for {scope_label}")
 
         return APIResponse(
             success=True,
             status="success",
-            message=f"Debug mode {('enabled' if new_state else 'disabled')}",
+            message=f"Debug mode {('enabled' if new_state else 'disabled')} for {scope_label}",
             data={
                 "debug_enabled": new_state,
                 "previous_state": current_state,
+                "scope": scope,
+                "affected_user": current_user if not is_global else None,
+                "debug_status": get_debug_mode_status(current_user),
             },
         )
 
@@ -661,16 +740,120 @@ async def get_debug_status(
     current_user: str = Depends(get_current_user),
 ):
     """
-    Get the current debug mode status of the server.
+    Get the current debug mode status of the server and for the current user.
 
-    Returns whether DEBUG level logging is currently enabled.
+    Returns:
+    - Global debug mode state (affects all users)
+    - Per-user debug mode state (user-specific override)
+    - Effective debug mode (which setting is currently active)
+    - Metadata about debug settings across users
     """
+    status_info = get_debug_mode_status(current_user)
+
     return APIResponse(
         success=True,
         status="success",
         message="Debug mode status retrieved",
-        data={"debug_enabled": is_debug_mode()},
+        data={
+            "global_debug_enabled": status_info["global_enabled"],
+            "user_debug_enabled": status_info["user_specific_enabled"],
+            "debug_enabled": status_info["active_debug_mode"],
+            "effective_scope": "user" if status_info["user_specific_enabled"] is not None else "global",
+            "current_user": current_user,
+            "total_users_with_custom_debug": status_info["total_users_with_debug"],
+        },
     )
+
+
+@router.delete(
+    "/debug/clear",
+    status_code=status.HTTP_200_OK,
+    summary="Clear per-user debug mode setting",
+)
+async def clear_debug_mode(
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Clear per-user debug mode setting for the current user.
+
+    After clearing, the user will use the global debug mode setting.
+    This is useful when you want to revert to system-wide debug settings.
+
+    Args:
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with confirmation
+    """
+    try:
+        clear_user_debug_mode(current_user)
+        logger.info(f"Cleared debug mode setting for user {current_user}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Debug mode setting cleared for {current_user}",
+            data={
+                "current_user": current_user,
+                "debug_enabled": is_debug_mode(current_user),
+                "debug_source": "global",
+            },
+        )
+
+    except Exception as e:
+        logger.error(f"Error clearing debug mode: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Operation failed. Please try again later.",
+        )
+
+
+@router.get(
+    "/debug/users",
+    status_code=status.HTTP_200_OK,
+    summary="List users with custom debug settings",
+)
+async def list_debug_users(
+    current_user: str = Depends(get_current_user),
+):
+    """
+    List all users who have custom (per-user) debug mode settings.
+
+    This is useful for administrators to see which users have debug mode
+    enabled or disabled separately from the global setting.
+
+    Args:
+        current_user: Authenticated user (for logging)
+
+    Returns:
+        SuccessResponse with list of users and their debug settings
+    """
+    try:
+        # Get all users with custom debug settings
+        users_with_debug = [
+            {"user_id": uid, "debug_enabled": enabled}
+            for uid, enabled in _debug_mode_users.items()
+        ]
+
+        logger.info(f"Listed debug mode users (requested by {current_user})")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Found {len(users_with_debug)} users with custom debug settings",
+            data={
+                "global_debug_enabled": _debug_mode_global,
+                "users_with_custom_settings": users_with_debug,
+                "total_custom_users": len(users_with_debug),
+            },
+        )
+
+    except Exception as e:
+        logger.error(f"Error listing debug users: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Operation failed. Please try again later.",
+        )
 
 
 @router.post(

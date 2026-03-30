@@ -294,7 +294,7 @@ async def _handle_chat_message(
             hint_text = ""
             if request_hint:
                 try:
-                    hint_text = orchestrator.claude_client.generate_suggestions(
+                    hint_text = orchestrator.llm_client.generate_suggestions(
                         f"Current question context: {message.content}", project
                     )
                 except Exception as e:
@@ -434,7 +434,7 @@ async def _route_command(
         # Map common commands to handlers
         if command in ["hint", "help", "suggest"]:
             # Generate hint
-            hint = orchestrator.claude_client.generate_suggestions(
+            hint = orchestrator.llm_client.generate_suggestions(
                 f"{command}: {args}" if args else "Help me with this task", project
             )
             return {"status": "success", "message": hint}
@@ -875,7 +875,7 @@ async def request_hint(
                 from socrates_api.main import get_orchestrator
 
                 orchestrator = get_orchestrator()
-                hint = orchestrator.claude_client.generate_suggestions(question, project)
+                hint = orchestrator.llm_client.generate_suggestions(question, project)
             except Exception as e:
                 logger.debug("Error generating hint", exc_info=True)
                 hint = "Try thinking about the main objectives and requirements."
@@ -1065,7 +1065,7 @@ Provide response in JSON format:
     "insights": ["...", "..."]
 }}"""
 
-                response = orchestrator.claude_client.generate_response(prompt)
+                response = orchestrator.llm_client.generate_response(prompt)
 
                 # Parse response (assume JSON format)
                 import json

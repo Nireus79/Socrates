@@ -55,6 +55,74 @@ class NLUInterpretResponse(BaseModel):
     intent: Optional[str] = None
 
 
+async def _extract_specs_from_input(text: str, context: Optional[dict] = None, user_id: str = None) -> Optional[Dict[str, Any]]:
+    """
+    Extract project specifications from user input using ContextAnalyzer.
+
+    Detects goals, requirements, tech stack, and constraints mentioned by the user.
+
+    Args:
+        text: User input text
+        context: Optional context about the project
+        user_id: Optional user ID for user-specific API key
+
+    Returns:
+        Dictionary with extracted specs (goals, requirements, tech_stack, constraints) or None if extraction fails
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+
+        orchestrator = get_orchestrator()
+
+        # Try to use ContextAnalyzer agent first
+        agent = orchestrator.agents.get("context_analyzer")
+        if agent and orchestrator.llm_client:
+            try:
+                result = agent.process({
+                    "action": "analyze",
+                    "content": text
+                })
+
+                if result and result.get("status") == "success":
+                    data = result.get("data", {})
+                    specs = {
+                        "goals": data.get("goals", []),
+                        "requirements": data.get("requirements", []),
+                        "tech_stack": data.get("tech_stack", []),
+                        "constraints": data.get("constraints", [])
+                    }
+
+                    # Only return if at least one spec was extracted
+                    if any(specs.values()):
+                        logger.debug(f"ContextAnalyzer extracted specs: {specs}")
+                        return specs
+            except Exception as e:
+                logger.debug(f"ContextAnalyzer extraction failed: {e}")
+
+        # Fallback: Use orchestrator's direct_chat extract_insights action
+        if orchestrator.llm_client:
+            result = orchestrator.process_request(
+                "direct_chat",
+                {
+                    "action": "extract_insights",
+                    "text": text,
+                    "user_id": user_id or "nlu_interpreter",
+                }
+            )
+
+            if result.get("status") == "success":
+                specs = result.get("data", {})
+                if any(specs.values()):
+                    logger.debug(f"LLM extracted specs: {specs}")
+                    return specs
+
+        return None
+
+    except Exception as e:
+        logger.debug(f"Failed to extract specs from input: {e}")
+        return None
+
+
 async def _extract_entities(text: str, context: Optional[dict] = None, user_id: str = None, user_auth_method: str = "api_key") -> Dict[str, Any]:
     """
     Extract entities from user input using Claude AI.
@@ -88,7 +156,7 @@ Extract the following in JSON format:
 
 Respond ONLY with valid JSON."""
 
-        response = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
+        response = orchestrator.llm_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
 
         try:
             entities = json.loads(response)
@@ -179,7 +247,7 @@ Respond with JSON:
 
 Respond ONLY with valid JSON."""
 
-        response = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
+        response = orchestrator.llm_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
 
         try:
             result = json.loads(response)
@@ -295,6 +363,9 @@ async def interpret_input(
         intent = entities.get("intent_category", "query")
         entity_confidence = entities.get("confidence", 0.0)
 
+        # Extract specifications from user input (async)
+        extracted_specs = await _extract_specs_from_input(user_input, request.context, user_id=current_user)
+
         # Get AI suggestions if confidence is moderate or higher
         ai_suggestions = []
         if entity_confidence >= 0.3:
@@ -303,17 +374,24 @@ async def interpret_input(
             # Format AI suggestions properly
             if ai_suggestions:
                 logger.info(f"AI suggestions for '{user_input}': {len(ai_suggestions)} suggestions")
+                response_data = {
+                    "status": "suggestions",
+                    "suggestions": ai_suggestions[:3],
+                    "message": "I found some relevant commands:",
+                    "entities": entities,
+                    "intent": intent,
+                }
+
+                # Include extracted specs if any were found
+                if extracted_specs:
+                    response_data["extracted_specs"] = extracted_specs
+                    logger.info(f"NLU detected specs: {extracted_specs}")
+
                 return APIResponse(
                     success=True,
                     status="success",
                     message="I found some relevant commands:",
-                    data={
-                        "status": "suggestions",
-                        "suggestions": ai_suggestions[:3],
-                        "message": "I found some relevant commands:",
-                        "entities": entities,
-                        "intent": intent,
-                    },
+                    data=response_data,
                 )
 
         # Fall back to keyword-based matching if AI confidence is low
@@ -379,17 +457,24 @@ async def interpret_input(
         # If exact match found, return it
         if matched_command:
             logger.info(f"Exact keyword match: {matched_command}")
+            response_data = {
+                "status": "success",
+                "command": matched_command,
+                "message": f"Understood! Executing: {matched_command}",
+                "entities": entities,
+                "intent": intent,
+            }
+
+            # Include extracted specs if any were found
+            if extracted_specs:
+                response_data["extracted_specs"] = extracted_specs
+                logger.info(f"NLU detected specs: {extracted_specs}")
+
             return APIResponse(
                 success=True,
                 status="success",
                 message=f"Understood! Executing: {matched_command}",
-                data={
-                    "status": "success",
-                    "command": matched_command,
-                    "message": f"Understood! Executing: {matched_command}",
-                    "entities": entities,
-                    "intent": intent,
-                },
+                data=response_data,
             )
 
         # If suggestions found, return them
@@ -397,31 +482,45 @@ async def interpret_input(
             # Sort by confidence
             suggestions.sort(key=lambda x: x["confidence"], reverse=True)
             logger.info(f"Found {len(suggestions)} keyword-based suggestions")
+            response_data = {
+                "status": "suggestions",
+                "suggestions": suggestions[:3],
+                "message": "Did you mean one of these?",
+                "entities": entities,
+                "intent": intent,
+            }
+
+            # Include extracted specs if any were found
+            if extracted_specs:
+                response_data["extracted_specs"] = extracted_specs
+                logger.info(f"NLU detected specs: {extracted_specs}")
+
             return APIResponse(
                 success=True,
                 status="success",
                 message="Did you mean one of these?",
-                data={
-                    "status": "suggestions",
-                    "suggestions": suggestions[:3],
-                    "message": "Did you mean one of these?",
-                    "entities": entities,
-                    "intent": intent,
-                },
+                data=response_data,
             )
 
         # No match found
         logger.info(f"No match found for input: {user_input}")
+        response_data = {
+            "status": "no_match",
+            "message": "I didn't understand that. Try:\n• Describing what you want (analyze, test, fix, etc.)\n• Typing a command like /help\n• Selecting a project from the dropdown",
+            "entities": entities,
+            "intent": intent,
+        }
+
+        # Include extracted specs even if no command was matched
+        if extracted_specs:
+            response_data["extracted_specs"] = extracted_specs
+            logger.info(f"NLU detected specs even though no command matched: {extracted_specs}")
+
         return APIResponse(
             success=False,
             status="error",
             message="I didn't understand that. Try describing what you want or typing a command like /help",
-            data={
-                "status": "no_match",
-                "message": "I didn't understand that. Try:\n• Describing what you want (analyze, test, fix, etc.)\n• Typing a command like /help\n• Selecting a project from the dropdown",
-                "entities": entities,
-                "intent": intent,
-            },
+            data=response_data,
         )
 
     except Exception as e:

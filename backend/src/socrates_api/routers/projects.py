@@ -339,8 +339,8 @@ async def create_project(
                 from socrates_api.main import app_state
 
                 orchestrator = app_state.get("orchestrator")
-                if orchestrator and hasattr(orchestrator, "claude_client"):
-                    insights = await orchestrator.claude_client.extract_insights(
+                if orchestrator and hasattr(orchestrator, "llm_client"):
+                    insights = await orchestrator.llm_client.extract_insights(
                         context_to_analyze, project
                     )
 

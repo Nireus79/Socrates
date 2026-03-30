@@ -29,12 +29,8 @@ from socrates_api.models import (
     ListChatSessionsResponse,
 )
 from socrates_api.models_local import User, ProjectContext
-# Local debug mode
-_debug_mode = False
-
-def is_debug_mode() -> bool:
-    """Check if debug mode is enabled"""
-    return _debug_mode
+# Import debug mode from system router (centralized)
+from socrates_api.routers.system import is_debug_mode
 
 
 class ChatModeRequest(BaseModel):
@@ -50,13 +46,14 @@ class SearchRequest(BaseModel):
 
 
 class ConflictResolution(BaseModel):
-    """Individual conflict resolution"""
+    """Individual conflict resolution from orchestrator conflicts"""
 
-    conflict_type: str
-    old_value: str
-    new_value: str
+    conflict_type: str  # "goals", "tech_stack", "requirements", "constraints"
+    old_value: Optional[str | list] = None  # Can be None, string, or list for compatibility
+    new_value: Optional[str | list] = None  # Can be None, string, or list for compatibility
     resolution: str  # "keep", "replace", "skip", or "manual"
-    manual_value: Optional[str] = None
+    manual_value: Optional[str | list] = None  # Optional resolved value for manual resolution
+    conflict_id: Optional[str] = None  # Unique ID from orchestrator for tracking
 
 
 class SaveExtractedSpecsRequest(BaseModel):
@@ -794,26 +791,47 @@ Provide a helpful, direct answer."""
                 # Continue without insights if extraction fails
                 insights = None
 
+            # Prepare response data
+            specs_count = sum([
+                len(insights.get("goals", [])) if insights else 0,
+                len(insights.get("requirements", [])) if insights else 0,
+                len(insights.get("tech_stack", [])) if insights else 0,
+                len(insights.get("constraints", [])) if insights else 0,
+            ])
+
+            response_data = {
+                "message": {
+                    "id": f"msg_{id(answer)}",
+                    "role": "assistant",
+                    "content": answer + (insights_message if insights_message else ""),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
+                "mode": "direct",
+                # Include extracted specs for user confirmation (not auto-saved)
+                "extracted_specs": insights,
+                "extracted_specs_count": specs_count,
+            }
+
+            # Add debug info if debug mode is enabled
+            if is_debug_mode(current_user):
+                logger.debug("Debug mode enabled - returning debug annotations to frontend")
+                response_data["debugInfo"] = {
+                    "specs_extracted": specs_count > 0,
+                    "extracted_specs": insights,
+                    "extracted_specs_count": specs_count,
+                    "inline_annotations": {
+                        "goals": insights.get("goals", []) if insights else [],
+                        "requirements": insights.get("requirements", []) if insights else [],
+                        "tech_stack": insights.get("tech_stack", []) if insights else [],
+                        "constraints": insights.get("constraints", []) if insights else [],
+                    } if specs_count > 0 else {},
+                }
+                logger.debug(f"Direct mode debug info: {specs_count} specs extracted")
+
             return APIResponse(
                 success=True,
                 status="success",
-                data={
-                    "message": {
-                        "id": f"msg_{id(answer)}",
-                        "role": "assistant",
-                        "content": answer + (insights_message if insights_message else ""),
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                    },
-                    "mode": "direct",
-                    # Include extracted specs for user confirmation (not auto-saved)
-                    "extracted_specs": insights,
-                    "extracted_specs_count": sum([
-                        len(insights.get("goals", [])) if insights else 0,
-                        len(insights.get("requirements", [])) if insights else 0,
-                        len(insights.get("tech_stack", [])) if insights else 0,
-                        len(insights.get("constraints", [])) if insights else 0,
-                    ]),
-                },
+                data=response_data,
             )
         else:
             # Socratic mode: Use the existing Socratic questioning approach
@@ -841,9 +859,15 @@ Provide a helpful, direct answer."""
             # Persist project changes to database (conversation history, maturity, etc.)
             db.save_project(project)
 
+            # Extract data from orchestrator response
+            result_data = result.get("data", {})
+            extracted_specs = result_data.get("extracted_specs", {})
+            conflicts = result_data.get("conflicts", [])
+            feedback = result_data.get("feedback", "")
+
             # Check if conflicts detected - if so, return them for frontend resolution
-            if result.get("conflicts_pending") and result.get("conflicts"):
-                logger.info(f"Conflicts detected: {len(result['conflicts'])} conflict(s)")
+            if conflicts:
+                logger.info(f"Conflicts detected in Socratic mode: {len(conflicts)} conflict(s)")
                 return APIResponse(
                     success=True,
                     status="success",
@@ -851,43 +875,63 @@ Provide a helpful, direct answer."""
                         "message": {
                             "id": f"msg_{id(result)}",
                             "role": "assistant",
-                            "content": "Conflict detected. Please resolve the conflict to proceed.",
+                            "content": "Conflict detected in specifications. Please resolve before continuing.",
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         },
                         "conflicts_pending": True,
-                        "conflicts": result.get("conflicts", []),
+                        "conflicts": conflicts,
                     },
                 )
 
-            # In Socratic mode: Specs/insights are automatically saved but NOT shown to user
+            # In Socratic mode: Specs/insights are automatically extracted but NOT shown to user
             # They are silently extracted and stored in the project without dialogue interference
-            insights = result.get("insights", {})
-            if insights:
-                logger.debug("Insights extracted and saved to project (hidden from Socratic dialogue)")
+            if extracted_specs:
+                logger.debug(f"Specs extracted from Socratic response: {extracted_specs}")
 
-            # Check if debug mode is enabled - if so, return insights for debugging
-            # Removed local import: from socratic_system.utils.logger import is_debug_mode
+            # Prepare response data with debug mode annotations
             response_data = {}
 
-            if is_debug_mode() and insights:
-                logger.debug(f"Debug mode enabled - returning insights to frontend: {insights}")
-                response_data["extracted_insights"] = insights
-                response_data["extracted_specs"] = insights
-                response_data["extracted_specs_count"] = len([v for v in insights.values() if v])
-                response_data["debug_message"] = f"Extracted {response_data['extracted_specs_count']} insight categories"
-                logger.debug(f"Returning {response_data['extracted_specs_count']} insight categories to frontend")
+            # Check if debug mode is enabled - if so, return debug info with inline annotations
+            if is_debug_mode(current_user):
+                logger.debug("Debug mode enabled - returning debug annotations to frontend")
 
-            # In Socratic mode, don't return insights as a message to the frontend (unless debug mode)
+                # Extract and format extracted specs for debugging
+                specs_count = sum([
+                    len(extracted_specs.get("goals", [])),
+                    len(extracted_specs.get("requirements", [])),
+                    len(extracted_specs.get("tech_stack", [])),
+                    len(extracted_specs.get("constraints", [])),
+                ])
+
+                response_data["debugInfo"] = {
+                    "specs_extracted": specs_count > 0,
+                    "extracted_specs": extracted_specs,
+                    "extracted_specs_count": specs_count,
+                    "feedback": feedback,
+                }
+
+                if specs_count > 0:
+                    response_data["debugInfo"]["inline_annotations"] = {
+                        "goals": extracted_specs.get("goals", []),
+                        "requirements": extracted_specs.get("requirements", []),
+                        "tech_stack": extracted_specs.get("tech_stack", []),
+                        "constraints": extracted_specs.get("constraints", []),
+                    }
+
+                logger.debug(f"Debug info with {specs_count} spec categories: {response_data['debugInfo']}")
+
+            # In Socratic mode, don't return extracted specs as a message to the frontend
             # The frontend will proceed directly to generate the next question
             # This keeps the Socratic dialogue clean and uninterrupted
+            # (Unless debug mode is enabled, specs are returned in debugInfo field)
 
             # Check if phase is complete and add recommendation
             try:
-                if result.get("phase_complete"):
+                if result_data.get("phase_complete"):
                     logger.info(f"Phase {project.phase} is complete for project {project_id}")
                     response_data["phase_complete"] = True
-                    response_data["phase_completion_message"] = result.get("phase_completion_message")
-                    response_data["next_phase"] = result.get("next_phase")
+                    response_data["phase_completion_message"] = result_data.get("phase_completion_message")
+                    response_data["next_phase"] = result_data.get("next_phase")
                     logger.debug(f"Phase completion data: {response_data.get('phase_completion_message', '')[:100]}...")
             except Exception as phase_error:
                 logger.error(f"Error handling phase completion: {str(phase_error)}", exc_info=True)
@@ -1075,16 +1119,38 @@ async def get_hint(
         if result.get("status") != "success":
             # Fallback to a generic hint if hint generation fails
             logger.warning(f"Failed to generate hint: {result.get('message', 'Unknown error')}")
+            fallback_hint = "Review the project requirements and consider what step comes next in your learning journey."
+            response_data = {"hint": fallback_hint}
+
+            if is_debug_mode(current_user):
+                response_data["debugInfo"] = {
+                    "hint_source": "fallback",
+                    "phase": project.phase if project else "unknown",
+                }
+
             return APIResponse(
                 success=True,
                 status="success",
-                data={"hint": "Review the project requirements and consider what step comes next in your learning journey."},
+                data=response_data,
             )
+
+        hint = result.get("data", {}).get("hint") or result.get("hint", "Continue working on your project.")
+        response_data = {"hint": hint}
+
+        # Add debug info if debug mode is enabled
+        if is_debug_mode(current_user):
+            logger.debug("Debug mode enabled - returning hint debug info")
+            response_data["debugInfo"] = {
+                "hint_source": result.get("message", "SkillGeneratorAgent"),
+                "phase": project.phase if project else "unknown",
+                "has_goals": bool(project.goals if project else False),
+            }
+            logger.debug(f"Hint generated from {response_data['debugInfo']['hint_source']}")
 
         return APIResponse(
             success=True,
             status="success",
-            data={"hint": result.get("hint", "Continue working on your project.")},
+            data=response_data,
         )
 
     except HTTPException:
@@ -2025,27 +2091,54 @@ async def resolve_conflicts(
     db: LocalDatabase = Depends(get_database),
 ):
     """
-    Resolve conflicts detected in project specifications.
+    Resolve specification conflicts detected during Socratic dialogue.
+
+    When a user's response during Socratic questioning introduces specs that conflict
+    with the project's existing specifications, this endpoint resolves those conflicts
+    and updates the project accordingly.
+
+    **Conflict Resolution Strategies:**
+    - "keep": Keep existing spec, discard new value
+    - "replace": Replace existing with new value
+    - "skip": Discard new value, keep existing
+    - "manual": Use a custom value provided in manual_value field
 
     Args:
         project_id: The project ID
-        body: JSON body with conflict resolutions
+        request: ConflictResolutionRequest body with list of conflict resolutions
             {
                 "conflicts": [
                     {
-                        "conflict_type": "tech_stack",
-                        "old_value": "Python",
-                        "new_value": "JavaScript",
+                        "conflict_type": "goals|tech_stack|requirements|constraints",
+                        "old_value": "existing_value",           # Can be string, list, or null
+                        "new_value": "proposed_value",           # Can be string, list, or null
                         "resolution": "keep|replace|skip|manual",
-                        "manual_value": "optional resolved value"
+                        "manual_value": "custom_value",          # Optional, for "manual" resolution
+                        "conflict_id": "unique_id"               # Optional tracking ID
                     }
                 ]
             }
-        current_user: Current authenticated user
+        current_user: Current authenticated user (must have editor role)
         db: Database connection
 
     Returns:
-        Updated project and next question
+        APIResponse with:
+        - success: true on success
+        - data: Updated project specs (goals, requirements, tech_stack, constraints)
+        - message: Confirmation message
+
+    Example:
+        POST /projects/{project_id}/chat/resolve-conflicts
+        {
+            "conflicts": [
+                {
+                    "conflict_type": "tech_stack",
+                    "old_value": "Python",
+                    "new_value": "JavaScript",
+                    "resolution": "replace"
+                }
+            ]
+        }
     """
     try:
         # Check project access - requires editor or better
@@ -2080,64 +2173,80 @@ async def resolve_conflicts(
                 f"({old_value} vs {new_value})"
             )
 
+            # Helper to safely check and remove from list
+            def safe_remove(lst: list, value):
+                if value and isinstance(value, str) and value in lst:
+                    lst.remove(value)
+                elif isinstance(value, list):
+                    for v in value:
+                        if v in lst:
+                            lst.remove(v)
+
+            # Helper to safely add to list
+            def safe_append(lst: list, value):
+                if isinstance(value, str) and value and value not in lst:
+                    lst.append(value)
+                elif isinstance(value, list):
+                    for v in value:
+                        if v and v not in lst:
+                            lst.append(v)
+
             # Apply resolution based on choice
             if resolution == "keep":
                 # Keep existing - remove new from project if it exists
-                if conflict_type == "tech_stack" and new_value in project.tech_stack:
-                    project.tech_stack.remove(new_value)
-                elif conflict_type == "requirements" and new_value in project.requirements:
-                    project.requirements.remove(new_value)
-                elif conflict_type == "constraints" and new_value in project.constraints:
-                    project.constraints.remove(new_value)
+                if conflict_type == "tech_stack":
+                    safe_remove(project.tech_stack, new_value)
+                elif conflict_type == "requirements":
+                    safe_remove(project.requirements, new_value)
+                elif conflict_type == "constraints":
+                    safe_remove(project.constraints, new_value)
 
             elif resolution == "replace":
                 # Replace existing with new
                 if conflict_type == "tech_stack":
-                    if old_value in project.tech_stack:
-                        project.tech_stack.remove(old_value)
-                    if new_value not in project.tech_stack:
-                        project.tech_stack.append(new_value)
+                    safe_remove(project.tech_stack, old_value)
+                    safe_append(project.tech_stack, new_value)
                 elif conflict_type == "requirements":
-                    if old_value in project.requirements:
-                        project.requirements.remove(old_value)
-                    if new_value not in project.requirements:
-                        project.requirements.append(new_value)
+                    safe_remove(project.requirements, old_value)
+                    safe_append(project.requirements, new_value)
                 elif conflict_type == "constraints":
-                    if old_value in project.constraints:
-                        project.constraints.remove(old_value)
-                    if new_value not in project.constraints:
-                        project.constraints.append(new_value)
+                    safe_remove(project.constraints, old_value)
+                    safe_append(project.constraints, new_value)
                 elif conflict_type == "goals":
-                    project.goals = new_value
+                    # For goals, set directly (string value)
+                    if isinstance(new_value, str):
+                        project.goals = new_value
+                    elif isinstance(new_value, list) and new_value:
+                        project.goals = new_value[0]
 
             elif resolution == "skip":
                 # Skip - remove new value
-                if conflict_type == "tech_stack" and new_value in project.tech_stack:
-                    project.tech_stack.remove(new_value)
-                elif conflict_type == "requirements" and new_value in project.requirements:
-                    project.requirements.remove(new_value)
-                elif conflict_type == "constraints" and new_value in project.constraints:
-                    project.constraints.remove(new_value)
+                if conflict_type == "tech_stack":
+                    safe_remove(project.tech_stack, new_value)
+                elif conflict_type == "requirements":
+                    safe_remove(project.requirements, new_value)
+                elif conflict_type == "constraints":
+                    safe_remove(project.constraints, new_value)
 
             elif resolution == "manual" and manual_value:
                 # Manual resolution - use the provided value
                 if conflict_type == "tech_stack":
-                    if old_value in project.tech_stack:
-                        project.tech_stack.remove(old_value)
-                    if manual_value not in project.tech_stack:
-                        project.tech_stack.append(manual_value)
+                    safe_remove(project.tech_stack, old_value)
+                    safe_append(project.tech_stack, manual_value)
                 elif conflict_type == "requirements":
-                    if old_value in project.requirements:
-                        project.requirements.remove(old_value)
-                    if manual_value not in project.requirements:
-                        project.requirements.append(manual_value)
+                    safe_remove(project.requirements, old_value)
+                    safe_append(project.requirements, manual_value)
                 elif conflict_type == "constraints":
-                    if old_value in project.constraints:
-                        project.constraints.remove(old_value)
-                    if manual_value not in project.constraints:
-                        project.constraints.append(manual_value)
+                    safe_remove(project.constraints, old_value)
+                    safe_append(project.constraints, manual_value)
                 elif conflict_type == "goals":
-                    project.goals = manual_value
+                    # For goals, set directly
+                    if isinstance(manual_value, str):
+                        project.goals = manual_value
+                    elif isinstance(manual_value, list) and manual_value:
+                        project.goals = manual_value[0]
+
+            logger.debug(f"Applied {resolution} resolution for {conflict_type}")
 
         # Save updated project to database
         db.save_project(project)
@@ -2148,17 +2257,42 @@ async def resolve_conflicts(
             f"Categorized specs with confidence metadata preserved: {len(project.categorized_specs)} categories"
         )
 
+        # Prepare response data
+        response_data = {
+            "project_id": project_id,
+            "goals": project.goals,
+            "requirements": project.requirements,
+            "tech_stack": project.tech_stack,
+            "constraints": project.constraints,
+            "next_action": "generate_question",  # Frontend should generate next Socratic question
+        }
+
+        # Add debug info if debug mode is enabled
+        if is_debug_mode():
+            logger.debug("Debug mode enabled - returning conflict resolution debug info")
+            response_data["debugInfo"] = {
+                "conflicts_resolved": len(conflicts),
+                "resolved_specs": {
+                    "goals": project.goals,
+                    "requirements": project.requirements,
+                    "tech_stack": project.tech_stack,
+                    "constraints": project.constraints,
+                },
+                "resolutions_applied": [
+                    {
+                        "conflict_type": c.conflict_type,
+                        "resolution": c.resolution,
+                    }
+                    for c in conflicts
+                ],
+            }
+            logger.debug(f"Resolved {len(conflicts)} conflicts in debug mode")
+
         return APIResponse(
             success=True,
             status="success",
             message="Conflicts resolved and project updated",
-            data={
-                "project_id": project_id,
-                "goals": project.goals,
-                "requirements": project.requirements,
-                "tech_stack": project.tech_stack,
-                "constraints": project.constraints,
-            },
+            data=response_data,
         )
 
     except HTTPException:

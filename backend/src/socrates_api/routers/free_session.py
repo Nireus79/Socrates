@@ -78,6 +78,7 @@ class FreeSessionAnswer(BaseModel):
     session_id: str
     suggested_commands: Optional[List[str]] = None
     topics_detected: Optional[List[str]] = None
+    extracted_specs: Optional[Dict[str, Any]] = None  # Extracted project specifications (goals, requirements, etc.)
 
 
 class FreeSessionSession(BaseModel):
@@ -136,7 +137,7 @@ Conversation:
 
 Return ONLY a JSON array of topics (strings), like: ["web development", "python", "database design"]"""
 
-        response = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
+        response = orchestrator.llm_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
 
         # Parse JSON response
         import json
@@ -254,6 +255,7 @@ async def ask_question(
                     "session_id": IDGenerator.session(),
                     "suggested_commands": [],
                     "topics_detected": [],
+                    "extracted_specs": None,
                 },
             )
 
@@ -275,7 +277,7 @@ async def ask_question(
         logger.info("[free-session] Getting orchestrator...")
         orchestrator = _get_orchestrator()
         logger.info(
-            f"[free-session] Orchestrator status: claude_client={orchestrator.claude_client is not None}"
+            f"[free-session] Orchestrator status: llm_client={orchestrator.llm_client is not None}"
         )
 
         # Load conversation history for context
@@ -303,7 +305,7 @@ async def ask_question(
 
         # Get answer from Claude
         logger.info("[free-session] Calling Claude API...")
-        answer = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=current_user)
+        answer = orchestrator.llm_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=current_user)
         logger.info(
             f"[free-session] Claude response received, length={len(answer) if answer else 0}"
         )
@@ -342,17 +344,52 @@ async def ask_question(
             f"suggested commands: {suggested_commands}"
         )
 
+        # Extract project specifications from the conversation
+        extracted_specs = None
+        try:
+            # Combine question and answer for spec extraction
+            combined_text = f"User Question: {question}\n\nAssistant Response: {answer}"
+
+            # Use orchestrator to extract specs
+            spec_result = orchestrator.process_request(
+                "direct_chat",
+                {
+                    "action": "extract_insights",
+                    "text": combined_text,
+                    "user_id": current_user,
+                }
+            )
+
+            if spec_result.get("status") == "success":
+                extracted_specs = spec_result.get("data", {})
+                if extracted_specs and any(extracted_specs.values()):
+                    logger.info(
+                        f"[free-session] Extracted specs: {extracted_specs}"
+                    )
+                else:
+                    extracted_specs = None
+        except Exception as e:
+            logger.debug(f"[free-session] Spec extraction failed: {e}")
+            # Continue without specs if extraction fails
+
+        # Build response data
+        response_data = {
+            "answer": answer,
+            "has_context": bool(relevant_context),
+            "session_id": session_id,
+            "suggested_commands": suggested_commands,
+            "topics_detected": topics,
+        }
+
+        # Include extracted specs if any were found
+        if extracted_specs:
+            response_data["extracted_specs"] = extracted_specs
+
         return APIResponse(
             success=True,
             status="success",
             message="Answer generated successfully",
-            data={
-                "answer": answer,
-                "has_context": bool(relevant_context),
-                "session_id": session_id,
-                "suggested_commands": suggested_commands,
-                "topics_detected": topics,
-            },
+            data=response_data,
         )
 
     except Exception as e:
@@ -372,6 +409,7 @@ async def ask_question(
                 "session_id": request.session_id or IDGenerator.session(),
                 "suggested_commands": [],
                 "topics_detected": [],
+                "extracted_specs": None,
             },
         )
 

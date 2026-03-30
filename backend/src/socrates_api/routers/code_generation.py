@@ -943,7 +943,7 @@ async def generate_documentation(
             logger.info(f"Generating {artifact_type} documentation using Claude AI")
 
             # Use Claude client to generate comprehensive documentation
-            documentation = orchestrator.claude_client.generate_documentation(
+            documentation = orchestrator.llm_client.generate_documentation(
                 project=project,
                 artifact=latest_artifact,
                 artifact_type=artifact_type,

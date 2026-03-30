@@ -1260,16 +1260,149 @@ class APIOrchestrator:
 
             logger.info(f"Processing response in Socratic mode: {response[:50]}...")
 
-            # For now, return a success response
-            # In a full implementation, this would analyze the response and provide feedback
-            return {
-                "status": "success",
-                "data": {
-                    "feedback": "Thank you for your response. Let me guide you further...",
-                    "next_action": "generate_question",
-                },
-                "message": "Response processed",
-            }
+            try:
+                # Extract specs from user's response using ContextAnalyzer agent
+                extracted_specs = self._extract_insights_fallback(response)
+                logger.info(f"Extracted specs from response: {extracted_specs}")
+
+                # Get project specs to compare against
+                project_specs = self._get_project_specs(project)
+                logger.info(f"Current project specs: {project_specs}")
+
+                # Compare specs for conflicts
+                conflicts = self._compare_specs(extracted_specs, project_specs)
+                logger.info(f"Detected {len(conflicts)} conflicts")
+
+                # Generate feedback based on insights and conflicts
+                feedback = self._generate_feedback(extracted_specs, conflicts)
+                logger.info(f"Generated feedback: {feedback[:100]}...")
+
+                return {
+                    "status": "success",
+                    "data": {
+                        "feedback": feedback,
+                        "extracted_specs": extracted_specs,
+                        "conflicts": conflicts,
+                        "next_action": "generate_question" if not conflicts else "resolve_conflicts",
+                    },
+                    "message": "Response processed successfully",
+                }
+
+            except Exception as e:
+                logger.error(f"Failed to process response: {e}", exc_info=True)
+                # Return graceful fallback on error
+                return {
+                    "status": "success",
+                    "data": {
+                        "feedback": "Thank you for your response. Let me guide you further...",
+                        "next_action": "generate_question",
+                    },
+                    "message": "Response processed",
+                }
+
+        elif action == "generate_hint":
+            # Generate a contextual hint for the current question
+            project = request_data.get("project", {})
+            current_user = request_data.get("current_user", "")
+
+            logger.info(f"Generating hint for user {current_user}")
+
+            try:
+                # Try to use SkillGeneratorAgent for smart hint generation
+                agent = self.agents.get("skill_generator")
+                if agent and self.llm_client:
+                    try:
+                        # Get project context for hint generation
+                        phase = getattr(project, "phase", project.get("phase", "discovery")) if hasattr(project, "get") else project.get("phase", "discovery")
+                        goals = getattr(project, "goals", project.get("goals", "")) if hasattr(project, "get") else project.get("goals", "")
+
+                        hint_prompt = f"""You are a Socratic tutor. A student is working on a project in the '{phase}' phase.
+
+Project Goals: {goals if goals else "Not yet defined"}
+
+Generate a brief, encouraging hint that guides the student to think about the next logical step in their project development. The hint should:
+1. Be specific to the current phase
+2. Encourage deeper thinking rather than giving direct answers
+3. Reference project goals if available
+4. Be concise (2-3 sentences max)
+
+Provide only the hint text, no additional commentary."""
+
+                        result = agent.process({
+                            "action": "generate",
+                            "prompt": hint_prompt,
+                            "context": {
+                                "phase": phase,
+                                "goals": goals,
+                            }
+                        })
+
+                        if result and result.get("status") == "success":
+                            hint = result.get("data", {}).get("hint") or result.get("hint")
+                            if hint:
+                                logger.info(f"Generated hint using SkillGeneratorAgent: {hint[:50]}...")
+                                return {
+                                    "status": "success",
+                                    "data": {"hint": hint},
+                                    "message": "Hint generated",
+                                }
+                    except Exception as e:
+                        logger.warning(f"SkillGeneratorAgent hint failed: {e}, using fallback")
+
+                # Fallback: Generate hint using LLM client
+                if self.llm_client:
+                    phase = getattr(project, "phase", project.get("phase", "discovery")) if hasattr(project, "get") else project.get("phase", "discovery")
+                    goals = getattr(project, "goals", project.get("goals", "")) if hasattr(project, "get") else project.get("goals", "")
+
+                    hint_prompt = f"""You are a Socratic tutor. A student is working on a project in the '{phase}' phase.
+
+Project Goals: {goals if goals else "Not yet defined"}
+
+Generate a brief, encouraging hint that guides the student to think about the next logical step. The hint should:
+1. Be specific to the current phase
+2. Encourage deeper thinking
+3. Be concise (2-3 sentences max)
+
+Provide only the hint text."""
+
+                    hint = self.llm_client.generate_response(hint_prompt)
+
+                    if hint:
+                        logger.info(f"Generated hint using LLM client: {hint[:50]}...")
+                        return {
+                            "status": "success",
+                            "data": {"hint": hint},
+                            "message": "Hint generated",
+                        }
+
+                # Final fallback: Generic phase-aware hint
+                phase = getattr(project, "phase", project.get("phase", "discovery")) if hasattr(project, "get") else project.get("phase", "discovery")
+
+                phase_hints = {
+                    "discovery": "Consider what problem you're trying to solve. What are the key requirements and constraints?",
+                    "requirements": "Think about how each requirement connects to your overall goals. Are there any missing pieces?",
+                    "architecture": "Review the components you've identified. How do they communicate with each other?",
+                    "implementation": "What's the next logical module or feature to implement? Start small and build up.",
+                    "testing": "What edge cases might you have missed? How would you test for them?",
+                    "deployment": "What are the steps to make your project accessible to users? Start with the most critical one.",
+                }
+
+                hint = phase_hints.get(phase, "Review your project progress and identify the next logical step in your development journey.")
+
+                logger.info(f"Using fallback hint for phase {phase}")
+                return {
+                    "status": "success",
+                    "data": {"hint": hint},
+                    "message": "Hint generated (fallback)",
+                }
+
+            except Exception as e:
+                logger.error(f"Failed to generate hint: {e}", exc_info=True)
+                return {
+                    "status": "success",
+                    "data": {"hint": "Review your project requirements and consider what step comes next in your learning journey."},
+                    "message": "Hint generated (fallback)",
+                }
 
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
@@ -1493,6 +1626,257 @@ If a category has no items, use an empty array."""
 
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def _extract_insights_fallback(self, text: str) -> Dict[str, Any]:
+        """Extract specs from user response text using ContextAnalyzer or fallback"""
+        try:
+            # Try to use ContextAnalyzer agent first
+            agent = self.agents.get("context_analyzer")
+            if agent and self.llm_client:
+                try:
+                    result = agent.process({"action": "analyze", "content": text})
+                    if result and result.get("status") == "success":
+                        data = result.get("data", {})
+                        return {
+                            "goals": data.get("goals", []),
+                            "requirements": data.get("requirements", []),
+                            "tech_stack": data.get("tech_stack", []),
+                            "constraints": data.get("constraints", [])
+                        }
+                except Exception as e:
+                    logger.warning(f"ContextAnalyzer failed, using fallback: {e}")
+
+            # Fallback: Use LLM client to extract specs
+            if self.llm_client:
+                extraction_prompt = f"""Extract structured information from the following text.
+
+Identify and extract:
+1. Goals: What are the project/task goals?
+2. Requirements: What are the functional requirements?
+3. Tech Stack: What technologies/tools are mentioned?
+4. Constraints: What are the constraints or limitations?
+
+Text to analyze:
+{text}
+
+Respond in JSON format:
+{{
+  "goals": ["goal1", "goal2"],
+  "requirements": ["req1", "req2"],
+  "tech_stack": ["tech1", "tech2"],
+  "constraints": ["constraint1", "constraint2"]
+}}
+
+If a category has no items, use an empty array."""
+
+                response = self.llm_client.generate_response(extraction_prompt)
+
+                # Parse JSON response
+                try:
+                    import json
+                    start_idx = response.find('{')
+                    end_idx = response.rfind('}') + 1
+                    if start_idx >= 0 and end_idx > start_idx:
+                        json_str = response[start_idx:end_idx]
+                        insights = json.loads(json_str)
+                        return {
+                            "goals": insights.get("goals", []),
+                            "requirements": insights.get("requirements", []),
+                            "tech_stack": insights.get("tech_stack", []),
+                            "constraints": insights.get("constraints", [])
+                        }
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.warning(f"Failed to parse extraction JSON: {e}")
+
+            # Final fallback: Return empty specs
+            return {
+                "goals": [],
+                "requirements": [],
+                "tech_stack": [],
+                "constraints": []
+            }
+
+        except Exception as e:
+            logger.error(f"Insight extraction failed: {e}")
+            return {
+                "goals": [],
+                "requirements": [],
+                "tech_stack": [],
+                "constraints": []
+            }
+
+    def _get_project_specs(self, project: Dict[str, Any]) -> Dict[str, Any]:
+        """Get current project specifications"""
+        try:
+            # Handle both dict and object access patterns
+            goals = getattr(project, "goals", project.get("goals", "")) if hasattr(project, "get") or hasattr(project, "goals") else ""
+            requirements = getattr(project, "requirements", project.get("requirements", [])) if hasattr(project, "get") or hasattr(project, "requirements") else []
+            tech_stack = getattr(project, "tech_stack", project.get("tech_stack", [])) if hasattr(project, "get") or hasattr(project, "tech_stack") else []
+            constraints = getattr(project, "constraints", project.get("constraints", [])) if hasattr(project, "get") or hasattr(project, "constraints") else []
+
+            # Normalize goals to list if it's a string
+            if isinstance(goals, str) and goals:
+                goals = [goals]
+            elif not isinstance(goals, list):
+                goals = []
+
+            return {
+                "goals": goals if isinstance(goals, list) else [str(goals)] if goals else [],
+                "requirements": requirements if isinstance(requirements, list) else [],
+                "tech_stack": tech_stack if isinstance(tech_stack, list) else [],
+                "constraints": constraints if isinstance(constraints, list) else []
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get project specs: {e}")
+            return {
+                "goals": [],
+                "requirements": [],
+                "tech_stack": [],
+                "constraints": []
+            }
+
+    def _compare_specs(self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Compare new specs against existing specs and detect conflicts"""
+        conflicts = []
+
+        try:
+            # Try to use AgentConflictDetector for more sophisticated comparison
+            agent = self.agents.get("conflict_detector")
+            if agent and self.llm_client:
+                try:
+                    result = agent.process({
+                        "field": "specifications",
+                        "agent_outputs": {
+                            "new": new_specs,
+                            "existing": existing_specs
+                        },
+                        "agents": ["user_response", "project"]
+                    })
+                    if result and result.get("status") == "success":
+                        detected = result.get("data", {}).get("conflicts", [])
+                        if detected:
+                            conflicts.extend(detected)
+                            logger.info(f"AgentConflictDetector found {len(detected)} conflicts")
+                except Exception as e:
+                    logger.warning(f"AgentConflictDetector failed: {e}")
+
+            # Fallback: Manual conflict detection
+            if not conflicts:
+                conflicts = self._detect_conflicts_fallback(new_specs, existing_specs)
+
+            return conflicts
+
+        except Exception as e:
+            logger.error(f"Spec comparison failed: {e}")
+            return []
+
+    def _detect_conflicts_fallback(self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Fallback conflict detection when agent is unavailable"""
+        conflicts = []
+
+        # Check for conflicting goals
+        new_goals = set(str(g).lower() for g in new_specs.get("goals", []) if g)
+        existing_goals = set(str(g).lower() for g in existing_specs.get("goals", []) if g)
+
+        # Detect contradictory goals (simple heuristic)
+        goal_conflicts = new_goals - existing_goals
+        if goal_conflicts:
+            for goal in goal_conflicts:
+                conflicts.append({
+                    "type": "goal_change",
+                    "old_value": list(existing_goals)[:1] if existing_goals else None,
+                    "new_value": goal,
+                    "severity": "info",
+                    "description": f"New goal detected: {goal}"
+                })
+
+        # Check for tech stack conflicts
+        new_tech = set(str(t).lower() for t in new_specs.get("tech_stack", []) if t)
+        existing_tech = set(str(t).lower() for t in existing_specs.get("tech_stack", []) if t)
+
+        tech_additions = new_tech - existing_tech
+        tech_removals = existing_tech - new_tech
+
+        if tech_additions:
+            conflicts.append({
+                "type": "tech_stack_change",
+                "field": "tech_stack",
+                "added": list(tech_additions),
+                "severity": "warning",
+                "description": f"New technologies proposed: {', '.join(tech_additions)}"
+            })
+
+        if tech_removals:
+            conflicts.append({
+                "type": "tech_stack_change",
+                "field": "tech_stack",
+                "removed": list(tech_removals),
+                "severity": "info",
+                "description": f"Technologies no longer mentioned: {', '.join(tech_removals)}"
+            })
+
+        # Check for new requirements
+        new_reqs = set(str(r).lower() for r in new_specs.get("requirements", []) if r)
+        existing_reqs = set(str(r).lower() for r in existing_specs.get("requirements", []) if r)
+
+        req_additions = new_reqs - existing_reqs
+        if req_additions:
+            conflicts.append({
+                "type": "requirements_change",
+                "field": "requirements",
+                "added": list(req_additions),
+                "severity": "info",
+                "description": f"New requirements: {', '.join(req_additions)}"
+            })
+
+        # Check for constraints
+        new_constraints = set(str(c).lower() for c in new_specs.get("constraints", []) if c)
+        existing_constraints = set(str(c).lower() for c in existing_specs.get("constraints", []) if c)
+
+        constraint_additions = new_constraints - existing_constraints
+        if constraint_additions:
+            conflicts.append({
+                "type": "constraints_change",
+                "field": "constraints",
+                "added": list(constraint_additions),
+                "severity": "warning",
+                "description": f"New constraints: {', '.join(constraint_additions)}"
+            })
+
+        return conflicts
+
+    def _generate_feedback(self, extracted_specs: Dict[str, Any], conflicts: List[Dict[str, Any]]) -> str:
+        """Generate natural language feedback for the user"""
+        feedback_parts = []
+
+        # Acknowledge the response
+        feedback_parts.append("Thank you for that response. ")
+
+        # Highlight what was understood
+        if extracted_specs.get("goals"):
+            goals_text = ", ".join(str(g) for g in extracted_specs["goals"][:2])
+            feedback_parts.append(f"I understand your goals are to {goals_text}. ")
+
+        if extracted_specs.get("requirements"):
+            reqs_text = ", ".join(str(r) for r in extracted_specs["requirements"][:2])
+            feedback_parts.append(f"Key requirements include {reqs_text}. ")
+
+        if extracted_specs.get("tech_stack"):
+            tech_text = ", ".join(str(t) for t in extracted_specs["tech_stack"][:2])
+            feedback_parts.append(f"I see you're considering {tech_text}. ")
+
+        # Address conflicts if any
+        if conflicts:
+            if len(conflicts) == 1:
+                feedback_parts.append("I noticed one point that may need clarification. ")
+            else:
+                feedback_parts.append(f"I noticed {len(conflicts)} points that may need clarification. ")
+            feedback_parts.append("Let me ask you some follow-up questions to explore these further.")
+        else:
+            feedback_parts.append("This aligns well with what we've discussed. Let me ask another question to deepen our understanding.")
+
+        return "".join(feedback_parts)
 
 
 # Global instance
