@@ -1972,6 +1972,77 @@ def _apply_initial_insights_to_project(project, insights: dict) -> None:
         logger.debug("Error applying insights to project:")
 
 
+@router.get(
+    "/{project_id}/phase/readiness",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get phase readiness status",
+    responses={
+        200: {"description": "Readiness status retrieved"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_phase_readiness(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """
+    Get readiness status for the current project phase.
+
+    Returns maturity score, readiness status, and recommendations
+    for phase advancement.
+
+    Args:
+        project_id: Project identifier
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with phase readiness data
+    """
+    try:
+        # Check project access
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        # Load project
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        # Get orchestrator and check readiness
+        from socrates_api.main import get_orchestrator
+        orchestrator = get_orchestrator()
+
+        readiness = orchestrator._check_phase_readiness(project)
+
+        logger.info(
+            f"Phase readiness for {project_id}: "
+            f"{readiness.get('phase')} - {readiness.get('status')} "
+            f"({readiness.get('maturity_percentage')}%)"
+        )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Phase readiness retrieved",
+            data=readiness,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting phase readiness: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve phase readiness",
+        )
+
+
 def _normalize_to_list(value) -> list:
     """Normalize various input types to a list of strings"""
     if isinstance(value, list):

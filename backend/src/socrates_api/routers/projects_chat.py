@@ -925,50 +925,61 @@ Provide a helpful, direct answer."""
             # This keeps the Socratic dialogue clean and uninterrupted
             # (Unless debug mode is enabled, specs are returned in debugInfo field)
 
-            # Calculate phase maturity and add readiness status
+            # Check phase readiness and add readiness status
             try:
                 from socrates_api.main import get_orchestrator
                 orchestrator = get_orchestrator()
 
-                maturity_result = orchestrator.calculate_phase_maturity(project)
-                if maturity_result.get("status") == "success":
-                    maturity_data = maturity_result.get("maturity", {})
-                    phase_readiness = maturity_result.get("phase_readiness", {})
+                # Use new _check_phase_readiness method
+                phase_readiness = orchestrator._check_phase_readiness(project)
 
-                    # Include maturity in debug info
-                    if debug_enabled and response_data.get("debugInfo"):
-                        response_data["debugInfo"]["phase_maturity"] = {
-                            "percentage": maturity_data.get("maturity_percentage", 0.0),
-                            "is_ready": phase_readiness.get("is_ready", False),
-                            "warnings": maturity_data.get("warnings", []),
-                        }
+                # Include readiness in debug info
+                if is_debug_mode(current_user) and response_data.get("debugInfo"):
+                    response_data["debugInfo"]["phase_readiness"] = phase_readiness
 
-                    # If phase becomes ready or complete, notify user
-                    if phase_readiness.get("is_ready") and maturity_data.get("maturity_percentage", 0.0) >= 20.0:
-                        response_data["phase_readiness"] = {
-                            "status": "ready",
-                            "current_maturity": maturity_data.get("maturity_percentage", 0.0),
-                            "message": f"Phase '{project.phase}' has reached {maturity_data.get('maturity_percentage', 0.0):.1f}% maturity and is ready for advancement.",
-                            "category_scores": maturity_data.get("category_scores", {})
-                        }
+                # If phase becomes ready or complete, notify user
+                if phase_readiness and (phase_readiness.get("is_complete") or phase_readiness.get("is_ready")):
+                    response_data["phase_readiness"] = phase_readiness
 
-                        logger.info(f"Phase {project.phase} is READY for project {project_id} ({maturity_data.get('maturity_percentage', 0.0):.1f}% maturity)")
-            except Exception as maturity_error:
-                logger.warning(f"Failed to calculate phase maturity: {maturity_error}")
-                # Don't fail the entire response if maturity calculation fails
+                    if phase_readiness.get("is_complete"):
+                        logger.info(
+                            f"Phase {project.phase} is COMPLETE for project {project_id} "
+                            f"({phase_readiness.get('maturity_percentage')}% maturity)"
+                        )
+                    else:
+                        logger.info(
+                            f"Phase {project.phase} is READY for project {project_id} "
+                            f"({phase_readiness.get('maturity_percentage')}% maturity)"
+                        )
 
-            # Check if phase is complete and add recommendation
-            try:
-                if result_data.get("phase_complete"):
-                    logger.info(f"Phase {project.phase} is complete for project {project_id}")
-                    response_data["phase_complete"] = True
-                    response_data["phase_completion_message"] = result_data.get("phase_completion_message")
-                    response_data["next_phase"] = result_data.get("next_phase")
-                    logger.debug(f"Phase completion data: {response_data.get('phase_completion_message', '')[:100]}...")
-            except Exception as phase_error:
-                logger.error(f"Error handling phase completion: {str(phase_error)}", exc_info=True)
-                # Don't fail the entire response if phase completion handling fails
-                # User's message was already processed successfully
+                # Optional: Auto-advance if enabled and phase is complete
+                if phase_readiness and phase_readiness.get("is_complete"):
+                    auto_advance = getattr(project, "auto_advance_phases", False)
+                    if auto_advance and phase_readiness.get("next_phase"):
+                        try:
+                            old_phase = project.phase
+                            project.phase = phase_readiness.get("next_phase")
+                            project.updated_at = datetime.now(timezone.utc)
+                            db.save_project(project)
+
+                            # Clear question cache for old phase
+                            try:
+                                db.clear_question_cache(project_id, phase=old_phase)
+                            except:
+                                pass
+
+                            logger.info(
+                                f"Auto-advanced project {project_id} from "
+                                f"{old_phase} to {project.phase}"
+                            )
+                            response_data["auto_advanced"] = True
+                            response_data["new_phase"] = project.phase
+                        except Exception as e:
+                            logger.error(f"Failed to auto-advance phase: {e}")
+
+            except Exception as readiness_error:
+                logger.warning(f"Failed to check phase readiness: {readiness_error}")
+                # Don't fail the entire response if readiness check fails
 
             return APIResponse(
                 success=True,

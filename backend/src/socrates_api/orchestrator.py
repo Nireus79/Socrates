@@ -2100,6 +2100,102 @@ If a category has no items, use an empty array."""
 
         return "".join(feedback_parts)
 
+    def _check_phase_readiness(self, project) -> Dict[str, Any]:
+        """
+        Check if current project phase is ready for advancement.
+
+        Args:
+            project: ProjectContext object
+
+        Returns:
+            Dict with readiness status, score, recommendations
+        """
+        try:
+            phase = getattr(project, "phase", "discovery")
+            phase_maturity_scores = getattr(project, "phase_maturity_scores", {}) or {}
+
+            # Get maturity score for current phase
+            current_score = phase_maturity_scores.get(phase, 0.0)
+
+            # Determine readiness status
+            READY_THRESHOLD = 0.7
+            COMPLETE_THRESHOLD = 0.95
+
+            is_ready = current_score >= READY_THRESHOLD
+            is_complete = current_score >= COMPLETE_THRESHOLD
+
+            # Determine status
+            if is_complete:
+                status = "complete"
+            elif is_ready:
+                status = "ready"
+            elif current_score > 0:
+                status = "in_progress"
+            else:
+                status = "not_started"
+
+            # Get next phase
+            valid_phases = ["discovery", "analysis", "design", "implementation"]
+            try:
+                current_index = valid_phases.index(phase)
+                next_phase = valid_phases[current_index + 1] if current_index < len(valid_phases) - 1 else None
+            except (ValueError, IndexError):
+                next_phase = None
+
+            # Generate recommendations
+            recommendations = []
+            if status == "complete":
+                if next_phase:
+                    recommendations.append({
+                        "type": "phase_advancement",
+                        "message": f"Your {phase} phase is complete! Ready to advance to {next_phase}.",
+                        "action": "advance_phase"
+                    })
+                else:
+                    recommendations.append({
+                        "type": "project_complete",
+                        "message": f"Congratulations! Your project has completed all phases.",
+                        "action": "finalize_project"
+                    })
+            elif status == "ready":
+                recommendations.append({
+                    "type": "phase_ready",
+                    "message": f"Your {phase} phase is {current_score:.0%} complete and ready to advance.",
+                    "action": "consider_advancement"
+                })
+            elif status == "in_progress":
+                # Calculate what's missing
+                remaining = (READY_THRESHOLD - current_score) * 100
+                recommendations.append({
+                    "type": "continue_work",
+                    "message": f"Continue working on {phase} phase. {remaining:.0f}% more needed to be ready.",
+                    "action": "answer_questions"
+                })
+
+            return {
+                "phase": phase,
+                "maturity_score": current_score,
+                "maturity_percentage": round(current_score * 100, 1),
+                "status": status,
+                "is_ready": is_ready,
+                "is_complete": is_complete,
+                "next_phase": next_phase,
+                "recommendations": recommendations,
+                "ready_threshold": READY_THRESHOLD,
+                "complete_threshold": COMPLETE_THRESHOLD,
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to check phase readiness: {e}")
+            return {
+                "phase": getattr(project, "phase", "discovery"),
+                "maturity_score": 0.0,
+                "status": "unknown",
+                "is_ready": False,
+                "is_complete": False,
+                "recommendations": []
+            }
+
 
 # Global instance
 _orchestrator_instance: Optional[APIOrchestrator] = None

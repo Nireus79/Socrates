@@ -145,6 +145,7 @@ class ProjectContext:
         code_history: Optional[list] = None,
         chat_sessions: Optional[Dict] = None,
         code_generated_count: int = 0,
+        auto_advance_phases: bool = False,
         **kwargs
     ):
         self.project_id = project_id
@@ -168,6 +169,7 @@ class ProjectContext:
         self.code_history = code_history or []
         self.chat_sessions = chat_sessions or {}
         self.code_generated_count = code_generated_count
+        self.auto_advance_phases = auto_advance_phases
 
         # Nested data structures - standardized as typed fields
         # Maturity tracking
