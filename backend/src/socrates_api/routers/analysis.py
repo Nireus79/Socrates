@@ -743,3 +743,147 @@ async def analyze_code(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Operation failed. Please try again later.",
         )
+
+
+@router.post(
+    "/metrics",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Calculate code metrics",
+    responses={
+        200: {"description": "Metrics calculated"},
+        400: {"description": "Invalid code", "model": ErrorResponse},
+        503: {"description": "Analyzer not available", "model": ErrorResponse},
+    },
+)
+async def calculate_metrics(
+    code: str,
+    language: str = "python",
+    current_user: str = Depends(get_current_user),
+) -> APIResponse:
+    """
+    Calculate detailed code metrics.
+
+    Analyzes code for complexity, maintainability, coverage, and duplication.
+
+    Args:
+        code: Source code to analyze
+        language: Programming language
+
+    Returns:
+        APIResponse with detailed metrics
+    """
+    try:
+        analyzer = AnalyzerIntegration()
+        if not analyzer.available:
+            raise HTTPException(status_code=503, detail="Analyzer not available")
+
+        metrics = analyzer.analyze_metrics(code, language)
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Code metrics calculated",
+            data=metrics,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating metrics: {e}")
+        raise HTTPException(status_code=500, detail="Operation failed")
+
+
+@router.post(
+    "/health",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Calculate project health score",
+    responses={
+        200: {"description": "Health score calculated"},
+        400: {"description": "Invalid code", "model": ErrorResponse},
+        503: {"description": "Analyzer not available", "model": ErrorResponse},
+    },
+)
+async def calculate_health_score(
+    code: str,
+    language: str = "python",
+    current_user: str = Depends(get_current_user),
+) -> APIResponse:
+    """
+    Calculate overall project health score.
+
+    Combines metrics, security, and performance analysis into a health grade.
+
+    Args:
+        code: Project code to analyze
+        language: Primary language
+
+    Returns:
+        APIResponse with health score (0-100) and grade (A-F)
+    """
+    try:
+        analyzer = AnalyzerIntegration()
+        if not analyzer.available:
+            raise HTTPException(status_code=503, detail="Analyzer not available")
+
+        health = analyzer.calculate_health_score(code, language)
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Project health: {health.get('grade')} ({health.get('score')}/100)",
+            data=health,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error calculating health: {e}")
+        raise HTTPException(status_code=500, detail="Operation failed")
+
+
+@router.post(
+    "/improvements",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get improvement suggestions",
+    responses={
+        200: {"description": "Suggestions generated"},
+        400: {"description": "Invalid code", "model": ErrorResponse},
+        503: {"description": "Analyzer not available", "model": ErrorResponse},
+    },
+)
+async def get_improvements(
+    code: str,
+    language: str = "python",
+    current_user: str = Depends(get_current_user),
+) -> APIResponse:
+    """
+    Get actionable code improvement suggestions.
+
+    Analyzes code and provides specific recommendations for improvement.
+
+    Args:
+        code: Code to analyze
+        language: Programming language
+
+    Returns:
+        APIResponse with improvement suggestions
+    """
+    try:
+        analyzer = AnalyzerIntegration()
+        if not analyzer.available:
+            raise HTTPException(status_code=503, detail="Analyzer not available")
+
+        suggestions = analyzer.get_improvement_suggestions(code, language)
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Found {len(suggestions)} improvement opportunities",
+            data={"suggestions": suggestions, "count": len(suggestions)},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting improvements: {e}")
+        raise HTTPException(status_code=500, detail="Operation failed")

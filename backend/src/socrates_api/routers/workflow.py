@@ -1,370 +1,144 @@
-"""
-Workflow optimization and approval API endpoints for Socrates.
-
-Provides workflow approval, path selection, and optimization functionality.
-Handles the blocking workflow optimization flow during question generation.
-"""
+"""Workflow automation router for Socrates."""
 
 import logging
-from socrates_api.models_local import ProjectContext
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from socrates_api.auth import get_current_user
-from socrates_api.database import get_database, LocalDatabase
-from socrates_api.auth.project_access import check_project_access
-# Database import replaced with local module
+from socrates_api.auth_utils import get_current_user
+from socrates_api.database import LocalDatabase, get_database
 from socrates_api.models import APIResponse, ErrorResponse
-from socrates_api.models_local import User
+from socrates_api.models_local import WorkflowIntegration
+from socrates_api.routers.projects import check_project_access
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1/workflow", tags=["workflow"])
+
+router = APIRouter(prefix="/workflow", tags=["workflow"])
 
 
-@router.get(
-    "/pending-approvals/{project_id}",
-    response_model=APIResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Get pending workflow approvals",
-    responses={
-        200: {"description": "Pending approvals retrieved"},
-        404: {"description": "Project not found", "model": ErrorResponse},
-        500: {"description": "Server error", "model": ErrorResponse},
-    },
-)
-async def get_pending_approvals(
+@router.post("/create", response_model=APIResponse, status_code=status.HTTP_201_CREATED, summary="Create a new workflow")
+async def create_workflow(
     project_id: str,
+    name: str,
+    workflow_type: str,
+    steps: List[Dict[str, Any]],
+    metadata: Optional[Dict[str, Any]] = None,
     current_user: str = Depends(get_current_user),
     db: LocalDatabase = Depends(get_database),
-):
-    """
-    Get list of pending workflow approval requests for a project.
-
-    Returns all approval requests currently awaiting user decision.
-
-    Args:
-        project_id: Project ID
-        current_user: Authenticated user
-        db: Database connection
-
-    Returns:
-        SuccessResponse with list of pending approvals
-    """
+) -> APIResponse:
     try:
-        await check_project_access(project_id, current_user, db, min_role="viewer")
-
-        from socrates_api.main import get_orchestrator
-
-        orchestrator = get_orchestrator()
-
-        # Load project to verify it exists
-        project = db.load_project(project_id)
-        if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
-
-        # Get pending approvals from QC
-        result = orchestrator.process_request(
-            "quality_controller",
-            {
-                "action": "get_pending_approvals",
-                "project_id": project_id,
-            },
-        )
-
-        if result.get("status") != "success":
-            raise HTTPException(
-                status_code=500, detail=result.get("message", "Failed to retrieve approvals")
-            )
-
-        return APIResponse(
-            success=True,
-            data={
-                "pending_approvals": result.get("pending_approvals", []),
-                "total_count": result.get("total_count", 0),
-            },
-        )
-
+        await check_project_access(project_id, current_user, db, min_role="editor")
+        valid_types = ["phase_advancement", "code_review", "learning_assessment", "custom"]
+        if workflow_type not in valid_types:
+            raise HTTPException(status_code=400, detail=f"Invalid workflow_type")
+        if not steps or not isinstance(steps, list):
+            raise HTTPException(status_code=400, detail="Workflow must have at least one step")
+        workflow_integration = WorkflowIntegration()
+        workflow_id = f"wf_{project_id}_{datetime.now(timezone.utc).timestamp()}"
+        workflow_data = {
+            "id": workflow_id,
+            "project_id": project_id,
+            "name": name,
+            "type": workflow_type,
+            "steps": steps,
+            "metadata": metadata or {},
+            "created_by": current_user,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "status": "created",
+        }
+        success = workflow_integration.create_workflow(workflow_id=workflow_id, name=name, steps=steps, metadata=workflow_data)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to create workflow")
+        logger.info(f"Created workflow {workflow_id} for project {project_id}")
+        return APIResponse(success=True, status="created", message=f"Workflow {name} created", data={"workflow_id": workflow_id, "name": name, "type": workflow_type, "step_count": len(steps), "status": "created"})
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Error retrieving pending approvals", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve pending approvals",
-        )
+        logger.error(f"Error creating workflow: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to create workflow")
 
 
-@router.post(
-    "/approve",
-    response_model=APIResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Approve a workflow path",
-    responses={
-        200: {"description": "Workflow approved"},
-        400: {"description": "Invalid input", "model": ErrorResponse},
-        404: {"description": "Approval request not found", "model": ErrorResponse},
-        500: {"description": "Server error", "model": ErrorResponse},
-    },
-)
-async def approve_workflow(
-    request_id: str,
-    approved_path_id: str,
-    project_id: Optional[str] = None,
-    current_user: str = Depends(get_current_user),
-    db: LocalDatabase = Depends(get_database),
-):
-    """
-    Approve a workflow path and resume execution.
-
-    Approves a pending workflow approval request by selecting one of the
-    available paths. Execution resumes after approval.
-
-    Args:
-        request_id: Approval request ID
-        approved_path_id: ID of path to approve
-        project_id: Optional project ID for logging
-        current_user: Authenticated user
-        db: Database connection
-
-    Returns:
-        SuccessResponse with approved path information
-    """
+@router.post("/execute", response_model=APIResponse)
+async def execute_workflow(workflow_id: str, context: Optional[Dict[str, Any]] = None, current_user: str = Depends(get_current_user)) -> APIResponse:
     try:
-        if project_id:
-            await check_project_access(project_id, current_user, db, min_role="editor")
-
-        from socrates_api.main import get_orchestrator
-        from socrates_api.routers.events import record_event
-
-        orchestrator = get_orchestrator()
-
-        if not request_id or not approved_path_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="request_id and approved_path_id required",
-            )
-
-        # Approve workflow
-        result = orchestrator.process_request(
-            "quality_controller",
-            {
-                "action": "approve_workflow",
-                "request_id": request_id,
-                "approved_path_id": approved_path_id,
-            },
-        )
-
-        if result.get("status") != "success":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("message", "Failed to approve workflow"),
-            )
-
-        # Record event
-        record_event(
-            "workflow_approved",
-            {
-                "request_id": request_id,
-                "approved_path_id": approved_path_id,
-                "project_id": project_id,
-            },
-            user_id=current_user,
-        )
-
-        return APIResponse(
-            success=True,
-            data={
-                "request_id": request_id,
-                "approved_path_id": approved_path_id,
-                "message": "Workflow approved and execution may proceed",
-            },
-        )
-
+        workflow_integration = WorkflowIntegration()
+        workflow_status = workflow_integration.get_workflow_status(workflow_id)
+        if not workflow_status:
+            raise HTTPException(status_code=404, detail=f"Workflow not found")
+        result = workflow_integration.execute_workflow(workflow_id=workflow_id, context=context or {})
+        if not result:
+            raise HTTPException(status_code=500, detail="Failed to execute workflow")
+        logger.info(f"Executed workflow {workflow_id}")
+        return APIResponse(success=True, status="success", message="Workflow executed", data=result)
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Error approving workflow", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to approve workflow",
-        )
+        logger.error(f"Error executing workflow: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to execute workflow")
 
 
-@router.post(
-    "/reject",
-    response_model=APIResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Reject a workflow approval",
-    responses={
-        200: {"description": "Workflow rejected"},
-        400: {"description": "Invalid input", "model": ErrorResponse},
-        404: {"description": "Approval request not found", "model": ErrorResponse},
-        500: {"description": "Server error", "model": ErrorResponse},
-    },
-)
-async def reject_workflow(
-    request_id: str,
-    reason: Optional[str] = None,
-    project_id: Optional[str] = None,
-    current_user: str = Depends(get_current_user),
-    db: LocalDatabase = Depends(get_database),
-):
-    """
-    Reject a workflow approval.
-
-    Rejects a pending workflow approval request and optionally provides
-    a reason for the rejection. Alternative workflows may be requested.
-
-    Args:
-        request_id: Approval request ID
-        reason: Optional rejection reason
-        project_id: Optional project ID for logging
-        current_user: Authenticated user
-        db: Database connection
-
-    Returns:
-        SuccessResponse with rejection confirmation
-    """
+@router.get("/status/{workflow_id}", response_model=APIResponse)
+async def get_workflow_status(workflow_id: str, current_user: str = Depends(get_current_user)) -> APIResponse:
     try:
-        if project_id:
-            await check_project_access(project_id, current_user, db, min_role="editor")
-
-        from socrates_api.main import get_orchestrator
-        from socrates_api.routers.events import record_event
-
-        orchestrator = get_orchestrator()
-
-        if not request_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="request_id required",
-            )
-
-        rejection_reason = reason or "User rejection"
-
-        # Reject workflow
-        result = orchestrator.process_request(
-            "quality_controller",
-            {
-                "action": "reject_workflow",
-                "request_id": request_id,
-                "reason": rejection_reason,
-            },
-        )
-
-        if result.get("status") != "success":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("message", "Failed to reject workflow"),
-            )
-
-        # Record event
-        record_event(
-            "workflow_rejected",
-            {
-                "request_id": request_id,
-                "reason": rejection_reason,
-                "project_id": project_id,
-            },
-            user_id=current_user,
-        )
-
-        return APIResponse(
-            success=True,
-            data={
-                "request_id": request_id,
-                "reason": rejection_reason,
-                "message": "Workflow rejected - alternatives may be requested",
-            },
-        )
-
+        workflow_integration = WorkflowIntegration()
+        status_result = workflow_integration.get_workflow_status(workflow_id)
+        if not status_result:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        logger.debug(f"Retrieved status for workflow {workflow_id}")
+        return APIResponse(success=True, status="success", message="Workflow status retrieved", data=status_result)
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Error rejecting workflow", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to reject workflow",
-        )
+        logger.error(f"Error getting workflow status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve workflow status")
 
 
-@router.get(
-    "/info/{request_id}",
-    response_model=APIResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Get workflow approval details",
-    responses={
-        200: {"description": "Approval details retrieved"},
-        404: {"description": "Approval not found", "model": ErrorResponse},
-        500: {"description": "Server error", "model": ErrorResponse},
-    },
-)
-async def get_workflow_info(
-    request_id: str,
-    project_id: Optional[str] = None,
-    current_user: str = Depends(get_current_user),
-    db: LocalDatabase = Depends(get_database),
-):
-    """
-    Get detailed workflow approval information.
-
-    Displays full details about a specific pending workflow approval
-    including all paths, metrics, and recommendations.
-
-    Args:
-        request_id: Approval request ID
-        project_id: Optional project ID to filter by
-        current_user: Authenticated user
-        db: Database connection
-
-    Returns:
-        SuccessResponse with approval details
-    """
+@router.get("/history/{workflow_id}", response_model=APIResponse)
+async def get_workflow_history(workflow_id: str, limit: int = 10, current_user: str = Depends(get_current_user)) -> APIResponse:
     try:
-        if project_id:
-            await check_project_access(project_id, current_user, db, min_role="viewer")
-
-        from socrates_api.main import get_orchestrator
-
-        orchestrator = get_orchestrator()
-
-        # Get pending approvals
-        result = orchestrator.process_request(
-            "quality_controller",
-            {
-                "action": "get_pending_approvals",
-                "project_id": project_id,
-            },
-        )
-
-        if result.get("status") != "success":
-            raise HTTPException(
-                status_code=500, detail=result.get("message", "Failed to retrieve approvals")
-            )
-
-        # Find matching approval
-        pending_approvals = result.get("pending_approvals", [])
-        approval = next(
-            (a for a in pending_approvals if a.get("request_id") == request_id),
-            None,
-        )
-
-        if not approval:
-            raise HTTPException(
-                status_code=404, detail=f"Approval request not found: {request_id}"
-            )
-
-        return APIResponse(
-            success=True,
-            data=approval,
-        )
-
+        if limit < 1 or limit > 100:
+            limit = min(100, max(1, limit))
+        workflow_integration = WorkflowIntegration()
+        workflow_status = workflow_integration.get_workflow_status(workflow_id)
+        if not workflow_status:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        history = workflow_integration.get_workflow_history(workflow_id=workflow_id, limit=limit)
+        logger.debug(f"Retrieved {len(history)} history entries")
+        return APIResponse(success=True, status="success", message=f"Retrieved {len(history)} records", data={"workflow_id": workflow_id, "history_count": len(history), "executions": history})
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Error retrieving workflow info", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve workflow information",
-        )
+        logger.error(f"Error getting workflow history: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve workflow history")
+
+
+@router.delete("/{workflow_id}", response_model=APIResponse)
+async def delete_workflow(workflow_id: str, current_user: str = Depends(get_current_user)) -> APIResponse:
+    try:
+        workflow_integration = WorkflowIntegration()
+        workflow_status = workflow_integration.get_workflow_status(workflow_id)
+        if not workflow_status:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        success = workflow_integration.delete_workflow(workflow_id)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to delete workflow")
+        logger.info(f"Deleted workflow {workflow_id}")
+        return APIResponse(success=True, status="success", message="Workflow deleted", data={"workflow_id": workflow_id, "deleted": True})
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting workflow: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to delete workflow")
+
+
+@router.get("/list", response_model=APIResponse)
+async def list_workflows(current_user: str = Depends(get_current_user)) -> APIResponse:
+    try:
+        workflow_integration = WorkflowIntegration()
+        workflows = workflow_integration.list_workflows()
+        logger.debug(f"Retrieved {len(workflows)} workflows")
+        return APIResponse(success=True, status="success", message=f"Retrieved {len(workflows)} workflows", data={"count": len(workflows), "workflows": workflows})
+    except Exception as e:
+        logger.error(f"Error listing workflows: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to list workflows")

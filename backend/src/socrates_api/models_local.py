@@ -486,6 +486,117 @@ class AnalyzerIntegration:
             "performance_analyzer": self.performance is not None,
         }
 
+    def analyze_metrics(self, code: str, language: str = "python") -> Dict[str, Any]:
+        """Calculate detailed code metrics"""
+        if not self.available or not self.metrics:
+            return {}
+
+        try:
+            metrics = self.metrics.calculate(code)
+            return {
+                "cyclomatic_complexity": metrics.get("cyclomatic_complexity", 0),
+                "cognitive_complexity": metrics.get("cognitive_complexity", 0),
+                "maintainability_index": metrics.get("maintainability_index", 0),
+                "test_coverage": metrics.get("test_coverage", 0),
+                "code_duplication": metrics.get("code_duplication", 0),
+                "lines_of_code": metrics.get("lines_of_code", 0),
+                "documentation_coverage": metrics.get("documentation_coverage", 0),
+            }
+        except Exception as e:
+            logger.error(f"Failed to calculate metrics: {e}")
+            return {}
+
+    def analyze_security(self, code: str, language: str = "python") -> Dict[str, Any]:
+        """Deep security analysis"""
+        if not self.available or not self.security:
+            return {"issues": []}
+
+        try:
+            issues = self.security.find_issues(code)
+            return {
+                "critical_count": len([i for i in issues if i.get("severity") == "critical"]),
+                "high_count": len([i for i in issues if i.get("severity") == "high"]),
+                "medium_count": len([i for i in issues if i.get("severity") == "medium"]),
+                "low_count": len([i for i in issues if i.get("severity") == "low"]),
+                "issues": issues,
+            }
+        except Exception as e:
+            logger.error(f"Failed to analyze security: {e}")
+            return {"issues": []}
+
+    def analyze_performance(self, code: str, language: str = "python") -> Dict[str, Any]:
+        """Analyze performance issues"""
+        if not self.available or not self.performance:
+            return {"issues": []}
+
+        try:
+            issues = self.performance.find_issues(code)
+            recommendations = self.performance.get_recommendations(code) if hasattr(self.performance, 'get_recommendations') else []
+            return {
+                "issue_count": len(issues),
+                "issues": issues,
+                "recommendations": recommendations,
+            }
+        except Exception as e:
+            logger.error(f"Failed to analyze performance: {e}")
+            return {"issues": []}
+
+    def calculate_health_score(self, code: str, language: str = "python") -> Dict[str, Any]:
+        """Calculate overall project health score"""
+        if not self.available:
+            return {"score": 0, "grade": "N/A"}
+
+        try:
+            metrics = self.analyze_metrics(code, language)
+            security = self.analyze_security(code, language)
+            performance = self.analyze_performance(code, language)
+
+            # Calculate health score (0-100)
+            score = 100
+            score -= metrics.get("cyclomatic_complexity", 0) * 2  # Max -20
+            score -= (100 - metrics.get("maintainability_index", 100)) * 0.3  # Max -30
+            score -= security.get("critical_count", 0) * 10  # Max -50
+            score -= security.get("high_count", 0) * 5  # Max -25
+            score -= performance.get("issue_count", 0) * 2  # Max -20
+
+            # Ensure score is 0-100
+            score = max(0, min(100, score))
+
+            # Grade
+            if score >= 90:
+                grade = "A"
+            elif score >= 80:
+                grade = "B"
+            elif score >= 70:
+                grade = "C"
+            elif score >= 60:
+                grade = "D"
+            else:
+                grade = "F"
+
+            return {
+                "score": round(score, 1),
+                "grade": grade,
+                "metrics": metrics,
+                "security_issues": security.get("critical_count", 0) + security.get("high_count", 0),
+                "performance_issues": performance.get("issue_count", 0),
+            }
+        except Exception as e:
+            logger.error(f"Failed to calculate health score: {e}")
+            return {"score": 0, "grade": "N/A"}
+
+    def get_improvement_suggestions(self, code: str, language: str = "python") -> List[Dict[str, Any]]:
+        """Get code improvement suggestions"""
+        if not self.available or not self.insights:
+            return []
+
+        try:
+            suggestions = self.insights.generate(code, language)
+            return suggestions if suggestions else []
+        except Exception as e:
+            logger.error(f"Failed to generate suggestions: {e}")
+            return []
+
 
 class StorageQuotaManager:
     """Manage storage quotas for users across different subscription tiers"""
@@ -841,4 +952,139 @@ class RAGIntegration:
             "rag_client": self.rag_client is not None,
             "document_store": self.document_store is not None,
             "retriever": self.retriever is not None,
+        }
+
+
+class WorkflowIntegration:
+    """Wrapper around socratic-workflow library for workflow automation"""
+    def __init__(self):
+        self.available = False
+        self.engine = None
+        self.workflows = {}
+
+        try:
+            from socratic_workflow import WorkflowEngine
+            self.engine = WorkflowEngine()
+            self.available = True
+            logger.info("socratic-workflow library initialized successfully")
+        except ImportError:
+            logger.warning("socratic-workflow library not available - workflow features disabled")
+            self.available = False
+        except Exception as e:
+            logger.warning(f"Failed to initialize socratic-workflow: {e}")
+            self.available = False
+
+    def create_workflow(
+        self,
+        workflow_id: str,
+        name: str,
+        steps: List[Dict[str, Any]],
+        metadata: Dict = None
+    ) -> bool:
+        """Create a new workflow"""
+        if not self.available or not self.engine:
+            logger.debug(f"Workflow engine unavailable, cannot create workflow {workflow_id}")
+            return False
+
+        try:
+            workflow = self.engine.create_workflow(
+                workflow_id=workflow_id,
+                name=name,
+                steps=steps,
+                metadata=metadata or {}
+            )
+            self.workflows[workflow_id] = workflow
+            logger.debug(f"Created workflow: {workflow_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to create workflow: {e}")
+            return False
+
+    def execute_workflow(
+        self,
+        workflow_id: str,
+        context: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """Execute a workflow"""
+        if not self.available or not self.engine:
+            logger.debug(f"Workflow engine unavailable, cannot execute workflow {workflow_id}")
+            return {"status": "failed", "error": "Workflow engine unavailable"}
+
+        try:
+            if workflow_id not in self.workflows:
+                workflow = self.engine.get_workflow(workflow_id)
+                if not workflow:
+                    return {"status": "failed", "error": f"Workflow not found: {workflow_id}"}
+                self.workflows[workflow_id] = workflow
+
+            workflow = self.workflows[workflow_id]
+            result = self.engine.execute(workflow, context or {})
+            logger.debug(f"Executed workflow: {workflow_id}")
+            return result if result else {"status": "completed"}
+        except Exception as e:
+            logger.error(f"Failed to execute workflow: {e}")
+            return {"status": "failed", "error": str(e)}
+
+    def get_workflow_status(self, workflow_id: str) -> Dict[str, Any]:
+        """Get status of a workflow"""
+        if not self.available or not self.engine:
+            return {"status": "unavailable"}
+
+        try:
+            status = self.engine.get_status(workflow_id)
+            return status if status else {"status": "not_found"}
+        except Exception as e:
+            logger.error(f"Failed to get workflow status: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def get_workflow_history(
+        self,
+        workflow_id: str,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Get execution history of a workflow"""
+        if not self.available or not self.engine:
+            logger.debug(f"Workflow engine unavailable for history of {workflow_id}")
+            return []
+
+        try:
+            history = self.engine.get_history(workflow_id, limit=limit)
+            return history if history else []
+        except Exception as e:
+            logger.error(f"Failed to get workflow history: {e}")
+            return []
+
+    def delete_workflow(self, workflow_id: str) -> bool:
+        """Delete a workflow"""
+        if not self.available or not self.engine:
+            logger.debug(f"Workflow engine unavailable, cannot delete workflow {workflow_id}")
+            return False
+
+        try:
+            self.engine.delete_workflow(workflow_id)
+            if workflow_id in self.workflows:
+                del self.workflows[workflow_id]
+            logger.debug(f"Deleted workflow: {workflow_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete workflow: {e}")
+            return False
+
+    def list_workflows(self) -> List[Dict[str, Any]]:
+        """List all available workflows"""
+        if not self.available or not self.engine:
+            return []
+
+        try:
+            workflows = self.engine.list_workflows()
+            return workflows if workflows else []
+        except Exception as e:
+            logger.error(f"Failed to list workflows: {e}")
+            return []
+
+    def get_status(self) -> Dict[str, bool]:
+        """Get workflow integration status"""
+        return {
+            "available": self.available,
+            "engine_available": self.engine is not None,
         }

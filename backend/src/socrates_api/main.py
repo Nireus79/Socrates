@@ -83,6 +83,7 @@ from .routers import (
     query_router,
     rag_router,
     security_router,
+    workflow_router,
     skills_analytics,
     skills_composition,
     skills_distribution,
