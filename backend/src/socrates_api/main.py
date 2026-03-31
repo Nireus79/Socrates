@@ -837,8 +837,10 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
         logger.error(f"Initialization failed: {e}")
-        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Initialization failed: {str(e)}")
 
 
 @app.get("/info", response_model=SystemInfoResponse)

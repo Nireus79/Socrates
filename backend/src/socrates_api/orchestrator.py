@@ -222,22 +222,23 @@ class APIOrchestrator:
                 return None
 
             # Create LLMClient with full socrates-nexus capabilities:
-            # - Token tracking for cost/usage monitoring
             # - Response caching for performance optimization
             # - Retry logic for reliability
-            llm_client = LLMClient(
+            from socrates_nexus import LLMConfig
+
+            config = LLMConfig(
                 provider="anthropic",
                 model="claude-3-sonnet",
                 api_key=self.api_key,
-                enable_token_tracking=True,      # Track tokens for cost analysis
-                enable_response_caching=True,    # Cache responses for performance
-                cache_ttl=3600,                  # Cache for 1 hour
-                max_retries=3,                   # Retry up to 3 times on failure
-                retry_delay=1.0                  # Wait 1 second between retries
+                cache_responses=True,           # Cache responses for performance
+                cache_ttl=3600,                 # Cache for 1 hour
+                retry_attempts=3,               # Retry up to 3 times on failure
+                retry_backoff_factor=2.0        # Exponential backoff for retries
             )
+            llm_client = LLMClient(config=config)
             logger.info(
                 "LLM client created with production features: "
-                "token_tracking=True, response_caching=True, max_retries=3"
+                "response_caching=True, retry_attempts=3"
             )
             return llm_client
         except Exception as e:
@@ -279,19 +280,21 @@ class APIOrchestrator:
             model = user_model or provider_meta.models[0]
 
             # Create LLM client with production-grade features from socrates-nexus
-            llm_client = LLMClient(
+            from socrates_nexus import LLMConfig
+
+            config = LLMConfig(
                 provider=provider,
                 model=model,
                 api_key=api_key,
-                enable_token_tracking=True,      # Track tokens for cost analysis
-                enable_response_caching=True,    # Cache responses for performance
-                cache_ttl=3600,                  # Cache for 1 hour
-                max_retries=3,                   # Retry up to 3 times on failure
-                retry_delay=1.0                  # Wait 1 second between retries
+                cache_responses=True,           # Cache responses for performance
+                cache_ttl=3600,                 # Cache for 1 hour
+                retry_attempts=3,               # Retry up to 3 times on failure
+                retry_backoff_factor=2.0        # Exponential backoff for retries
             )
+            llm_client = LLMClient(config=config)
             logger.info(
                 f"LLM client created for user {user_id} with provider {provider}/{model} "
-                "and production features: token_tracking=True, response_caching=True, max_retries=3"
+                "and production features: response_caching=True, retry_attempts=3"
             )
             return llm_client
 
@@ -1595,11 +1598,10 @@ class APIOrchestrator:
                             provider=provider,
                             model=model,
                             api_key=user_api_key,
-                            enable_token_tracking=True,      # Track tokens for cost analysis
-                            enable_response_caching=True,    # Cache responses for performance
-                            cache_ttl=3600,                  # Cache for 1 hour
-                            max_retries=3,                   # Retry up to 3 times on failure
-                            retry_delay=1.0                  # Wait 1 second between retries
+                            cache_responses=True,           # Cache responses for performance
+                            cache_ttl=3600,                 # Cache for 1 hour
+                            retry_attempts=3,               # Retry up to 3 times on failure
+                            retry_backoff_factor=2.0        # Exponential backoff for retries
                         )
                         # Wrap with adapter for SocraticCounselor compatibility
                         llm_client_to_use = LLMClientAdapter(raw_client)
@@ -1888,11 +1890,10 @@ Provide only the hint text."""
                             provider=provider,
                             model=model,
                             api_key=user_api_key,
-                            enable_token_tracking=True,      # Track tokens for cost analysis
-                            enable_response_caching=True,    # Cache responses for performance
-                            cache_ttl=3600,                  # Cache for 1 hour
-                            max_retries=3,                   # Retry up to 3 times on failure
-                            retry_delay=1.0                  # Wait 1 second between retries
+                            cache_responses=True,           # Cache responses for performance
+                            cache_ttl=3600,                 # Cache for 1 hour
+                            retry_attempts=3,               # Retry up to 3 times on failure
+                            retry_backoff_factor=2.0        # Exponential backoff for retries
                         )
                         # Wrap with adapter for compatibility
                         llm_client_to_use = LLMClientAdapter(raw_client)
@@ -1986,11 +1987,10 @@ Provide only the hint text."""
                             provider=provider,
                             model="claude-3-sonnet",
                             api_key=user_api_key,
-                            enable_token_tracking=True,      # Track tokens for cost analysis
-                            enable_response_caching=True,    # Cache responses for performance
-                            cache_ttl=3600,                  # Cache for 1 hour
-                            max_retries=3,                   # Retry up to 3 times on failure
-                            retry_delay=1.0                  # Wait 1 second between retries
+                            cache_responses=True,           # Cache responses for performance
+                            cache_ttl=3600,                 # Cache for 1 hour
+                            retry_attempts=3,               # Retry up to 3 times on failure
+                            retry_backoff_factor=2.0        # Exponential backoff for retries
                         )
                         # Wrap with adapter for compatibility
                         llm_client_to_use = LLMClientAdapter(raw_client)
