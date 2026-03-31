@@ -688,3 +688,157 @@ class KnowledgeManager:
             "document_store": self.document_store is not None,
             "search_engine": self.search_engine is not None,
         }
+
+
+class RAGIntegration:
+    """Wrapper around socratic-rag library for retrieval-augmented generation"""
+    def __init__(self):
+        self.available = False
+        self.rag_client = None
+        self.document_store = None
+        self.retriever = None
+
+        try:
+            from socratic_rag import RAGClient, DocumentStore, Retriever
+            self.rag_client = RAGClient()
+            self.document_store = DocumentStore()
+            self.retriever = Retriever()
+            self.available = True
+            logger.info("socratic-rag library initialized successfully")
+        except ImportError:
+            logger.warning("socratic-rag library not available - RAG features disabled")
+            self.available = False
+        except Exception as e:
+            logger.warning(f"Failed to initialize socratic-rag: {e}")
+            self.available = False
+
+    def index_document(
+        self,
+        doc_id: str,
+        title: str,
+        content: str,
+        doc_type: str = "text",
+        metadata: Dict = None
+    ) -> bool:
+        """Index document for RAG retrieval"""
+        if not self.available or not self.document_store:
+            logger.debug(f"RAG unavailable, cannot index document {doc_id}")
+            return False
+
+        try:
+            self.document_store.add(
+                doc_id,
+                title=title,
+                content=content,
+                doc_type=doc_type,
+                metadata=metadata or {}
+            )
+            logger.debug(f"Indexed document in RAG: {doc_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to index document in RAG: {e}")
+            return False
+
+    def retrieve_context(
+        self,
+        query: str,
+        limit: int = 5,
+        threshold: float = 0.5
+    ) -> List[Dict[str, Any]]:
+        """Retrieve relevant documents for context"""
+        if not self.available or not self.retriever:
+            logger.debug(f"RAG unavailable, cannot retrieve context for: {query}")
+            return []
+
+        try:
+            results = self.retriever.retrieve(
+                query=query,
+                limit=limit,
+                threshold=threshold
+            )
+            return results if results else []
+        except Exception as e:
+            logger.error(f"Failed to retrieve context: {e}")
+            return []
+
+    def augment_prompt(
+        self,
+        prompt: str,
+        context_limit: int = 5,
+        include_metadata: bool = True
+    ) -> str:
+        """Augment prompt with relevant context from knowledge base"""
+        if not self.available or not self.retriever:
+            logger.debug("RAG unavailable for prompt augmentation")
+            return prompt
+
+        try:
+            # Retrieve relevant documents
+            context_docs = self.retrieve_context(prompt, limit=context_limit)
+
+            if not context_docs:
+                logger.debug(f"No relevant context found for: {prompt[:50]}...")
+                return prompt
+
+            # Build augmented prompt
+            augmented = f"{prompt}\n\n---\n## Reference Context from Knowledge Base:\n\n"
+            for i, doc in enumerate(context_docs, 1):
+                title = doc.get("title", "Unknown")
+                content = doc.get("content", "")[:300]  # Limit content
+                score = doc.get("score", 0)
+                augmented += f"**{i}. {title}** (relevance: {score:.1%})\n{content}\n\n"
+
+            logger.debug(f"Augmented prompt with {len(context_docs)} documents from RAG")
+            return augmented
+        except Exception as e:
+            logger.error(f"Failed to augment prompt: {e}")
+            return prompt
+
+    def search_documents(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Search documents using RAG retriever"""
+        if not self.available or not self.retriever:
+            logger.debug(f"RAG unavailable for search: {query}")
+            return []
+
+        try:
+            results = self.retriever.search(query, limit=limit)
+            return results if results else []
+        except Exception as e:
+            logger.error(f"Failed to search documents: {e}")
+            return []
+
+    def remove_document(self, doc_id: str) -> bool:
+        """Remove document from RAG index"""
+        if not self.available or not self.document_store:
+            logger.debug(f"RAG unavailable, cannot remove document {doc_id}")
+            return False
+
+        try:
+            self.document_store.remove(doc_id)
+            logger.debug(f"Removed document from RAG: {doc_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to remove document from RAG: {e}")
+            return False
+
+    def get_document(self, doc_id: str) -> Dict[str, Any]:
+        """Get document by ID from RAG index"""
+        if not self.available or not self.document_store:
+            logger.debug(f"RAG unavailable, cannot get document {doc_id}")
+            return {}
+
+        try:
+            document = self.document_store.get(doc_id)
+            return document if document else {}
+        except Exception as e:
+            logger.error(f"Failed to get document from RAG: {e}")
+            return {}
+
+    def get_status(self) -> Dict[str, bool]:
+        """Get RAG integration status"""
+        return {
+            "available": self.available,
+            "rag_client": self.rag_client is not None,
+            "document_store": self.document_store is not None,
+            "retriever": self.retriever is not None,
+        }

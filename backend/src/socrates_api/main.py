@@ -81,6 +81,7 @@ from .routers import (
     projects_chat_router,
     projects_router,
     query_router,
+    rag_router,
     security_router,
     skills_analytics,
     skills_composition,
@@ -482,6 +483,7 @@ _include_router_safe(collab_router, "collab")
 _include_router_safe(code_generation_router, "code_generation")
 _include_router_safe(knowledge_router, "knowledge")
 _include_router_safe(learning_router, "learning")
+_include_router_safe(rag_router, "rag")
 _include_router_safe(library_integrations_router, "library_integrations")
 _include_router_safe(llm_router, "llm")
 _include_router_safe(projects_chat_router, "projects_chat")
