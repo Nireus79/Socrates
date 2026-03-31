@@ -282,12 +282,409 @@ class StorageQuotaManager:
 
 
 class LearningIntegration:
-    """Minimal LearningIntegration stub - USE socratic_learning FROM PyPI"""
+    """Wrapper around socratic-learning library for learning analytics and recommendations"""
     def __init__(self):
-        pass
+        self.available = False
+        self.engine = None
+        self.pattern_detector = None
+        self.metrics_collector = None
+        self.recommendation_engine = None
 
-    def log_interaction(self, user_id: str, action: str, data: Dict) -> bool:
-        return True
+        try:
+            from socratic_learning import (
+                LearningEngine,
+                PatternDetector,
+                MetricsCollector,
+                RecommendationEngine
+            )
+            self.engine = LearningEngine()
+            self.pattern_detector = PatternDetector()
+            self.metrics_collector = MetricsCollector()
+            self.recommendation_engine = RecommendationEngine()
+            self.available = True
+            logger.info("socratic-learning library initialized successfully")
+        except ImportError:
+            logger.warning("socratic-learning library not available - learning features will be limited")
+            self.available = False
+        except Exception as e:
+            logger.warning(f"Failed to initialize socratic-learning: {e}")
+            self.available = False
 
-    def get_recommendations(self, user_id: str) -> Dict:
-        return {}
+    @property
+    def interaction_logger(self):
+        """Compatibility property for legacy code"""
+        return self.engine
+
+    @property
+    def recommendation_engine_property(self):
+        """Compatibility property for legacy code"""
+        return self.recommendation_engine
+
+    def log_interaction(
+        self,
+        user_id: str,
+        interaction_type: str,
+        context: Dict = None,
+        metadata: Dict = None
+    ) -> bool:
+        """Log user interaction via socratic-learning library"""
+        if not self.available or not self.engine:
+            logger.debug(f"Learning integration unavailable, skipping interaction log for {user_id}")
+            return False
+
+        try:
+            self.engine.log_interaction(
+                user_id=user_id,
+                interaction_type=interaction_type,
+                context=context or {},
+                metadata=metadata or {}
+            )
+            logger.debug(f"Logged interaction: {interaction_type} for user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to log interaction: {e}")
+            return False
+
+    def get_progress(self, user_id: str) -> Dict[str, Any]:
+        """Get comprehensive learning progress for a user"""
+        if not self.available or not self.metrics_collector:
+            return {}
+
+        try:
+            progress_data = self.metrics_collector.calculate_progress(user_id)
+            return progress_data if progress_data else {}
+        except Exception as e:
+            logger.error(f"Failed to calculate progress: {e}")
+            return {}
+
+    def get_recommendations(self, user_id: str, count: int = 5) -> List[Dict[str, Any]]:
+        """Get personalized learning recommendations"""
+        if not self.available or not self.recommendation_engine:
+            return []
+
+        try:
+            recommendations = self.recommendation_engine.generate_recommendations(
+                user_id=user_id,
+                count=count
+            )
+            return recommendations if recommendations else []
+        except Exception as e:
+            logger.error(f"Failed to generate recommendations: {e}")
+            return []
+
+    def get_mastery(self, user_id: str, concept_id: str = None) -> List[Dict[str, Any]]:
+        """Get concept mastery levels for a user"""
+        if not self.available or not self.metrics_collector:
+            return []
+
+        try:
+            mastery_data = self.metrics_collector.get_mastery_levels(user_id, concept_id)
+            return mastery_data if mastery_data else []
+        except Exception as e:
+            logger.error(f"Failed to get mastery levels: {e}")
+            return []
+
+    def detect_misconceptions(self, user_id: str) -> List[Dict[str, Any]]:
+        """Detect user misconceptions using socratic-learning"""
+        if not self.available or not self.pattern_detector:
+            return []
+
+        try:
+            misconceptions = self.pattern_detector.detect_misconceptions(user_id)
+            return misconceptions if misconceptions else []
+        except Exception as e:
+            logger.error(f"Failed to detect misconceptions: {e}")
+            return []
+
+    def get_analytics(self, user_id: str, period: str = "weekly", days_back: int = 30) -> Dict[str, Any]:
+        """Get learning analytics for a specific period"""
+        if not self.available or not self.metrics_collector:
+            return {}
+
+        try:
+            analytics_data = self.metrics_collector.get_analytics(user_id, period, days_back)
+            return analytics_data if analytics_data else {}
+        except Exception as e:
+            logger.error(f"Failed to get analytics: {e}")
+            return {}
+
+    def get_status(self) -> Dict[str, bool]:
+        """Get status of learning integration"""
+        return {
+            "available": self.available,
+            "interaction_logger": self.engine is not None,
+            "recommendation_engine": self.recommendation_engine is not None,
+            "pattern_detector": self.pattern_detector is not None,
+            "metrics_collector": self.metrics_collector is not None,
+        }
+
+
+class AnalyzerIntegration:
+    """Wrapper around socratic-analyzer library for comprehensive code analysis"""
+    def __init__(self):
+        self.available = False
+        self.code_analyzer = None
+        self.metrics = None
+        self.insights = None
+        self.security = None
+        self.performance = None
+
+        try:
+            from socratic_analyzer import (
+                CodeAnalyzer,
+                MetricsCalculator,
+                InsightGenerator,
+                SecurityAnalyzer,
+                PerformanceAnalyzer
+            )
+            self.code_analyzer = CodeAnalyzer()
+            self.metrics = MetricsCalculator()
+            self.insights = InsightGenerator()
+            self.security = SecurityAnalyzer()
+            self.performance = PerformanceAnalyzer()
+            self.available = True
+            logger.info("socratic-analyzer library initialized successfully")
+        except ImportError:
+            logger.warning("socratic-analyzer library not available - code analysis features will be limited")
+            self.available = False
+        except Exception as e:
+            logger.warning(f"Failed to initialize socratic-analyzer: {e}")
+            self.available = False
+
+    def analyze_code(self, code: str, language: str = "python") -> Dict[str, Any]:
+        """Perform comprehensive code analysis"""
+        if not self.available or not self.code_analyzer:
+            return {"error": "Code analyzer not available"}
+
+        try:
+            result = self.code_analyzer.analyze(code, language)
+            quality_metrics = self.metrics.calculate(code) if self.metrics else {}
+            security_issues = self.security.find_issues(code) if self.security else []
+            performance_issues = self.performance.find_issues(code) if self.performance else []
+            insights = self.insights.generate(code, language) if self.insights else []
+
+            return {
+                "overall_score": result.get("quality_score", 0) if isinstance(result, dict) else 0,
+                "quality_metrics": quality_metrics,
+                "security_issues": security_issues,
+                "performance_issues": performance_issues,
+                "insights": insights,
+                "language": language,
+            }
+        except Exception as e:
+            logger.error(f"Code analysis failed: {e}")
+            return {"error": str(e)}
+
+    def get_status(self) -> Dict[str, bool]:
+        """Get status of analyzer integration"""
+        return {
+            "available": self.available,
+            "code_analyzer": self.code_analyzer is not None,
+            "metrics_calculator": self.metrics is not None,
+            "insight_generator": self.insights is not None,
+            "security_analyzer": self.security is not None,
+            "performance_analyzer": self.performance is not None,
+        }
+
+
+class StorageQuotaManager:
+    """Manage storage quotas for users across different subscription tiers"""
+    TIER_LIMITS = {
+        "free": 10 * 1024 * 1024,              # 10 MB
+        "premium": 100 * 1024 * 1024,          # 100 MB
+        "enterprise": 1 * 1024 * 1024 * 1024   # 1 GB
+    }
+
+    @staticmethod
+    def can_upload_document(
+        user: "User",
+        db: "LocalDatabase",
+        size_bytes: int,
+        testing_mode: bool = False
+    ) -> tuple:
+        """
+        Check if user can upload document of given size.
+
+        Args:
+            user: User object with subscription_tier attribute
+            db: Database connection
+            size_bytes: Size of document in bytes
+            testing_mode: If True, always allow (for testing)
+
+        Returns:
+            Tuple of (can_upload: bool, message: str)
+        """
+        if testing_mode:
+            return True, "Testing mode - quota check skipped"
+
+        if not user:
+            return False, "User not found"
+
+        tier = getattr(user, "subscription_tier", "free").lower()
+        limit = StorageQuotaManager.TIER_LIMITS.get(tier, 10 * 1024 * 1024)
+
+        # Calculate current usage across all projects
+        total_usage = 0
+        try:
+            if hasattr(db, "get_user_projects"):
+                project_ids = db.get_user_projects(user.id if hasattr(user, "id") else user.username) or []
+
+                for project_id in project_ids:
+                    try:
+                        project = db.load_project(project_id)
+                        if project:
+                            # Sum up knowledge document sizes
+                            for doc in getattr(project, "knowledge_documents", []) or []:
+                                if isinstance(doc, dict):
+                                    total_usage += len(doc.get("content", "").encode("utf-8"))
+                                else:
+                                    total_usage += len(getattr(doc, "content", "").encode("utf-8"))
+                    except Exception as e:
+                        logger.warning(f"Failed to calculate project usage: {e}")
+                        continue
+        except Exception as e:
+            logger.warning(f"Failed to calculate storage usage: {e}")
+
+        # Check if upload would exceed quota
+        if total_usage + size_bytes > limit:
+            remaining = limit - total_usage
+            return (
+                False,
+                f"Storage quota exceeded for {tier} tier. Used {total_usage:,} bytes of {limit:,}. "
+                f"Cannot upload {size_bytes:,} bytes (need {size_bytes - remaining:,} more). "
+                f"Upgrade your plan for more storage."
+            )
+
+        return True, f"Storage available. Used {total_usage:,} bytes of {limit:,} for {tier} tier."
+
+    @staticmethod
+    def get_quota_info(user: "User") -> Dict[str, Any]:
+        """Get quota information for user"""
+        if not user:
+            return {}
+
+        tier = getattr(user, "subscription_tier", "free").lower()
+        limit = StorageQuotaManager.TIER_LIMITS.get(tier, 10 * 1024 * 1024)
+
+        return {
+            "tier": tier,
+            "limit_bytes": limit,
+            "limit_mb": limit / (1024 * 1024),
+            "limit_gb": limit / (1024 * 1024 * 1024),
+        }
+
+
+class KnowledgeManager:
+    """Wrapper around socratic-knowledge library for knowledge base management"""
+    def __init__(self):
+        self.available = False
+        self.knowledge_base = None
+        self.document_store = None
+        self.search_engine = None
+
+        try:
+            from socratic_knowledge import (
+                KnowledgeBase,
+                DocumentStore,
+                SearchEngine
+            )
+            self.knowledge_base = KnowledgeBase()
+            self.document_store = DocumentStore()
+            self.search_engine = SearchEngine()
+            self.available = True
+            logger.info("socratic-knowledge library initialized successfully")
+        except ImportError:
+            logger.warning("socratic-knowledge library not available - knowledge management will use fallback")
+            self.available = False
+        except Exception as e:
+            logger.warning(f"Failed to initialize socratic-knowledge: {e}")
+            self.available = False
+
+    def add_document(
+        self,
+        doc_id: str,
+        title: str,
+        content: str,
+        doc_type: str = "text",
+        metadata: Dict = None
+    ) -> bool:
+        """Add document to knowledge base"""
+        if not self.available or not self.document_store:
+            logger.debug(f"Knowledge manager unavailable, cannot add document {doc_id}")
+            return False
+
+        try:
+            self.document_store.add(
+                doc_id,
+                title=title,
+                content=content,
+                doc_type=doc_type,
+                metadata=metadata or {}
+            )
+            logger.debug(f"Added document to knowledge base: {doc_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add document: {e}")
+            return False
+
+    def remove_document(self, doc_id: str) -> bool:
+        """Remove document from knowledge base"""
+        if not self.available or not self.document_store:
+            logger.debug(f"Knowledge manager unavailable, cannot remove document {doc_id}")
+            return False
+
+        try:
+            self.document_store.remove(doc_id)
+            logger.debug(f"Removed document from knowledge base: {doc_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to remove document: {e}")
+            return False
+
+    def search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Search knowledge base by query"""
+        if not self.available or not self.search_engine:
+            logger.debug(f"Knowledge manager unavailable, cannot search: {query}")
+            return []
+
+        try:
+            results = self.search_engine.search(query, limit=limit)
+            return results if results else []
+        except Exception as e:
+            logger.error(f"Failed to search knowledge base: {e}")
+            return []
+
+    def get_document(self, doc_id: str) -> Dict[str, Any]:
+        """Get document by ID"""
+        if not self.available or not self.document_store:
+            logger.debug(f"Knowledge manager unavailable, cannot get document {doc_id}")
+            return {}
+
+        try:
+            document = self.document_store.get(doc_id)
+            return document if document else {}
+        except Exception as e:
+            logger.error(f"Failed to get document: {e}")
+            return {}
+
+    def list_documents(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+        """List all documents with pagination"""
+        if not self.available or not self.document_store:
+            logger.debug("Knowledge manager unavailable, cannot list documents")
+            return []
+
+        try:
+            documents = self.document_store.list(limit=limit, offset=offset)
+            return documents if documents else []
+        except Exception as e:
+            logger.error(f"Failed to list documents: {e}")
+            return []
+
+    def get_status(self) -> Dict[str, bool]:
+        """Get status of knowledge manager"""
+        return {
+            "available": self.available,
+            "knowledge_base": self.knowledge_base is not None,
+            "document_store": self.document_store is not None,
+            "search_engine": self.search_engine is not None,
+        }

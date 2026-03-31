@@ -6,10 +6,12 @@ Provides REST endpoints for managing project knowledge base including:
 - Searching and filtering knowledge
 - Importing and exporting knowledge bases
 - Remembering important knowledge items
+
+Uses socratic-knowledge library for knowledge base operations.
 """
 
 import logging
-from socrates_api.models_local import ProjectContext
+from socrates_api.models_local import ProjectContext, StorageQuotaManager, KnowledgeManager
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -71,11 +73,10 @@ async def add_knowledge_document(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # CHECK STORAGE QUOTA BEFORE ADDING DOCUMENT
+        # Check storage quota before adding document
         content_size_bytes = len(request.content.encode("utf-8"))
         user_object = db.load_user(current_user)
         if user_object:
-            # Removed local import: from socratic_system.subscription.storage import StorageQuotaManager
             can_upload, error_msg = StorageQuotaManager.can_upload_document(
                 user_object, db, content_size_bytes, testing_mode=False
             )
@@ -86,7 +87,7 @@ async def add_knowledge_document(
                     detail=error_msg,
                 )
 
-        # Create document
+        # Create document with timestamp-based ID
         doc_id = f"doc_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
         document = {
             "id": doc_id,
@@ -101,8 +102,20 @@ async def add_knowledge_document(
         if not hasattr(project, "knowledge_documents"):
             project.knowledge_documents = []
 
-        # Add to project
+        # Add to project knowledge documents
         project.knowledge_documents.append(document)
+
+        # Also add to socratic-knowledge library if available
+        km = KnowledgeManager()
+        if km.available:
+            km.add_document(
+                doc_id=doc_id,
+                title=request.title,
+                content=request.content,
+                doc_type=request.type or "text",
+                metadata={"project_id": project_id, "created_by": current_user}
+            )
+            logger.debug(f"Document also added to socratic-knowledge: {doc_id}")
 
         # Persist changes
         db.save_project(project)

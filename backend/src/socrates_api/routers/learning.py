@@ -214,6 +214,8 @@ def get_learning_progress(user_id: str) -> LearningProgressResponse:
     - Mastery levels and learning velocity
     - Strengths and areas for improvement
 
+    Uses the socratic-learning library for accurate metrics.
+
     Path Parameters:
     - user_id: User identifier
 
@@ -222,24 +224,28 @@ def get_learning_progress(user_id: str) -> LearningProgressResponse:
     """
     try:
         learning = get_learning_integration()
-        if learning is None:
+        if learning is None or not learning.available:
             raise HTTPException(
                 status_code=503,
                 detail="Learning integration not available",
             )
 
-        # This would load actual user progress data
+        # Get actual progress data from library
+        progress_data = learning.get_progress(user_id)
+
+        # Map library response to API model
         progress = LearningProgressResponse(
             user_id=user_id,
-            total_interactions=0,
-            concepts_mastered=0,
-            total_concepts=0,
-            average_mastery=0.0,
-            learning_velocity=0.0,
-            study_streak=0,
-            overall_score=0.0,
-            strengths=[],
-            areas_for_improvement=[],
+            total_interactions=progress_data.get("total_interactions", 0),
+            concepts_mastered=progress_data.get("concepts_mastered", 0),
+            total_concepts=progress_data.get("total_concepts", 0),
+            average_mastery=progress_data.get("average_mastery", 0.0),
+            learning_velocity=progress_data.get("learning_velocity", 0.0),
+            study_streak=progress_data.get("study_streak", 0),
+            overall_score=progress_data.get("overall_score", 0.0),
+            strengths=progress_data.get("strengths", []),
+            areas_for_improvement=progress_data.get("areas_for_improvement", []),
+            predicted_mastery_date=progress_data.get("predicted_mastery_date"),
         )
 
         return progress
@@ -247,7 +253,7 @@ def get_learning_progress(user_id: str) -> LearningProgressResponse:
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Error getting learning progress", exc_info=True)
+        logger.error(f"Error getting learning progress: {e}")
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -259,7 +265,8 @@ def get_concept_mastery(
     """
     Get concept mastery levels for a user.
 
-    Returns mastery information for all concepts or a specific concept.
+    Returns mastery information for all concepts or a specific concept
+    using the socratic-learning library.
 
     Path Parameters:
     - user_id: User identifier
@@ -272,26 +279,34 @@ def get_concept_mastery(
     """
     try:
         learning = get_learning_integration()
-        if learning is None:
+        if learning is None or not learning.available:
             raise HTTPException(
                 status_code=503,
                 detail="Learning integration not available",
             )
 
-        mastery_data: List[ConceptMastery] = []
-        # Would load actual mastery data from database
+        # Get mastery data from library
+        mastery_list = learning.get_mastery(user_id, concept_id)
+
+        # Calculate average mastery
+        if mastery_list:
+            average_mastery = sum(m.get("mastery_level", 0) for m in mastery_list) / len(mastery_list)
+        else:
+            average_mastery = 0.0
 
         return {
             "status": "success",
             "user_id": user_id,
-            "mastery_levels": mastery_data,
-            "average_mastery": 0.0,
+            "concept_id": concept_id,
+            "mastery_levels": mastery_list,
+            "average_mastery": average_mastery,
+            "count": len(mastery_list),
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Error getting mastery levels", exc_info=True)
+        logger.error(f"Error getting mastery levels: {e}")
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -300,7 +315,8 @@ def get_misconceptions(user_id: str) -> Dict[str, Any]:
     """
     Get detected misconceptions for a user.
 
-    Identifies common misunderstandings and provides corrections.
+    Identifies common misunderstandings and provides corrections
+    using the socratic-learning library's pattern detection.
 
     Path Parameters:
     - user_id: User identifier
@@ -309,8 +325,13 @@ def get_misconceptions(user_id: str) -> Dict[str, Any]:
     - List of detected misconceptions with corrections
     """
     try:
-        misconceptions: List[MisconcceptionDetection] = []
-        # Would load actual misconception data
+        learning = get_learning_integration()
+        if learning is None or not learning.available:
+            logger.warning(f"Learning integration unavailable for misconception detection")
+            misconceptions = []
+        else:
+            # Get detected misconceptions from library
+            misconceptions = learning.detect_misconceptions(user_id)
 
         return {
             "status": "success",
@@ -320,7 +341,7 @@ def get_misconceptions(user_id: str) -> Dict[str, Any]:
         }
 
     except Exception as e:
-        logger.debug("Error getting misconceptions", exc_info=True)
+        logger.error(f"Error getting misconceptions: {e}")
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -338,36 +359,39 @@ def get_recommendations(
     - Learning patterns
     - Predicted difficulty
 
+    Uses the socratic-learning library's recommendation engine.
+
     Path Parameters:
     - user_id: User identifier
 
     Query Parameters:
-    - count: Number of recommendations (default: 5)
+    - count: Number of recommendations (default: 5, max: 20)
 
     Returns:
     - Prioritized learning recommendations
     """
     try:
         learning = get_learning_integration()
-        if learning is None:
+        if learning is None or not learning.available:
             raise HTTPException(
                 status_code=503,
                 detail="Learning integration not available",
             )
 
-        recommendations: List[LearningRecommendation] = []
-        # Would generate recommendations using recommendation engine
+        # Get recommendations from library
+        recommendations = learning.get_recommendations(user_id, count=count)
 
         return {
             "status": "success",
             "user_id": user_id,
+            "count": len(recommendations),
             "recommendations": recommendations,
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Error getting recommendations", exc_info=True)
+        logger.error(f"Error getting recommendations: {e}")
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -386,12 +410,14 @@ def get_learning_analytics(
     - Learning efficiency
     - Engagement trends
 
+    Uses the socratic-learning library's metrics collector.
+
     Path Parameters:
     - user_id: User identifier
 
     Query Parameters:
     - period: Analysis period (daily, weekly, monthly)
-    - days_back: How many days to analyze (default: 30)
+    - days_back: How many days to analyze (default: 30, max: 365)
 
     Returns:
     - Detailed learning analytics
@@ -400,23 +426,33 @@ def get_learning_analytics(
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days_back)
 
+        learning = get_learning_integration()
+        if learning is None or not learning.available:
+            logger.warning(f"Learning integration unavailable for analytics")
+            # Return default analytics
+            analytics_data = {}
+        else:
+            # Get analytics from library
+            analytics_data = learning.get_analytics(user_id, period=period, days_back=days_back)
+
+        # Map library response to API model
         analytics = LearningAnalytics(
             user_id=user_id,
             period=period,
             start_date=start_date,
             end_date=end_date,
-            total_interactions=0,
-            unique_concepts_studied=0,
-            average_concept_mastery=0.0,
-            learning_efficiency=0.0,
-            engagement_score=0.0,
-            trend="stable",
+            total_interactions=analytics_data.get("total_interactions", 0),
+            unique_concepts_studied=analytics_data.get("unique_concepts_studied", 0),
+            average_concept_mastery=analytics_data.get("average_concept_mastery", 0.0),
+            learning_efficiency=analytics_data.get("learning_efficiency", 0.0),
+            engagement_score=analytics_data.get("engagement_score", 0.0),
+            trend=analytics_data.get("trend", "stable"),
         )
 
         return analytics
 
     except Exception as e:
-        logger.debug("Error getting learning analytics", exc_info=True)
+        logger.error(f"Error getting learning analytics: {e}")
         raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
 
 
@@ -425,31 +461,47 @@ def get_learning_system_status() -> Dict[str, Any]:
     """
     Get status of the learning analytics system.
 
+    Returns the availability of the socratic-learning library and all capabilities.
+
     Returns:
     - System status and capabilities
     """
     try:
         learning = get_learning_integration()
 
+        if learning is None:
+            return {
+                "status": "unavailable",
+                "message": "Learning integration not initialized",
+                "learning_integration_available": False,
+                "capabilities": [],
+            }
+
+        status_info = learning.get_status()
+
+        capabilities = []
+        if status_info.get("interaction_logger"):
+            capabilities.append("interaction_logging")
+        if status_info.get("metrics_collector"):
+            capabilities.extend(["mastery_tracking", "progress_analytics", "learning_patterns"])
+        if status_info.get("pattern_detector"):
+            capabilities.append("misconception_detection")
+        if status_info.get("recommendation_engine"):
+            capabilities.append("personalized_recommendations")
+
         return {
-            "status": "operational",
-            "learning_integration_available": learning is not None,
-            "interaction_logger_available": learning.interaction_logger is not None if learning else False,
-            "recommendation_engine_available": learning.recommendation_engine is not None if learning else False,
-            "capabilities": [
-                "interaction_logging",
-                "mastery_tracking",
-                "misconception_detection",
-                "personalized_recommendations",
-                "progress_analytics",
-                "learning_patterns",
-            ],
+            "status": "operational" if learning.available else "degraded",
+            "learning_integration_available": learning.available,
+            "library_details": status_info,
+            "capabilities": capabilities,
+            "message": "All learning features operational" if learning.available else "Limited learning features (library unavailable)"
         }
 
     except Exception as e:
-        logger.debug("Error getting learning status", exc_info=True)
+        logger.error(f"Error getting learning status: {e}")
         return {
             "status": "error",
             "message": str(e),
+            "learning_integration_available": False,
             "capabilities": [],
         }

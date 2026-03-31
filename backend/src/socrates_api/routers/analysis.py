@@ -5,7 +5,7 @@ Provides code validation, testing, review, and analysis functionality.
 """
 
 import logging
-from socrates_api.models_local import ProjectContext
+from socrates_api.models_local import ProjectContext, AnalyzerIntegration
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -690,22 +690,23 @@ async def analyze_code(
         - Architecture insights
     """
     try:
-        # Removed local import: from socratic_system.core.analyzer_integration import AnalyzerIntegration
         from socrates_api.routers.events import record_event
 
-        # Initialize analyzer
+        # Initialize analyzer from models_local
         try:
             analyzer = AnalyzerIntegration()
+            if not analyzer.available:
+                raise ImportError("socratic-analyzer library not available")
         except Exception as e:
-            logger.debug("Failed to initialize code analyzer", exc_info=True)
+            logger.debug(f"Failed to initialize code analyzer: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Code analyzer is not available",
+                detail="Code analyzer is not available. Please ensure socratic-analyzer is installed.",
             )
 
         logger.info(f"Analyzing {language} code for user: {current_user}")
 
-        # Run comprehensive analysis
+        # Run comprehensive analysis using socratic-analyzer library
         analysis_result = analyzer.analyze_code(code, language=language)
 
         if analysis_result.get("error"):
@@ -715,14 +716,17 @@ async def analyze_code(
             )
 
         # Record event
-        record_event(
-            "code_analyzed",
-            {
-                "language": language,
-                "score": analysis_result.get("overall_score", 0),
-            },
-            user_id=current_user,
-        )
+        try:
+            record_event(
+                "code_analyzed",
+                {
+                    "language": language,
+                    "score": analysis_result.get("overall_score", 0),
+                },
+                user_id=current_user,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to record event: {e}")
 
         return APIResponse(
             success=True,
