@@ -692,28 +692,11 @@ async def analyze_code(
     try:
         from socrates_api.routers.events import record_event
 
-        # Initialize analyzer from models_local
-        try:
-            analyzer = AnalyzerIntegration()
-            if not analyzer.available:
-                raise ImportError("socratic-analyzer library not available")
-        except Exception as e:
-            logger.debug(f"Failed to initialize code analyzer: {e}", exc_info=True)
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Code analyzer is not available. Please ensure socratic-analyzer is installed.",
-            )
-
         logger.info(f"Analyzing {language} code for user: {current_user}")
 
-        # Run comprehensive analysis using socratic-analyzer library
+        # Initialize analyzer and run comprehensive analysis using socratic-analyzer library
+        analyzer = AnalyzerIntegration()
         analysis_result = analyzer.analyze_code(code, language=language)
-
-        if analysis_result.get("error"):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Failed to analyze code: {analysis_result['error']}",
-            )
 
         # Record event
         try:
@@ -823,9 +806,6 @@ async def calculate_health_score(
     """
     try:
         analyzer = AnalyzerIntegration()
-        if not analyzer.available:
-            raise HTTPException(status_code=503, detail="Analyzer not available")
-
         health = analyzer.calculate_health_score(code, language)
 
         return APIResponse(
@@ -871,9 +851,6 @@ async def get_improvements(
     """
     try:
         analyzer = AnalyzerIntegration()
-        if not analyzer.available:
-            raise HTTPException(status_code=503, detail="Analyzer not available")
-
         suggestions = analyzer.get_improvement_suggestions(code, language)
 
         return APIResponse(

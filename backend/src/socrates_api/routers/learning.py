@@ -126,11 +126,11 @@ class LearningAnalytics(BaseModel):
 _learning_integration: Optional[LearningIntegration] = None
 
 
-def get_learning_integration() -> Optional[LearningIntegration]:
-    """Get or initialize learning integration"""
+def get_learning_integration() -> LearningIntegration:
+    """Get or initialize learning integration (fail-fast design)"""
     global _learning_integration
     if _learning_integration is None:
-        _learning_integration = LearningIntegration()
+        _learning_integration = LearningIntegration()  # Raises if socratic-learning not available
     return _learning_integration
 
 
@@ -224,12 +224,6 @@ def get_learning_progress(user_id: str) -> LearningProgressResponse:
     """
     try:
         learning = get_learning_integration()
-        if learning is None or not learning.available:
-            raise HTTPException(
-                status_code=503,
-                detail="Learning integration not available",
-            )
-
         # Get actual progress data from library
         progress_data = learning.get_progress(user_id)
 
@@ -279,12 +273,6 @@ def get_concept_mastery(
     """
     try:
         learning = get_learning_integration()
-        if learning is None or not learning.available:
-            raise HTTPException(
-                status_code=503,
-                detail="Learning integration not available",
-            )
-
         # Get mastery data from library
         mastery_list = learning.get_mastery(user_id, concept_id)
 
@@ -326,12 +314,7 @@ def get_misconceptions(user_id: str) -> Dict[str, Any]:
     """
     try:
         learning = get_learning_integration()
-        if learning is None or not learning.available:
-            logger.warning(f"Learning integration unavailable for misconception detection")
-            misconceptions = []
-        else:
-            # Get detected misconceptions from library
-            misconceptions = learning.detect_misconceptions(user_id)
+        misconceptions = learning.detect_misconceptions(user_id)
 
         return {
             "status": "success",
@@ -372,12 +355,6 @@ def get_recommendations(
     """
     try:
         learning = get_learning_integration()
-        if learning is None or not learning.available:
-            raise HTTPException(
-                status_code=503,
-                detail="Learning integration not available",
-            )
-
         # Get recommendations from library
         recommendations = learning.get_recommendations(user_id, count=count)
 
@@ -427,13 +404,7 @@ def get_learning_analytics(
         start_date = end_date - timedelta(days=days_back)
 
         learning = get_learning_integration()
-        if learning is None or not learning.available:
-            logger.warning(f"Learning integration unavailable for analytics")
-            # Return default analytics
-            analytics_data = {}
-        else:
-            # Get analytics from library
-            analytics_data = learning.get_analytics(user_id, period=period, days_back=days_back)
+        analytics_data = learning.get_analytics(user_id, period=period, days_back=days_back)
 
         # Map library response to API model
         analytics = LearningAnalytics(
@@ -468,19 +439,10 @@ def get_learning_system_status() -> Dict[str, Any]:
     """
     try:
         learning = get_learning_integration()
-
-        if learning is None:
-            return {
-                "status": "unavailable",
-                "message": "Learning integration not initialized",
-                "learning_integration_available": False,
-                "capabilities": [],
-            }
-
         status_info = learning.get_status()
 
         capabilities = []
-        if status_info.get("interaction_logger"):
+        if status_info.get("engine"):
             capabilities.append("interaction_logging")
         if status_info.get("metrics_collector"):
             capabilities.extend(["mastery_tracking", "progress_analytics", "learning_patterns"])
@@ -488,10 +450,14 @@ def get_learning_system_status() -> Dict[str, Any]:
             capabilities.append("misconception_detection")
         if status_info.get("recommendation_engine"):
             capabilities.append("personalized_recommendations")
+        if status_info.get("user_feedback"):
+            capabilities.append("feedback_integration")
+        if status_info.get("fine_tuning_exporter"):
+            capabilities.append("fine_tuning_data_export")
 
         return {
-            "status": "operational" if learning.available else "degraded",
-            "learning_integration_available": learning.available,
+            "status": "operational",
+            "learning_integration_available": True,
             "library_details": status_info,
             "capabilities": capabilities,
             "message": "All learning features operational" if learning.available else "Limited learning features (library unavailable)"

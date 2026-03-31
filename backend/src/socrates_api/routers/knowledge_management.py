@@ -105,30 +105,28 @@ async def add_knowledge_document(
         # Add to project knowledge documents
         project.knowledge_documents.append(document)
 
-        # Also add to socratic-knowledge library if available
+        # Add to socratic-knowledge library for enterprise knowledge management
         km = KnowledgeManager()
-        if km.available:
-            km.add_document(
-                doc_id=doc_id,
-                title=request.title,
-                content=request.content,
-                doc_type=request.type or "text",
-                metadata={"project_id": project_id, "created_by": current_user}
-            )
-            logger.debug(f"Document also added to socratic-knowledge: {doc_id}")
+        km.add_document(
+            doc_id=doc_id,
+            title=request.title,
+            content=request.content,
+            doc_type=request.type or "text",
+            metadata={"project_id": project_id, "created_by": current_user}
+        )
+        logger.info(f"Document added to enterprise knowledge management: {doc_id}")
 
         # Index in RAG for retrieval-augmented generation
         from socrates_api.models_local import RAGIntegration
         rag = RAGIntegration()
-        if rag.available:
-            rag.index_document(
-                doc_id=doc_id,
-                title=request.title,
-                content=request.content,
-                doc_type=request.type or "text",
-                metadata={"project_id": project_id, "created_by": current_user}
-            )
-            logger.debug(f"Document indexed in RAG for retrieval: {doc_id}")
+        rag.index_document(
+            doc_id=doc_id,
+            title=request.title,
+            content=request.content,
+            doc_type=request.type or "text",
+            metadata={"project_id": project_id, "created_by": current_user}
+        )
+        logger.info(f"Document indexed in RAG system for retrieval: {doc_id}")
 
         # Persist changes
         db.save_project(project)
