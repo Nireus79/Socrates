@@ -7,12 +7,17 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-# Import all 4 security components from socratic-security (REQUIRED)
+# Import all security components from socratic-security (REQUIRED)
 from socratic_security import (
     PromptInjectionDetector,
     PathValidator,
     SandboxExecutor,
     SafeFilename,
+)
+from socratic_security.input_validation import (
+    validate_no_sql_injection,
+    validate_username as validate_username_util,
+    validate_no_xss,
 )
 
 # ============================================================================
