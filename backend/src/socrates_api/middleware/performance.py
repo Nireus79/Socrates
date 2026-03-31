@@ -3,7 +3,6 @@ Production Performance Monitoring Middleware
 
 Uses socratic-performance library for:
 - QueryProfiler: Automatic request profiling and analysis
-- TTLCache: High-performance response caching with time-to-live
 - Decorators: @profile for methods, @cached for metrics
 
 Tracks response times, caching, and identifies performance bottlenecks.
@@ -18,12 +17,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 # Import production-grade performance monitoring (required)
-from socratic_performance import QueryProfiler, TTLCache
+from socratic_performance import QueryProfiler
 
 logger = logging.getLogger(__name__)
 
-# Global cache with 5-minute default TTL (300 seconds = 5 minutes)
-_PERFORMANCE_CACHE = TTLCache(ttl_minutes=5)
+# Simple in-memory cache for performance metrics (not using TTLCache due to API mismatch)
+_PERFORMANCE_CACHE = {}  # Simple dict-based cache
 
 
 class PerformanceMiddleware(BaseHTTPMiddleware):
