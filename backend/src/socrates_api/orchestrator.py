@@ -10,23 +10,14 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# Import MaturityCalculator from socratic-maturity library
-try:
-    from socrates_maturity import MaturityCalculator
-except ImportError:
-    logger.warning("socrates-maturity not available, maturity calculations will be limited")
-    MaturityCalculator = None
+# Import MaturityCalculator from socratic-maturity library (required)
+from socrates_maturity import MaturityCalculator
 
-# Import SocraticCounselor from the fixed library
-try:
-    from socratic_agents import SocraticCounselor
+# Import SocraticCounselor from socratic-agents library (required)
+from socratic_agents import SocraticCounselor
 
-except ImportError:
-    logger.warning("socratic_agents library not available, SocraticCounselor stub will be used")
-    class SocraticCounselor:
-        """Stub when library unavailable"""
-        def __init__(self, **kwargs):
-            self.llm_client = kwargs.get('llm_client')
+# Import LLMClient from socrates-nexus for production-grade LLM handling
+from socrates_nexus import LLMClient
 
 
 def _get_valid_model_for_provider(provider: str, preferred_model: Optional[str] = None) -> str:
@@ -201,22 +192,34 @@ class APIOrchestrator:
         logger.info("API Orchestrator initialized with real agents")
 
     def _create_llm_client(self) -> Optional[Any]:
-        """Create LLM client if API key provided"""
+        """Create LLM client with production-grade features from socrates-nexus"""
         try:
             if not self.api_key:
                 logger.debug("No API key provided - LLM client will be None")
                 return None
 
-            from socrates_nexus import LLMClient
-
+            # Create LLMClient with full socrates-nexus capabilities:
+            # - Token tracking for cost/usage monitoring
+            # - Response caching for performance optimization
+            # - Retry logic for reliability
             llm_client = LLMClient(
-                provider="anthropic", model="claude-3-sonnet", api_key=self.api_key
+                provider="anthropic",
+                model="claude-3-sonnet",
+                api_key=self.api_key,
+                enable_token_tracking=True,      # Track tokens for cost analysis
+                enable_response_caching=True,    # Cache responses for performance
+                cache_ttl=3600,                  # Cache for 1 hour
+                max_retries=3,                   # Retry up to 3 times on failure
+                retry_delay=1.0                  # Wait 1 second between retries
             )
-            logger.info("LLM client created successfully")
+            logger.info(
+                "LLM client created with production features: "
+                "token_tracking=True, response_caching=True, max_retries=3"
+            )
             return llm_client
         except Exception as e:
-            logger.warning(f"Failed to create LLM client: {e}")
-            return None
+            logger.error(f"Failed to create LLM client: {e}", exc_info=True)
+            raise  # Fail fast instead of returning None
 
     def _create_user_llm_client(self, user_id: str, provider: str = "claude") -> Optional[Any]:
         """
@@ -232,7 +235,6 @@ class APIOrchestrator:
         try:
             from socrates_api.database import get_database
             from socratic_system.models.llm_provider import get_provider_metadata
-            from socrates_nexus import LLMClient
 
             db = get_database()
 
@@ -253,13 +255,21 @@ class APIOrchestrator:
             user_model = db.get_provider_model(user_id, provider)
             model = user_model or provider_meta.models[0]
 
-            # Create LLM client with user's API key
+            # Create LLM client with production-grade features from socrates-nexus
             llm_client = LLMClient(
                 provider=provider,
                 model=model,
-                api_key=api_key
+                api_key=api_key,
+                enable_token_tracking=True,      # Track tokens for cost analysis
+                enable_response_caching=True,    # Cache responses for performance
+                cache_ttl=3600,                  # Cache for 1 hour
+                max_retries=3,                   # Retry up to 3 times on failure
+                retry_delay=1.0                  # Wait 1 second between retries
             )
-            logger.info(f"LLM client created for user {user_id} with provider {provider}")
+            logger.info(
+                f"LLM client created for user {user_id} with provider {provider}/{model} "
+                "and production features: token_tracking=True, response_caching=True, max_retries=3"
+            )
             return llm_client
 
         except Exception as e:
@@ -1385,17 +1395,25 @@ class APIOrchestrator:
                 llm_client_to_use = None
                 if user_api_key:
                     try:
-                        from socrates_nexus import LLMClient
+                        # Use socrates-nexus with production features for user's API key
                         raw_client = LLMClient(
                             provider=provider,
                             model=model,
-                            api_key=user_api_key
+                            api_key=user_api_key,
+                            enable_token_tracking=True,      # Track tokens for cost analysis
+                            enable_response_caching=True,    # Cache responses for performance
+                            cache_ttl=3600,                  # Cache for 1 hour
+                            max_retries=3,                   # Retry up to 3 times on failure
+                            retry_delay=1.0                  # Wait 1 second between retries
                         )
                         # Wrap with adapter for SocraticCounselor compatibility
                         llm_client_to_use = LLMClientAdapter(raw_client)
-                        logger.info(f"Using user API key for user {user_id} with provider {provider}/{model}")
+                        logger.info(
+                            f"Using user API key for {user_id} with provider {provider}/{model} "
+                            "and production features: token_tracking=True, response_caching=True"
+                        )
                     except Exception as e:
-                        logger.warning(f"Failed to create LLMClient with user key: {e}")
+                        logger.warning(f"Failed to create LLMClient with user key: {e}", exc_info=True)
                         llm_client_to_use = self.llm_client
                 else:
                     llm_client_to_use = self.llm_client
@@ -1670,17 +1688,25 @@ Provide only the hint text."""
                 llm_client_to_use = None
                 if user_api_key:
                     try:
-                        from socrates_nexus import LLMClient
+                        # Use socrates-nexus with production features for user's API key
                         raw_client = LLMClient(
                             provider=provider,
                             model=model,
-                            api_key=user_api_key
+                            api_key=user_api_key,
+                            enable_token_tracking=True,      # Track tokens for cost analysis
+                            enable_response_caching=True,    # Cache responses for performance
+                            cache_ttl=3600,                  # Cache for 1 hour
+                            max_retries=3,                   # Retry up to 3 times on failure
+                            retry_delay=1.0                  # Wait 1 second between retries
                         )
                         # Wrap with adapter for compatibility
                         llm_client_to_use = LLMClientAdapter(raw_client)
-                        logger.info(f"Using user API key for user {user_id} in direct mode with provider {provider}/{model}")
+                        logger.info(
+                            f"Using user API key for user {user_id} in direct mode with provider {provider}/{model} "
+                            "and production features: token_tracking=True, response_caching=True"
+                        )
                     except Exception as e:
-                        logger.warning(f"Failed to create LLMClient with user key: {e}")
+                        logger.warning(f"Failed to create LLMClient with user key: {e}", exc_info=True)
                         llm_client_to_use = self.llm_client
                 else:
                     llm_client_to_use = self.llm_client
@@ -1760,17 +1786,25 @@ Provide only the hint text."""
                 llm_client_to_use = None
                 if user_api_key:
                     try:
-                        from socrates_nexus import LLMClient
+                        # Use socrates-nexus with production features for insights extraction
                         raw_client = LLMClient(
                             provider=provider,
                             model="claude-3-sonnet",
-                            api_key=user_api_key
+                            api_key=user_api_key,
+                            enable_token_tracking=True,      # Track tokens for cost analysis
+                            enable_response_caching=True,    # Cache responses for performance
+                            cache_ttl=3600,                  # Cache for 1 hour
+                            max_retries=3,                   # Retry up to 3 times on failure
+                            retry_delay=1.0                  # Wait 1 second between retries
                         )
                         # Wrap with adapter for compatibility
                         llm_client_to_use = LLMClientAdapter(raw_client)
-                        logger.info(f"Using user API key for insights extraction for user {user_id}")
+                        logger.info(
+                            f"Using user API key for insights extraction for user {user_id} "
+                            "with production features: token_tracking=True, response_caching=True"
+                        )
                     except Exception as e:
-                        logger.warning(f"Failed to create LLMClient with user key: {e}")
+                        logger.warning(f"Failed to create LLMClient with user key: {e}", exc_info=True)
                         llm_client_to_use = self.llm_client
                 else:
                     llm_client_to_use = self.llm_client
