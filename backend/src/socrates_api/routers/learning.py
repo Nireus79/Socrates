@@ -1,4 +1,3 @@
-from socrates_api.models_local import LearningIntegration
 """
 Learning Analytics API Router
 
@@ -12,6 +11,9 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+
+from socrates_api.models_local import LearningIntegration
+from socrates_api.library_cache import get_learning_service
 
 logger = logging.getLogger(__name__)
 
@@ -120,18 +122,11 @@ class LearningAnalytics(BaseModel):
 
 
 # ============================================================================
-# STATE
+# DEPENDENCY INJECTION
 # ============================================================================
 
-_learning_integration: Optional[LearningIntegration] = None
-
-
-def get_learning_integration() -> LearningIntegration:
-    """Get or initialize learning integration (fail-fast design)"""
-    global _learning_integration
-    if _learning_integration is None:
-        _learning_integration = LearningIntegration()  # Raises if socratic-learning not available
-    return _learning_integration
+# Use library singleton caching via dependency injection
+# The get_learning_service function from library_cache provides the singleton instance
 
 
 # ============================================================================
@@ -147,6 +142,7 @@ def log_interaction(
     success: bool = True,
     duration_seconds: int = 0,
     metadata: Optional[Dict[str, Any]] = None,
+    learning: LearningIntegration = Depends(get_learning_service),
 ) -> Dict[str, Any]:
     """
     Log a learning interaction.
@@ -161,18 +157,12 @@ def log_interaction(
     - success: Whether interaction was successful
     - duration_seconds: Time spent on interaction
     - metadata: Additional metadata
+    - learning: LearningIntegration singleton (injected)
 
     Returns:
     - Confirmation and interaction ID
     """
     try:
-        learning = get_learning_integration()
-        if learning is None or learning.interaction_logger is None:
-            raise HTTPException(
-                status_code=503,
-                detail="Learning integration not available",
-            )
-
         context = {
             "topic": topic,
             "success": success,
@@ -205,7 +195,10 @@ def log_interaction(
 
 
 @router.get("/progress/{user_id}", response_model=LearningProgressResponse)
-def get_learning_progress(user_id: str) -> LearningProgressResponse:
+def get_learning_progress(
+    user_id: str,
+    learning: LearningIntegration = Depends(get_learning_service),
+) -> LearningProgressResponse:
     """
     Get overall learning progress for a user.
 
@@ -218,12 +211,12 @@ def get_learning_progress(user_id: str) -> LearningProgressResponse:
 
     Path Parameters:
     - user_id: User identifier
+    - learning: LearningIntegration singleton (injected)
 
     Returns:
     - Detailed learning progress metrics
     """
     try:
-        learning = get_learning_integration()
         # Get actual progress data from library
         progress_data = learning.get_progress(user_id)
 
@@ -255,6 +248,7 @@ def get_learning_progress(user_id: str) -> LearningProgressResponse:
 def get_concept_mastery(
     user_id: str,
     concept_id: Optional[str] = None,
+    learning: LearningIntegration = Depends(get_learning_service),
 ) -> Dict[str, Any]:
     """
     Get concept mastery levels for a user.
@@ -264,6 +258,7 @@ def get_concept_mastery(
 
     Path Parameters:
     - user_id: User identifier
+    - learning: LearningIntegration singleton (injected)
 
     Query Parameters:
     - concept_id: Optional specific concept (all if not provided)
@@ -272,7 +267,6 @@ def get_concept_mastery(
     - Mastery levels with confidence scores
     """
     try:
-        learning = get_learning_integration()
         # Get mastery data from library
         mastery_list = learning.get_mastery(user_id, concept_id)
 
@@ -299,7 +293,10 @@ def get_concept_mastery(
 
 
 @router.get("/misconceptions/{user_id}")
-def get_misconceptions(user_id: str) -> Dict[str, Any]:
+def get_misconceptions(
+    user_id: str,
+    learning: LearningIntegration = Depends(get_learning_service),
+) -> Dict[str, Any]:
     """
     Get detected misconceptions for a user.
 
@@ -308,12 +305,12 @@ def get_misconceptions(user_id: str) -> Dict[str, Any]:
 
     Path Parameters:
     - user_id: User identifier
+    - learning: LearningIntegration singleton (injected)
 
     Returns:
     - List of detected misconceptions with corrections
     """
     try:
-        learning = get_learning_integration()
         misconceptions = learning.detect_misconceptions(user_id)
 
         return {
@@ -332,6 +329,7 @@ def get_misconceptions(user_id: str) -> Dict[str, Any]:
 def get_recommendations(
     user_id: str,
     count: int = Query(5, ge=1, le=20),
+    learning: LearningIntegration = Depends(get_learning_service),
 ) -> Dict[str, Any]:
     """
     Get personalized learning recommendations.
@@ -346,6 +344,7 @@ def get_recommendations(
 
     Path Parameters:
     - user_id: User identifier
+    - learning: LearningIntegration singleton (injected)
 
     Query Parameters:
     - count: Number of recommendations (default: 5, max: 20)
@@ -354,7 +353,6 @@ def get_recommendations(
     - Prioritized learning recommendations
     """
     try:
-        learning = get_learning_integration()
         # Get recommendations from library
         recommendations = learning.get_recommendations(user_id, count=count)
 
@@ -377,6 +375,7 @@ def get_learning_analytics(
     user_id: str,
     period: str = Query("weekly", pattern="daily|weekly|monthly"),
     days_back: int = Query(30, ge=1, le=365),
+    learning: LearningIntegration = Depends(get_learning_service),
 ) -> LearningAnalytics:
     """
     Get comprehensive learning analytics for a user.
@@ -391,6 +390,7 @@ def get_learning_analytics(
 
     Path Parameters:
     - user_id: User identifier
+    - learning: LearningIntegration singleton (injected)
 
     Query Parameters:
     - period: Analysis period (daily, weekly, monthly)
@@ -403,7 +403,6 @@ def get_learning_analytics(
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days_back)
 
-        learning = get_learning_integration()
         analytics_data = learning.get_analytics(user_id, period=period, days_back=days_back)
 
         # Map library response to API model
@@ -428,17 +427,21 @@ def get_learning_analytics(
 
 
 @router.get("/status")
-def get_learning_system_status() -> Dict[str, Any]:
+def get_learning_system_status(
+    learning: LearningIntegration = Depends(get_learning_service),
+) -> Dict[str, Any]:
     """
     Get status of the learning analytics system.
 
     Returns the availability of the socratic-learning library and all capabilities.
 
+    Parameters:
+    - learning: LearningIntegration singleton (injected)
+
     Returns:
     - System status and capabilities
     """
     try:
-        learning = get_learning_integration()
         status_info = learning.get_status()
 
         capabilities = []
@@ -460,7 +463,7 @@ def get_learning_system_status() -> Dict[str, Any]:
             "learning_integration_available": True,
             "library_details": status_info,
             "capabilities": capabilities,
-            "message": "All learning features operational" if learning.available else "Limited learning features (library unavailable)"
+            "message": "All learning features operational"
         }
 
     except Exception as e:

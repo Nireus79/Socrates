@@ -15,6 +15,7 @@ from socrates_api.auth.project_access import check_project_access
 from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse, ErrorResponse
 from socrates_api.models_local import User
+from socrates_api.library_cache import get_analyzer_service
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
@@ -55,10 +56,10 @@ async def validate_code(
         SuccessResponse with validation results
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
         from socrates_api.routers.events import record_event
 
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
 
         if project_id:
             logger.info(f"Validating code for project: {project_id}")
@@ -79,8 +80,8 @@ async def validate_code(
             # In the future, this can export project files for analysis
             project_path = project.repository_url or project_id
 
-            # Call code validation agent - same as CLI uses
-            result = orchestrator.process_request(
+            # Call code validation agent asynchronously to avoid blocking event loop
+            result = await async_orch.process_request_async(
                 "code_validation",
                 {
                     "action": "validate_project",
@@ -161,7 +162,7 @@ async def assess_maturity(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Assessing maturity for project: {project_id}")
@@ -182,10 +183,10 @@ async def assess_maturity(
                 status_code=400, detail=f"Invalid phase. Must be one of: {', '.join(valid_phases)}"
             )
 
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
 
-        # Call quality_controller to calculate maturity - same as CLI does
-        result = orchestrator.process_request(
+        # Call quality_controller to calculate maturity asynchronously
+        result = await async_orch.process_request_async(
             "quality_controller",
             {
                 "action": "calculate_maturity",
@@ -259,7 +260,7 @@ async def run_tests(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Running tests for project: {project_id}")
@@ -279,9 +280,9 @@ async def run_tests(
 
         project_path = project.repository_url or project_id
 
-        # Call code_validation agent - same as CLI uses
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        # Call code_validation agent asynchronously
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "code_validation",
             {
                 "action": "run_tests",
@@ -351,7 +352,7 @@ async def analyze_structure(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Analyzing structure for project: {project_id}")
@@ -362,9 +363,9 @@ async def analyze_structure(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call context analyzer - same as CLI uses
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        # Call context analyzer asynchronously
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "context_analyzer",
             {
                 "action": "analyze_context",
@@ -433,7 +434,7 @@ async def review_code(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Getting code statistics for project: {project_id}")
@@ -444,9 +445,9 @@ async def review_code(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call context analyzer to get project statistics
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        # Call context analyzer asynchronously to get project statistics
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "context_analyzer",
             {
                 "action": "analyze_context",
@@ -517,7 +518,7 @@ async def auto_fix_issues(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Auto-fixing issues for project: {project_id}")
@@ -527,9 +528,9 @@ async def auto_fix_issues(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call code generator to generate improved code
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        # Call code generator asynchronously to generate improved code
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "code_generator",
             {
                 "action": "generate_script",
@@ -600,7 +601,7 @@ async def get_analysis_report(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Generating analysis report for project: {project_id}")
@@ -611,9 +612,9 @@ async def get_analysis_report(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call context analyzer to generate report/summary
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        # Call context analyzer asynchronously to generate report/summary
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "context_analyzer",
             {
                 "action": "generate_summary",
@@ -669,6 +670,7 @@ async def analyze_code(
     code: str,
     language: str = "python",
     current_user: str = Depends(get_current_user),
+    analyzer: AnalyzerIntegration = Depends(get_analyzer_service),
 ):
     """
     Perform comprehensive code analysis.
@@ -680,6 +682,7 @@ async def analyze_code(
         code: Source code to analyze
         language: Programming language (python, javascript, typescript, etc.)
         current_user: Authenticated user
+        analyzer: AnalyzerIntegration singleton (injected)
 
     Returns:
         SuccessResponse with analysis results including:
@@ -694,8 +697,7 @@ async def analyze_code(
 
         logger.info(f"Analyzing {language} code for user: {current_user}")
 
-        # Initialize analyzer and run comprehensive analysis using socratic-analyzer library
-        analyzer = AnalyzerIntegration()
+        # Run comprehensive analysis using socratic-analyzer library (singleton instance)
         analysis_result = analyzer.analyze_code(code, language=language)
 
         # Record event
@@ -743,6 +745,7 @@ async def calculate_metrics(
     code: str,
     language: str = "python",
     current_user: str = Depends(get_current_user),
+    analyzer: AnalyzerIntegration = Depends(get_analyzer_service),
 ) -> APIResponse:
     """
     Calculate detailed code metrics.
@@ -752,15 +755,12 @@ async def calculate_metrics(
     Args:
         code: Source code to analyze
         language: Programming language
+        analyzer: AnalyzerIntegration singleton (injected)
 
     Returns:
         APIResponse with detailed metrics
     """
     try:
-        analyzer = AnalyzerIntegration()
-        if not analyzer.available:
-            raise HTTPException(status_code=503, detail="Analyzer not available")
-
         metrics = analyzer.analyze_metrics(code, language)
 
         return APIResponse(
@@ -791,6 +791,7 @@ async def calculate_health_score(
     code: str,
     language: str = "python",
     current_user: str = Depends(get_current_user),
+    analyzer: AnalyzerIntegration = Depends(get_analyzer_service),
 ) -> APIResponse:
     """
     Calculate overall project health score.
@@ -800,12 +801,12 @@ async def calculate_health_score(
     Args:
         code: Project code to analyze
         language: Primary language
+        analyzer: AnalyzerIntegration singleton (injected)
 
     Returns:
         APIResponse with health score (0-100) and grade (A-F)
     """
     try:
-        analyzer = AnalyzerIntegration()
         health = analyzer.calculate_health_score(code, language)
 
         return APIResponse(
@@ -836,6 +837,7 @@ async def get_improvements(
     code: str,
     language: str = "python",
     current_user: str = Depends(get_current_user),
+    analyzer: AnalyzerIntegration = Depends(get_analyzer_service),
 ) -> APIResponse:
     """
     Get actionable code improvement suggestions.
@@ -845,12 +847,12 @@ async def get_improvements(
     Args:
         code: Code to analyze
         language: Programming language
+        analyzer: AnalyzerIntegration singleton (injected)
 
     Returns:
         APIResponse with improvement suggestions
     """
     try:
-        analyzer = AnalyzerIntegration()
         suggestions = analyzer.get_improvement_suggestions(code, language)
 
         return APIResponse(

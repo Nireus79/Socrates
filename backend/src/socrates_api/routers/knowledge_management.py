@@ -11,7 +11,7 @@ Uses socratic-knowledge library for knowledge base operations.
 """
 
 import logging
-from socrates_api.models_local import ProjectContext, StorageQuotaManager, KnowledgeManager
+from socrates_api.models_local import ProjectContext, StorageQuotaManager, KnowledgeManager, RAGIntegration
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -23,6 +23,7 @@ from socrates_api.auth.project_access import check_project_access
 from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse
 from socrates_api.models_local import User
+from socrates_api.library_cache import get_knowledge_service, get_rag_service
 # Database import replaced with local module
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,8 @@ async def add_knowledge_document(
     request: KnowledgeDocumentRequest,
     current_user: str = Depends(get_current_user),
     db: LocalDatabase = Depends(get_database),
+    km: KnowledgeManager = Depends(get_knowledge_service),
+    rag: RAGIntegration = Depends(get_rag_service),
 ):
     """
     Add a knowledge document to the project's knowledge base.
@@ -58,6 +61,8 @@ async def add_knowledge_document(
         request: Document request with title, content, and type
         current_user: Authenticated user
         db: Database connection
+        km: KnowledgeManager singleton (injected)
+        rag: RAGIntegration singleton (injected)
 
     Returns:
         Success response with document details
@@ -105,8 +110,7 @@ async def add_knowledge_document(
         # Add to project knowledge documents
         project.knowledge_documents.append(document)
 
-        # Add to socratic-knowledge library for enterprise knowledge management
-        km = KnowledgeManager()
+        # Add to socratic-knowledge library for enterprise knowledge management (singleton instance)
         km.add_document(
             doc_id=doc_id,
             title=request.title,
@@ -116,9 +120,7 @@ async def add_knowledge_document(
         )
         logger.info(f"Document added to enterprise knowledge management: {doc_id}")
 
-        # Index in RAG for retrieval-augmented generation
-        from socrates_api.models_local import RAGIntegration
-        rag = RAGIntegration()
+        # Index in RAG for retrieval-augmented generation (singleton instance)
         rag.index_document(
             doc_id=doc_id,
             title=request.title,

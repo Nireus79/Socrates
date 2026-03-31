@@ -20,6 +20,7 @@ from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 from socrates_api.services.report_generator import get_report_generator
 from socrates_api.models_local import User
 from socrates_api.auth.project_access import check_project_access
+from socrates_api.services.metrics_calculator import calculate_metrics_with_cache
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -133,36 +134,25 @@ async def get_analytics_summary(
             # SECURITY FIX: Allow team members with viewer+ role
             await check_project_access(project_id, current_user, db, min_role="viewer")
 
-            # Calculate metrics from conversation history
+            # Calculate metrics from conversation history (single-pass with caching)
             conversation = project.conversation_history or []
-            total_questions = len([m for m in conversation if m.get("role") == "user"])
-            total_answers = len([m for m in conversation if m.get("role") == "assistant"])
-            code_generation_count = len([m for m in conversation if "```" in m.get("content", "")])
-            code_lines_generated = sum(
-                len(parts[1].splitlines()) if len(parts) > 1 else 0
-                for m in conversation
-                if "```" in m.get("content", "")
-                for parts in [m.get("content", "").split("```")]
-            )
+            metrics = calculate_metrics_with_cache(project_id, conversation, use_cache=True)
 
             # Calculate confidence based on maturity
             confidence_score = min(100, 40 + (project.overall_maturity or 0) * 0.75)
 
             summary = {
                 "project_id": project_id,
-                "total_questions": total_questions,
-                "total_answers": total_answers,
+                "total_questions": metrics.user_messages,
+                "total_answers": metrics.assistant_messages,
                 "confidence_score": round(confidence_score, 1),
-                "code_generation_count": code_generation_count,
-                "code_lines_generated": code_lines_generated,
+                "code_generation_count": metrics.code_blocks,
+                "code_lines_generated": metrics.code_lines_generated,
                 "average_response_time": 2.3,
-                "learning_velocity": round(min(100, 50 + (total_questions // 2)), 1),
-                "categories": {
-                    "variables": max(0, total_questions // 5),
-                    "functions": max(0, total_questions // 4),
-                    "loops": max(0, total_questions // 6),
-                    "conditionals": max(0, total_questions // 3),
-                },
+                "learning_velocity": round(min(100, 50 + (metrics.user_messages // 2)), 1),
+                "categories": metrics.topics,
+                "languages_used": metrics.code_languages,
+                "conversation_turns": metrics.conversation_turns,
             }
         else:
             # Get summary across all user's projects

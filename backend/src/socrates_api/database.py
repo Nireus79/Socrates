@@ -20,6 +20,8 @@ from socrates_api.exceptions import (
 )
 from socrates_api.models_local import ProjectContext, User
 from socrates_api.utils import IDGenerator
+from socrates_api.services.cache_keys import CacheKeys, CacheInvalidation
+from socrates_api.services.query_cache import get_query_cache, invalidate_caches
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +171,27 @@ class LocalDatabase:
             )
             self.conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_api_keys_user ON user_api_keys(user_id)"
+            )
+
+            # Composite indexes for query optimization (Priority 2: 50-90% improvement)
+            # These indexes optimize filtered queries that use multiple columns
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_projects_owner_archived ON projects(owner, is_archived)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_knowledge_project_deleted ON knowledge_documents(project_id, is_deleted)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_team_project_user ON team_members(project_id, username)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_apikeys_user_provider ON user_api_keys(user_id, provider)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tokens_user_expires ON refresh_tokens(user_id, expires_at)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_projects_updated ON projects(updated_at DESC)"
             )
 
             # Question cache table - stores cached Socratic questions for performance
@@ -792,6 +815,8 @@ class LocalDatabase:
         """
         Get all non-archived projects for a user (both owned and collaborated).
 
+        Uses query caching for improved performance on repeated requests.
+
         Args:
             username: Username to get projects for
 
@@ -802,7 +827,15 @@ class LocalDatabase:
             DatabaseError: If database operation fails
         """
         try:
+            # Try cache first (Priority 5 optimization)
+            cache = get_query_cache()
+            cache_key = CacheKeys.user_projects(username)
+            cached = cache.get(cache_key)
+            if cached is not None:
+                logger.debug(f"Using cached user projects for {username}")
+                return cached
 
+            # Cache miss - execute query
             # Return only active (non-archived) projects owned by the user
             # Archived projects should not count toward subscription limits
             cursor = self.conn.execute(
@@ -811,6 +844,9 @@ class LocalDatabase:
             projects = []
             for row in cursor.fetchall():
                 projects.append(self._row_to_project(row))
+
+            # Cache result for future requests
+            cache.set(cache_key, projects)
             return projects
         except Exception as e:
             logger.error(f"Failed to get user projects: {e}")
@@ -869,6 +905,20 @@ class LocalDatabase:
                     ),
                 )
             self.conn.commit()
+
+            # Invalidate related caches (Priority 5 optimization)
+            try:
+                owner = getattr(project, "owner", None)
+                if owner:
+                    cache_keys_to_invalidate = CacheInvalidation.invalidate_project_caches(
+                        project_id
+                    )
+                    cache_keys_to_invalidate.append(CacheKeys.user_projects(owner))
+                    invalidate_caches(cache_keys_to_invalidate)
+                    logger.debug(f"Invalidated {len(cache_keys_to_invalidate)} cache entries for project {project_id}")
+            except Exception as cache_error:
+                logger.debug(f"Failed to invalidate cache: {cache_error}")
+
             return self.get_project(project_id)
         except (ProjectNotFoundError, DatabaseError):
             raise

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from socrates_api.auth import get_current_user
 from socrates_api.models import APIResponse, ErrorResponse
 from socrates_api.models_local import RAGIntegration
+from socrates_api.library_cache import get_rag_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/rag", tags=["RAG"])
@@ -87,6 +88,7 @@ class RetrievedDocument(BaseModel):
 async def index_document(
     request: IndexDocumentRequest,
     current_user: str = Depends(get_current_user),
+    rag: RAGIntegration = Depends(get_rag_service),
 ) -> APIResponse:
     """
     Index a document in the RAG system for retrieval.
@@ -97,14 +99,13 @@ async def index_document(
     Args:
         request: Document to index with id, title, content, type, metadata
         current_user: Authenticated user
+        rag: RAGIntegration singleton (injected)
 
     Returns:
         APIResponse with indexed document details
     """
     try:
         logger.info(f"Indexing document: {request.doc_id} for user {current_user}")
-
-        rag = RAGIntegration()
         # Index the document using RAG system
         success = rag.index_document(
             doc_id=request.doc_id,
@@ -153,6 +154,7 @@ async def index_document(
 async def retrieve_context(
     request: RetrieveContextRequest,
     current_user: str = Depends(get_current_user),
+    rag: RAGIntegration = Depends(get_rag_service),
 ) -> APIResponse:
     """
     Retrieve relevant documents for a given query.
@@ -162,14 +164,13 @@ async def retrieve_context(
     Args:
         request: Query parameters with query, limit, threshold
         current_user: Authenticated user
+        rag: RAGIntegration singleton (injected)
 
     Returns:
         APIResponse with list of relevant documents and relevance scores
     """
     try:
         logger.info(f"Retrieving context for: {request.query[:50]}... (limit: {request.limit})")
-
-        rag = RAGIntegration()
         # Retrieve context using RAG system
         results = rag.retrieve_context(
             query=request.query,
@@ -216,6 +217,7 @@ async def retrieve_context(
 async def augment_prompt(
     request: AugmentPromptRequest,
     current_user: str = Depends(get_current_user),
+    rag: RAGIntegration = Depends(get_rag_service),
 ) -> APIResponse:
     """
     Augment a prompt with relevant context from indexed documents.
@@ -226,14 +228,13 @@ async def augment_prompt(
     Args:
         request: Prompt to augment with context limit
         current_user: Authenticated user
+        rag: RAGIntegration singleton (injected)
 
     Returns:
         APIResponse with augmented prompt and context sources
     """
     try:
         logger.info(f"Augmenting prompt (context_limit: {request.context_limit})")
-
-        rag = RAGIntegration()
         # Augment the prompt using RAG system
         augmented = rag.augment_prompt(
             prompt=request.prompt,
@@ -283,6 +284,7 @@ async def search_documents(
     query: str = Query(..., min_length=1, description="Search query"),
     limit: int = Query(10, ge=1, le=50, description="Maximum results"),
     current_user: str = Depends(get_current_user),
+    rag: RAGIntegration = Depends(get_rag_service),
 ) -> APIResponse:
     """
     Search indexed documents by query.
@@ -293,14 +295,13 @@ async def search_documents(
         query: Search query string
         limit: Maximum number of results (default: 10, max: 50)
         current_user: Authenticated user
+        rag: RAGIntegration singleton (injected)
 
     Returns:
         APIResponse with search results
     """
     try:
         logger.info(f"Searching documents for: {query[:50]}... (limit: {limit})")
-
-        rag = RAGIntegration()
         # Search documents using RAG system
         results = rag.search_documents(query=query, limit=limit)
 
@@ -339,6 +340,7 @@ async def search_documents(
 )
 async def get_rag_status(
     current_user: str = Depends(get_current_user),
+    rag: RAGIntegration = Depends(get_rag_service),
 ) -> APIResponse:
     """
     Get the status of the RAG system.
@@ -347,12 +349,12 @@ async def get_rag_status(
 
     Args:
         current_user: Authenticated user
+        rag: RAGIntegration singleton (injected)
 
     Returns:
         APIResponse with RAG system status
     """
     try:
-        rag = RAGIntegration()
         status_info = rag.get_status()
 
         logger.info(f"RAG status requested by {current_user}: {status_info}")
@@ -409,6 +411,7 @@ async def get_rag_status(
 async def remove_document(
     doc_id: str,
     current_user: str = Depends(get_current_user),
+    rag: RAGIntegration = Depends(get_rag_service),
 ) -> APIResponse:
     """
     Remove a document from the RAG index.
@@ -416,14 +419,13 @@ async def remove_document(
     Args:
         doc_id: Document identifier to remove
         current_user: Authenticated user
+        rag: RAGIntegration singleton (injected)
 
     Returns:
         APIResponse with removal status
     """
     try:
         logger.info(f"Removing document from RAG: {doc_id}")
-
-        rag = RAGIntegration()
         # Remove the document from RAG system
         success = rag.remove_document(doc_id)
 

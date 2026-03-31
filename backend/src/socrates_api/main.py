@@ -248,6 +248,14 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down Socrates API server...")
 
+    # Shutdown async orchestrator (Priority 3 optimization)
+    try:
+        from socrates_api.async_orchestrator import shutdown_async_orchestrator
+        shutdown_async_orchestrator()
+        logger.info("Async orchestrator shut down successfully")
+    except Exception as e:
+        logger.warning(f"Failed to shutdown async orchestrator: {e}")
+
     # Cancel shutdown monitor task
     if shutdown_monitor_task:
         shutdown_monitor_task.cancel()
@@ -264,9 +272,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Failed to close database: {e}")
 
-    # Shutdown
-    logger.info("Shutting down Socrates API server...")
-
     # Shutdown Phase 4 Service Orchestrator
     if app_state.get("service_orchestrator"):
         try:
@@ -275,18 +280,6 @@ async def lifespan(app: FastAPI):
             logger.info("Phase 4 services shut down successfully")
         except Exception as e:
             logger.debug("Phase 4 shutdown failed")
-
-    # Cancel shutdown monitor task
-    shutdown_monitor_task.cancel()
-    try:
-        await shutdown_monitor_task
-    except asyncio.CancelledError:
-        logger.info("Shutdown monitor task cancelled")
-
-    # Close database connection
-    from socrates_api.database import close_database
-
-    close_database()
 
 
 # Create FastAPI application with lifespan handler
