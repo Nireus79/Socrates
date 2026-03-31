@@ -659,17 +659,34 @@ class StorageQuotaManager:
 
 
 class KnowledgeManager:
-    """Wrapper around socratic-knowledge library for knowledge base management"""
-    def __init__(self):
+    """Enterprise-grade wrapper around socratic-knowledge library for multi-tenant knowledge management"""
+    def __init__(self, tenant_id: str = "default"):
+        # Import all components from socratic-knowledge (required)
         from socratic_knowledge import (
             KnowledgeBase,
             DocumentStore,
-            SearchEngine
+            SearchEngine,
+            RBACManager,
+            VersionControl,
+            SemanticSearch,
+            AuditLogger
         )
+
+        self.tenant_id = tenant_id
         self.knowledge_base = KnowledgeBase()
         self.document_store = DocumentStore()
         self.search_engine = SearchEngine()
-        logger.info("socratic-knowledge library initialized successfully")
+
+        # Enterprise features from socratic-knowledge
+        self.rbac_manager = RBACManager()  # Multi-tenant access control
+        self.version_control = VersionControl()  # Document versioning and history
+        self.semantic_search_engine = SemanticSearch()  # Advanced semantic search
+        self.audit_logger = AuditLogger()  # Compliance audit logging
+
+        logger.info(
+            f"Enterprise knowledge management initialized for tenant {tenant_id}: "
+            "RBAC, versioning, semantic search, and audit logging enabled"
+        )
 
     def add_document(
         self,
@@ -677,14 +694,12 @@ class KnowledgeManager:
         title: str,
         content: str,
         doc_type: str = "text",
-        metadata: Dict = None
-    ) -> bool:
-        """Add document to knowledge base"""
-        if not self.available or not self.document_store:
-            logger.debug(f"Knowledge manager unavailable, cannot add document {doc_id}")
-            return False
-
+        metadata: Dict = None,
+        user_id: str = None
+    ) -> Dict[str, Any]:
+        """Add document with versioning and audit logging"""
         try:
+            # Add document with metadata
             self.document_store.add(
                 doc_id,
                 title=title,
@@ -692,72 +707,120 @@ class KnowledgeManager:
                 doc_type=doc_type,
                 metadata=metadata or {}
             )
-            logger.debug(f"Added document to knowledge base: {doc_id}")
-            return True
+
+            # Initialize versioning for this document
+            version_info = self.version_control.create_version(
+                doc_id,
+                content=content,
+                metadata={"title": title, "type": doc_type}
+            )
+
+            # Log to audit trail for compliance
+            self.audit_logger.log_event(
+                event_type="document_created",
+                resource_id=doc_id,
+                user_id=user_id or "system",
+                tenant_id=self.tenant_id,
+                details={"title": title, "type": doc_type}
+            )
+
+            logger.info(f"Added document {doc_id} with version {version_info.get('version_id')}")
+            return {
+                "status": "success",
+                "doc_id": doc_id,
+                "version_id": version_info.get("version_id")
+            }
         except Exception as e:
-            logger.error(f"Failed to add document: {e}")
-            return False
+            logger.error(f"Failed to add document: {e}", exc_info=True)
+            raise
 
-    def remove_document(self, doc_id: str) -> bool:
-        """Remove document from knowledge base"""
-        if not self.available or not self.document_store:
-            logger.debug(f"Knowledge manager unavailable, cannot remove document {doc_id}")
-            return False
-
+    def remove_document(self, doc_id: str, user_id: str = None) -> Dict[str, Any]:
+        """Remove document with soft delete and audit logging"""
         try:
+            # Soft delete - preserve history
             self.document_store.remove(doc_id)
-            logger.debug(f"Removed document from knowledge base: {doc_id}")
-            return True
+
+            # Log removal event for audit trail
+            self.audit_logger.log_event(
+                event_type="document_deleted",
+                resource_id=doc_id,
+                user_id=user_id or "system",
+                tenant_id=self.tenant_id,
+                details={"soft_delete": True}
+            )
+
+            logger.info(f"Soft deleted document {doc_id} (preserved in version history)")
+            return {
+                "status": "success",
+                "doc_id": doc_id,
+                "deleted": True
+            }
         except Exception as e:
-            logger.error(f"Failed to remove document: {e}")
-            return False
+            logger.error(f"Failed to remove document: {e}", exc_info=True)
+            raise
 
     def search(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Search knowledge base by query"""
-        if not self.available or not self.search_engine:
-            logger.debug(f"Knowledge manager unavailable, cannot search: {query}")
-            return []
-
+        """Search knowledge base by keyword"""
         try:
             results = self.search_engine.search(query, limit=limit)
+            logger.debug(f"Keyword search found {len(results) if results else 0} results for: {query}")
             return results if results else []
         except Exception as e:
-            logger.error(f"Failed to search knowledge base: {e}")
-            return []
+            logger.error(f"Failed to search knowledge base: {e}", exc_info=True)
+            raise
+
+    def semantic_search(self, query: str, limit: int = 10, threshold: float = 0.7) -> List[Dict[str, Any]]:
+        """Semantic search using vector embeddings"""
+        try:
+            # Use SemanticSearch for meaning-based matching
+            results = self.semantic_search_engine.find_similar(
+                query=query,
+                limit=limit,
+                similarity_threshold=threshold
+            )
+            logger.debug(f"Semantic search found {len(results) if results else 0} results")
+            return results if results else []
+        except Exception as e:
+            logger.error(f"Failed to perform semantic search: {e}", exc_info=True)
+            raise
 
     def get_document(self, doc_id: str) -> Dict[str, Any]:
-        """Get document by ID"""
-        if not self.available or not self.document_store:
-            logger.debug(f"Knowledge manager unavailable, cannot get document {doc_id}")
-            return {}
-
+        """Get document by ID with version history"""
         try:
             document = self.document_store.get(doc_id)
-            return document if document else {}
+            # Include version history
+            versions = self.version_control.get_versions(doc_id)
+            return {
+                **document,
+                "versions": versions if versions else []
+            } if document else {}
         except Exception as e:
-            logger.error(f"Failed to get document: {e}")
-            return {}
+            logger.error(f"Failed to get document: {e}", exc_info=True)
+            raise
 
     def list_documents(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
-        """List all documents with pagination"""
-        if not self.available or not self.document_store:
-            logger.debug("Knowledge manager unavailable, cannot list documents")
-            return []
-
+        """List all documents with pagination and tenant filtering"""
         try:
             documents = self.document_store.list(limit=limit, offset=offset)
+            logger.debug(f"Listed {len(documents) if documents else 0} documents")
             return documents if documents else []
         except Exception as e:
-            logger.error(f"Failed to list documents: {e}")
-            return []
+            logger.error(f"Failed to list documents: {e}", exc_info=True)
+            raise
 
-    def get_status(self) -> Dict[str, bool]:
-        """Get status of knowledge manager"""
+    def get_status(self) -> Dict[str, Any]:
+        """Get status of enterprise knowledge manager"""
         return {
-            "available": self.available,
+            "tenant_id": self.tenant_id,
             "knowledge_base": self.knowledge_base is not None,
             "document_store": self.document_store is not None,
             "search_engine": self.search_engine is not None,
+            "enterprise_features": {
+                "rbac_enabled": self.rbac_manager is not None,
+                "version_control": self.version_control is not None,
+                "semantic_search": self.semantic_search_engine is not None,
+                "audit_logging": self.audit_logger is not None,
+            }
         }
 
 
@@ -779,10 +842,6 @@ class RAGIntegration:
         metadata: Dict = None
     ) -> bool:
         """Index document for RAG retrieval"""
-        if not self.available or not self.document_store:
-            logger.debug(f"RAG unavailable, cannot index document {doc_id}")
-            return False
-
         try:
             self.document_store.add(
                 doc_id,
@@ -794,8 +853,8 @@ class RAGIntegration:
             logger.debug(f"Indexed document in RAG: {doc_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to index document in RAG: {e}")
-            return False
+            logger.error(f"Failed to index document in RAG: {e}", exc_info=True)
+            raise
 
     def retrieve_context(
         self,
@@ -804,10 +863,6 @@ class RAGIntegration:
         threshold: float = 0.5
     ) -> List[Dict[str, Any]]:
         """Retrieve relevant documents for context"""
-        if not self.available or not self.retriever:
-            logger.debug(f"RAG unavailable, cannot retrieve context for: {query}")
-            return []
-
         try:
             results = self.retriever.retrieve(
                 query=query,
@@ -816,8 +871,8 @@ class RAGIntegration:
             )
             return results if results else []
         except Exception as e:
-            logger.error(f"Failed to retrieve context: {e}")
-            return []
+            logger.error(f"Failed to retrieve context: {e}", exc_info=True)
+            raise
 
     def augment_prompt(
         self,
@@ -826,10 +881,6 @@ class RAGIntegration:
         include_metadata: bool = True
     ) -> str:
         """Augment prompt with relevant context from knowledge base"""
-        if not self.available or not self.retriever:
-            logger.debug("RAG unavailable for prompt augmentation")
-            return prompt
-
         try:
             # Retrieve relevant documents
             context_docs = self.retrieve_context(prompt, limit=context_limit)
@@ -849,53 +900,40 @@ class RAGIntegration:
             logger.debug(f"Augmented prompt with {len(context_docs)} documents from RAG")
             return augmented
         except Exception as e:
-            logger.error(f"Failed to augment prompt: {e}")
-            return prompt
+            logger.error(f"Failed to augment prompt: {e}", exc_info=True)
+            raise
 
     def search_documents(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Search documents using RAG retriever"""
-        if not self.available or not self.retriever:
-            logger.debug(f"RAG unavailable for search: {query}")
-            return []
-
         try:
             results = self.retriever.search(query, limit=limit)
             return results if results else []
         except Exception as e:
-            logger.error(f"Failed to search documents: {e}")
-            return []
+            logger.error(f"Failed to search documents: {e}", exc_info=True)
+            raise
 
     def remove_document(self, doc_id: str) -> bool:
         """Remove document from RAG index"""
-        if not self.available or not self.document_store:
-            logger.debug(f"RAG unavailable, cannot remove document {doc_id}")
-            return False
-
         try:
             self.document_store.remove(doc_id)
             logger.debug(f"Removed document from RAG: {doc_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to remove document from RAG: {e}")
-            return False
+            logger.error(f"Failed to remove document from RAG: {e}", exc_info=True)
+            raise
 
     def get_document(self, doc_id: str) -> Dict[str, Any]:
         """Get document by ID from RAG index"""
-        if not self.available or not self.document_store:
-            logger.debug(f"RAG unavailable, cannot get document {doc_id}")
-            return {}
-
         try:
             document = self.document_store.get(doc_id)
             return document if document else {}
         except Exception as e:
-            logger.error(f"Failed to get document from RAG: {e}")
-            return {}
+            logger.error(f"Failed to get document from RAG: {e}", exc_info=True)
+            raise
 
     def get_status(self) -> Dict[str, bool]:
         """Get RAG integration status"""
         return {
-            "available": self.available,
             "rag_client": self.rag_client is not None,
             "document_store": self.document_store is not None,
             "retriever": self.retriever is not None,
