@@ -519,6 +519,11 @@ async def login_mfa_verify(
                 detail=mfa_result.error or "Invalid MFA code",
             )
 
+        # CRITICAL FIX #2: Mark recovery code as used in database if one was provided
+        if request.recovery_code:
+            db.mark_recovery_code_used(request.username, request.recovery_code)
+            logger.info(f"Marked recovery code as used for user: {request.username}")
+
         logger.info(f"MFA verification successful for user: {request.username}")
 
         # Extract client IP and User-Agent for token fingerprinting
@@ -827,6 +832,7 @@ async def mfa_enable(
 async def mfa_verify_enable(
     request: MFAVerifyEnableRequest,
     current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
 ):
     """
     Verify TOTP code and enable MFA for the current user.
@@ -836,6 +842,7 @@ async def mfa_verify_enable(
     Args:
         request: MFAVerifyEnableRequest with TOTP code
         current_user: Current authenticated user (from JWT)
+        db: Database instance
 
     Returns:
         APIResponse confirming MFA enabled
@@ -857,6 +864,13 @@ async def mfa_verify_enable(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=message,
             )
+
+        # CRITICAL FIX #2: Persist MFA state to database for recovery after restart
+        totp_secret = mfa_manager.get_totp_secret(current_user)
+        backup_codes = mfa_manager.get_backup_codes(current_user) if hasattr(mfa_manager, 'get_backup_codes') else []
+
+        if totp_secret:
+            db.save_mfa_state(current_user, totp_secret, backup_codes)
 
         # Log the MFA enablement event (REQUIRED)
         logger.info(f"MFA enabled successfully for user: {current_user}")
@@ -928,6 +942,9 @@ async def mfa_disable(
 
         # Disable MFA
         mfa_manager.disable_mfa(current_user)
+
+        # CRITICAL FIX #2: Remove MFA state from database when disabled
+        db.delete_mfa_state(current_user)
 
         logger.info(f"MFA disabled for user: {current_user}")
 

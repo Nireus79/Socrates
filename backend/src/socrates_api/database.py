@@ -332,6 +332,24 @@ class LocalDatabase:
                 "CREATE INDEX IF NOT EXISTS idx_pattern_by_type ON spec_extraction_patterns(project_id, pattern_type)"
             )
 
+            # MFA state table - persists recovery code usage across server restarts
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS mfa_state (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL UNIQUE,
+                    totp_secret TEXT NOT NULL,
+                    backup_codes TEXT NOT NULL,
+                    recovery_codes_used TEXT NOT NULL DEFAULT '[]',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_mfa_user ON mfa_state(user_id)"
+            )
+
             self.conn.commit()
 
             # Perform schema migration for existing databases
@@ -2084,6 +2102,144 @@ class LocalDatabase:
         except Exception as e:
             logger.error(f"Failed to calculate extraction confidence: {e}")
             return 0.0
+
+    # ========================================================================
+    # MFA STATE PERSISTENCE (CRITICAL FIX #2)
+    # ========================================================================
+
+    def save_mfa_state(self, user_id: str, totp_secret: str, backup_codes: List[str]) -> bool:
+        """
+        Save MFA state for a user.
+
+        Args:
+            user_id: User ID
+            totp_secret: TOTP secret (should be encrypted before storing)
+            backup_codes: List of backup codes (should be encrypted/hashed before storing)
+
+        Returns:
+            True if successful, False otherwise
+        """
+        import json
+        try:
+            now = datetime.now(timezone.utc).isoformat()
+            mfa_id = IDGenerator.generate_id("mfa")
+
+            self.conn.execute("""
+                INSERT OR REPLACE INTO mfa_state
+                (id, user_id, totp_secret, backup_codes, recovery_codes_used, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                mfa_id,
+                user_id,
+                totp_secret,
+                json.dumps(backup_codes),
+                "[]",
+                now,
+                now
+            ))
+            self.conn.commit()
+            logger.info(f"Saved MFA state for user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save MFA state for user {user_id}: {e}")
+            return False
+
+    def get_mfa_state(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get MFA state for a user.
+
+        Args:
+            user_id: User ID
+
+        Returns:
+            Dictionary with mfa_state or None if not found
+        """
+        import json
+        try:
+            row = self.conn.execute("""
+                SELECT * FROM mfa_state WHERE user_id = ?
+            """, (user_id,)).fetchone()
+
+            if not row:
+                return None
+
+            return {
+                "id": row["id"],
+                "user_id": row["user_id"],
+                "totp_secret": row["totp_secret"],
+                "backup_codes": json.loads(row["backup_codes"]),
+                "recovery_codes_used": json.loads(row["recovery_codes_used"]),
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+            }
+        except Exception as e:
+            logger.error(f"Failed to get MFA state for user {user_id}: {e}")
+            return None
+
+    def mark_recovery_code_used(self, user_id: str, recovery_code: str) -> bool:
+        """
+        Mark a recovery code as used.
+
+        Args:
+            user_id: User ID
+            recovery_code: The recovery code that was used
+
+        Returns:
+            True if successful, False otherwise
+        """
+        import json
+        try:
+            # Get current used codes
+            row = self.conn.execute("""
+                SELECT recovery_codes_used FROM mfa_state WHERE user_id = ?
+            """, (user_id,)).fetchone()
+
+            if not row:
+                logger.warning(f"MFA state not found for user {user_id}")
+                return False
+
+            # Parse and update used codes
+            used_codes = json.loads(row["recovery_codes_used"])
+            if recovery_code not in used_codes:
+                used_codes.append(recovery_code)
+
+                # Update database
+                now = datetime.now(timezone.utc).isoformat()
+                self.conn.execute("""
+                    UPDATE mfa_state
+                    SET recovery_codes_used = ?, updated_at = ?
+                    WHERE user_id = ?
+                """, (json.dumps(used_codes), now, user_id))
+                self.conn.commit()
+                logger.info(f"Marked recovery code as used for user {user_id}")
+                return True
+            else:
+                logger.warning(f"Recovery code already used for user {user_id}")
+                return False
+        except Exception as e:
+            logger.error(f"Failed to mark recovery code used for user {user_id}: {e}")
+            return False
+
+    def delete_mfa_state(self, user_id: str) -> bool:
+        """
+        Delete MFA state for a user.
+
+        Args:
+            user_id: User ID
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.conn.execute("""
+                DELETE FROM mfa_state WHERE user_id = ?
+            """, (user_id,))
+            self.conn.commit()
+            logger.info(f"Deleted MFA state for user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete MFA state for user {user_id}: {e}")
+            return False
 
     def close(self) -> None:
         """Close database connection"""
