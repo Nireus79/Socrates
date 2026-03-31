@@ -202,8 +202,7 @@ class APIOrchestrator:
 
         # Initialize event-driven architecture from socratic-core (required)
         self.event_bus = EventBus()
-        self.shared_models = SharedModels()
-        logger.info("Event-driven architecture initialized: EventBus and SharedModels enabled")
+        logger.info("Event-driven architecture initialized: EventBus enabled")
 
         # Create LLMClient first (if API key provided)
         self.llm_client = self._create_llm_client()
