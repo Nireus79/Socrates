@@ -19,6 +19,9 @@ from socratic_agents import SocraticCounselor
 # Import LLMClient from socrates-nexus for production-grade LLM handling
 from socrates_nexus import LLMClient
 
+# Import conflict resolution from socratic-conflict library (required)
+from socratic_conflict import ConflictDetector, ResolutionEngine
+
 
 def _get_valid_model_for_provider(provider: str, preferred_model: Optional[str] = None) -> str:
     """Get a valid model name for the given provider"""
@@ -2016,39 +2019,34 @@ If a category has no items, use an empty array."""
             }
 
     def _compare_specs(self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Compare new specs against existing specs and detect conflicts"""
-        conflicts = []
-
+        """Compare new specs against existing specs and detect conflicts using socratic-conflict"""
         try:
-            # Try to use AgentConflictDetector for more sophisticated comparison
-            agent = self.agents.get("conflict_detector")
-            if agent and self.llm_client:
-                try:
-                    result = agent.process({
-                        "field": "specifications",
-                        "agent_outputs": {
-                            "new": new_specs,
-                            "existing": existing_specs
-                        },
-                        "agents": ["user_response", "project"]
-                    })
-                    if result and result.get("status") == "success":
-                        detected = result.get("data", {}).get("conflicts", [])
-                        if detected:
-                            conflicts.extend(detected)
-                            logger.info(f"AgentConflictDetector found {len(detected)} conflicts")
-                except Exception as e:
-                    logger.warning(f"AgentConflictDetector failed: {e}")
+            # Use ConflictDetector from socratic-conflict library for sophisticated comparison
+            detector = ConflictDetector()
+            conflicts = detector.detect_conflicts(
+                current_state=existing_specs,
+                new_state=new_specs,
+                context={"domain": "specifications", "type": "project_specs"}
+            )
 
-            # Fallback: Manual conflict detection
-            if not conflicts:
-                conflicts = self._detect_conflicts_fallback(new_specs, existing_specs)
+            if conflicts:
+                logger.info(f"ConflictDetector found {len(conflicts)} conflicts in specs")
+
+                # Categorize conflicts by severity
+                critical = [c for c in conflicts if c.get("severity") == "critical"]
+                high = [c for c in conflicts if c.get("severity") == "high"]
+                medium = [c for c in conflicts if c.get("severity") == "medium"]
+
+                logger.info(f"Conflict breakdown - Critical: {len(critical)}, High: {len(high)}, Medium: {len(medium)}")
+            else:
+                logger.debug("No conflicts detected in specs")
 
             return conflicts
 
         except Exception as e:
-            logger.error(f"Spec comparison failed: {e}")
-            return []
+            logger.error(f"Conflict detection failed: {e}", exc_info=True)
+            # Fallback: Manual conflict detection
+            return self._detect_conflicts_fallback(new_specs, existing_specs)
 
     def _detect_conflicts_fallback(self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Fallback conflict detection when agent is unavailable"""
@@ -2156,6 +2154,71 @@ If a category has no items, use an empty array."""
             feedback_parts.append("This aligns well with what we've discussed. Let me ask another question to deepen our understanding.")
 
         return "".join(feedback_parts)
+
+    def _resolve_conflicts(
+        self,
+        conflicts: List[Dict[str, Any]],
+        new_specs: Dict[str, Any],
+        existing_specs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Resolve detected conflicts using multiple strategies from socratic-conflict library.
+
+        Implements 5 resolution strategies:
+        1. Consensus - Find common ground
+        2. Prioritization - Weighted importance
+        3. Compromise - Split differences
+        4. Integration - Merge compatible elements
+        5. Escalation - Mark for human review
+        """
+        try:
+            if not conflicts:
+                return {"status": "no_conflicts", "resolution": "accepted"}
+
+            # Use ResolutionEngine from socratic-conflict library
+            resolver = ResolutionEngine()
+
+            # Attempt resolution with multiple strategies
+            resolution_result = resolver.resolve(
+                conflicts=conflicts,
+                current_state=existing_specs,
+                new_state=new_specs,
+                strategies=["consensus", "prioritization", "compromise", "integration", "escalation"]
+            )
+
+            if resolution_result.get("status") == "resolved":
+                logger.info(f"Resolved {len(conflicts)} conflicts using {resolution_result.get('strategy')}")
+                return {
+                    "status": "resolved",
+                    "strategy": resolution_result.get("strategy"),
+                    "resolution": resolution_result.get("resolution"),
+                    "merged_state": resolution_result.get("merged_state")
+                }
+            elif resolution_result.get("status") == "partial":
+                logger.info(f"Partially resolved {len(conflicts)} conflicts - some require human review")
+                return {
+                    "status": "partial",
+                    "resolved_conflicts": resolution_result.get("resolved_conflicts", []),
+                    "unresolved_conflicts": resolution_result.get("unresolved_conflicts", []),
+                    "requires_review": True
+                }
+            else:
+                logger.warning(f"Failed to resolve conflicts - marking for escalation")
+                return {
+                    "status": "escalated",
+                    "conflicts": conflicts,
+                    "requires_review": True,
+                    "recommended_action": "human_review"
+                }
+
+        except Exception as e:
+            logger.error(f"Conflict resolution failed: {e}", exc_info=True)
+            return {
+                "status": "error",
+                "error": str(e),
+                "conflicts": conflicts,
+                "requires_review": True
+            }
 
     def _check_phase_readiness(self, project) -> Dict[str, Any]:
         """
