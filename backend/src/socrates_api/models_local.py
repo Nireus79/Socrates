@@ -284,19 +284,29 @@ class StorageQuotaManager:
 
 
 class LearningIntegration:
-    """Wrapper around socratic-learning library for learning analytics and recommendations"""
+    """Enterprise-grade continuous learning system with pattern detection and fine-tuning data export"""
     def __init__(self):
+        # Import all components from socratic-learning (required)
         from socratic_learning import (
             LearningEngine,
             PatternDetector,
             MetricsCollector,
-            RecommendationEngine
+            RecommendationEngine,
+            UserFeedback,
+            FineTuningDataExporter
         )
+
         self.engine = LearningEngine()
         self.pattern_detector = PatternDetector()
         self.metrics_collector = MetricsCollector()
         self.recommendation_engine = RecommendationEngine()
-        logger.info("socratic-learning library initialized successfully")
+        self.user_feedback = UserFeedback()  # Collect and analyze user feedback
+        self.fine_tuning_exporter = FineTuningDataExporter()  # Export data for model fine-tuning
+
+        logger.info(
+            "Enterprise continuous learning system initialized: "
+            "interaction tracking, pattern detection, recommendations, feedback, and fine-tuning export enabled"
+        )
 
     @property
     def interaction_logger(self):
@@ -314,42 +324,36 @@ class LearningIntegration:
         interaction_type: str,
         context: Dict = None,
         metadata: Dict = None
-    ) -> bool:
-        """Log user interaction via socratic-learning library"""
-        if not self.available or not self.engine:
-            logger.debug(f"Learning integration unavailable, skipping interaction log for {user_id}")
-            return False
-
+    ) -> Dict[str, Any]:
+        """Log user interaction with feedback integration"""
         try:
-            self.engine.log_interaction(
+            interaction_id = self.engine.log_interaction(
                 user_id=user_id,
                 interaction_type=interaction_type,
                 context=context or {},
                 metadata=metadata or {}
             )
-            logger.debug(f"Logged interaction: {interaction_type} for user {user_id}")
-            return True
+            logger.debug(f"Logged interaction {interaction_id}: {interaction_type} for user {user_id}")
+            return {
+                "status": "success",
+                "interaction_id": interaction_id,
+                "user_id": user_id
+            }
         except Exception as e:
-            logger.error(f"Failed to log interaction: {e}")
-            return False
+            logger.error(f"Failed to log interaction: {e}", exc_info=True)
+            raise
 
     def get_progress(self, user_id: str) -> Dict[str, Any]:
-        """Get comprehensive learning progress for a user"""
-        if not self.available or not self.metrics_collector:
-            return {}
-
+        """Get comprehensive learning progress with metric tracking"""
         try:
             progress_data = self.metrics_collector.calculate_progress(user_id)
             return progress_data if progress_data else {}
         except Exception as e:
-            logger.error(f"Failed to calculate progress: {e}")
-            return {}
+            logger.error(f"Failed to calculate progress: {e}", exc_info=True)
+            raise
 
     def get_recommendations(self, user_id: str, count: int = 5) -> List[Dict[str, Any]]:
         """Get personalized learning recommendations"""
-        if not self.available or not self.recommendation_engine:
-            return []
-
         try:
             recommendations = self.recommendation_engine.generate_recommendations(
                 user_id=user_id,
@@ -357,113 +361,188 @@ class LearningIntegration:
             )
             return recommendations if recommendations else []
         except Exception as e:
-            logger.error(f"Failed to generate recommendations: {e}")
-            return []
+            logger.error(f"Failed to generate recommendations: {e}", exc_info=True)
+            raise
 
     def get_mastery(self, user_id: str, concept_id: str = None) -> List[Dict[str, Any]]:
         """Get concept mastery levels for a user"""
-        if not self.available or not self.metrics_collector:
-            return []
-
         try:
             mastery_data = self.metrics_collector.get_mastery_levels(user_id, concept_id)
             return mastery_data if mastery_data else []
         except Exception as e:
-            logger.error(f"Failed to get mastery levels: {e}")
-            return []
+            logger.error(f"Failed to get mastery levels: {e}", exc_info=True)
+            raise
 
     def detect_misconceptions(self, user_id: str) -> List[Dict[str, Any]]:
-        """Detect user misconceptions using socratic-learning"""
-        if not self.available or not self.pattern_detector:
-            return []
-
+        """Detect user misconceptions using pattern detection"""
         try:
             misconceptions = self.pattern_detector.detect_misconceptions(user_id)
             return misconceptions if misconceptions else []
         except Exception as e:
-            logger.error(f"Failed to detect misconceptions: {e}")
-            return []
+            logger.error(f"Failed to detect misconceptions: {e}", exc_info=True)
+            raise
 
     def get_analytics(self, user_id: str, period: str = "weekly", days_back: int = 30) -> Dict[str, Any]:
-        """Get learning analytics for a specific period"""
-        if not self.available or not self.metrics_collector:
-            return {}
-
+        """Get learning analytics with performance monitoring"""
         try:
             analytics_data = self.metrics_collector.get_analytics(user_id, period, days_back)
             return analytics_data if analytics_data else {}
         except Exception as e:
-            logger.error(f"Failed to get analytics: {e}")
-            return {}
+            logger.error(f"Failed to get analytics: {e}", exc_info=True)
+            raise
 
-    def get_status(self) -> Dict[str, bool]:
-        """Get status of learning integration"""
+    def log_user_feedback(
+        self,
+        user_id: str,
+        interaction_id: str,
+        feedback_type: str,
+        rating: int,
+        notes: str = None
+    ) -> Dict[str, Any]:
+        """Log user feedback for continuous improvement"""
+        try:
+            feedback_id = self.user_feedback.log_feedback(
+                user_id=user_id,
+                interaction_id=interaction_id,
+                feedback_type=feedback_type,
+                rating=rating,
+                notes=notes
+            )
+            logger.debug(f"Logged feedback {feedback_id} for interaction {interaction_id}")
+            return {
+                "status": "success",
+                "feedback_id": feedback_id,
+                "user_id": user_id
+            }
+        except Exception as e:
+            logger.error(f"Failed to log feedback: {e}", exc_info=True)
+            raise
+
+    def export_fine_tuning_data(
+        self,
+        output_format: str = "jsonl",
+        include_feedback: bool = True,
+        min_confidence: float = 0.7
+    ) -> Dict[str, Any]:
+        """Export learning data for model fine-tuning"""
+        try:
+            export_result = self.fine_tuning_exporter.export(
+                format=output_format,
+                include_feedback=include_feedback,
+                min_confidence=min_confidence
+            )
+            records_exported = export_result.get("records_count", 0)
+            logger.info(f"Exported {records_exported} records for fine-tuning (format: {output_format})")
+            return {
+                "status": "success",
+                "records_exported": records_exported,
+                "format": output_format,
+                "export_path": export_result.get("path")
+            }
+        except Exception as e:
+            logger.error(f"Failed to export fine-tuning data: {e}", exc_info=True)
+            raise
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get learning integration status with enterprise features"""
         return {
-            "available": self.available,
-            "interaction_logger": self.engine is not None,
-            "recommendation_engine": self.recommendation_engine is not None,
+            "engine": self.engine is not None,
             "pattern_detector": self.pattern_detector is not None,
             "metrics_collector": self.metrics_collector is not None,
+            "recommendation_engine": self.recommendation_engine is not None,
+            "user_feedback": self.user_feedback is not None,
+            "fine_tuning_exporter": self.fine_tuning_exporter is not None,
+            "enterprise_features_enabled": all([
+                self.engine,
+                self.pattern_detector,
+                self.metrics_collector,
+                self.recommendation_engine,
+                self.user_feedback,
+                self.fine_tuning_exporter
+            ])
         }
 
 
 class AnalyzerIntegration:
-    """Wrapper around socratic-analyzer library for comprehensive code analysis"""
+    """Enterprise-grade code analysis with 0-100 quality scoring and comprehensive metrics"""
     def __init__(self):
+        # Import all components from socratic-analyzer (required)
         from socratic_analyzer import (
             CodeAnalyzer,
             MetricsCalculator,
             InsightGenerator,
             SecurityAnalyzer,
-            PerformanceAnalyzer
+            PerformanceAnalyzer,
+            QualityScorer,
+            PatternDetector
         )
+
         self.code_analyzer = CodeAnalyzer()
         self.metrics = MetricsCalculator()
         self.insights = InsightGenerator()
         self.security = SecurityAnalyzer()
         self.performance = PerformanceAnalyzer()
-        logger.info("socratic-analyzer library initialized successfully")
+        self.quality_scorer = QualityScorer()  # Normalized 0-100 scoring
+        self.pattern_detector = PatternDetector()  # Detect code patterns and anti-patterns
+
+        logger.info(
+            "Enterprise code analysis system initialized: "
+            "static analysis, complexity metrics, security scanning, pattern detection, and quality scoring (0-100) enabled"
+        )
 
     def analyze_code(self, code: str, language: str = "python") -> Dict[str, Any]:
-        """Perform comprehensive code analysis"""
-        if not self.available or not self.code_analyzer:
-            return {"error": "Code analyzer not available"}
-
+        """Perform comprehensive code analysis with 0-100 quality scoring"""
         try:
-            result = self.code_analyzer.analyze(code, language)
-            quality_metrics = self.metrics.calculate(code) if self.metrics else {}
-            security_issues = self.security.find_issues(code) if self.security else []
-            performance_issues = self.performance.find_issues(code) if self.performance else []
-            insights = self.insights.generate(code, language) if self.insights else []
+            # Comprehensive analysis across all dimensions
+            quality_metrics = self.metrics.calculate(code)
+            security_issues = self.security.find_issues(code)
+            performance_issues = self.performance.find_issues(code)
+            insights = self.insights.generate(code, language)
+            patterns = self.pattern_detector.detect_patterns(code, language)
+
+            # Calculate normalized 0-100 quality score
+            quality_score = self.quality_scorer.calculate_score(
+                metrics=quality_metrics,
+                security_issues=security_issues,
+                performance_issues=performance_issues
+            )
 
             return {
-                "overall_score": result.get("quality_score", 0) if isinstance(result, dict) else 0,
+                "quality_score": quality_score,  # 0-100 normalized score
                 "quality_metrics": quality_metrics,
                 "security_issues": security_issues,
                 "performance_issues": performance_issues,
+                "patterns_detected": patterns,
                 "insights": insights,
                 "language": language,
             }
         except Exception as e:
-            logger.error(f"Code analysis failed: {e}")
-            return {"error": str(e)}
+            logger.error(f"Code analysis failed: {e}", exc_info=True)
+            raise
 
-    def get_status(self) -> Dict[str, bool]:
-        """Get status of analyzer integration"""
+    def get_status(self) -> Dict[str, Any]:
+        """Get analyzer integration status with enterprise features"""
         return {
-            "available": self.available,
             "code_analyzer": self.code_analyzer is not None,
             "metrics_calculator": self.metrics is not None,
             "insight_generator": self.insights is not None,
             "security_analyzer": self.security is not None,
             "performance_analyzer": self.performance is not None,
+            "quality_scorer": self.quality_scorer is not None,
+            "pattern_detector": self.pattern_detector is not None,
+            "enterprise_features_enabled": all([
+                self.code_analyzer,
+                self.metrics,
+                self.insights,
+                self.security,
+                self.performance,
+                self.quality_scorer,
+                self.pattern_detector
+            ])
         }
 
     def analyze_metrics(self, code: str, language: str = "python") -> Dict[str, Any]:
         """Calculate detailed code metrics"""
-        if not self.available or not self.metrics:
-            return {}
-
         try:
             metrics = self.metrics.calculate(code)
             return {
@@ -476,14 +555,11 @@ class AnalyzerIntegration:
                 "documentation_coverage": metrics.get("documentation_coverage", 0),
             }
         except Exception as e:
-            logger.error(f"Failed to calculate metrics: {e}")
-            return {}
+            logger.error(f"Failed to calculate metrics: {e}", exc_info=True)
+            raise
 
     def analyze_security(self, code: str, language: str = "python") -> Dict[str, Any]:
         """Deep security analysis"""
-        if not self.available or not self.security:
-            return {"issues": []}
-
         try:
             issues = self.security.find_issues(code)
             return {
@@ -494,14 +570,11 @@ class AnalyzerIntegration:
                 "issues": issues,
             }
         except Exception as e:
-            logger.error(f"Failed to analyze security: {e}")
-            return {"issues": []}
+            logger.error(f"Failed to analyze security: {e}", exc_info=True)
+            raise
 
     def analyze_performance(self, code: str, language: str = "python") -> Dict[str, Any]:
         """Analyze performance issues"""
-        if not self.available or not self.performance:
-            return {"issues": []}
-
         try:
             issues = self.performance.find_issues(code)
             recommendations = self.performance.get_recommendations(code) if hasattr(self.performance, 'get_recommendations') else []
@@ -511,64 +584,54 @@ class AnalyzerIntegration:
                 "recommendations": recommendations,
             }
         except Exception as e:
-            logger.error(f"Failed to analyze performance: {e}")
-            return {"issues": []}
+            logger.error(f"Failed to analyze performance: {e}", exc_info=True)
+            raise
 
     def calculate_health_score(self, code: str, language: str = "python") -> Dict[str, Any]:
-        """Calculate overall project health score"""
-        if not self.available:
-            return {"score": 0, "grade": "N/A"}
-
+        """Calculate overall project health score (0-100)"""
         try:
-            metrics = self.analyze_metrics(code, language)
-            security = self.analyze_security(code, language)
-            performance = self.analyze_performance(code, language)
+            # Use quality scorer for normalized 0-100 health score
+            metrics = self.metrics.calculate(code)
+            security_issues = self.security.find_issues(code)
+            performance_issues = self.performance.find_issues(code)
 
-            # Calculate health score (0-100)
-            score = 100
-            score -= metrics.get("cyclomatic_complexity", 0) * 2  # Max -20
-            score -= (100 - metrics.get("maintainability_index", 100)) * 0.3  # Max -30
-            score -= security.get("critical_count", 0) * 10  # Max -50
-            score -= security.get("high_count", 0) * 5  # Max -25
-            score -= performance.get("issue_count", 0) * 2  # Max -20
+            health_score = self.quality_scorer.calculate_score(
+                metrics=metrics,
+                security_issues=security_issues,
+                performance_issues=performance_issues
+            )
 
-            # Ensure score is 0-100
-            score = max(0, min(100, score))
-
-            # Grade
-            if score >= 90:
+            # Grade mapping
+            if health_score >= 90:
                 grade = "A"
-            elif score >= 80:
+            elif health_score >= 80:
                 grade = "B"
-            elif score >= 70:
+            elif health_score >= 70:
                 grade = "C"
-            elif score >= 60:
+            elif health_score >= 60:
                 grade = "D"
             else:
                 grade = "F"
 
             return {
-                "score": round(score, 1),
+                "score": round(health_score, 1),
                 "grade": grade,
                 "metrics": metrics,
-                "security_issues": security.get("critical_count", 0) + security.get("high_count", 0),
-                "performance_issues": performance.get("issue_count", 0),
+                "security_issues": len([i for i in security_issues if i.get("severity") in ["critical", "high"]]),
+                "performance_issues": len(performance_issues),
             }
         except Exception as e:
-            logger.error(f"Failed to calculate health score: {e}")
-            return {"score": 0, "grade": "N/A"}
+            logger.error(f"Failed to calculate health score: {e}", exc_info=True)
+            raise
 
     def get_improvement_suggestions(self, code: str, language: str = "python") -> List[Dict[str, Any]]:
         """Get code improvement suggestions"""
-        if not self.available or not self.insights:
-            return []
-
         try:
             suggestions = self.insights.generate(code, language)
             return suggestions if suggestions else []
         except Exception as e:
-            logger.error(f"Failed to generate suggestions: {e}")
-            return []
+            logger.error(f"Failed to generate suggestions: {e}", exc_info=True)
+            raise
 
 
 class StorageQuotaManager:
