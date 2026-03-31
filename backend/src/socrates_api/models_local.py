@@ -286,31 +286,17 @@ class StorageQuotaManager:
 class LearningIntegration:
     """Wrapper around socratic-learning library for learning analytics and recommendations"""
     def __init__(self):
-        self.available = False
-        self.engine = None
-        self.pattern_detector = None
-        self.metrics_collector = None
-        self.recommendation_engine = None
-
-        try:
-            from socratic_learning import (
-                LearningEngine,
-                PatternDetector,
-                MetricsCollector,
-                RecommendationEngine
-            )
-            self.engine = LearningEngine()
-            self.pattern_detector = PatternDetector()
-            self.metrics_collector = MetricsCollector()
-            self.recommendation_engine = RecommendationEngine()
-            self.available = True
-            logger.info("socratic-learning library initialized successfully")
-        except ImportError:
-            logger.warning("socratic-learning library not available - learning features will be limited")
-            self.available = False
-        except Exception as e:
-            logger.warning(f"Failed to initialize socratic-learning: {e}")
-            self.available = False
+        from socratic_learning import (
+            LearningEngine,
+            PatternDetector,
+            MetricsCollector,
+            RecommendationEngine
+        )
+        self.engine = LearningEngine()
+        self.pattern_detector = PatternDetector()
+        self.metrics_collector = MetricsCollector()
+        self.recommendation_engine = RecommendationEngine()
+        logger.info("socratic-learning library initialized successfully")
 
     @property
     def interaction_logger(self):
@@ -424,34 +410,19 @@ class LearningIntegration:
 class AnalyzerIntegration:
     """Wrapper around socratic-analyzer library for comprehensive code analysis"""
     def __init__(self):
-        self.available = False
-        self.code_analyzer = None
-        self.metrics = None
-        self.insights = None
-        self.security = None
-        self.performance = None
-
-        try:
-            from socratic_analyzer import (
-                CodeAnalyzer,
-                MetricsCalculator,
-                InsightGenerator,
-                SecurityAnalyzer,
-                PerformanceAnalyzer
-            )
-            self.code_analyzer = CodeAnalyzer()
-            self.metrics = MetricsCalculator()
-            self.insights = InsightGenerator()
-            self.security = SecurityAnalyzer()
-            self.performance = PerformanceAnalyzer()
-            self.available = True
-            logger.info("socratic-analyzer library initialized successfully")
-        except ImportError:
-            logger.warning("socratic-analyzer library not available - code analysis features will be limited")
-            self.available = False
-        except Exception as e:
-            logger.warning(f"Failed to initialize socratic-analyzer: {e}")
-            self.available = False
+        from socratic_analyzer import (
+            CodeAnalyzer,
+            MetricsCalculator,
+            InsightGenerator,
+            SecurityAnalyzer,
+            PerformanceAnalyzer
+        )
+        self.code_analyzer = CodeAnalyzer()
+        self.metrics = MetricsCalculator()
+        self.insights = InsightGenerator()
+        self.security = SecurityAnalyzer()
+        self.performance = PerformanceAnalyzer()
+        logger.info("socratic-analyzer library initialized successfully")
 
     def analyze_code(self, code: str, language: str = "python") -> Dict[str, Any]:
         """Perform comprehensive code analysis"""
@@ -690,28 +661,15 @@ class StorageQuotaManager:
 class KnowledgeManager:
     """Wrapper around socratic-knowledge library for knowledge base management"""
     def __init__(self):
-        self.available = False
-        self.knowledge_base = None
-        self.document_store = None
-        self.search_engine = None
-
-        try:
-            from socratic_knowledge import (
-                KnowledgeBase,
-                DocumentStore,
-                SearchEngine
-            )
-            self.knowledge_base = KnowledgeBase()
-            self.document_store = DocumentStore()
-            self.search_engine = SearchEngine()
-            self.available = True
-            logger.info("socratic-knowledge library initialized successfully")
-        except ImportError:
-            logger.warning("socratic-knowledge library not available - knowledge management will use fallback")
-            self.available = False
-        except Exception as e:
-            logger.warning(f"Failed to initialize socratic-knowledge: {e}")
-            self.available = False
+        from socratic_knowledge import (
+            KnowledgeBase,
+            DocumentStore,
+            SearchEngine
+        )
+        self.knowledge_base = KnowledgeBase()
+        self.document_store = DocumentStore()
+        self.search_engine = SearchEngine()
+        logger.info("socratic-knowledge library initialized successfully")
 
     def add_document(
         self,
@@ -806,24 +764,11 @@ class KnowledgeManager:
 class RAGIntegration:
     """Wrapper around socratic-rag library for retrieval-augmented generation"""
     def __init__(self):
-        self.available = False
-        self.rag_client = None
-        self.document_store = None
-        self.retriever = None
-
-        try:
-            from socratic_rag import RAGClient, DocumentStore, Retriever
-            self.rag_client = RAGClient()
-            self.document_store = DocumentStore()
-            self.retriever = Retriever()
-            self.available = True
-            logger.info("socratic-rag library initialized successfully")
-        except ImportError:
-            logger.warning("socratic-rag library not available - RAG features disabled")
-            self.available = False
-        except Exception as e:
-            logger.warning(f"Failed to initialize socratic-rag: {e}")
-            self.available = False
+        from socratic_rag import RAGClient, DocumentStore, Retriever
+        self.rag_client = RAGClient()
+        self.document_store = DocumentStore()
+        self.retriever = Retriever()
+        logger.info("socratic-rag library initialized successfully")
 
     def index_document(
         self,
@@ -960,21 +905,10 @@ class RAGIntegration:
 class WorkflowIntegration:
     """Wrapper around socratic-workflow library for workflow automation"""
     def __init__(self):
-        self.available = False
-        self.engine = None
+        from socratic_workflow import WorkflowEngine
+        self.engine = WorkflowEngine()
         self.workflows = {}
-
-        try:
-            from socratic_workflow import WorkflowEngine
-            self.engine = WorkflowEngine()
-            self.available = True
-            logger.info("socratic-workflow library initialized successfully")
-        except ImportError:
-            logger.warning("socratic-workflow library not available - workflow features disabled")
-            self.available = False
-        except Exception as e:
-            logger.warning(f"Failed to initialize socratic-workflow: {e}")
-            self.available = False
+        logger.info("socratic-workflow library initialized successfully")
 
     def create_workflow(
         self,
