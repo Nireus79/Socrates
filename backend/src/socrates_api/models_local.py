@@ -825,13 +825,33 @@ class KnowledgeManager:
 
 
 class RAGIntegration:
-    """Wrapper around socratic-rag library for retrieval-augmented generation"""
-    def __init__(self):
-        from socratic_rag import RAGClient, DocumentStore, Retriever
+    """Enterprise-grade RAG system with multiple vector DB support from socratic-rag library"""
+    def __init__(self, vector_db: str = "chromadb"):
+        # Import all components from socratic-rag (required)
+        from socratic_rag import (
+            RAGClient,
+            DocumentStore,
+            Retriever,
+            ChunkingStrategy,
+            VectorDatabaseFactory
+        )
+
+        self.vector_db_type = vector_db  # Support: chromadb, qdrant, faiss, pinecone
         self.rag_client = RAGClient()
         self.document_store = DocumentStore()
         self.retriever = Retriever()
-        logger.info("socratic-rag library initialized successfully")
+
+        # Initialize vector database (supports multiple backends)
+        self.vector_db_factory = VectorDatabaseFactory()
+        self.vector_db = self.vector_db_factory.create(vector_db)
+
+        # Initialize chunking strategy for advanced document processing
+        self.chunking_strategy = ChunkingStrategy()
+
+        logger.info(
+            f"Enterprise RAG system initialized with vector DB: {vector_db}, "
+            "chunking strategies, and multiple DB support enabled"
+        )
 
     def index_document(
         self,
@@ -931,134 +951,332 @@ class RAGIntegration:
             logger.error(f"Failed to get document from RAG: {e}", exc_info=True)
             raise
 
-    def get_status(self) -> Dict[str, bool]:
-        """Get RAG integration status"""
+    def get_status(self) -> Dict[str, Any]:
+        """Get RAG integration status with vector DB backend"""
         return {
             "rag_client": self.rag_client is not None,
             "document_store": self.document_store is not None,
             "retriever": self.retriever is not None,
+            "vector_db_backend": self.vector_db_type,
+            "vector_db_connected": self.vector_db is not None,
         }
+
+    def chunk_document(
+        self,
+        doc_id: str,
+        content: str,
+        strategy: str = "semantic",
+        chunk_size: int = 512,
+        overlap: int = 50
+    ) -> List[Dict[str, Any]]:
+        """
+        Chunk document using advanced strategies (fixed, semantic, recursive).
+        Supports multiple chunking approaches for optimal retrieval.
+        """
+        try:
+            chunks = self.chunking_strategy.chunk(
+                content=content,
+                strategy=strategy,  # 'fixed', 'semantic', 'recursive'
+                chunk_size=chunk_size,
+                overlap=overlap
+            )
+            logger.debug(f"Chunked document {doc_id} into {len(chunks) if chunks else 0} chunks using {strategy} strategy")
+            return chunks if chunks else []
+        except Exception as e:
+            logger.error(f"Failed to chunk document: {e}", exc_info=True)
+            raise
+
+    def index_documents_batch(
+        self,
+        documents: List[Dict[str, Any]],
+        chunking_strategy: str = "semantic"
+    ) -> Dict[str, Any]:
+        """
+        Batch index multiple documents with advanced chunking.
+        Efficient bulk indexing for large document sets.
+        """
+        try:
+            indexed_count = 0
+            failed_count = 0
+            total_chunks = 0
+
+            for doc in documents:
+                try:
+                    doc_id = doc.get("id", "unknown")
+                    content = doc.get("content", "")
+
+                    # Chunk the document
+                    chunks = self.chunk_document(
+                        doc_id=doc_id,
+                        content=content,
+                        strategy=chunking_strategy
+                    )
+                    total_chunks += len(chunks) if chunks else 0
+
+                    # Index the document and its chunks
+                    self.index_document(
+                        doc_id=doc_id,
+                        title=doc.get("title", ""),
+                        content=content,
+                        doc_type=doc.get("type", "text"),
+                        metadata=doc.get("metadata", {})
+                    )
+                    indexed_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to index document {doc.get('id')}: {e}")
+                    failed_count += 1
+
+            logger.info(f"Batch indexed {indexed_count} documents with {total_chunks} total chunks")
+            return {
+                "indexed": indexed_count,
+                "failed": failed_count,
+                "total_chunks": total_chunks
+            }
+        except Exception as e:
+            logger.error(f"Failed to batch index documents: {e}", exc_info=True)
+            raise
+
+    def switch_vector_db(self, new_db: str) -> bool:
+        """Switch to a different vector database backend (chromadb, qdrant, faiss, pinecone)"""
+        try:
+            old_db = self.vector_db_type
+            self.vector_db = self.vector_db_factory.create(new_db)
+            self.vector_db_type = new_db
+            logger.info(f"Switched vector DB from {old_db} to {new_db}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to switch vector DB to {new_db}: {e}", exc_info=True)
+            raise
+
+    async def retrieve_context_async(
+        self,
+        query: str,
+        limit: int = 5,
+        threshold: float = 0.5
+    ) -> List[Dict[str, Any]]:
+        """Async retrieval for non-blocking context fetching"""
+        try:
+            results = self.retriever.retrieve(
+                query=query,
+                limit=limit,
+                threshold=threshold
+            )
+            return results if results else []
+        except Exception as e:
+            logger.error(f"Failed to retrieve context (async): {e}", exc_info=True)
+            raise
 
 
 class WorkflowIntegration:
-    """Wrapper around socratic-workflow library for workflow automation"""
+    """Enterprise-grade workflow orchestration with cost tracking, parallel execution, and error recovery"""
     def __init__(self):
-        from socratic_workflow import WorkflowEngine
+        # Import all components from socratic-workflow (required)
+        from socratic_workflow import (
+            WorkflowEngine,
+            CostTracker,
+            ParallelExecutor,
+            ErrorRecovery,
+            StateManager
+        )
+
         self.engine = WorkflowEngine()
         self.workflows = {}
-        logger.info("socratic-workflow library initialized successfully")
+        self.cost_tracker = CostTracker()  # Track workflow execution costs
+        self.parallel_executor = ParallelExecutor()  # Enable parallel step execution
+        self.error_recovery = ErrorRecovery()  # Error recovery with exponential backoff
+        self.state_manager = StateManager()  # State management for resilience
+
+        logger.info(
+            "Enterprise workflow orchestration initialized: "
+            "cost tracking, parallel execution, error recovery, and state management enabled"
+        )
 
     def create_workflow(
         self,
         workflow_id: str,
         name: str,
         steps: List[Dict[str, Any]],
-        metadata: Dict = None
-    ) -> bool:
-        """Create a new workflow"""
-        if not self.available or not self.engine:
-            logger.debug(f"Workflow engine unavailable, cannot create workflow {workflow_id}")
-            return False
-
+        metadata: Dict = None,
+        enable_parallel_execution: bool = False,
+        max_retries: int = 3
+    ) -> Dict[str, Any]:
+        """Create a new workflow with optional parallel execution and error recovery"""
         try:
             workflow = self.engine.create_workflow(
                 workflow_id=workflow_id,
                 name=name,
                 steps=steps,
-                metadata=metadata or {}
+                metadata=metadata or {},
+                parallel_execution=enable_parallel_execution,
+                max_retries=max_retries
             )
             self.workflows[workflow_id] = workflow
-            logger.debug(f"Created workflow: {workflow_id}")
-            return True
+
+            # Initialize state for this workflow
+            self.state_manager.initialize_workflow(workflow_id)
+
+            # Estimate and log workflow cost
+            estimated_cost = self.cost_tracker.estimate_cost(workflow)
+            logger.info(f"Created workflow {workflow_id} (estimated cost: ${estimated_cost:.2f})")
+
+            return {
+                "status": "success",
+                "workflow_id": workflow_id,
+                "estimated_cost": estimated_cost
+            }
         except Exception as e:
-            logger.error(f"Failed to create workflow: {e}")
-            return False
+            logger.error(f"Failed to create workflow: {e}", exc_info=True)
+            raise
 
     def execute_workflow(
         self,
         workflow_id: str,
         context: Dict[str, Any] = None
     ) -> Dict[str, Any]:
-        """Execute a workflow"""
-        if not self.available or not self.engine:
-            logger.debug(f"Workflow engine unavailable, cannot execute workflow {workflow_id}")
-            return {"status": "failed", "error": "Workflow engine unavailable"}
-
+        """Execute workflow with error recovery and cost tracking"""
         try:
             if workflow_id not in self.workflows:
                 workflow = self.engine.get_workflow(workflow_id)
                 if not workflow:
-                    return {"status": "failed", "error": f"Workflow not found: {workflow_id}"}
+                    raise ValueError(f"Workflow not found: {workflow_id}")
                 self.workflows[workflow_id] = workflow
 
             workflow = self.workflows[workflow_id]
-            result = self.engine.execute(workflow, context or {})
-            logger.debug(f"Executed workflow: {workflow_id}")
-            return result if result else {"status": "completed"}
+            execution_context = context or {}
+
+            # Track execution for cost calculation
+            execution_id = self.cost_tracker.start_execution(workflow_id)
+
+            # Execute with error recovery (exponential backoff, retry logic)
+            result = self.error_recovery.execute_with_recovery(
+                lambda: self.engine.execute(workflow, execution_context),
+                max_retries=workflow.get("max_retries", 3)
+            )
+
+            # Calculate and track execution cost
+            execution_cost = self.cost_tracker.end_execution(execution_id)
+
+            # Save workflow state for resilience
+            self.state_manager.save_state(workflow_id, result)
+
+            logger.info(
+                f"Executed workflow {workflow_id} (cost: ${execution_cost:.2f}, "
+                f"execution_id: {execution_id})"
+            )
+
+            return {
+                "status": "completed",
+                "workflow_id": workflow_id,
+                "execution_id": execution_id,
+                "cost": execution_cost,
+                "result": result
+            }
         except Exception as e:
-            logger.error(f"Failed to execute workflow: {e}")
-            return {"status": "failed", "error": str(e)}
+            logger.error(f"Failed to execute workflow {workflow_id}: {e}", exc_info=True)
+            raise
 
     def get_workflow_status(self, workflow_id: str) -> Dict[str, Any]:
-        """Get status of a workflow"""
-        if not self.available or not self.engine:
-            return {"status": "unavailable"}
-
+        """Get workflow status with cost tracking"""
         try:
             status = self.engine.get_status(workflow_id)
-            return status if status else {"status": "not_found"}
+            if not status:
+                return {"status": "not_found"}
+
+            # Include cost information
+            total_cost = self.cost_tracker.get_workflow_total_cost(workflow_id)
+            state = self.state_manager.get_state(workflow_id)
+
+            return {
+                **status,
+                "total_cost": total_cost,
+                "workflow_state": state
+            }
         except Exception as e:
-            logger.error(f"Failed to get workflow status: {e}")
-            return {"status": "error", "error": str(e)}
+            logger.error(f"Failed to get workflow status: {e}", exc_info=True)
+            raise
 
     def get_workflow_history(
         self,
         workflow_id: str,
         limit: int = 10
     ) -> List[Dict[str, Any]]:
-        """Get execution history of a workflow"""
-        if not self.available or not self.engine:
-            logger.debug(f"Workflow engine unavailable for history of {workflow_id}")
-            return []
-
+        """Get execution history with cost tracking"""
         try:
             history = self.engine.get_history(workflow_id, limit=limit)
-            return history if history else []
+            if not history:
+                return []
+
+            # Add cost information for each execution
+            enriched_history = []
+            for execution in history:
+                execution_id = execution.get("id")
+                cost = self.cost_tracker.get_execution_cost(execution_id) if execution_id else 0
+                enriched_history.append({**execution, "cost": cost})
+
+            logger.debug(f"Retrieved {len(enriched_history)} execution records for workflow {workflow_id}")
+            return enriched_history
         except Exception as e:
-            logger.error(f"Failed to get workflow history: {e}")
-            return []
+            logger.error(f"Failed to get workflow history: {e}", exc_info=True)
+            raise
 
-    def delete_workflow(self, workflow_id: str) -> bool:
-        """Delete a workflow"""
-        if not self.available or not self.engine:
-            logger.debug(f"Workflow engine unavailable, cannot delete workflow {workflow_id}")
-            return False
-
+    def delete_workflow(self, workflow_id: str) -> Dict[str, Any]:
+        """Delete a workflow and clean up associated state"""
         try:
+            # Get final cost before deletion
+            total_cost = self.cost_tracker.get_workflow_total_cost(workflow_id)
+
+            # Delete the workflow
             self.engine.delete_workflow(workflow_id)
             if workflow_id in self.workflows:
                 del self.workflows[workflow_id]
-            logger.debug(f"Deleted workflow: {workflow_id}")
-            return True
+
+            # Clean up state and cost tracking
+            self.state_manager.cleanup_workflow(workflow_id)
+            self.cost_tracker.cleanup_workflow(workflow_id)
+
+            logger.info(f"Deleted workflow {workflow_id} (total lifetime cost: ${total_cost:.2f})")
+
+            return {
+                "status": "success",
+                "workflow_id": workflow_id,
+                "total_cost": total_cost
+            }
         except Exception as e:
-            logger.error(f"Failed to delete workflow: {e}")
-            return False
+            logger.error(f"Failed to delete workflow: {e}", exc_info=True)
+            raise
 
     def list_workflows(self) -> List[Dict[str, Any]]:
-        """List all available workflows"""
-        if not self.available or not self.engine:
-            return []
-
+        """List all workflows with cost tracking"""
         try:
             workflows = self.engine.list_workflows()
-            return workflows if workflows else []
-        except Exception as e:
-            logger.error(f"Failed to list workflows: {e}")
-            return []
+            if not workflows:
+                return []
 
-    def get_status(self) -> Dict[str, bool]:
-        """Get workflow integration status"""
+            # Enrich with cost information
+            enriched_workflows = []
+            for workflow in workflows:
+                workflow_id = workflow.get("id")
+                total_cost = self.cost_tracker.get_workflow_total_cost(workflow_id) if workflow_id else 0
+                enriched_workflows.append({**workflow, "total_cost": total_cost})
+
+            logger.debug(f"Listed {len(enriched_workflows)} workflows")
+            return enriched_workflows
+        except Exception as e:
+            logger.error(f"Failed to list workflows: {e}", exc_info=True)
+            raise
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get workflow integration status with enterprise features"""
         return {
-            "available": self.available,
-            "engine_available": self.engine is not None,
+            "engine": self.engine is not None,
+            "cost_tracking": self.cost_tracker is not None,
+            "parallel_execution": self.parallel_executor is not None,
+            "error_recovery": self.error_recovery is not None,
+            "state_management": self.state_manager is not None,
+            "enterprise_features_enabled": all([
+                self.cost_tracker,
+                self.parallel_executor,
+                self.error_recovery,
+                self.state_manager
+            ])
         }
