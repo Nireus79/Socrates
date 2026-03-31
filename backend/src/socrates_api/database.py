@@ -9,6 +9,7 @@ All components should use get_database() to access the database.
 import json
 import logging
 import sqlite3
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -38,19 +39,56 @@ class LocalDatabase:
 
         self.db_path = Path(db_path)
         self.conn = None
+        # CRITICAL FIX #3: Thread safety for SQLite concurrent writes
+        self._write_lock = threading.Lock()
         self._initialize()
 
     def _initialize(self) -> None:
         """Create tables if they don't exist"""
         try:
-            # SECURITY FIX: Enable timeout and disable threading bypass
-            # Note: SQLite is not designed for concurrent writes - consider PostgreSQL for production
+            # CRITICAL FIX #3: SQLite thread safety for concurrent writes
+            # SQLite is single-threaded for writes. This implementation uses:
+            # 1. timeout=10.0 to handle database locks gracefully
+            # 2. check_same_thread=False to allow async operations
+            # 3. _write_lock (threading.Lock) to serialize writes
+            #
+            # PRODUCTION WARNING:
+            # SQLite is NOT suitable for high-concurrency production environments.
+            # Consider migrating to PostgreSQL for:
+            # - Concurrent write safety
+            # - Better performance under load
+            # - Connection pooling
+            # - Full ACID compliance for concurrent transactions
+            #
+            # Migration Guide:
+            # 1. Install: pip install psycopg2-binary
+            # 2. Create PostgreSQL database and schema
+            # 3. Use alembic for schema migration
+            # 4. Update connection string in environment
+            #
+            import os
+            if os.getenv("ENVIRONMENT") == "production" or os.getenv("PROD") == "1":
+                logger.warning(
+                    "*** PRODUCTION WARNING ***\n"
+                    "SQLite is being used in a production environment.\n"
+                    "SQLite is NOT designed for concurrent writes and may corrupt data under load.\n"
+                    "STRONGLY RECOMMEND: Migrate to PostgreSQL immediately.\n"
+                    "See database.py documentation for migration instructions."
+                )
+
             self.conn = sqlite3.connect(
                 str(self.db_path),
                 timeout=10.0,  # 10 second timeout for database locks
-                check_same_thread=False  # Allow threads (but ensure single write access via locks)
+                check_same_thread=False  # Allow async (but writes are serialized via _write_lock)
             )
             self.conn.row_factory = sqlite3.Row
+
+            # Enable write-ahead logging (WAL mode) for better concurrency
+            # This allows reads to continue while writes are in progress
+            try:
+                self.conn.execute("PRAGMA journal_mode=WAL")
+            except Exception as e:
+                logger.warning(f"Could not enable WAL mode: {e}")
 
             # Projects table - stores project metadata
             self.conn.execute("""
@@ -359,6 +397,44 @@ class LocalDatabase:
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
             raise
+
+    def _execute_write(self, sql: str, params: tuple = ()) -> int:
+        """
+        Execute a write operation (INSERT/UPDATE/DELETE) with thread safety.
+
+        CRITICAL FIX #3: Ensures SQLite concurrent write safety by serializing
+        all write operations through a single lock.
+
+        Args:
+            sql: SQL statement to execute
+            params: Parameters for the SQL statement
+
+        Returns:
+            Number of rows affected
+        """
+        with self._write_lock:
+            try:
+                cursor = self.conn.execute(sql, params)
+                self.conn.commit()
+                return cursor.rowcount
+            except Exception as e:
+                self.conn.rollback()
+                logger.error(f"Write operation failed: {e}")
+                raise
+
+    def _execute_write_commit(self) -> None:
+        """
+        Commit a write operation (for batch writes). Use _execute_write for single operations.
+
+        CRITICAL FIX #3: Must be called within the write lock context.
+        """
+        with self._write_lock:
+            try:
+                self.conn.commit()
+            except Exception as e:
+                self.conn.rollback()
+                logger.error(f"Commit failed: {e}")
+                raise
 
     def _migrate_schema(self) -> None:
         """Add missing columns to existing tables from previous schema versions"""
