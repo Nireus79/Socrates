@@ -371,3 +371,17 @@ Socrates is 85-90% complete and PRODUCTION-READY with minor fixes.
   - 🎁 Knowledge graphs
   - 🎁 Payment processing
   - 🎁 Advanced monitoring
+ The TTLCache library only provides .clear() and .stats() methods. It does NOT support:
+  - Dictionary-style access: cache[key]
+  - Membership testing: key in cache
+  - Setting values: cache[key] = value
+
+  Your performance middleware code tries to use all three of these patterns, which is why it failed with "argument of type 'TTLCache' is not iterable."
+
+  Trade-off: The simple dict means:
+  - ✅ Caching works for this MVP
+  - ✅ No external dependencies
+  - ❌ Cache entries never expire (they persist until app restart)
+  - ❌ Memory usage grows unbounded
+
+  For production, consider implementing a proper TTL cache later (like cachetools.TTLCache which supports dict-style access).
