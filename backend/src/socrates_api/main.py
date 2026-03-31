@@ -44,6 +44,7 @@ from socrates_api.middleware.rate_limit import (
 from socrates_api.middleware.security_headers import add_security_headers_middleware
 from socrates_api.orchestrator import APIOrchestrator
 from socrates_api.orchestrator import get_orchestrator as create_orchestrator
+from socratic_performance.profiling.query_profiler import QueryProfiler
 
 from .models import (
     AskQuestionRequest,
@@ -103,6 +104,60 @@ logger = logging.getLogger(__name__)
 # Initialize rate limiter before app creation
 _redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
 limiter = initialize_limiter(_redis_url)  # Export for use in routers
+
+# Initialize query profiler singleton
+_query_profiler: Optional[QueryProfiler] = None
+
+
+def get_profiler() -> QueryProfiler:
+    """Get or initialize the global query profiler singleton."""
+    global _query_profiler
+    if _query_profiler is None:
+        _query_profiler = QueryProfiler()
+    return _query_profiler
+
+
+def _get_slow_queries(min_slow_count: int = 1) -> list:
+    """Get queries with slow executions above threshold.
+
+    Args:
+        min_slow_count: Minimum number of slow executions to include
+
+    Returns:
+        List of slow queries sorted by slow execution count
+    """
+    profiler = get_profiler()
+    stats = profiler.get_stats()
+
+    if not stats.get("slowest_queries"):
+        return []
+
+    # Filter by minimum count and sort
+    slow_queries = [q for q in stats.get("slowest_queries", [])
+                    if q.get("elapsed_ms", 0) > 100]  # Mark > 100ms as slow
+    return sorted(slow_queries, key=lambda x: x.get("elapsed_ms", 0), reverse=True)
+
+
+def _get_slowest_queries(limit: int = 10) -> list:
+    """Get slowest queries by average execution time.
+
+    Args:
+        limit: Maximum number of queries to return
+
+    Returns:
+        List of slowest queries sorted by average execution time
+    """
+    profiler = get_profiler()
+    stats = profiler.get_stats()
+
+    if not stats.get("slowest_queries"):
+        return []
+
+    slowest = sorted(stats.get("slowest_queries", []),
+                     key=lambda x: x.get("elapsed_ms", 0),
+                     reverse=True)
+    return slowest[:limit]
+
 
 # Global state
 app_state = {
@@ -586,8 +641,6 @@ async def detailed_health_check():
     """
     from socrates_api.caching import get_cache
 
-    # REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
-
     try:
         cache = get_cache()
         cache_status = (await cache.get_stats()) if cache else {"status": "unavailable"}
@@ -597,9 +650,9 @@ async def detailed_health_check():
     try:
         profiler = get_profiler()
         profiler_stats = profiler.get_stats()
-        slow_queries = profiler.get_slow_queries(min_slow_count=1)
+        slow_queries = _get_slow_queries(min_slow_count=1)
     except Exception:
-        profiler_stats = {}
+        profiler_stats = {"total": 0, "avg_ms": 0.0}
         slow_queries = []
 
     orchestrator_ready = app_state.get("orchestrator") is not None
@@ -627,14 +680,15 @@ async def detailed_health_check():
             },
         },
         "database_metrics": {
-            "total_queries": len(profiler_stats),
+            "total_queries": profiler_stats.get("total", 0),
             "slow_queries": len(slow_queries),
             "slowest_query_avg_ms": max(
-                (q.get("avg_time_ms", 0) for q in profiler_stats.values()), default=0
+                (q.get("elapsed_ms", 0) for q in profiler_stats.get("slowest_queries", [])), default=0
             ),
         },
         "metrics": {
-            "queries_tracked": len(profiler_stats),
+            "queries_tracked": profiler_stats.get("total", 0),
+            "avg_query_ms": profiler_stats.get("avg_ms", 0),
             "cache_type": cache_status.get("type", "unknown"),
         },
     }
@@ -700,8 +754,6 @@ async def query_metrics():
             ...
         }
     """
-    # REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
-
     profiler = get_profiler()
     return profiler.get_stats()
 
@@ -717,10 +769,7 @@ async def slow_query_metrics(min_count: int = 1):
     Returns:
         List of slow queries sorted by slow execution count
     """
-    # REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
-
-    profiler = get_profiler()
-    return profiler.get_slow_queries(min_slow_count=min_count)
+    return _get_slow_queries(min_slow_count=min_count)
 
 
 @app.get("/metrics/queries/slowest")
@@ -734,10 +783,7 @@ async def slowest_query_metrics(limit: int = 10):
     Returns:
         List of slowest queries sorted by average execution time
     """
-    # REMOVED LOCAL IMPORT: from socratic_system.database.query_profiler import get_profiler
-
-    profiler = get_profiler()
-    return profiler.get_slowest_queries(limit=limit)
+    return _get_slowest_queries(limit=limit)
 
 
 @app.post("/initialize", response_model=SystemInfoResponse)

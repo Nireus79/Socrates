@@ -22,8 +22,8 @@ from socratic_performance import QueryProfiler, TTLCache
 
 logger = logging.getLogger(__name__)
 
-# Global cache with 5-minute default TTL
-_PERFORMANCE_CACHE = TTLCache(max_size=1000, ttl=300)
+# Global cache with 5-minute default TTL (300 seconds = 5 minutes)
+_PERFORMANCE_CACHE = TTLCache(ttl_minutes=5)
 
 
 class PerformanceMiddleware(BaseHTTPMiddleware):

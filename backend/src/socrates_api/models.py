@@ -10,9 +10,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # Import all 4 security components from socratic-security (REQUIRED)
 from socratic_security import (
     PromptInjectionDetector,
-    PathTraversalValidator,
-    CodeSandbox,
-    InputValidator,
+    PathValidator,
+    SandboxExecutor,
+    SafeFilename,
 )
 
 # ============================================================================

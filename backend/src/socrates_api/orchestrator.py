@@ -34,8 +34,7 @@ from socratic_security import (
 from socratic_core import (
     EventBus,
     BaseService,
-    Orchestrator as CoreOrchestrator,
-    SharedModels,
+    ServiceOrchestrator as CoreOrchestrator,
 )
 
 
