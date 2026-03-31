@@ -303,7 +303,7 @@ class APIOrchestrator:
             return None
 
     def _initialize_agents(self) -> None:
-        """Initialize all agents from socratic-agents with LLM client (required)"""
+        """Initialize all agents from socratic-agents and socratic-analyzer with LLM client (required)"""
         from socratic_agents import (
             AgentConflictDetector,
             CodeGenerator,
@@ -321,6 +321,14 @@ class APIOrchestrator:
             SystemMonitor,
             UserManager,
         )
+
+        # Try to import CodeAnalyzer from socratic_analyzer
+        code_analyzer = None
+        try:
+            from socratic_analyzer import CodeAnalyzer
+            code_analyzer = CodeAnalyzer()
+        except ImportError:
+            logger.warning("socratic_analyzer not available; CodeAnalyzer will not be initialized")
 
         # Initialize all agents with LLM client
         self.agents = {
@@ -341,6 +349,7 @@ class APIOrchestrator:
 
             # Analysis
             "context_analyzer": ContextAnalyzer(llm_client=self.llm_client),
+            "code_analyzer": code_analyzer,  # From socratic_analyzer
 
             # Knowledge and documentation
             "user_manager": UserManager(llm_client=self.llm_client),
@@ -354,6 +363,9 @@ class APIOrchestrator:
             # Conflict resolution
             "conflict_detector": AgentConflictDetector(llm_client=self.llm_client),
         }
+
+        # Remove None agents from dict
+        self.agents = {k: v for k, v in self.agents.items() if v is not None}
         logger.info(
             f"Initialized {len(self.agents)} specialized agents from socratic-agents "
             "with production LLM client and all enterprise features"
