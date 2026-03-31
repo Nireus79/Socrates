@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from socrates_api.auth_utils import get_current_user
+from socrates_api.auth.dependencies import get_current_user
 from socrates_api.database import LocalDatabase, get_database
 from socrates_api.models import APIResponse, ErrorResponse
 from socrates_api.models_local import WorkflowIntegration

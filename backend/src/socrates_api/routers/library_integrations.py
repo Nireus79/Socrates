@@ -467,7 +467,7 @@ async def generate_all_documentation(
 @router.post("/workflow/execute")
 async def execute_workflow(
     workflow_name: str = Query(..., description="Workflow name"),
-    parameters: Dict[str, Any] = Query(..., description="Workflow parameters"),
+    parameters: Dict[str, Any] = Body(None, description="Workflow parameters"),
 ) -> Dict[str, Any]:
     """
     Execute a workflow using socratic-workflow.
@@ -480,7 +480,7 @@ async def execute_workflow(
 
     Args:
         workflow_name: Name of workflow to execute
-        parameters: Parameters for workflow execution
+        parameters: Parameters for workflow execution (JSON body)
 
     Returns:
         Workflow execution result with status and task results
@@ -672,9 +672,9 @@ async def get_performance_dashboard() -> Dict[str, Any]:
 
 @router.post("/rag/index-document")
 async def index_rag_document(
-    content: str = Query(..., description="Document content"),
-    source: str = Query(..., description="Document source/file name"),
-    metadata: Dict[str, Any] = Query({}, description="Document metadata"),
+    content: str = Body(..., description="Document content"),
+    source: str = Body(..., description="Document source/file name"),
+    metadata: Dict[str, Any] = Body({}, description="Document metadata"),
 ) -> Dict[str, Any]:
     """
     Index a document for RAG retrieval using socratic-rag.
@@ -768,7 +768,7 @@ async def get_rag_status() -> Dict[str, Any]:
 @router.post("/agents/execute")
 async def execute_agent(
     agent_name: str = Query(..., description="Agent name"),
-    request_data: Dict[str, Any] = Query(..., description="Agent request data"),
+    request_data: Dict[str, Any] = Body(..., description="Agent request data"),
 ) -> Dict[str, Any]:
     """
     Execute an agent using socratic-agents.
