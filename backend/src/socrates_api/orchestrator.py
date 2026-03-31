@@ -56,13 +56,34 @@ class LLMClientAdapter:
         self.llm_client = llm_client
         # Delegate attribute access to wrapped client
         self.provider = getattr(llm_client, 'provider', None)
+        # Initialize security handler
+        self._init_security()
+
+    def _init_security(self):
+        """Initialize prompt security validation"""
+        try:
+            from socrates_api.utils.prompt_security import get_prompt_handler
+            self.prompt_handler = get_prompt_handler()
+        except ImportError:
+            logger.warning("Prompt security module not available")
+            self.prompt_handler = None
 
     def generate_response(self, prompt: str) -> str:
         """
         Adapt LLMClient.chat() to generate_response() interface.
         SocraticCounselor expects this method.
+
+        Includes prompt injection protection.
         """
         try:
+            # Security: Validate prompt for injection attempts
+            if self.prompt_handler:
+                is_safe, sanitized_prompt = self.prompt_handler.validate_prompt(prompt)
+                if not is_safe:
+                    logger.error("Prompt validation failed - potential injection attack")
+                    raise ValueError("Prompt validation failed - input contains potential injection")
+                prompt = sanitized_prompt
+
             # Use the chat method that LLMClient actually provides
             # LLMClient.chat() expects a string prompt, not a list
             response = self.llm_client.chat(prompt)
@@ -112,7 +133,18 @@ class LLMClientAdapter:
             raise
 
     def chat(self, messages, **kwargs):
-        """Delegate to wrapped client's chat method, filtering incompatible params"""
+        """
+        Delegate to wrapped client's chat method, filtering incompatible params.
+        Includes prompt injection protection for string messages.
+        """
+        # Security: Validate messages if they're strings
+        if self.prompt_handler and isinstance(messages, str):
+            is_safe, sanitized = self.prompt_handler.validate_prompt(messages)
+            if not is_safe:
+                logger.error("Message validation failed - potential injection attack")
+                raise ValueError("Message validation failed - input contains potential injection")
+            messages = sanitized
+
         # Remove parameters that conflict for certain models
         # Claude Haiku doesn't allow both temperature and top_p
         if 'temperature' in kwargs and 'top_p' in kwargs:
@@ -121,7 +153,18 @@ class LLMClientAdapter:
         return self.llm_client.chat(messages, **kwargs)
 
     def stream(self, messages, **kwargs):
-        """Delegate to wrapped client's stream method, filtering incompatible params"""
+        """
+        Delegate to wrapped client's stream method, filtering incompatible params.
+        Includes prompt injection protection for string messages.
+        """
+        # Security: Validate messages if they're strings
+        if self.prompt_handler and isinstance(messages, str):
+            is_safe, sanitized = self.prompt_handler.validate_prompt(messages)
+            if not is_safe:
+                logger.error("Message validation failed - potential injection attack")
+                raise ValueError("Message validation failed - input contains potential injection")
+            messages = sanitized
+
         # Remove parameters that conflict for certain models
         if 'temperature' in kwargs and 'top_p' in kwargs:
             del kwargs['top_p']

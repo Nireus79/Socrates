@@ -979,3 +979,43 @@ async def get_shutdown_status():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Operation failed. Please try again later.",
         )
+
+
+@router.get(
+    "/security/status",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get security system status",
+)
+async def get_security_status(current_user: str = Depends(get_current_user)):
+    """
+    Get the current security system status.
+
+    Returns information about prompt injection detection and other security features.
+
+    Returns:
+        SuccessResponse with security status information
+    """
+    try:
+        from socrates_api.utils.prompt_security import get_prompt_handler
+
+        handler = get_prompt_handler()
+        status_info = handler.get_status()
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Security status retrieved",
+            data={
+                "prompt_injection_detection": status_info,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "user": current_user,
+            },
+        )
+
+    except Exception as e:
+        logger.error(f"Error retrieving security status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Operation failed. Please try again later.",
+        )
