@@ -125,6 +125,17 @@ def detect_conflicts(request: ConflictDetectionRequest) -> ConflictDetectionResp
     - Suggested resolutions if requested
     """
     try:
+        from socrates_api.database import get_database
+        db = get_database()
+
+        # Load project from database
+        project = db.load_project(request.project_id)
+        if not project:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Project '{request.project_id}' not found"
+            )
+
         detector = get_conflict_detector()
 
         if detector.detector is None:
@@ -136,28 +147,92 @@ def detect_conflicts(request: ConflictDetectionRequest) -> ConflictDetectionResp
                 message="Conflict detection is not available (socratic-conflict not installed)",
             )
 
-        # Simulate conflict detection
-        # In a real implementation, this would:
-        # 1. Load project data from database
-        # 2. Analyze new values against existing project context
-        # 3. Use socratic-conflict library for detection
-        conflicts: List[ConflictInfo] = []
+        # Detect conflicts between new values and existing project specs
+        detected_conflicts: List[ConflictInfo] = []
 
-        # Example conflict detection logic
-        # This would be replaced with actual project loading and comparison
-        logger.info(f"Detecting conflicts for project {request.project_id}")
+        # Define fields to check
+        fields_to_check = request.fields_to_check or [
+            "goals", "requirements", "tech_stack", "constraints"
+        ]
+
+        # Get existing project values
+        existing_data = {
+            "goals": project.goals or [],
+            "requirements": project.requirements or [],
+            "tech_stack": project.tech_stack or [],
+            "constraints": project.constraints or [],
+        }
+
+        # Check each field for conflicts
+        for field_name in fields_to_check:
+            if field_name not in request.new_values:
+                continue
+
+            existing_value = existing_data.get(field_name)
+            new_value = request.new_values[field_name]
+
+            # Skip if values are identical
+            if existing_value == new_value:
+                continue
+
+            # Determine conflict type based on field
+            conflict_type = "data_conflict"
+            if field_name == "goals":
+                conflict_type = "goal_conflict"
+            elif field_name == "tech_stack":
+                conflict_type = "tech_conflict"
+            elif field_name == "requirements":
+                conflict_type = "requirement_conflict"
+            elif field_name == "constraints":
+                conflict_type = "constraint_conflict"
+
+            # Determine severity level
+            severity = "high" if field_name in ["goals", "tech_stack"] else "medium"
+
+            # Create conflict info
+            conflict = ConflictInfo(
+                conflict_type=conflict_type,
+                field_name=field_name,
+                existing_value=existing_value,
+                new_value=new_value,
+                severity=severity,
+                description=f"{field_name.title()}: {str(existing_value)[:50]} vs {str(new_value)[:50]}",
+                suggested_resolution=f"Review both values and choose which better fits your project goals" if request.include_resolution else None
+            )
+
+            detected_conflicts.append(conflict)
+
+            # Save conflict to database for history tracking (Task 3.3)
+            try:
+                db.save_conflict(
+                    project_id=request.project_id,
+                    conflict_type=conflict_type,
+                    severity=severity,
+                    context={
+                        "field": field_name,
+                        "existing": str(existing_value),
+                        "new": str(new_value),
+                        "description": conflict.description
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Failed to save conflict to database: {e}")
+
+        logger.info(f"Detected {len(detected_conflicts)} conflict(s) for project {request.project_id}")
 
         return ConflictDetectionResponse(
             status="success",
-            conflicts=conflicts,
-            has_conflicts=len(conflicts) > 0,
-            total_conflicts=len(conflicts),
-            message=f"Found {len(conflicts)} conflicts" if conflicts else "No conflicts detected",
+            conflicts=detected_conflicts,
+            has_conflicts=len(detected_conflicts) > 0,
+            total_conflicts=len(detected_conflicts),
+            message=f"Found {len(detected_conflicts)} conflict(s)" if detected_conflicts else "No conflicts detected",
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.debug("Error detecting conflicts", exc_info=True)
-        raise HTTPException(status_code=500, detail="Operation failed. Please try again later.")
+        logger.error(f"Error detecting conflicts: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Conflict detection failed. Please try again.")
 
 
 @router.post("/resolve", response_model=ConflictResolutionResponse)
