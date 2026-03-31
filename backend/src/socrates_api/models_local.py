@@ -634,6 +634,155 @@ class AnalyzerIntegration:
             raise
 
 
+class DocumentationGenerator:
+    """Automated documentation generation from code and project structure"""
+    def __init__(self):
+        # Import all components from socratic-docs (required)
+        from socratic_docs import (
+            DocumentationGenerator as DocsGenerator,
+            MarkdownBuilder,
+            ContentOrganizer,
+            ExportManager
+        )
+
+        self.docs_generator = DocsGenerator()
+        self.markdown_builder = MarkdownBuilder()
+        self.content_organizer = ContentOrganizer()
+        self.export_manager = ExportManager()
+
+        logger.info(
+            "Automated documentation system initialized: "
+            "API docs, architecture docs, setup guides, and export management enabled"
+        )
+
+    def generate_api_documentation(
+        self,
+        code_structure: Dict[str, Any],
+        project_name: str = "Project"
+    ) -> str:
+        """Generate API documentation from code structure"""
+        try:
+            doc = self.docs_generator.generate_api_docs(
+                code_structure=code_structure,
+                project_name=project_name
+            )
+            return doc if doc else "# API Documentation\n\nNo API found to document"
+        except Exception as e:
+            logger.error(f"Failed to generate API docs: {e}", exc_info=True)
+            raise
+
+    def generate_architecture_documentation(
+        self,
+        modules: List[str],
+        relationships: Dict[str, List[str]] = None
+    ) -> str:
+        """Generate architecture documentation from modules"""
+        try:
+            doc = self.docs_generator.generate_architecture_docs(
+                modules=modules,
+                relationships=relationships or {}
+            )
+            return doc if doc else "# Architecture Documentation\n\nNo modules to document"
+        except Exception as e:
+            logger.error(f"Failed to generate architecture docs: {e}", exc_info=True)
+            raise
+
+    def generate_setup_guide(
+        self,
+        project_info: Dict[str, Any],
+        installation_steps: List[str] = None,
+        requirements: List[str] = None
+    ) -> str:
+        """Generate setup/installation guide"""
+        try:
+            doc = self.docs_generator.generate_setup_guide(
+                project_info=project_info,
+                installation_steps=installation_steps or [],
+                requirements=requirements or []
+            )
+            return doc if doc else "# Setup Guide\n\nNo setup information provided"
+        except Exception as e:
+            logger.error(f"Failed to generate setup guide: {e}", exc_info=True)
+            raise
+
+    def generate_user_guide(
+        self,
+        features: List[Dict[str, str]],
+        examples: List[Dict[str, str]] = None
+    ) -> str:
+        """Generate user guide with features and examples"""
+        try:
+            doc = self.docs_generator.generate_user_guide(
+                features=features,
+                examples=examples or []
+            )
+            return doc if doc else "# User Guide\n\nNo features documented"
+        except Exception as e:
+            logger.error(f"Failed to generate user guide: {e}", exc_info=True)
+            raise
+
+    def generate_complete_documentation(
+        self,
+        project_info: Dict[str, Any],
+        code_structure: Dict[str, Any],
+        modules: List[str] = None,
+        features: List[Dict[str, str]] = None
+    ) -> Dict[str, str]:
+        """Generate complete documentation package"""
+        try:
+            docs = {
+                "api": self.generate_api_documentation(code_structure, project_info.get("name", "Project")),
+                "architecture": self.generate_architecture_documentation(modules or []),
+                "setup": self.generate_setup_guide(project_info),
+                "user_guide": self.generate_user_guide(features or [])
+            }
+            logger.info("Generated complete documentation package with 4 components")
+            return docs
+        except Exception as e:
+            logger.error(f"Failed to generate complete documentation: {e}", exc_info=True)
+            raise
+
+    def export_documentation(
+        self,
+        documents: Dict[str, str],
+        format: str = "markdown",
+        output_path: str = None
+    ) -> Dict[str, Any]:
+        """Export documentation to various formats (markdown, html, pdf)"""
+        try:
+            export_result = self.export_manager.export(
+                documents=documents,
+                format=format,
+                output_path=output_path
+            )
+            logger.info(f"Exported documentation in {format} format to {output_path}")
+            return {
+                "status": "success",
+                "format": format,
+                "files_created": export_result.get("files_count", 0),
+                "output_path": output_path
+            }
+        except Exception as e:
+            logger.error(f"Failed to export documentation: {e}", exc_info=True)
+            raise
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get documentation generator status"""
+        return {
+            "docs_generator": self.docs_generator is not None,
+            "markdown_builder": self.markdown_builder is not None,
+            "content_organizer": self.content_organizer is not None,
+            "export_manager": self.export_manager is not None,
+            "supported_formats": ["markdown", "html", "pdf"],
+            "enterprise_features_enabled": all([
+                self.docs_generator,
+                self.markdown_builder,
+                self.content_organizer,
+                self.export_manager
+            ])
+        }
+
+
 class StorageQuotaManager:
     """Manage storage quotas for users across different subscription tiers"""
     TIER_LIMITS = {

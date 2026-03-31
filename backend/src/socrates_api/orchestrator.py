@@ -30,6 +30,14 @@ from socratic_security import (
     InputValidator,
 )
 
+# Import foundation services from socratic-core library (required)
+from socratic_core import (
+    EventBus,
+    BaseService,
+    Orchestrator as CoreOrchestrator,
+    SharedModels,
+)
+
 
 def _get_valid_model_for_provider(provider: str, preferred_model: Optional[str] = None) -> str:
     """Get a valid model name for the given provider"""
@@ -181,7 +189,7 @@ class APIOrchestrator:
     """Orchestrates real agents from socratic-agents for REST API"""
 
     def __init__(self, api_key_or_config: str = ""):
-        """Initialize orchestrator with real agents"""
+        """Initialize orchestrator with real agents and event-driven architecture"""
         self.api_key = api_key_or_config
         self.agents = {}
         self.skill_orchestrator = None
@@ -193,6 +201,11 @@ class APIOrchestrator:
         self.profiler = None
         self.cache = None
 
+        # Initialize event-driven architecture from socratic-core (required)
+        self.event_bus = EventBus()
+        self.shared_models = SharedModels()
+        logger.info("Event-driven architecture initialized: EventBus and SharedModels enabled")
+
         # Create LLMClient first (if API key provided)
         self.llm_client = self._create_llm_client()
 
@@ -200,7 +213,8 @@ class APIOrchestrator:
         self._initialize_orchestrators()
         self._initialize_documentation()
         self._initialize_performance_monitoring()
-        logger.info("API Orchestrator initialized with real agents")
+        self._setup_event_listeners()
+        logger.info("API Orchestrator initialized with real agents, event-driven architecture, and shared models")
 
     def _create_llm_client(self) -> Optional[Any]:
         """Create LLM client with production-grade features from socrates-nexus"""
@@ -1013,6 +1027,42 @@ class APIOrchestrator:
                 "message": "Security validation failed",
                 "error": str(e)
             }
+
+    def _setup_event_listeners(self) -> None:
+        """Setup event listeners for event-driven architecture from socratic-core"""
+        try:
+            # Subscribe to key events for system coordination
+            self.event_bus.on("agent_execution_start", self._handle_agent_start)
+            self.event_bus.on("agent_execution_complete", self._handle_agent_complete)
+            self.event_bus.on("error", self._handle_system_error)
+            self.event_bus.on("project_updated", self._handle_project_update)
+
+            logger.info("Event listeners configured for system coordination")
+        except Exception as e:
+            logger.warning(f"Event listener setup failed: {e}")
+
+    def _handle_agent_start(self, event_data: Dict[str, Any]) -> None:
+        """Handle agent execution start event"""
+        logger.debug(f"Agent execution started: {event_data.get('agent_id')}")
+
+    def _handle_agent_complete(self, event_data: Dict[str, Any]) -> None:
+        """Handle agent execution completion event"""
+        logger.debug(f"Agent execution completed: {event_data.get('agent_id')}")
+
+    def _handle_system_error(self, event_data: Dict[str, Any]) -> None:
+        """Handle system error event"""
+        logger.error(f"System error event: {event_data.get('error_message')}")
+
+    def _handle_project_update(self, event_data: Dict[str, Any]) -> None:
+        """Handle project update event"""
+        logger.info(f"Project updated: {event_data.get('project_id')}")
+
+    def emit_event(self, event_type: str, event_data: Dict[str, Any]) -> None:
+        """Emit an event through the event bus"""
+        try:
+            self.event_bus.emit(event_type, event_data)
+        except Exception as e:
+            logger.error(f"Failed to emit event {event_type}: {e}", exc_info=True)
 
     def _initialize_performance_monitoring(self) -> None:
         """Initialize performance monitoring tools"""
