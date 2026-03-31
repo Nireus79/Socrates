@@ -7,9 +7,12 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-# Import input validation utilities (REQUIRED)
-from socratic_security.input_validation import (
-    validate_no_sql_injection,
+# Import all 4 security components from socratic-security (REQUIRED)
+from socratic_security import (
+    PromptInjectionDetector,
+    PathTraversalValidator,
+    CodeSandbox,
+    InputValidator,
 )
 
 # ============================================================================
@@ -88,11 +91,15 @@ class CreateProjectRequest(BaseModel):
 
     @field_validator("name", "description")
     @classmethod
-    def validate_no_injection(cls, v: str | None) -> str | None:
-        """Validate input for SQL injection and XSS attacks (REQUIRED)"""
+    def validate_input_security(cls, v: str | None) -> str | None:
+        """Validate input using comprehensive InputValidator from socratic-security (REQUIRED)"""
         if v is None:
             return v
-        validate_no_sql_injection(v)
+        # Use InputValidator to check for all injection types
+        validator = InputValidator()
+        is_valid = validator.validate(v)
+        if not is_valid:
+            raise ValueError(f"Input contains invalid or unsafe content: {validator.get_error_message()}")
         return v
 
 

@@ -22,6 +22,14 @@ from socrates_nexus import LLMClient
 # Import conflict resolution from socratic-conflict library (required)
 from socratic_conflict import ConflictDetector, ResolutionEngine
 
+# Import all 4 security components from socratic-security (required)
+from socratic_security import (
+    PromptInjectionDetector,
+    PathTraversalValidator,
+    CodeSandbox,
+    InputValidator,
+)
+
 
 def _get_valid_model_for_provider(provider: str, preferred_model: Optional[str] = None) -> str:
     """Get a valid model name for the given provider"""
@@ -925,6 +933,86 @@ class APIOrchestrator:
         except Exception as e:
             logger.warning(f"Documentation generator not available: {e}")
             self.doc_generator = None
+
+    def _validate_user_input(self, user_input: str, input_type: str = "text") -> Dict[str, Any]:
+        """
+        Validate user input using all 4 security components from socratic-security.
+
+        Checks for:
+        1. Prompt injection attacks
+        2. Path traversal attempts
+        3. XSS and SQL injection
+        4. Overall input validity
+
+        Args:
+            user_input: User-provided text to validate
+            input_type: Type of input (text, prompt, code, path)
+
+        Returns:
+            Dictionary with validation results and status
+        """
+        try:
+            validation_results = {
+                "status": "valid",
+                "checks": {},
+                "warnings": []
+            }
+
+            # 1. Check for prompt injection attacks
+            injection_detector = PromptInjectionDetector()
+            injection_risk = injection_detector.detect(user_input)
+            validation_results["checks"]["prompt_injection"] = {
+                "is_safe": not injection_risk.get("is_injection_attempt", False),
+                "confidence": injection_risk.get("confidence", 0.0),
+                "risk_level": injection_risk.get("risk_level", "low")
+            }
+            if injection_risk.get("is_injection_attempt"):
+                validation_results["warnings"].append("Potential prompt injection detected")
+
+            # 2. Check for path traversal (if applicable)
+            if input_type in ["path", "file"]:
+                path_validator = PathTraversalValidator()
+                is_safe_path = path_validator.is_safe(user_input)
+                validation_results["checks"]["path_traversal"] = {"is_safe": is_safe_path}
+                if not is_safe_path:
+                    validation_results["status"] = "blocked"
+                    validation_results["warnings"].append("Path traversal attempt detected")
+
+            # 3. Validate general input integrity
+            input_validator = InputValidator()
+            is_valid = input_validator.validate(user_input)
+            validation_results["checks"]["input_validity"] = {"is_valid": is_valid}
+            if not is_valid:
+                validation_results["warnings"].append(input_validator.get_error_message())
+
+            # 4. Log security findings
+            if validation_results["warnings"]:
+                logger.warning(
+                    f"Security validation warnings: {validation_results['warnings']} | "
+                    f"Risk level: {injection_risk.get('risk_level', 'unknown')}"
+                )
+
+            # Fail if status is blocked
+            if validation_results["status"] == "blocked":
+                return {
+                    "status": "blocked",
+                    "message": "Input validation failed - security policy violated",
+                    "details": validation_results
+                }
+
+            return {
+                "status": "valid",
+                "message": "Input validation passed",
+                "details": validation_results
+            }
+
+        except Exception as e:
+            logger.error(f"Input validation error: {e}", exc_info=True)
+            return {
+                "status": "error",
+                "message": "Security validation failed",
+                "error": str(e)
+            }
 
     def _initialize_performance_monitoring(self) -> None:
         """Initialize performance monitoring tools"""
