@@ -303,20 +303,17 @@ class APIOrchestrator:
             return None
 
     def _initialize_agents(self) -> None:
-        """Initialize all 19+ agents from socratic-agents with LLM client (required)"""
+        """Initialize all agents from socratic-agents with LLM client (required)"""
         from socratic_agents import (
             AgentConflictDetector,
-            CodeAnalyzer,
             CodeGenerator,
             CodeValidator,
-            ConflictResolver,
+            ConflictDetector,
             ContextAnalyzer,
             DocumentProcessor,
             KnowledgeManager as AgentKnowledgeManager,
             LearningAgent,
-            LearningTracker,
             NoteManager,
-            PerformanceMonitor,
             ProjectManager,
             QualityController,
             SkillGeneratorAgent,
@@ -325,12 +322,11 @@ class APIOrchestrator:
             UserManager,
         )
 
-        # Initialize all 18+ agents with LLM client
+        # Initialize all agents with LLM client
         self.agents = {
             # Code analysis and generation
             "code_generator": CodeGenerator(llm_client=self.llm_client),
             "code_validator": CodeValidator(llm_client=self.llm_client),
-            "code_analyzer": CodeAnalyzer(llm_client=self.llm_client),
 
             # Project and learning coordination
             "socratic_counselor": SocraticCounselor(llm_client=self.llm_client),
@@ -342,11 +338,9 @@ class APIOrchestrator:
 
             # Learning and development
             "learning_agent": LearningAgent(llm_client=self.llm_client),
-            "learning_tracker": LearningTracker(llm_client=self.llm_client),
 
-            # Monitoring and analysis
+            # Analysis
             "context_analyzer": ContextAnalyzer(llm_client=self.llm_client),
-            "performance_monitor": PerformanceMonitor(llm_client=self.llm_client),
 
             # Knowledge and documentation
             "user_manager": UserManager(llm_client=self.llm_client),
@@ -359,7 +353,6 @@ class APIOrchestrator:
 
             # Conflict resolution
             "conflict_detector": AgentConflictDetector(llm_client=self.llm_client),
-            "conflict_resolver": ConflictResolver(llm_client=self.llm_client),
         }
         logger.info(
             f"Initialized {len(self.agents)} specialized agents from socratic-agents "
