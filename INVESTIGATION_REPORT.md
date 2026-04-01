@@ -604,19 +604,28 @@ Despite infrastructure being complete, the core **dialogue workflow is broken**.
 - [x] Background logs show: extraction, counting, conflict check, success/warnings
 - [x] All events sent in real-time for immediate UI display
 
-### PHASE 2: UX RESTORATION (2-3 days)
+### ✅ PHASE 2: UX RESTORATION - COMPLETE (Commits: 1e1c25f, 1867a9c)
 
-**P2.1** - Conflict Notification Flow
-- [ ] Emit CONFLICT_DETECTED event when conflicts found
-- [ ] Improve conflict explanation message
-- [ ] Auto-trigger conflict resolution UI
-- [ ] Suggest specific resolutions to user
+**✅ P2.1** - Conflict Notification Flow (DONE)
+- [x] Emit CONFLICT_DETECTED event when conflicts found
+- [x] Improve conflict explanation message with user-friendly explanations
+- [x] Auto-trigger conflict resolution UI with summary data
+- [x] Suggest specific resolutions to user via _generate_conflict_explanation() helper
 
-**P2.2** - Suggestions/Hints Integration
-- [ ] Track current_question_id in project
-- [ ] Pass question context to hint generator
-- [ ] Auto-execute selected NLU suggestion
-- [ ] Collect user feedback on suggestions
+**✅ P2.2** - Suggestions/Hints Integration (DONE)
+- [x] Track current_question_id in project context (uuid)
+- [x] Track current_question_text for hint context
+- [x] Pass question context to hint generator via process_request
+- [x] Emit HINT_GENERATED events for real-time UI updates
+- [x] Improve hint fallback message when no active question
+
+**✅ P2.3** - NLU Auto-Execution Pathway (DONE)
+- [x] Detect actionable intents (skip, hint, explain conflict)
+- [x] Auto-execute high-confidence intents (>= 0.85 threshold)
+- [x] Emit NLU_SUGGESTION_EXECUTED events for analytics
+- [x] Add skip_question action to clear context
+- [x] Add explain_conflict action for user-friendly explanations
+- [x] Integrate NLU detection into process_response handler
 
 ### PHASE 3: DATABASE SCHEMA (1-2 days)
 
