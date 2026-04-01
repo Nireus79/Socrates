@@ -61,6 +61,12 @@ class EventType(str, Enum):
     COLLABORATION_ADDED = "COLLABORATION_ADDED"
     COLLABORATION_REMOVED = "COLLABORATION_REMOVED"
     ACTIVITY_LOGGED = "ACTIVITY_LOGGED"
+    # CRITICAL FIX #3: New dialogue system event types
+    SPECS_EXTRACTED = "SPECS_EXTRACTED"
+    CONFLICT_DETECTED = "CONFLICT_DETECTED"
+    DEBUG_LOG = "DEBUG_LOG"
+    HINT_GENERATED = "HINT_GENERATED"
+    NLU_SUGGESTION_EXECUTED = "NLU_SUGGESTION_EXECUTED"
 
 
 class User:
@@ -189,12 +195,18 @@ class ProjectContext:
         self.answered_questions: List[Dict[str, Any]] = kwargs.get("answered_questions", [])
         self.skipped_questions: List[Dict[str, Any]] = kwargs.get("skipped_questions", [])
 
+        # CRITICAL FIX #2: Track current question context for hints/suggestions
+        # This allows suggestions system to know which question user is answering
+        self.current_question_id: Optional[str] = kwargs.get("current_question_id", None)
+        self.current_question_text: Optional[str] = kwargs.get("current_question_text", None)
+
         # Store any additional kwargs
         for key, value in kwargs.items():
             if not key.startswith("_") and key not in (
                 "maturity_score", "previous_maturity", "maturity_history",
                 "phase_maturity_scores", "category_scores",
-                "pending_questions", "answered_questions", "skipped_questions"
+                "pending_questions", "answered_questions", "skipped_questions",
+                "current_question_id", "current_question_text"
             ):
                 setattr(self, key, value)
 

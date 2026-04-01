@@ -43,6 +43,12 @@ class EventBridge:
         EventType.COLLABORATION_ADDED: "COLLABORATION_ADDED",
         EventType.COLLABORATION_REMOVED: "COLLABORATION_REMOVED",
         EventType.ACTIVITY_LOGGED: "ACTIVITY_LOGGED",
+        # CRITICAL FIX #3: Dialogue system events
+        EventType.SPECS_EXTRACTED: "SPECS_EXTRACTED",
+        EventType.CONFLICT_DETECTED: "CONFLICT_DETECTED",
+        EventType.DEBUG_LOG: "DEBUG_LOG",
+        EventType.HINT_GENERATED: "HINT_GENERATED",
+        EventType.NLU_SUGGESTION_EXECUTED: "NLU_SUGGESTION_EXECUTED",
     }
 
     def __init__(self):

@@ -1715,6 +1715,30 @@ class APIOrchestrator:
                 conflicts = self._compare_specs(extracted_specs, project_specs)
                 logger.info(f"Detected {len(conflicts)} conflicts")
 
+                # CRITICAL FIX #1: Auto-save extracted specs with metadata
+                # This ensures specs are persisted and not lost after response processing
+                project_id = getattr(project, "project_id", project.get("project_id")) if hasattr(project, "get") or hasattr(project, "project_id") else None
+                if project_id and extracted_specs:
+                    try:
+                        from socrates_api.database import get_database
+                        db = get_database()
+                        db.save_extracted_specs(
+                            project_id=project_id,
+                            specs=extracted_specs,
+                            extraction_method="contextanalyzer",
+                            confidence_score=0.95,
+                            source_text=response,
+                            metadata={
+                                "user_id": current_user,
+                                "conflict_count": len(conflicts),
+                                "has_conflicts": len(conflicts) > 0,
+                            }
+                        )
+                        logger.info(f"✓ Extracted specs persisted for project {project_id}")
+                    except Exception as e:
+                        logger.warning(f"Failed to persist extracted specs: {e}")
+                        # Don't fail the whole request if persistence fails
+
                 # Generate feedback based on insights and conflicts
                 feedback = self._generate_feedback(extracted_specs, conflicts)
                 logger.info(f"Generated feedback: {feedback[:100]}...")

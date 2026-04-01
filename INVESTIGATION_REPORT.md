@@ -345,33 +345,310 @@ The system is ready for **immediate MVP production deployment** with all critica
 **Next Step:** Deploy to production with recommended PostgreSQL migration plan
 
 
-Socrates is 85-90% complete and PRODUCTION-READY with minor fixes.
+---
+
+## 9. NEW FINDINGS: DIALOGUE SYSTEM BREAKDOWN (April 1, 2026) ⚠️
+
+**UPDATE:** Previous report was overly optimistic about infrastructure. **DIALOGUE SYSTEM IS BROKEN** despite infrastructure being complete. The user's reported issues are REAL and CRITICAL.
+
+### User-Reported Issues: ALL VERIFIED ✅
+
+1. ❌ **Specs detection not persisted** - Extracted specs are lost after processing
+2. ❌ **Debug mode doesn't print logs to dialogue** - Background logs stay on server
+3. ❌ **Conflict detection disconnected** - Conflicts detected but no frontend notification
+4. ❌ **Activity tracking broken** - Code calls `save_activity()` which doesn't exist
+5. ❌ **Suggestions button broken** - Shows "No active question" error
+6. ❌ **NLU doesn't execute** - Returns suggestions but user must manually re-type
+
+### CRITICAL GAPS IN DIALOGUE WORKFLOW
+
+#### Gap #1: Specs Extraction Not Auto-Saved ⚠️ CRITICAL
+- **File**: `backend/src/socrates_api/orchestrator.py:1697-1731`
+- **Issue**: `_handle_socratic_counselor()` action="process_response" extracts specs but NEVER saves them
+  ```python
+  # Line 1707: Extract specs
+  extracted_specs = self._extract_insights_fallback(response)
+  logger.info(f"Extracted specs from response: {extracted_specs}")
+
+  # Line 1722-1731: Return data - specs returned but NOT saved to database
+  return {
+      "status": "success",
+      "data": {
+          "extracted_specs": extracted_specs,  # ← Lost after response
+          "conflicts": conflicts,
+      },
+  }
+  ```
+- **Impact**: Next message loses context; specs knowledge degraded over time
+- **Missing**: Database call to `db.save_extracted_specs()` with metadata
+- **Missing Table**: Spec metadata tracking (confidence scores, extraction method, timestamp)
+
+#### Gap #2: Debug Mode Returns Data But Doesn't Print Logs ⚠️ CRITICAL
+- **File**: `backend/src/socrates_api/routers/projects_chat.py:895-921`
+- **Issue**: Debug data prepared but NO real-time logs shown in dialogue
+  ```python
+  # Line 895: Debug mode check
+  if is_debug_mode(current_user):
+      response_data["debugInfo"] = {
+          "specs_extracted": specs_count > 0,
+          "extracted_specs": extracted_specs,
+      }
+  ```
+- **Expected (from commit e9b46e9)**:
+  ```
+  [Background: Extracting specs...]
+  [Background: Goals detected: create calculator]
+  [Background: Specs saved...]
+  → Question: "What specific operations..."
+  ```
+- **Actual**: Only question shown, no logs, no background process visibility
+- **Missing**:
+  - No DEBUG_LOG event type in EventBridge.EVENT_MAPPING
+  - No WebSocket event emission for debug logs
+  - No real-time log streaming to frontend
+  - Logs only in server console
+
+#### Gap #3: Conflict Detection Is Disconnected ⚠️ CRITICAL
+- **File**: `backend/src/socrates_api/orchestrator.py:2195-2223`
+- **Issue**: Conflicts detected but not published to UI
+  ```python
+  # Line 2199-2204: Detect conflicts
+  conflicts = detector.detect_conflicts(...)
+
+  # Line 2215-2218: Log results only, no event emission
+  if conflicts:
+      logger.info(f"ConflictDetector found {len(conflicts)} conflicts")
+  else:
+      logger.debug("No conflicts detected in specs")
+      # ← NO WebSocket event, NO frontend notification
+  ```
+- **Missing**:
+  - No CONFLICT_DETECTED event type
+  - No event emission when conflict found
+  - Frontend must manually query `/conflicts/history` to see conflicts
+- **Workaround Code** (routers/projects_chat.py:869-884): Returns hardcoded message if conflicts exist
+  - Message: "Conflict detected in specifications. Please resolve before continuing."
+  - Not user-friendly, doesn't explain WHAT conflict
+  - Breaks frontend "Suggestions" button logic → "No active question" error
+
+#### Gap #4: Activity Tracking Function Missing ⚠️ BREAKS COLLABORATION
+- **File**: `backend/src/socrates_api/routers/websocket.py:1306`
+- **Issue**: Code calls function that doesn't exist
+  ```python
+  # Line 1306: This function is CALLED but NOT DEFINED
+  db.save_activity(activity)
+  ```
+- **Missing**:
+  - Function `save_activity()` not implemented in `database.py`
+  - Table `activities` doesn't exist
+  - No columns for: project_id, user_id, activity_type, data, created_at
+- **Impact**: Collaboration activity never tracked, team member presence missing
+
+#### Gap #5: Current Question Context Not Tracked ⚠️ BLOCKS SUGGESTIONS
+- **Issue**: Frontend "Suggestions" button expects current question context
+  - No `current_question_id` field in ProjectContext
+  - No `current_question_text` tracking
+  - Hint generator has no context about which question user is answering
+- **Result**: Hint generation returns generic fallback, frontend shows "No active question" error
+
+#### Gap #6: NLU Interpretation Not Executed ⚠️ UX BROKEN
+- **File**: `backend/src/socrates_api/routers/nlu.py`
+- **Issue**: NLU returns suggestions but doesn't execute them
+  ```python
+  # Lines 58-100: Extract specs and return interpretations
+  specs = _extract_specs_from_input(text)
+  return {
+      "status": "success",
+      "interpretations": [interpretation1, interpretation2, ...],
+      # ← No auto-execution pathway
+  }
+  ```
+- **Missing**:
+  - Auto-execution pathway for selected suggestion
+  - Context preservation between NLU and execution
+  - User feedback mechanism for executed suggestions
+- **Impact**: User selects suggestion but nothing happens; must manually re-type
+
+### MISSING DATABASE FUNCTIONS & TABLES
+
+#### Database Functions ❌
+| Function | Location | Status | Impact |
+|----------|----------|--------|--------|
+| `save_activity()` | database.py | ❌ NOT IMPLEMENTED | Breaks collaboration tracking |
+| `save_extracted_specs()` | database.py | ❌ NOT IMPLEMENTED | Specs lost after processing |
+| `get_current_question()` | database.py | ❌ NOT IMPLEMENTED | Suggestions can't access context |
+
+#### Database Tables ❌
+| Table | Status | Missing Columns |
+|-------|--------|-----------------|
+| `activities` | ❌ MISSING | project_id, user_id, activity_type, data, created_at |
+| `spec_extraction_metadata` | ❌ MISSING | confidence_score, extraction_method, source_text, timestamp |
+| `message_history` | ⚠️ IN-MEMORY ONLY | no persistence, no indexing, no search capability |
+
+### MISSING EVENT TYPES IN EVENT SYSTEM ❌
+
+EventBridge.EVENT_MAPPING missing:
+- ❌ `SPECS_EXTRACTED` - when specs detected from response
+- ❌ `CONFLICT_DETECTED` - when conflicts found
+- ❌ `DEBUG_LOG` - for streaming debug messages to frontend
+- ❌ `HINT_GENERATED` - when hint created
+- ❌ `NLU_SUGGESTION_EXECUTED` - when user accepts NLU suggestion
+
+**Current mapped events**: PROJECT_CREATED, PROJECT_UPDATED, QUESTION_GENERATED, RESPONSE_EVALUATED, etc.
+**Missing**: Dialogue-specific real-time events
+
+### ROOT CAUSE: MODULARIZATION BROKE ATOMICITY
+
+**Before Modularization** (monolithic system):
+```
+User Answer → Single Orchestrator → Sync Spec Extraction →
+  Sync Conflict Detection → Sync DB Save → Sync Next Question →
+  Return Complete State in ONE Response
+```
+- ✅ Atomic transaction guarantees
+- ✅ Debug logs captured in real-time
+- ✅ All context preserved through flow
+- ✅ Single response with complete state
+
+**After Modularization** (current):
+```
+User Answer → API Router → Orchestrator.process_request() →
+  Separate Agent Call (ContextAnalyzer) →
+  Returns Specs Dict BUT NO SAVE →
+  Separate Conflict Detector Call →
+  Returns Conflicts Dict BUT NO NOTIFICATION →
+  Separate Question Generator Call →
+  Returns Question BUT NO CONTEXT →
+  Assembles Response with Missing Pieces
+```
+- ❌ Lost atomic transaction boundaries
+- ❌ Specs extracted but never persisted
+- ❌ Conflicts detected but never published
+- ❌ Question context never tracked
+- ❌ No real-time feedback to user
+
+### CONFIRMATION OF PREVIOUS RESTORATION EFFORT (Commit e9b46e9)
+
+Previous effort attempted to restore dialogue system but missed critical pieces:
+- ✅ Fixed attribute errors (claude_client → llm_client)
+- ✅ Implemented process_response handler
+- ✅ Implemented conflict resolution flow
+- ✅ Added debug mode inline annotations
+- ❌ **BUT missed: Auto-save of extracted specs**
+- ❌ **BUT missed: Real-time debug log streaming**
+- ❌ **BUT missed: Event emission for conflicts**
+- ❌ **BUT missed: Current question context tracking**
+- ❌ **BUT missed: NLU auto-execution pathway**
+- ❌ **BUT missed: Missing database functions**
+
+---
+
+## 10. REVISED PRODUCTION READINESS ASSESSMENT
+
+### CORRECTED Readiness Score: 60% (NOT 90%)
+
+The infrastructure is 90% complete, but the **dialogue system is only ~60% functional**:
+
+```
+Infrastructure             ██████████ 100% ✅ (APIs, WebSocket, agents, libraries)
+Specs Persistence          ██░░░░░░░░  20% ❌ (Extracted but not saved)
+Conflict Management        ███░░░░░░░  30% ❌ (Detected but not published)
+Debug Logging              ██░░░░░░░░  20% ❌ (Data prepared but not streamed)
+Dialogue Context Tracking  ██░░░░░░░░  20% ❌ (No current_question tracking)
+NLU Integration            ███░░░░░░░  30% ❌ (Suggestions only, no execution)
+Database Persistence       ████░░░░░░  40% ❌ (Missing functions & tables)
+Activity Tracking          ░░░░░░░░░░   0% ❌ (Function doesn't exist)
+Event System               ██████░░░░  60% ⚠️ (Infrastructure exists, events missing)
+
+DIALOGUE SYSTEM OVERALL:   ███████░░░  60% ❌ (Infrastructure done, integration broken)
+```
+
+### NOT READY FOR PRODUCTION ❌
+
+Despite infrastructure being complete, the core **dialogue workflow is broken**. MVP deployment would be unusable for the primary Socratic dialogue feature.
+
+---
+
+## 11. REQUIRED FIXES (Priority Order)
+
+### PHASE 1: CRITICAL DIALOGUE FIXES (3-4 days)
+
+**P1.1** - Auto-save Extracted Specs
+- [ ] Implement `db.save_extracted_specs()` in database.py
+- [ ] Add spec metadata tracking with confidence scores
+- [ ] Update orchestrator to persist specs after extraction
+- [ ] Verify specs persist across dialogue turns
+
+**P1.2** - Implement Missing Database Functions
+- [ ] Implement `save_activity()` in database.py
+- [ ] Create `activities` table
+- [ ] Implement `get_current_question()` in database.py
+- [ ] Add `current_question_id` to ProjectContext
+
+**P1.3** - Add Missing Event Types to EventBridge
+- [ ] Add SPECS_EXTRACTED event type
+- [ ] Add CONFLICT_DETECTED event type
+- [ ] Add DEBUG_LOG event type
+- [ ] Wire event emission in orchestrator
+
+**P1.4** - Real-time Debug Log Streaming
+- [ ] Capture debug logs in debug mode
+- [ ] Emit DEBUG_LOG events to WebSocket
+- [ ] Display logs in real-time in dialogue UI
+
+### PHASE 2: UX RESTORATION (2-3 days)
+
+**P2.1** - Conflict Notification Flow
+- [ ] Emit CONFLICT_DETECTED event when conflicts found
+- [ ] Improve conflict explanation message
+- [ ] Auto-trigger conflict resolution UI
+- [ ] Suggest specific resolutions to user
+
+**P2.2** - Suggestions/Hints Integration
+- [ ] Track current_question_id in project
+- [ ] Pass question context to hint generator
+- [ ] Auto-execute selected NLU suggestion
+- [ ] Collect user feedback on suggestions
+
+### PHASE 3: DATABASE SCHEMA (1-2 days)
+
+**P3.1** - Create Missing Tables
+- [ ] `activities` table for collaboration tracking
+- [ ] `spec_extraction_metadata` for tracking confidence/method
+- [ ] Optional: `message_history` for persistent message search
+
+---
+
+Socrates is 85-90% complete INFRASTRUCTURE-wise but DIALOGUE SYSTEM is only ~60% complete.
+
+  Current Status
+
+  - ✅ 480+ API endpoints working
+  - ✅ All 14 libraries integrated
+  - ✅ Orchestrator with 18+ agents
+  - ✅ WebSocket infrastructure
+  - ❌ **Dialogue specs not auto-saved**
+  - ❌ **Debug mode doesn't stream logs**
+  - ❌ **Conflict detection disconnected from UI**
+  - ❌ **Missing critical database functions**
+  - ❌ **NLU doesn't auto-execute**
+
+  What This Means
+
+  - ✅ Can build features ON TOP of infrastructure
+  - ❌ Core dialogue feature is broken
+  - ❌ NOT READY for MVP deployment without fixes
 
   Best Path Forward
 
-  1. ✅ Deploy Now - Fix critical issues (17 hours of work)
-  2. ✅ Launch MVP - Core features working perfectly
-  3. ✅ Phase in Features - Add advanced capabilities over 2-3 months
-  4. ✅ Migrate Database - PostgreSQL within 4-6 weeks
+  1. ✅ Fix dialogue system (Phase 1-2: 3-4 days)
+  2. ✅ Complete database schema (Phase 3: 1-2 days)
+  3. ✅ Then deploy MVP with working dialogue
+  4. ✅ Then add advanced features in 40-50 hours
 
-  What You Get Today (After 17 hours of fixes)
+  TTLCache Limitation
 
-  - ✅ 480+ fully functional API endpoints
-  - ✅ Real multi-agent orchestration
-  - ✅ All 14 libraries working
-  - ✅ Production-grade security
-  - ✅ Real-time capabilities
-  - ✅ High performance (async + caching)
-  - ✅ Comprehensive testing
-  - ⚠️ Note: SQLite remains single-threaded for writes - PostgreSQL migration recommended within 4-6 weeks
-
-  What Comes Later (40-50 more hours)
-
-  - 🎁 Advanced ML features (fine-tuning, recommendations)
-  - 🎁 Knowledge graphs
-  - 🎁 Payment processing
-  - 🎁 Advanced monitoring
- The TTLCache library only provides .clear() and .stats() methods. It does NOT support:
+  The TTLCache library only provides .clear() and .stats() methods. It does NOT support:
   - Dictionary-style access: cache[key]
   - Membership testing: key in cache
   - Setting values: cache[key] = value

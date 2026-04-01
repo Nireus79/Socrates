@@ -388,6 +388,57 @@ class LocalDatabase:
                 "CREATE INDEX IF NOT EXISTS idx_mfa_user ON mfa_state(user_id)"
             )
 
+            # Activities table - tracks project collaboration activities
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS activities (
+                    activity_id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    activity_type TEXT NOT NULL,
+                    activity_data TEXT,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_activity_project ON activities(project_id)"
+            )
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_activity_user ON activities(user_id)"
+            )
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_activity_project_created ON activities(project_id, created_at DESC)"
+            )
+
+            # Extracted specs metadata table - tracks specs with confidence and source info
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS extracted_specs_metadata (
+                    spec_id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    spec_type TEXT NOT NULL,
+                    spec_value TEXT NOT NULL,
+                    confidence_score REAL DEFAULT 0.95,
+                    extraction_method TEXT DEFAULT 'contextanalyzer',
+                    source_text TEXT,
+                    extracted_at TEXT NOT NULL,
+                    response_turn INTEGER,
+                    metadata TEXT,
+                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_specs_project ON extracted_specs_metadata(project_id)"
+            )
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_specs_type ON extracted_specs_metadata(project_id, spec_type)"
+            )
+
             self.conn.commit()
 
             # Perform schema migration for existing databases
@@ -2316,6 +2367,216 @@ class LocalDatabase:
         except Exception as e:
             logger.error(f"Failed to delete MFA state for user {user_id}: {e}")
             return False
+
+    def save_extracted_specs(
+        self,
+        project_id: str,
+        specs: Dict[str, Any],
+        extraction_method: str = "contextanalyzer",
+        confidence_score: float = 0.95,
+        source_text: Optional[str] = None,
+        response_turn: Optional[int] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """
+        Save extracted specs metadata to database with confidence scores and source tracking.
+
+        This persists the specs detected during dialogue so that:
+        1. Context is maintained across dialogue turns
+        2. Extraction quality can be tracked
+        3. User feedback can be collected
+        4. Patterns can be analyzed
+
+        Args:
+            project_id: Project ID
+            specs: Dict with keys: goals, requirements, tech_stack, constraints
+            extraction_method: Method used (contextanalyzer, fallback, etc.)
+            confidence_score: Confidence (0.0-1.0) of extraction quality
+            source_text: Original text from which specs were extracted
+            response_turn: Which response turn this came from (for tracking dialogue progress)
+            metadata: Additional metadata
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            now = datetime.now(timezone.utc).isoformat()
+            metadata_str = json.dumps(metadata or {})
+
+            # Store each spec type separately for better tracking
+            spec_types = ["goals", "requirements", "tech_stack", "constraints"]
+
+            with self._write_lock:
+                for spec_type in spec_types:
+                    spec_values = specs.get(spec_type, [])
+
+                    # Handle both list and string formats
+                    if isinstance(spec_values, str):
+                        spec_values = [spec_values] if spec_values else []
+                    elif not isinstance(spec_values, list):
+                        spec_values = []
+
+                    # Store each value as a separate record
+                    for spec_value in spec_values:
+                        spec_id = f"spec_{IDGenerator.generate_id()}"
+
+                        self.conn.execute(
+                            """INSERT INTO extracted_specs_metadata
+                               (spec_id, project_id, spec_type, spec_value, confidence_score,
+                                extraction_method, source_text, extracted_at, response_turn, metadata)
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                            (spec_id, project_id, spec_type, str(spec_value), confidence_score,
+                             extraction_method, source_text, now, response_turn, metadata_str)
+                        )
+
+                self.conn.commit()
+
+            logger.info(f"Saved extracted specs for project {project_id}: "
+                       f"{sum(len(specs.get(t, [])) for t in spec_types)} specs "
+                       f"via {extraction_method} (confidence: {confidence_score})")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to save extracted specs: {e}")
+            return False
+
+    def save_activity(
+        self,
+        project_id: str,
+        user_id: str,
+        activity_type: str,
+        activity_data: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """
+        Save a project activity/event to track collaboration.
+
+        This records user actions in the project for:
+        1. Collaboration tracking
+        2. Activity feeds
+        3. Team member presence
+        4. Audit trails
+
+        Args:
+            project_id: Project ID
+            user_id: User ID of who performed the activity
+            activity_type: Type of activity (message, edit, question_answered, etc.)
+            activity_data: Additional activity details as dict
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            activity_id = f"activity_{IDGenerator.generate_id()}"
+            now = datetime.now(timezone.utc).isoformat()
+            activity_data_str = json.dumps(activity_data or {})
+
+            with self._write_lock:
+                self.conn.execute(
+                    """INSERT INTO activities
+                       (activity_id, project_id, user_id, activity_type, activity_data, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (activity_id, project_id, user_id, activity_type, activity_data_str, now)
+                )
+                self.conn.commit()
+
+            logger.debug(f"Saved activity: {activity_type} for user {user_id} in project {project_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to save activity: {e}")
+            return False
+
+    def get_project_activities(
+        self,
+        project_id: str,
+        limit: int = 50,
+        activity_type: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get recent activities for a project.
+
+        Args:
+            project_id: Project ID
+            limit: Maximum number of activities to return
+            activity_type: Optional filter by activity type
+
+        Returns:
+            List of activity records
+        """
+        try:
+            if activity_type:
+                query = """SELECT * FROM activities
+                          WHERE project_id = ? AND activity_type = ?
+                          ORDER BY created_at DESC LIMIT ?"""
+                cursor = self.conn.execute(query, (project_id, activity_type, limit))
+            else:
+                query = """SELECT * FROM activities
+                          WHERE project_id = ?
+                          ORDER BY created_at DESC LIMIT ?"""
+                cursor = self.conn.execute(query, (project_id, limit))
+
+            activities = []
+            for row in cursor.fetchall():
+                activities.append({
+                    "activity_id": row[0],
+                    "project_id": row[1],
+                    "user_id": row[2],
+                    "activity_type": row[3],
+                    "activity_data": json.loads(row[4] or "{}"),
+                    "created_at": row[5],
+                })
+            return activities
+
+        except Exception as e:
+            logger.error(f"Failed to get project activities: {e}")
+            return []
+
+    def get_extracted_specs(
+        self,
+        project_id: str,
+        spec_type: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get extracted specs for a project.
+
+        Args:
+            project_id: Project ID
+            spec_type: Optional filter by spec type (goals, requirements, tech_stack, constraints)
+
+        Returns:
+            List of extracted spec records with metadata
+        """
+        try:
+            if spec_type:
+                query = """SELECT * FROM extracted_specs_metadata
+                          WHERE project_id = ? AND spec_type = ?
+                          ORDER BY extracted_at DESC"""
+                cursor = self.conn.execute(query, (project_id, spec_type))
+            else:
+                query = """SELECT * FROM extracted_specs_metadata
+                          WHERE project_id = ?
+                          ORDER BY extracted_at DESC"""
+                cursor = self.conn.execute(query, (project_id,))
+
+            specs = []
+            for row in cursor.fetchall():
+                specs.append({
+                    "spec_id": row[0],
+                    "project_id": row[1],
+                    "spec_type": row[2],
+                    "spec_value": row[3],
+                    "confidence_score": row[4],
+                    "extraction_method": row[5],
+                    "source_text": row[6],
+                    "extracted_at": row[7],
+                    "response_turn": row[8],
+                    "metadata": json.loads(row[9] or "{}"),
+                })
+            return specs
+
+        except Exception as e:
+            logger.error(f"Failed to get extracted specs: {e}")
+            return []
 
     def close(self) -> None:
         """Close database connection"""
