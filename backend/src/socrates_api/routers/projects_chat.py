@@ -1040,7 +1040,6 @@ Provide a helpful, direct answer."""
                 try:
                     from socrates_api.websocket.connection_manager import get_connection_manager
                     from socrates_api.models_local import EventType
-                    from datetime import datetime, timezone
                     import json
 
                     conn_manager = get_connection_manager()
