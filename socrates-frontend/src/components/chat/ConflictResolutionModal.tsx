@@ -129,10 +129,10 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
           {/* Conflict Type and Severity */}
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 capitalize">
-              {currentConflict.conflict_type.replace(/_/g, ' ')}
+              {currentConflict?.conflict_type?.replace(/_/g, ' ') || 'Unknown Conflict'}
             </h3>
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getSeverityBadgeColor(currentConflict.severity)}`}>
-              {getSeverityIcon(currentConflict.severity)} Severity
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getSeverityBadgeColor(currentConflict?.severity)}`}>
+              {getSeverityIcon(currentConflict?.severity)} Severity
             </span>
           </div>
 
@@ -142,24 +142,24 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
               <div className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">
                 Current Value
               </div>
-              <div className="text-xs text-red-600 mb-2">by {currentConflict.old_author}</div>
+              <div className="text-xs text-red-600 mb-2">by {currentConflict?.old_author || 'Unknown'}</div>
               <div className="bg-white border border-red-100 rounded p-3 font-mono text-sm text-gray-900 break-words">
-                {currentConflict.old_value}
+                {currentConflict?.old_value || 'N/A'}
               </div>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">
                 Proposed Value
               </div>
-              <div className="text-xs text-green-600 mb-2">by {currentConflict.new_author}</div>
+              <div className="text-xs text-green-600 mb-2">by {currentConflict?.new_author || 'Unknown'}</div>
               <div className="bg-white border border-green-100 rounded p-3 font-mono text-sm text-gray-900 break-words">
-                {currentConflict.new_value}
+                {currentConflict?.new_value || 'N/A'}
               </div>
             </div>
           </div>
 
           {/* Suggestions if available */}
-          {currentConflict.suggestions && currentConflict.suggestions.length > 0 && (
+          {currentConflict?.suggestions && currentConflict.suggestions.length > 0 && (
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -197,7 +197,7 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-semibold text-gray-900">Keep Current Value</div>
-                  <p className="text-sm text-gray-600 mt-1">Use: {currentConflict.old_value}</p>
+                  <p className="text-sm text-gray-600 mt-1">Use: {currentConflict?.old_value || 'N/A'}</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
@@ -218,7 +218,7 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-semibold text-gray-900">Use New Value</div>
-                  <p className="text-sm text-gray-600 mt-1">Use: {currentConflict.new_value}</p>
+                  <p className="text-sm text-gray-600 mt-1">Use: {currentConflict?.new_value || 'N/A'}</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>

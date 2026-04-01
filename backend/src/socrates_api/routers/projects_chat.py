@@ -1154,6 +1154,30 @@ Provide a helpful, direct answer."""
                 response_data["debug_logs"] = debug_logs
                 logger.debug(f"Included {len(debug_logs)} debug logs in response")
 
+            # Include conflicts in response if any were detected
+            # Transform backend conflict format to frontend format
+            if conflicts:
+                formatted_conflicts = []
+                for i, conflict in enumerate(conflicts):
+                    # Map backend field names to frontend field names
+                    conflict_type = conflict.get("field") or conflict.get("type", "unknown")
+
+                    # Format conflict for frontend
+                    formatted_conflict = {
+                        "conflict_id": f"conflict_{i}",
+                        "conflict_type": conflict_type.replace("_change", "").lower(),
+                        "old_value": str(conflict.get("old_value") or ", ".join(conflict.get("removed", [])) or "None"),
+                        "new_value": str(conflict.get("new_value") or ", ".join(conflict.get("added", [])) or "None"),
+                        "old_author": "existing specs",
+                        "new_author": "user response",
+                        "severity": conflict.get("severity", "medium"),
+                        "suggestions": conflict.get("suggestions", []),
+                    }
+                    formatted_conflicts.append(formatted_conflict)
+
+                response_data["conflicts"] = formatted_conflicts
+                logger.debug(f"Included {len(formatted_conflicts)} formatted conflicts in response")
+
             # Check if debug mode is enabled - if so, return debug info with inline annotations
             if is_debug_mode(current_user):
                 logger.debug("Debug mode enabled - returning debug annotations to frontend")
