@@ -657,6 +657,16 @@ class LocalDatabase:
         if "debug_logs" in project.metadata:
             project.debug_logs = project.metadata.get("debug_logs", [])
 
+        # CRITICAL FIX #4: Load current question context for specs extraction
+        # Restore current_question_id, current_question_text, current_question_metadata
+        # These are needed when user responds to extract specs with context awareness
+        if "current_question_id" in project.metadata:
+            project.current_question_id = project.metadata.get("current_question_id")
+        if "current_question_text" in project.metadata:
+            project.current_question_text = project.metadata.get("current_question_text")
+        if "current_question_metadata" in project.metadata:
+            project.current_question_metadata = project.metadata.get("current_question_metadata")
+
         # CRITICAL FIX #3: Consolidate conversation storage
         # Automatically migrate chat_sessions to conversation_history if needed
         if hasattr(project, "chat_sessions") and project.chat_sessions:
@@ -1134,6 +1144,15 @@ class LocalDatabase:
                 metadata_dict["question_cache"] = project.question_cache
             if hasattr(project, "debug_logs") and project.debug_logs:
                 metadata_dict["debug_logs"] = project.debug_logs
+
+            # CRITICAL FIX #4: Persist current question context for specs extraction
+            # Without this, question metadata is lost when project is reloaded
+            if hasattr(project, "current_question_id") and project.current_question_id:
+                metadata_dict["current_question_id"] = project.current_question_id
+            if hasattr(project, "current_question_text") and project.current_question_text:
+                metadata_dict["current_question_text"] = project.current_question_text
+            if hasattr(project, "current_question_metadata") and project.current_question_metadata:
+                metadata_dict["current_question_metadata"] = project.current_question_metadata
 
             metadata = json.dumps(metadata_dict)
 
