@@ -75,6 +75,56 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
 
 
+# ============================================================================
+# PHASE 2.1: Helper Functions for UX Improvements
+# ============================================================================
+
+
+def _generate_conflict_explanation(conflicts: list) -> str:
+    """
+    Generate a user-friendly explanation of detected conflicts.
+
+    Converts technical conflict data into clear, actionable messages for users.
+
+    Args:
+        conflicts: List of conflict dicts from ConflictDetector
+
+    Returns:
+        User-friendly conflict explanation message
+    """
+    if not conflicts:
+        return "No conflicts detected."
+
+    # Build explanation with details about each conflict
+    lines = [f"I detected {len(conflicts)} conflict(s) in your specifications that need resolution:\n"]
+
+    for i, conflict in enumerate(conflicts, 1):
+        conflict_type = conflict.get("conflict_type", "unknown").replace("_", " ").title()
+        severity = conflict.get("severity", "medium").upper()
+        description = conflict.get("description", "No details available")
+
+        lines.append(f"**{i}. {conflict_type}** [{severity}]")
+        lines.append(f"   {description}")
+
+        # Show old vs new values if available
+        old_value = conflict.get("old_value")
+        new_value = conflict.get("new_value")
+
+        if old_value and new_value:
+            old_str = str(old_value) if not isinstance(old_value, list) else ", ".join(str(v) for v in old_value)
+            new_str = str(new_value) if not isinstance(new_value, list) else ", ".join(str(v) for v in new_value)
+            lines.append(f"   Previous: {old_str}")
+            lines.append(f"   New: {new_str}")
+
+        lines.append("")
+
+    lines.append("Please review these conflicts and decide how to resolve them:")
+    lines.append("- **Keep** the original value")
+    lines.append("- **Replace** with the new value")
+    lines.append("- **Merge** both values")
+    lines.append("- **Custom** - manually edit the value")
+
+    return "\n".join(lines)
 
 
 # ============================================================================
@@ -609,11 +659,19 @@ async def get_question(
                 detail=question_data.get("message", "Failed to generate question"),
             )
 
+        # PHASE 2.2: Track current question context for hints/suggestions
+        question_id = f"q_{uuid.uuid4().hex[:12]}"
+        project.current_question_id = question_id
+        project.current_question_text = question
+        db.save_project(project)
+        logger.debug(f"Current question tracked: {question_id}")
+
         return APIResponse(
             success=True,
             status="success",
             data={
                 "question": question,
+                "question_id": question_id,
                 "phase": project.phase,
             },
         )
@@ -919,7 +977,7 @@ Provide a helpful, direct answer."""
 
             # Check if conflicts detected - if so, return them for frontend resolution
             if conflicts:
-                logger.info(f"Conflicts detected in Socratic mode: {len(conflicts)} conflict(s)}")
+                logger.info(f"Conflicts detected in Socratic mode: {len(conflicts)} conflict(s)")
 
                 # CRITICAL FIX #4: Emit CONFLICT_DETECTED event for real-time UI notification
                 if is_debug_mode(current_user) or True:  # Always emit conflict event, even if debug off
@@ -941,6 +999,10 @@ Provide a helpful, direct answer."""
                         logger.debug(f"Emitted CONFLICT_DETECTED event with {len(conflicts)} conflict(s)")
                     except Exception as e:
                         logger.warning(f"Failed to emit conflict detected event: {e}")
+
+                # PHASE 2.1: Generate user-friendly conflict explanation
+                conflict_explanation = _generate_conflict_explanation(conflicts)
+
                 return APIResponse(
                     success=True,
                     status="success",
@@ -948,11 +1010,15 @@ Provide a helpful, direct answer."""
                         "message": {
                             "id": f"msg_{id(result)}",
                             "role": "assistant",
-                            "content": "Conflict detected in specifications. Please resolve before continuing.",
+                            "content": conflict_explanation,
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         },
                         "conflicts_pending": True,
                         "conflicts": conflicts,
+                        "conflict_summary": {
+                            "count": len(conflicts),
+                            "explanation": conflict_explanation,
+                        },
                     },
                 )
 
@@ -1229,13 +1295,21 @@ async def get_hint(
                 "action": "generate_hint",
                 "project": project,
                 "current_user": current_user,
+                "question_id": getattr(project, "current_question_id", None),
+                "question_text": getattr(project, "current_question_text", None),
             },
         )
 
         if result.get("status") != "success":
             # Fallback to a generic hint if hint generation fails
             logger.warning(f"Failed to generate hint: {result.get('message', 'Unknown error')}")
-            fallback_hint = "Review the project requirements and consider what step comes next in your learning journey."
+
+            # Check if there's an active question
+            if not getattr(project, "current_question_id", None):
+                fallback_hint = "No active question. Please get a question first to receive hints."
+            else:
+                fallback_hint = "Review the project requirements and consider what step comes next in your learning journey."
+
             response_data = {"hint": fallback_hint}
 
             if is_debug_mode(current_user):
@@ -1252,6 +1326,26 @@ async def get_hint(
 
         hint = result.get("data", {}).get("hint") or result.get("hint", "Continue working on your project.")
         response_data = {"hint": hint}
+
+        # Emit HINT_GENERATED event
+        from socrates_api.models_local import EventType
+        from socrates_api.websocket.event_bridge import get_event_bridge
+
+        event_bridge = get_event_bridge()
+        await event_bridge.broadcast_message(
+            current_user,
+            project_id,
+            f"Hint: {hint}",
+        )
+
+        # Log event for analytics
+        event_data = {
+            "user_id": current_user,
+            "project_id": project_id,
+            "hint": hint,
+            "question_id": getattr(project, "current_question_id", None),
+        }
+        orchestrator.event_emitter.emit(EventType.HINT_GENERATED, event_data)
 
         # Add debug info if debug mode is enabled
         if is_debug_mode(current_user):
