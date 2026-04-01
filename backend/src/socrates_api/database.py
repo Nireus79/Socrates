@@ -2739,7 +2739,7 @@ class LocalDatabase:
 
                     # Store each value as a separate record
                     for spec_value in spec_values:
-                        spec_id = f"spec_{IDGenerator.generate_id()}"
+                        spec_id = IDGenerator.generate_id("spec")
 
                         self.conn.execute(
                             """INSERT INTO extracted_specs_metadata
@@ -2787,7 +2787,7 @@ class LocalDatabase:
             True if successful, False otherwise
         """
         try:
-            activity_id = f"activity_{IDGenerator.generate_id()}"
+            activity_id = IDGenerator.generate_id("activity")
             now = datetime.now(timezone.utc).isoformat()
             activity_data_str = json.dumps(activity_data or {})
 
