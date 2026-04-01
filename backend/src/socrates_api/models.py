@@ -97,14 +97,19 @@ class CreateProjectRequest(BaseModel):
     @field_validator("name", "description")
     @classmethod
     def validate_input_security(cls, v: str | None) -> str | None:
-        """Validate input using comprehensive InputValidator from socratic-security (REQUIRED)"""
+        """Validate input using security validators from socratic-security"""
         if v is None:
             return v
-        # Use InputValidator to check for all injection types
-        validator = InputValidator()
-        is_valid = validator.validate(v)
-        if not is_valid:
-            raise ValueError(f"Input contains invalid or unsafe content: {validator.get_error_message()}")
+
+        # Validate against common injection attacks
+        try:
+            # Check for SQL injection
+            validate_no_sql_injection(v)
+            # Check for XSS
+            validate_no_xss(v)
+        except ValueError as e:
+            raise ValueError(f"Input validation failed: {str(e)}")
+
         return v
 
 
