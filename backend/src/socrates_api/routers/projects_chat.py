@@ -2217,12 +2217,9 @@ async def get_answer_suggestions(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Find current question from pending_questions (use LAST unanswered, not first)
-        current_question = None
-        if project.pending_questions:
-            unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
-            if unanswered:
-                current_question = unanswered[-1].get("question")
+        # Find current question from persisted question metadata
+        # This is set when a question is generated (in GET /question endpoint)
+        current_question = getattr(project, "current_question_text", None)
 
         if not current_question:
             # Generate phase-aware fallback suggestions
