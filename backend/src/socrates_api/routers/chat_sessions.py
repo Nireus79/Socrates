@@ -5,6 +5,12 @@ Provides REST endpoints for session-based chat operations including:
 - Creating and managing chat sessions
 - Sending and retrieving messages within sessions
 - Session lifecycle management
+
+DEPRECATION NOTICE (CRITICAL FIX #3):
+This module is being consolidated into conversation_history model.
+Chat sessions now store messages in conversation_history with session metadata.
+This router is maintained for backward compatibility during migration.
+New code should use conversation_history directly.
 """
 
 import logging

@@ -41,7 +41,46 @@ class LocalDatabase:
         self.conn = None
         # CRITICAL FIX #3: Thread safety for SQLite concurrent writes
         self._write_lock = threading.Lock()
+        # CRITICAL FIX #6: Transaction tracking
+        self._transaction_active = False
         self._initialize()
+
+    def transaction(self):
+        """
+        Context manager for database transactions.
+
+        CRITICAL FIX #6: Ensures atomicity of multi-step operations.
+        All operations within the context are committed together or rolled back on error.
+
+        Usage:
+            with db.transaction():
+                db.save_project(project1)
+                db.save_project(project2)
+                # If either save fails, both are rolled back
+
+        Yields:
+            Database connection for use within transaction context
+        """
+        from contextlib import contextmanager
+
+        @contextmanager
+        def _transaction_context():
+            with self._write_lock:
+                try:
+                    self._transaction_active = True
+                    self.conn.execute("BEGIN TRANSACTION")
+                    logger.debug("Transaction started")
+                    yield self.conn
+                    self.conn.execute("COMMIT")
+                    self._transaction_active = False
+                    logger.debug("Transaction committed")
+                except Exception as e:
+                    self.conn.execute("ROLLBACK")
+                    self._transaction_active = False
+                    logger.warning(f"Transaction rolled back due to error: {e}")
+                    raise
+
+        return _transaction_context()
 
     def _initialize(self) -> None:
         """Create tables if they don't exist"""
@@ -439,6 +478,30 @@ class LocalDatabase:
                 "CREATE INDEX IF NOT EXISTS idx_specs_type ON extracted_specs_metadata(project_id, spec_type)"
             )
 
+            # CRITICAL FIX #4: Create events table for persistent event storage
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS events (
+                    event_id TEXT PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    user_id TEXT,
+                    project_id TEXT,
+                    data TEXT,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id),
+                    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+                )
+            """)
+
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_events_user_time ON events(user_id, created_at)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type)"
+            )
+            self.conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_events_project ON events(project_id)"
+            )
+
             self.conn.commit()
 
             # Perform schema migration for existing databases
@@ -537,6 +600,14 @@ class LocalDatabase:
                         if "duplicate column" not in str(e).lower():
                             raise
 
+            # CRITICAL FIX #5: Cleanup any orphaned records after schema migration
+            try:
+                orphaned_count = self.cleanup_orphaned_documents()
+                if orphaned_count > 0:
+                    logger.info(f"Cleaned up {orphaned_count} orphaned knowledge documents during migration")
+            except Exception as cleanup_error:
+                logger.warning(f"Failed to cleanup orphaned documents during migration: {cleanup_error}")
+
             logger.info("Schema migration completed successfully")
         except Exception as e:
             logger.error(f"Failed to migrate schema: {e}")
@@ -574,6 +645,34 @@ class LocalDatabase:
             is_archived=row[7] == 1,
         )
         project.metadata = json.loads(row[8] or "{}")
+
+        # CRITICAL FIX #16: Load conversation history from metadata
+        # Restore asked_questions, skipped_questions, question_cache, debug_logs
+        if "asked_questions" in project.metadata:
+            project.asked_questions = project.metadata.get("asked_questions", [])
+        if "skipped_questions" in project.metadata:
+            project.skipped_questions = project.metadata.get("skipped_questions", [])
+        if "question_cache" in project.metadata:
+            project.question_cache = project.metadata.get("question_cache", {})
+        if "debug_logs" in project.metadata:
+            project.debug_logs = project.metadata.get("debug_logs", [])
+
+        # CRITICAL FIX #3: Consolidate conversation storage
+        # Automatically migrate chat_sessions to conversation_history if needed
+        if hasattr(project, "chat_sessions") and project.chat_sessions:
+            try:
+                from socrates_api.services.conversation_migration import (
+                    migrate_chat_sessions_to_conversation_history,
+                )
+
+                migrate_chat_sessions_to_conversation_history(project)
+                # Mark migration as complete - clear old storage
+                project.chat_sessions = {}
+                logger.info(f"Auto-migrated chat_sessions for project {project.project_id}")
+            except Exception as e:
+                logger.warning(f"Failed to auto-migrate chat_sessions for project {project.project_id}: {e}")
+                # Don't fail project load - migration will be retried next time
+
         return project
 
     # ========================================================================
@@ -692,7 +791,7 @@ class LocalDatabase:
 
     def list_projects(self, limit: int = 100) -> List[ProjectContext]:
         """
-        List all projects.
+        List all active (non-archived) projects.
 
         Args:
             limit: Maximum number of projects to return (default: 100)
@@ -704,7 +803,8 @@ class LocalDatabase:
             DatabaseError: If database operation fails
         """
         try:
-            cursor = self.conn.execute("SELECT * FROM projects LIMIT ?", (limit,))
+            # Filter out archived projects - deleted projects should not appear in lists
+            cursor = self.conn.execute("SELECT * FROM projects WHERE is_archived = 0 ORDER BY updated_at DESC LIMIT ?", (limit,))
             projects = []
             for row in cursor.fetchall():
                 projects.append(self._row_to_project(row))
@@ -1020,7 +1120,22 @@ class LocalDatabase:
             description = getattr(project, "description", "")
             phase = getattr(project, "phase", "discovery")
             is_archived = int(getattr(project, "is_archived", False))
-            metadata = json.dumps(getattr(project, "metadata", {}))
+
+            # CRITICAL FIX #16: Persist conversation history in metadata
+            # Include asked_questions, skipped_questions, question_cache, debug_logs
+            metadata_dict = getattr(project, "metadata", {}).copy() if hasattr(project, "metadata") else {}
+
+            # Store conversation tracking fields in metadata
+            if hasattr(project, "asked_questions") and project.asked_questions:
+                metadata_dict["asked_questions"] = project.asked_questions
+            if hasattr(project, "skipped_questions") and project.skipped_questions:
+                metadata_dict["skipped_questions"] = project.skipped_questions
+            if hasattr(project, "question_cache") and project.question_cache:
+                metadata_dict["question_cache"] = project.question_cache
+            if hasattr(project, "debug_logs") and project.debug_logs:
+                metadata_dict["debug_logs"] = project.debug_logs
+
+            metadata = json.dumps(metadata_dict)
 
             # Check if project exists
             cursor = self.conn.execute("SELECT id FROM projects WHERE id = ?", (project_id,))
@@ -1072,6 +1187,146 @@ class LocalDatabase:
             raise DatabaseError(
                 f"Failed to save project {project.project_id}: {e}", operation="save_project"
             ) from e
+
+    def get_conversation_history(self, project_id: str) -> List[Dict]:
+        """
+        Get the conversation history for a project.
+
+        Args:
+            project_id: The project ID
+
+        Returns:
+            List of conversation entries from asked_questions list
+
+        Raises:
+            DatabaseError: If database operation fails
+        """
+        try:
+            project = self.get_project(project_id)
+            if not project:
+                return []
+
+            asked_questions = getattr(project, "asked_questions", []) or []
+            return asked_questions
+
+        except ProjectNotFoundError:
+            return []
+        except Exception as e:
+            logger.error(f"Failed to get conversation history for {project_id}: {e}")
+            raise DatabaseError(
+                f"Failed to get conversation history: {e}", operation="get_conversation_history"
+            ) from e
+
+    def get_skipped_questions(self, project_id: str) -> List[str]:
+        """
+        Get the list of skipped question IDs for a project.
+
+        Args:
+            project_id: The project ID
+
+        Returns:
+            List of skipped question IDs
+
+        Raises:
+            DatabaseError: If database operation fails
+        """
+        try:
+            project = self.get_project(project_id)
+            if not project:
+                return []
+
+            skipped_questions = getattr(project, "skipped_questions", []) or []
+            return skipped_questions
+
+        except ProjectNotFoundError:
+            return []
+        except Exception as e:
+            logger.error(f"Failed to get skipped questions for {project_id}: {e}")
+            raise DatabaseError(
+                f"Failed to get skipped questions: {e}", operation="get_skipped_questions"
+            ) from e
+
+    def get_question_cache(self, project_id: str) -> Dict:
+        """
+        Get the question cache for a project.
+
+        Args:
+            project_id: The project ID
+
+        Returns:
+            Dictionary containing cached questions
+
+        Raises:
+            DatabaseError: If database operation fails
+        """
+        try:
+            project = self.get_project(project_id)
+            if not project:
+                return {}
+
+            question_cache = getattr(project, "question_cache", {}) or {}
+            return question_cache
+
+        except ProjectNotFoundError:
+            return {}
+        except Exception as e:
+            logger.error(f"Failed to get question cache for {project_id}: {e}")
+            raise DatabaseError(
+                f"Failed to get question cache: {e}", operation="get_question_cache"
+            ) from e
+
+    def get_debug_logs(self, project_id: str) -> List[Dict]:
+        """
+        Get the debug logs for a project.
+
+        Args:
+            project_id: The project ID
+
+        Returns:
+            List of debug log entries
+
+        Raises:
+            DatabaseError: If database operation fails
+        """
+        try:
+            project = self.get_project(project_id)
+            if not project:
+                return []
+
+            debug_logs = getattr(project, "debug_logs", []) or []
+            return debug_logs
+
+        except ProjectNotFoundError:
+            return []
+        except Exception as e:
+            logger.error(f"Failed to get debug logs for {project_id}: {e}")
+            raise DatabaseError(
+                f"Failed to get debug logs: {e}", operation="get_debug_logs"
+            ) from e
+
+    def clear_debug_logs(self, project_id: str) -> bool:
+        """
+        Clear debug logs for a project.
+
+        Args:
+            project_id: The project ID
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            project = self.get_project(project_id)
+            if not project:
+                return False
+
+            project.debug_logs = []
+            self.save_project(project)
+            logger.info(f"Cleared debug logs for project {project_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to clear debug logs for {project_id}: {e}")
+            return False
 
     def save_knowledge_document(
         self,
@@ -1514,6 +1769,42 @@ class LocalDatabase:
                 f"Failed to delete project {project_id}: {e}", operation="delete_project"
             ) from e
 
+    def permanently_delete_project(self, project_id: str) -> bool:
+        """
+        Permanently delete a project and all associated data.
+
+        CRITICAL FIX #5: Cleans up orphaned knowledge_documents and other related data.
+
+        Args:
+            project_id: Project ID to permanently delete
+
+        Returns:
+            True if project was deleted successfully
+
+        Raises:
+            DatabaseError: If delete operation fails
+        """
+        try:
+            # CRITICAL FIX #5: Clean up all related data before deleting project
+            # This prevents orphaned records in the database
+            self.conn.execute("DELETE FROM knowledge_documents WHERE project_id = ?", (project_id,))
+            self.conn.execute("DELETE FROM team_members WHERE project_id = ?", (project_id,))
+            self.conn.execute("DELETE FROM events WHERE project_id = ?", (project_id,))
+            self.conn.execute("DELETE FROM extracted_specs_metadata WHERE project_id = ?", (project_id,))
+
+            # Finally, delete the project itself
+            self.conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+            self.conn.commit()
+
+            logger.info(f"Project {project_id} permanently deleted with all related data")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to permanently delete project {project_id}: {e}")
+            raise DatabaseError(
+                f"Failed to permanently delete project {project_id}: {e}",
+                operation="permanently_delete_project",
+            ) from e
+
     def permanently_delete_user(self, username: str) -> bool:
         """
         Permanently delete a user and all associated data.
@@ -1528,6 +1819,17 @@ class LocalDatabase:
             DatabaseError: If delete operation fails
         """
         try:
+            # Get all projects owned by this user
+            cursor = self.conn.execute("SELECT id FROM projects WHERE owner = ?", (username,))
+            project_ids = [row[0] for row in cursor.fetchall()]
+
+            # CRITICAL FIX #5: Clean up all orphaned data for each project
+            for project_id in project_ids:
+                self.conn.execute("DELETE FROM knowledge_documents WHERE project_id = ?", (project_id,))
+                self.conn.execute("DELETE FROM team_members WHERE project_id = ?", (project_id,))
+                self.conn.execute("DELETE FROM events WHERE project_id = ?", (project_id,))
+                self.conn.execute("DELETE FROM extracted_specs_metadata WHERE project_id = ?", (project_id,))
+
             # Delete refresh tokens
             self.conn.execute("DELETE FROM refresh_tokens WHERE user_id = ?", (username,))
             # Delete projects
@@ -2577,6 +2879,254 @@ class LocalDatabase:
         except Exception as e:
             logger.error(f"Failed to get extracted specs: {e}")
             return []
+
+    # ========================================================================
+    # CRITICAL FIX #4: Event Persistence Methods
+    # ========================================================================
+
+    def record_event(
+        self,
+        event_type: str,
+        data: Optional[Dict[str, Any]] = None,
+        user_id: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ) -> str:
+        """
+        Record an event to the database for persistence.
+
+        Args:
+            event_type: Type of event (e.g., 'project_created', 'code_generated')
+            data: Event data as dictionary
+            user_id: User who triggered the event
+            project_id: Associated project (optional)
+
+        Returns:
+            Event ID of the recorded event
+        """
+        try:
+            import uuid
+            from datetime import datetime, timezone
+
+            event_id = f"evt_{uuid.uuid4().hex[:12]}"
+            created_at = datetime.now(timezone.utc).isoformat()
+
+            self._execute_write(
+                """INSERT INTO events (event_id, event_type, user_id, project_id, data, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (
+                    event_id,
+                    event_type,
+                    user_id,
+                    project_id,
+                    json.dumps(data or {}),
+                    created_at,
+                ),
+            )
+
+            logger.debug(f"Event recorded: {event_type} (ID: {event_id})")
+            return event_id
+
+        except Exception as e:
+            logger.error(f"Failed to record event: {e}")
+            raise
+
+    def get_events_for_user(
+        self, user_id: str, limit: int = 100, offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        Get events for a specific user.
+
+        Args:
+            user_id: User ID to get events for
+            limit: Maximum number of events to return
+            offset: Number of events to skip
+
+        Returns:
+            List of event records
+        """
+        try:
+            cursor = self.conn.execute(
+                """SELECT event_id, event_type, user_id, project_id, data, created_at
+                   FROM events WHERE user_id = ?
+                   ORDER BY created_at DESC
+                   LIMIT ? OFFSET ?""",
+                (user_id, limit, offset),
+            )
+
+            events = []
+            for row in cursor.fetchall():
+                events.append({
+                    "event_id": row[0],
+                    "event_type": row[1],
+                    "user_id": row[2],
+                    "project_id": row[3],
+                    "data": json.loads(row[4] or "{}"),
+                    "created_at": row[5],
+                })
+            return events
+
+        except Exception as e:
+            logger.error(f"Failed to get user events: {e}")
+            return []
+
+    def get_events_for_project(
+        self, project_id: str, limit: int = 100, offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        Get events for a specific project.
+
+        Args:
+            project_id: Project ID to get events for
+            limit: Maximum number of events to return
+            offset: Number of events to skip
+
+        Returns:
+            List of event records
+        """
+        try:
+            cursor = self.conn.execute(
+                """SELECT event_id, event_type, user_id, project_id, data, created_at
+                   FROM events WHERE project_id = ?
+                   ORDER BY created_at DESC
+                   LIMIT ? OFFSET ?""",
+                (project_id, limit, offset),
+            )
+
+            events = []
+            for row in cursor.fetchall():
+                events.append({
+                    "event_id": row[0],
+                    "event_type": row[1],
+                    "user_id": row[2],
+                    "project_id": row[3],
+                    "data": json.loads(row[4] or "{}"),
+                    "created_at": row[5],
+                })
+            return events
+
+        except Exception as e:
+            logger.error(f"Failed to get project events: {e}")
+            return []
+
+    def get_events_by_type(
+        self, event_type: str, limit: int = 100, offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """
+        Get events by type.
+
+        Args:
+            event_type: Type of event to filter by
+            limit: Maximum number of events to return
+            offset: Number of events to skip
+
+        Returns:
+            List of event records
+        """
+        try:
+            cursor = self.conn.execute(
+                """SELECT event_id, event_type, user_id, project_id, data, created_at
+                   FROM events WHERE event_type = ?
+                   ORDER BY created_at DESC
+                   LIMIT ? OFFSET ?""",
+                (event_type, limit, offset),
+            )
+
+            events = []
+            for row in cursor.fetchall():
+                events.append({
+                    "event_id": row[0],
+                    "event_type": row[1],
+                    "user_id": row[2],
+                    "project_id": row[3],
+                    "data": json.loads(row[4] or "{}"),
+                    "created_at": row[5],
+                })
+            return events
+
+        except Exception as e:
+            logger.error(f"Failed to get events by type: {e}")
+            return []
+
+    def cleanup_orphaned_documents(self) -> int:
+        """
+        CRITICAL FIX #5: Find and remove orphaned knowledge_documents records
+        that reference deleted projects.
+
+        Returns:
+            Number of orphaned records cleaned up
+        """
+        try:
+            # Find documents whose project_id doesn't exist in projects table
+            cursor = self.conn.execute("""
+                DELETE FROM knowledge_documents
+                WHERE project_id NOT IN (SELECT id FROM projects)
+            """)
+            count = cursor.rowcount
+            if count > 0:
+                self.conn.commit()
+                logger.info(f"Cleaned up {count} orphaned knowledge documents")
+            return count
+        except Exception as e:
+            logger.error(f"Failed to cleanup orphaned documents: {e}")
+            return 0
+
+    def validate_referential_integrity(self) -> Dict[str, Any]:
+        """
+        CRITICAL FIX #5: Validate that all foreign key references are valid.
+
+        Returns:
+            Report of any referential integrity issues found
+        """
+        try:
+            report = {
+                "valid": True,
+                "orphaned_documents": 0,
+                "orphaned_events": 0,
+                "orphaned_specs": 0,
+                "issues": [],
+            }
+
+            # Check for orphaned knowledge_documents
+            cursor = self.conn.execute("""
+                SELECT COUNT(*) FROM knowledge_documents
+                WHERE project_id NOT IN (SELECT id FROM projects)
+            """)
+            orphaned_docs = cursor.fetchone()[0]
+            if orphaned_docs > 0:
+                report["orphaned_documents"] = orphaned_docs
+                report["valid"] = False
+                report["issues"].append(f"Found {orphaned_docs} orphaned knowledge documents")
+
+            # Check for orphaned events
+            cursor = self.conn.execute("""
+                SELECT COUNT(*) FROM events
+                WHERE project_id IS NOT NULL AND project_id NOT IN (SELECT id FROM projects)
+            """)
+            orphaned_events = cursor.fetchone()[0]
+            if orphaned_events > 0:
+                report["orphaned_events"] = orphaned_events
+                report["valid"] = False
+                report["issues"].append(f"Found {orphaned_events} orphaned events")
+
+            # Check for orphaned extracted_specs_metadata
+            cursor = self.conn.execute("""
+                SELECT COUNT(*) FROM extracted_specs_metadata
+                WHERE project_id NOT IN (SELECT id FROM projects)
+            """)
+            orphaned_specs = cursor.fetchone()[0]
+            if orphaned_specs > 0:
+                report["orphaned_specs"] = orphaned_specs
+                report["valid"] = False
+                report["issues"].append(f"Found {orphaned_specs} orphaned spec records")
+
+            return report
+
+        except Exception as e:
+            logger.error(f"Failed to validate referential integrity: {e}")
+            return {
+                "valid": False,
+                "issues": [f"Validation failed: {str(e)}"],
+            }
 
     def close(self) -> None:
         """Close database connection"""

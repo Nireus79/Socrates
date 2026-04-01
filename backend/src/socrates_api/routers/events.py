@@ -27,20 +27,36 @@ _event_queue = deque(maxlen=1000)
 _event_subscribers = []  # List of async queues for streaming clients
 
 
-def record_event(event_type: str, data: dict = None, user_id: str = None) -> None:
+def record_event(event_type: str, data: dict = None, user_id: str = None, project_id: str = None) -> None:
     """
-    Record an event to the in-memory event queue.
+    Record an event to both database (persistent) and in-memory queue.
+
+    CRITICAL FIX #4: Events now persist to database in addition to in-memory queue.
+    This ensures events survive server restarts.
 
     Args:
         event_type: Type of event (e.g., 'project_created', 'code_generated')
         data: Event data as dictionary
         user_id: User who triggered the event
+        project_id: Associated project (optional)
     """
+    try:
+        # Persist event to database (CRITICAL FIX #4)
+        db = get_database()
+        event_id = db.record_event(event_type, data, user_id, project_id)
+        logger.debug(f"Event persisted to database: {event_type} (ID: {event_id})")
+    except Exception as e:
+        logger.warning(f"Failed to persist event to database: {e}")
+        # Don't fail the entire event recording if database fails
+        # Fall back to in-memory queue
+
+    # Still maintain in-memory queue for real-time streaming
     event = {
         "id": f"evt_{len(_event_queue)}",
         "type": event_type,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "user_id": user_id,
+        "project_id": project_id,
         "data": data or {},
     }
     _event_queue.append(event)

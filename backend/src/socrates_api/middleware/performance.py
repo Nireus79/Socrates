@@ -61,16 +61,20 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
 
         # Record request performance with QueryProfiler
         try:
-            self.profiler.record_query(
-                query_name=route_name,
-                duration=duration_ms,
-                success=response.status_code < 400,
-                metadata={
-                    "method": request.method,
-                    "path": request.url.path,
-                    "status": response.status_code
-                }
-            )
+            if hasattr(self.profiler, 'record_query'):
+                self.profiler.record_query(
+                    query_name=route_name,
+                    duration=duration_ms,
+                    success=response.status_code < 400,
+                    metadata={
+                        "method": request.method,
+                        "path": request.url.path,
+                        "status": response.status_code
+                    }
+                )
+            else:
+                # Fallback: profiler doesn't have record_query method
+                logger.debug(f"QueryProfiler.record_query() not available, skipping profile recording")
         except Exception as e:
             logger.warning(f"Failed to record profile: {e}")
 
@@ -99,11 +103,15 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
         # Log extremely slow requests with profiler analysis
         if duration > 5.0:
             try:
-                # Get profiler stats for analysis
-                stats = self.profiler.get_slowest_queries(limit=5)
+                # Get profiler stats for analysis - use actual available method
+                if hasattr(self.profiler, 'get_stats'):
+                    stats = self.profiler.get_stats()
+                    slowest_count = len(stats.get('slowest_queries', [])) if isinstance(stats, dict) else 0
+                else:
+                    slowest_count = 0
                 logger.error(
                     f"CRITICAL PERFORMANCE: {route_name} took {duration_ms:.2f}ms | "
-                    f"Top slow queries: {len(stats) if stats else 0}"
+                    f"Top slow queries: {slowest_count}"
                 )
             except Exception as e:
                 logger.debug(f"Failed to get profiler stats: {e}")
@@ -113,11 +121,19 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
     def get_performance_stats(self):
         """Get current performance statistics"""
         try:
-            return {
-                "slowest_queries": self.profiler.get_slowest_queries(limit=10),
-                "cache_size": len(_PERFORMANCE_CACHE),
-                "cache_ttl": _PERFORMANCE_CACHE.ttl if hasattr(_PERFORMANCE_CACHE, 'ttl') else 300
-            }
+            stats = {}
+
+            # Use actual available method on QueryProfiler
+            if hasattr(self.profiler, 'get_stats'):
+                profiler_stats = self.profiler.get_stats()
+                stats["slowest_queries"] = profiler_stats.get('slowest_queries', []) if isinstance(profiler_stats, dict) else []
+            else:
+                stats["slowest_queries"] = []
+
+            stats["cache_size"] = len(_PERFORMANCE_CACHE)
+            stats["cache_ttl"] = _PERFORMANCE_CACHE.ttl if hasattr(_PERFORMANCE_CACHE, 'ttl') else 300
+
+            return stats
         except Exception as e:
             logger.error(f"Failed to get performance stats: {e}")
             return {}

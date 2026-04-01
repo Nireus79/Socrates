@@ -194,19 +194,22 @@ class ProjectContext:
         self.pending_questions: List[Dict[str, Any]] = kwargs.get("pending_questions", [])
         self.answered_questions: List[Dict[str, Any]] = kwargs.get("answered_questions", [])
         self.skipped_questions: List[Dict[str, Any]] = kwargs.get("skipped_questions", [])
+        self.asked_questions: List[Dict[str, Any]] = kwargs.get("asked_questions", [])  # CRITICAL FIX #12: Track questions asked
 
         # CRITICAL FIX #2: Track current question context for hints/suggestions
         # This allows suggestions system to know which question user is answering
         self.current_question_id: Optional[str] = kwargs.get("current_question_id", None)
         self.current_question_text: Optional[str] = kwargs.get("current_question_text", None)
+        self.current_question_metadata: Optional[Dict[str, Any]] = kwargs.get("current_question_metadata", None)
+        self.chat_mode: str = kwargs.get("chat_mode", "socratic")  # socratic or direct
 
         # Store any additional kwargs
         for key, value in kwargs.items():
             if not key.startswith("_") and key not in (
                 "maturity_score", "previous_maturity", "maturity_history",
                 "phase_maturity_scores", "category_scores",
-                "pending_questions", "answered_questions", "skipped_questions",
-                "current_question_id", "current_question_text"
+                "pending_questions", "answered_questions", "skipped_questions", "asked_questions",
+                "current_question_id", "current_question_text", "current_question_metadata", "chat_mode"
             ):
                 setattr(self, key, value)
 

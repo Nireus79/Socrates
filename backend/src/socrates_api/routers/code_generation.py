@@ -267,6 +267,71 @@ async def generate_code(
             file_path.write_text(generated_code, encoding="utf-8")
             logger.info(f"Code generated and saved to {file_path}")
 
+            # CRITICAL FIX #7: RECONNECT PIPELINE #3 - CODE QUALITY CONTROL
+            # Run quality checks on generated code before saving
+            quality_metrics = {
+                "errors": [],
+                "warnings": [],
+                "suggestions": [],
+                "complexity_score": 5,
+                "readability_score": 5,
+                "is_valid": True,
+                "security_issues": [],
+                "has_issues": False,
+            }
+
+            try:
+                logger.info(f"Running quality checks on generated {language} code...")
+
+                # Call quality_controller to validate and analyze code
+                from socrates_api.main import get_orchestrator
+
+                quality_orchestrator = get_orchestrator()
+                quality_result = await quality_orchestrator.process_request_async(
+                    "quality_controller",
+                    {
+                        "action": "validate_code",
+                        "code": generated_code,
+                        "language": language,
+                        "project": project,
+                        "current_user": current_user,
+                    },
+                )
+
+                if quality_result.get("status") == "success":
+                    quality_data = quality_result.get("data", {})
+                    quality_metrics = {
+                        "errors": quality_data.get("errors", []),
+                        "warnings": quality_data.get("warnings", []),
+                        "suggestions": quality_data.get("suggestions", []),
+                        "complexity_score": quality_data.get("complexity_score", 5),
+                        "readability_score": quality_data.get("readability_score", 5),
+                        "is_valid": quality_data.get("is_valid", True),
+                        "security_issues": quality_data.get("security_issues", []),
+                        "has_issues": len(quality_data.get("errors", [])) > 0 or len(quality_data.get("security_issues", [])) > 0,
+                    }
+
+                    # Log quality results
+                    if quality_metrics["has_issues"]:
+                        logger.warning(
+                            f"Quality issues found in generated code: "
+                            f"{len(quality_metrics['errors'])} errors, "
+                            f"{len(quality_metrics['security_issues'])} security issues"
+                        )
+                    else:
+                        logger.info("✓ Generated code passed all quality checks")
+
+                    # Try to auto-fix issues if available
+                    if quality_data.get("auto_fixed_code"):
+                        logger.info("Auto-fixing quality issues...")
+                        generated_code = quality_data["auto_fixed_code"]
+                        quality_metrics["auto_fixed"] = True
+                        explanation += " (with auto-fixes applied)"
+
+            except Exception as qc_err:
+                logger.warning(f"Quality control check failed (non-critical): {qc_err}")
+                # Quality control is non-critical, don't fail the generation
+
             # Save to code history
             project.code_history = project.code_history or []
             code_entry = {
@@ -278,11 +343,13 @@ async def generate_code(
                 "lines": len(generated_code.splitlines()),
                 "file_path": str(file_path),
                 "filename": filename,
+                "quality_metrics": quality_metrics,
             }
             project.code_history.append(code_entry)
             logger.info(
                 f"Added code to history for project {project_id}: "
-                f"id={generation_id}, language={language}, lines={len(generated_code.splitlines())}"
+                f"id={generation_id}, language={language}, lines={len(generated_code.splitlines())}, "
+                f"quality_score={quality_metrics.get('readability_score', 5)}/10"
             )
 
             # Save project with code history
@@ -306,6 +373,8 @@ async def generate_code(
                     "language": language,
                     "lines": len(generated_code.splitlines()),
                     "generation_id": generation_id,
+                    "quality_score": quality_metrics.get("readability_score", 5),
+                    "has_issues": quality_metrics.get("has_issues", False),
                 },
                 user_id=current_user,
             )

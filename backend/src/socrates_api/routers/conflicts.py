@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 # Use PyPI library directly
 from socratic_conflict import ConflictDetector
+from socrates_api.utils import IDGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ class ConflictInfo(BaseModel):
     severity: str  # "low", "medium", "high", "critical"
     description: str
     suggested_resolution: Optional[str] = None
+    conflict_id: Optional[str] = None  # FIX #9: Unique identifier for tracking
 
 
 class ConflictDetectionResponse(BaseModel):
@@ -202,19 +204,25 @@ def detect_conflicts(request: ConflictDetectionRequest) -> ConflictDetectionResp
 
             detected_conflicts.append(conflict)
 
-            # Save conflict to database for history tracking (Task 3.3)
+            # FIX #9: Save conflict to database for history tracking with proper ID
             try:
+                conflict_id = IDGenerator.generate_id("conflict")
                 db.save_conflict(
                     project_id=request.project_id,
+                    conflict_id=conflict_id,
                     conflict_type=conflict_type,
+                    title=f"{field_name.title()} Conflict",
+                    description=conflict.description,
                     severity=severity,
+                    related_agents=[],
                     context={
                         "field": field_name,
                         "existing": str(existing_value),
                         "new": str(new_value),
-                        "description": conflict.description
                     }
                 )
+                # Store conflict_id on conflict object for client reference
+                conflict.conflict_id = conflict_id
             except Exception as e:
                 logger.warning(f"Failed to save conflict to database: {e}")
 
@@ -256,6 +264,9 @@ def resolve_conflict(request: ConflictResolutionRequest) -> ConflictResolutionRe
     - Resolution result and status
     """
     try:
+        from socrates_api.database import get_database
+        from datetime import datetime, timezone
+
         detector = get_conflict_detector()
 
         if detector.detector is None:
@@ -264,28 +275,82 @@ def resolve_conflict(request: ConflictResolutionRequest) -> ConflictResolutionRe
                 detail="Conflict resolution is not available",
             )
 
+        db = get_database()
         logger.info(
             f"Resolving {request.conflict_type} conflict for project {request.project_id} "
             f"using strategy: {request.resolution_strategy}"
         )
 
-        # Implementation would apply the selected resolution strategy
+        # FIX #9 & #10: Properly save resolution and create decision with versioning
+        # FIX #10: Use atomic transaction for resolution to ensure consistency
+        resolution_id = IDGenerator.generate_id("resolution")
+        decision_id = IDGenerator.generate_id("decision")
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Get the most recent conflict of this type for this project
+        conflicts = db.get_conflict_history(request.project_id, conflict_type=request.conflict_type, limit=1)
+        if not conflicts:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No unresolved conflict found for type {request.conflict_type}"
+            )
+
+        conflict_id = conflicts[0]["conflict_id"]
+
+        # FIX #10: Use atomic transaction for all resolution operations
+        try:
+            with db.transaction():
+                # Save resolution strategy
+                db.save_resolution(
+                    resolution_id=resolution_id,
+                    conflict_id=conflict_id,
+                    strategy=request.resolution_strategy,
+                    confidence=0.8,  # Default confidence
+                    rationale=f"Applied {request.resolution_strategy} strategy",
+                    metadata=request.resolution_details or {}
+                )
+
+                # Save decision (versioning for multiple resolutions of same conflict)
+                existing_decisions = db.get_conflict_decisions(conflict_id)
+                next_version = len(existing_decisions) + 1
+
+                db.save_decision(
+                    decision_id=decision_id,
+                    conflict_id=conflict_id,
+                    resolution_id=resolution_id,
+                    decided_by="system",  # Could be user_id from context
+                    rationale=f"Resolved using {request.resolution_strategy}",
+                    version=next_version,
+                    metadata=request.resolution_details or {}
+                )
+                logger.debug(f"Conflict {conflict_id} resolution committed atomically")
+        except Exception as e:
+            logger.error(f"Atomic conflict resolution failed, rolled back: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to save conflict resolution. Please try again."
+            )
+
         result = {
             "strategy_applied": request.resolution_strategy,
             "conflict_type": request.conflict_type,
-            "timestamp": "2024-03-22T00:00:00Z",  # Would be actual timestamp
+            "conflict_id": conflict_id,
+            "resolution_id": resolution_id,
+            "decision_id": decision_id,
+            "decision_version": next_version,
+            "timestamp": now,
         }
 
         return ConflictResolutionResponse(
             status="success",
             result=result,
-            message=f"Conflict resolved using {request.resolution_strategy} strategy",
+            message=f"Conflict resolved using {request.resolution_strategy} strategy (v{next_version})",
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Error resolving conflict", exc_info=True)
+        logger.error("Error resolving conflict", exc_info=True)
         return ConflictResolutionResponse(
             status="error",
             message=str(e),

@@ -6,7 +6,9 @@ Provides unified interface for REST API endpoints to call agents and orchestrato
 """
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -217,8 +219,11 @@ class APIOrchestrator:
     def _create_llm_client(self) -> Optional[Any]:
         """Create LLM client with production-grade features from socrates-nexus"""
         try:
-            if not self.api_key:
-                logger.debug("No API key provided - LLM client will be None")
+            # Use provided API key, or fall back to environment variable
+            api_key = self.api_key or os.getenv('ANTHROPIC_API_KEY', '')
+
+            if not api_key:
+                logger.debug("No API key provided (neither in config nor ANTHROPIC_API_KEY env var) - LLM client will be None")
                 return None
 
             # Create LLMClient with full socrates-nexus capabilities:
@@ -229,18 +234,21 @@ class APIOrchestrator:
             config = LLMConfig(
                 provider="anthropic",
                 model="claude-3-sonnet",
-                api_key=self.api_key,
+                api_key=api_key,
                 cache_responses=True,           # Cache responses for performance
                 cache_ttl=3600,                 # Cache for 1 hour
                 retry_attempts=3,               # Retry up to 3 times on failure
                 retry_backoff_factor=2.0        # Exponential backoff for retries
             )
-            llm_client = LLMClient(config=config)
+            raw_client = LLMClient(config=config)
             logger.info(
                 "LLM client created with production features: "
                 "response_caching=True, retry_attempts=3"
             )
-            return llm_client
+            # WRAP with adapter for socratic-agents compatibility
+            wrapped_client = LLMClientAdapter(raw_client)
+            logger.debug("LLMClient wrapped with LLMClientAdapter for agent compatibility")
+            return wrapped_client
         except Exception as e:
             logger.error(f"Failed to create LLM client: {e}", exc_info=True)
             raise  # Fail fast instead of returning None
@@ -291,12 +299,14 @@ class APIOrchestrator:
                 retry_attempts=3,               # Retry up to 3 times on failure
                 retry_backoff_factor=2.0        # Exponential backoff for retries
             )
-            llm_client = LLMClient(config=config)
+            raw_client = LLMClient(config=config)
             logger.info(
                 f"LLM client created for user {user_id} with provider {provider}/{model} "
                 "and production features: response_caching=True, retry_attempts=3"
             )
-            return llm_client
+            # WRAP with adapter for socratic-agents compatibility
+            wrapped_client = LLMClientAdapter(raw_client)
+            return wrapped_client
 
         except Exception as e:
             logger.warning(f"Failed to create user LLM client: {e}")
@@ -1038,10 +1048,11 @@ class APIOrchestrator:
         """Setup event listeners for event-driven architecture from socratic-core"""
         try:
             # Subscribe to key events for system coordination
-            self.event_bus.on("agent_execution_start", self._handle_agent_start)
-            self.event_bus.on("agent_execution_complete", self._handle_agent_complete)
-            self.event_bus.on("error", self._handle_system_error)
-            self.event_bus.on("project_updated", self._handle_project_update)
+            # CRITICAL FIX: EventBus uses .subscribe() not .on()
+            self.event_bus.subscribe("agent_execution_start", self._handle_agent_start)
+            self.event_bus.subscribe("agent_execution_complete", self._handle_agent_complete)
+            self.event_bus.subscribe("error", self._handle_system_error)
+            self.event_bus.subscribe("project_updated", self._handle_project_update)
 
             logger.info("Event listeners configured for system coordination")
         except Exception as e:
@@ -1685,8 +1696,23 @@ class APIOrchestrator:
                     try:
                         # Use real agent to generate question
                         # SocraticCounselor expects topic at top level
+                        # CRITICAL FIX: Include conversation history for context-aware question generation
                         logger.info(f"Calling counselor.process() with topic: {topic[:50] if topic else 'EMPTY'}")
-                        result = counselor.process({"topic": topic})
+                        conversation_summary = self._get_conversation_summary(project)
+
+                        # Build request with conversation context
+                        counselor_request = {
+                            "topic": topic,
+                            "context": conversation_summary,
+                        }
+
+                        # Include conversation history if available
+                        conversation_history = getattr(project, "conversation_history", [])
+                        if conversation_history:
+                            counselor_request["conversation_history"] = conversation_history
+                            logger.debug(f"Including {len(conversation_history)} conversation history entries for context")
+
+                        result = counselor.process(counselor_request)
                         logger.info(f"counselor.process() returned: {result}")
 
                         # CACHE THE GENERATED QUESTION
@@ -1797,7 +1823,20 @@ class APIOrchestrator:
 
             try:
                 # Extract specs from user's response using ContextAnalyzer agent
-                extracted_specs = self._extract_insights_fallback(response)
+                # CRITICAL FIX: Pass question context for context-aware specs extraction
+                question_text = getattr(project, "current_question_text", None)
+                question_metadata = getattr(project, "current_question_metadata", {})
+
+                logger.debug(f"Processing response with question context:")
+                logger.debug(f"  Question: {question_text}")
+                logger.debug(f"  Category: {question_metadata.get('category', 'unknown') if question_metadata else 'unknown'}")
+                logger.debug(f"  Target field: {question_metadata.get('target_field', 'unknown') if question_metadata else 'unknown'}")
+
+                extracted_specs = self._extract_insights_fallback(
+                    response_text=response,
+                    question_text=question_text,
+                    question_metadata=question_metadata,
+                )
                 logger.info(f"Extracted specs from response: {extracted_specs}")
 
                 # Get project specs to compare against
@@ -1832,9 +1871,141 @@ class APIOrchestrator:
                         logger.warning(f"Failed to persist extracted specs: {e}")
                         # Don't fail the whole request if persistence fails
 
+                # CRITICAL FIX #6: RECONNECT PIPELINE #4 - KNOWLEDGE BASE INTEGRATION
+                # Add extracted specs to vector database so they become project knowledge
+                # This enables project-specific question generation instead of generic questions
+                if project_id and extracted_specs and hasattr(self, 'vector_db') and self.vector_db:
+                    try:
+                        logger.info("Adding extracted specs to knowledge base...")
+
+                        # Format specs for knowledge base
+                        for spec_field, spec_items in extracted_specs.items():
+                            if spec_items:  # Only if there are items in this field
+                                for item in spec_items:
+                                    # Create knowledge entry for each spec
+                                    knowledge_text = f"{spec_field}: {item}"
+
+                                    # Add to vector database with project context
+                                    try:
+                                        self.vector_db.add_text(
+                                            text=knowledge_text,
+                                            metadata={
+                                                "project_id": project_id,
+                                                "user_id": current_user,
+                                                "spec_type": spec_field,
+                                                "spec_value": item,
+                                                "source": "dialogue_response",
+                                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                            }
+                                        )
+                                    except Exception as vec_err:
+                                        logger.debug(f"Failed to add spec '{item}' to vector DB: {vec_err}")
+
+                        logger.info(f"✓ Added {sum(len(items) for items in extracted_specs.values() if items)} specs to knowledge base")
+
+                    except Exception as kb_err:
+                        logger.warning(f"Failed to integrate with knowledge base: {kb_err}")
+                        # Knowledge base is non-critical, don't fail the request
+
                 # Generate feedback based on insights and conflicts
                 feedback = self._generate_feedback(extracted_specs, conflicts)
                 logger.info(f"Generated feedback: {feedback[:100]}...")
+
+                # CRITICAL FIX #5: RECONNECT PIPELINE #2 - MATURITY RECALCULATION
+                # This was completely missing and is why user progress never updates
+                # After specs are extracted, we MUST recalculate project maturity
+                maturity_update_data = None
+                if any(extracted_specs.values()):  # Only if specs were actually extracted
+                    try:
+                        logger.info("Recalculating project maturity after specs extraction...")
+
+                        # Call quality_controller to recalculate maturity based on new specs
+                        maturity_result = self.process_request(
+                            "quality_controller",
+                            {
+                                "action": "update_after_response",
+                                "project": project,
+                                "insights": extracted_specs,
+                                "current_user": current_user,
+                            }
+                        )
+
+                        if maturity_result.get("status") == "success":
+                            maturity_data = maturity_result.get("data", {})
+                            maturity_info = maturity_data.get("maturity", {})
+
+                            # Update project with new maturity scores
+                            if maturity_info:
+                                # Update phase maturity scores
+                                if "phase_scores" in maturity_info:
+                                    project.phase_maturity_scores = maturity_info["phase_scores"]
+
+                                # Update overall maturity
+                                if "overall_score" in maturity_info:
+                                    project.overall_maturity = maturity_info["overall_score"]
+
+                                # Update category scores if available
+                                if "category_scores" in maturity_info:
+                                    project.category_scores = maturity_info["category_scores"]
+
+                                maturity_update_data = {
+                                    "overall_score": maturity_info.get("overall_score", 0.0),
+                                    "phase_scores": maturity_info.get("phase_scores", {}),
+                                    "updated": True,
+                                }
+
+                                old_score = getattr(project, "_old_maturity_score", 0.0)
+                                new_score = maturity_info.get("overall_score", 0.0)
+                                logger.info(f"✓ Project maturity recalculated: {old_score:.1f}% → {new_score:.1f}%")
+
+                                # Emit event for maturity update (RECONNECT PIPELINE)
+                                try:
+                                    from socrates_api.models_local import EventType
+                                    from socrates_api.websocket.connection_manager import get_connection_manager
+
+                                    event_data = {
+                                        "project_id": getattr(project, "project_id", ""),
+                                        "user_id": current_user,
+                                        "old_maturity": old_score,
+                                        "new_maturity": new_score,
+                                        "maturity_data": maturity_update_data,
+                                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                                    }
+
+                                    # Try to emit event (non-critical)
+                                    try:
+                                        conn_manager = get_connection_manager()
+                                        conn_manager.broadcast_to_project(
+                                            user_id=current_user,
+                                            project_id=getattr(project, "project_id", ""),
+                                            message={
+                                                "type": "event",
+                                                "eventType": "MATURITY_UPDATED",
+                                                "data": event_data,
+                                            }
+                                        )
+                                        logger.debug("Emitted MATURITY_UPDATED event")
+                                    except Exception as event_err:
+                                        logger.debug(f"Could not emit maturity event: {event_err}")
+                                except Exception as event_init_err:
+                                    logger.debug(f"Could not initialize event system: {event_init_err}")
+                        else:
+                            logger.warning(f"Maturity recalculation returned non-success: {maturity_result.get('message')}")
+
+                    except Exception as maturity_err:
+                        # Maturity recalculation is important but not critical
+                        # Don't fail the whole response if it fails
+                        logger.warning(f"Failed to recalculate maturity: {maturity_err}")
+                        maturity_update_data = None
+
+                    # CRITICAL: Save project with updated maturity
+                    try:
+                        from socrates_api.database import get_database
+                        db = get_database()
+                        db.save_project(project)
+                        logger.info("✓ Project saved with updated maturity scores")
+                    except Exception as save_err:
+                        logger.warning(f"Failed to save project with maturity: {save_err}")
 
                 return {
                     "status": "success",
@@ -1842,6 +2013,7 @@ class APIOrchestrator:
                         "feedback": feedback,
                         "extracted_specs": extracted_specs,
                         "conflicts": conflicts,
+                        "maturity_update": maturity_update_data,  # Include maturity in response
                         "next_action": "generate_question" if not conflicts else "resolve_conflicts",
                     },
                     "message": "Response processed successfully",
@@ -2272,14 +2444,293 @@ If a category has no items, use an empty array."""
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
 
-    def _extract_insights_fallback(self, text: str) -> Dict[str, Any]:
-        """Extract specs from user response text using ContextAnalyzer or fallback"""
+    def _extract_insights_fallback(
+        self,
+        response_text: str,
+        question_text: str = None,
+        question_metadata: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Extract specs from user response using question context.
+
+        This is the critical fix for context-aware specs extraction. When a user
+        responds to "What operations do you want?", this method understands the
+        context and maps the answer to the correct spec field.
+
+        Args:
+            response_text: The user's response text (e.g., "+ -")
+            question_text: The question that was asked (e.g., "What operations would you want?")
+            question_metadata: Metadata about the question including category and target field
+
+        Returns:
+            Dictionary with extracted specs: {goals, requirements, tech_stack, constraints}
+        """
+        import json
+        import re
+
+        logger.debug(f"Extracting insights from: '{response_text}' (question_category: {question_metadata.get('category') if question_metadata else 'none'})")
+
+        # Initialize empty specs structure
+        empty_specs = {
+            "goals": [],
+            "requirements": [],
+            "tech_stack": [],
+            "constraints": []
+        }
+
+        # Handle empty response
+        if not response_text or not response_text.strip():
+            logger.debug("Empty response text, returning empty specs")
+            return empty_specs
+
+        # Determine target field from question metadata
+        target_field = None
+        category = None
+
+        if question_metadata:
+            target_field = question_metadata.get("target_field")
+            category = question_metadata.get("category")
+            logger.debug(f"Using question metadata: target_field={target_field}, category={category}")
+
+        # If we have a target field, use category-specific parsing
+        if target_field and category:
+            return self._extract_specs_by_category(
+                response_text=response_text,
+                category=category,
+                target_field=target_field,
+                question_text=question_text
+            )
+
+        # If we have a question but no metadata, try to detect category
+        if question_text:
+            detected_category = self._detect_question_category(question_text)
+            detected_field = self._map_category_to_field(detected_category)
+
+            logger.debug(f"Detected category from question: {detected_category} → field: {detected_field}")
+
+            return self._extract_specs_by_category(
+                response_text=response_text,
+                category=detected_category,
+                target_field=detected_field,
+                question_text=question_text
+            )
+
+        # Last resort: Use generic LLM-based extraction (existing behavior)
+        logger.debug("No question context available, using generic LLM extraction")
+        return self._generic_llm_extraction(response_text)
+
+    def _extract_specs_by_category(
+        self,
+        response_text: str,
+        category: str,
+        target_field: str,
+        question_text: str = None
+    ) -> Dict[str, Any]:
+        """Extract specs based on question category with targeted parsing"""
+
+        empty_specs = {
+            "goals": [],
+            "requirements": [],
+            "tech_stack": [],
+            "constraints": []
+        }
+
+        logger.debug(f"Extracting {category} specs from response: '{response_text}'")
+
+        # Category-specific extraction
+        if category == "operations":
+            items = self._parse_comma_or_symbol_separated(response_text)
+            items = self._expand_symbols(items)
+            logger.debug(f"Parsed operations: {items}")
+            empty_specs[target_field] = items
+            return empty_specs
+
+        elif category == "goals":
+            goals = self._parse_goal_statement(response_text)
+            logger.debug(f"Parsed goals: {goals}")
+            empty_specs[target_field] = goals
+            return empty_specs
+
+        elif category == "requirements":
+            requirements = self._parse_requirement_list(response_text)
+            logger.debug(f"Parsed requirements: {requirements}")
+            empty_specs[target_field] = requirements
+            return empty_specs
+
+        elif category == "constraints":
+            constraints = self._parse_constraint_list(response_text)
+            logger.debug(f"Parsed constraints: {constraints}")
+            empty_specs[target_field] = constraints
+            return empty_specs
+
+        elif category == "tech_stack":
+            tech_items = self._parse_comma_or_symbol_separated(response_text)
+            logger.debug(f"Parsed tech stack: {tech_items}")
+            empty_specs[target_field] = tech_items
+            return empty_specs
+
+        else:
+            # Generic category - use generic extraction
+            return self._generic_llm_extraction(response_text)
+
+    def _parse_comma_or_symbol_separated(self, text: str) -> List[str]:
+        """Parse comma-separated or symbol-separated values like '+ -' or 'a, b, c'"""
+        import re
+
+        text = text.strip()
+
+        # Handle symbol-separated format: "+ -" → ["+", "-"]
+        # Also handle: "addition, subtraction, multiplication"
+
+        # Split on comma, semicolon, "and", "or", or multiple spaces
+        items = re.split(r'[,;\s]+(?:and\s+|or\s+)?', text)
+
+        # Clean up and filter empty items
+        items = [item.strip() for item in items if item.strip()]
+
+        logger.debug(f"Parsed items from '{text}': {items}")
+        return items
+
+    def _expand_symbols(self, items: List[str]) -> List[str]:
+        """Expand mathematical/programming symbols to full names"""
+
+        symbol_map = {
+            "+": "addition",
+            "-": "subtraction",
+            "*": "multiplication",
+            "x": "multiplication",
+            "/": "division",
+            "%": "modulo",
+            "**": "exponentiation",
+            "^": "exponentiation",
+            "&&": "logical_and",
+            "&": "and",
+            "||": "logical_or",
+            "|": "or",
+            "!": "logical_not",
+            "~": "bitwise_not",
+            "==": "equals",
+            "!=": "not_equals",
+            "<": "less_than",
+            ">": "greater_than",
+            "<=": "less_than_or_equal",
+            ">=": "greater_than_or_equal",
+        }
+
+        expanded = []
+        for item in items:
+            if item in symbol_map:
+                expanded.append(symbol_map[item])
+            else:
+                expanded.append(item)
+
+        logger.debug(f"Expanded symbols: {items} → {expanded}")
+        return expanded
+
+    def _parse_goal_statement(self, text: str) -> List[str]:
+        """Parse a goal statement into individual goals"""
+
+        text = text.strip()
+
+        # Single-line goal
+        if '\n' not in text and len(text) < 200:
+            return [text] if text else []
+
+        # Multiple goals (split on newline or numbering)
+        import re
+        goals = re.split(r'\n|^\d+\.\s*', text)
+        goals = [g.strip() for g in goals if g.strip()]
+
+        logger.debug(f"Parsed goals: {goals}")
+        return goals
+
+    def _parse_requirement_list(self, text: str) -> List[str]:
+        """Parse a requirements list"""
+
+        text = text.strip()
+
+        # Split on newlines or bullet points or numbering
+        import re
+        requirements = re.split(
+            r'\n+|^[\-\*\+]\s*|^\d+\.\s*',
+            text
+        )
+        requirements = [r.strip() for r in requirements if r.strip()]
+
+        # Further split on "and" if single items are long
+        final_requirements = []
+        for req in requirements:
+            if " and " in req and len(req) > 50:
+                # Split compound requirements
+                parts = re.split(r'\s+and\s+', req)
+                final_requirements.extend([p.strip() for p in parts])
+            else:
+                final_requirements.append(req)
+
+        logger.debug(f"Parsed requirements: {final_requirements}")
+        return final_requirements
+
+    def _parse_constraint_list(self, text: str) -> List[str]:
+        """Parse a constraints list"""
+        # Same as requirement parsing for now
+        return self._parse_requirement_list(text)
+
+    def _detect_question_category(self, question_text: str) -> str:
+        """Detect what category a question belongs to based on keywords"""
+
+        if not question_text:
+            return "generic"
+
+        q_lower = question_text.lower()
+
+        # Check for each category in order of specificity
+        if any(word in q_lower for word in ["operation", "perform", "function", "can do", "compute", "calculate"]):
+            return "operations"
+
+        elif any(word in q_lower for word in ["goal", "purpose", "objective", "want to build", "main goal", "aim", "target"]):
+            return "goals"
+
+        elif any(word in q_lower for word in ["requirement", "feature", "capability", "need", "should", "must"]):
+            return "requirements"
+
+        elif any(word in q_lower for word in ["constraint", "limit", "limitation", "restriction", "avoid", "prevent"]):
+            return "constraints"
+
+        elif any(word in q_lower for word in ["technology", "tool", "framework", "language", "library", "platform", "use", "tech"]):
+            return "tech_stack"
+
+        return "generic"
+
+    def _map_category_to_field(self, category: str) -> str:
+        """Map question category to project spec field"""
+
+        mapping = {
+            "operations": "tech_stack",
+            "goals": "goals",
+            "requirements": "requirements",
+            "constraints": "constraints",
+            "tech_stack": "tech_stack",
+            "generic": "requirements",  # Default fallback
+        }
+
+        return mapping.get(category, "requirements")
+
+    def _generic_llm_extraction(self, response_text: str) -> Dict[str, Any]:
+        """Fallback: Use LLM to generically extract specs"""
+
+        empty_specs = {
+            "goals": [],
+            "requirements": [],
+            "tech_stack": [],
+            "constraints": []
+        }
+
         try:
             # Try to use ContextAnalyzer agent first
             agent = self.agents.get("context_analyzer")
             if agent and self.llm_client:
                 try:
-                    result = agent.process({"action": "analyze", "content": text})
+                    result = agent.process({"action": "analyze", "content": response_text})
                     if result and result.get("status") == "success":
                         data = result.get("data", {})
                         return {
@@ -2289,7 +2740,7 @@ If a category has no items, use an empty array."""
                             "constraints": data.get("constraints", [])
                         }
                 except Exception as e:
-                    logger.warning(f"ContextAnalyzer failed, using fallback: {e}")
+                    logger.warning(f"ContextAnalyzer failed, using LLM fallback: {e}")
 
             # Fallback: Use LLM client to extract specs
             if self.llm_client:
@@ -2302,7 +2753,7 @@ Identify and extract:
 4. Constraints: What are the constraints or limitations?
 
 Text to analyze:
-{text}
+{response_text}
 
 Respond in JSON format:
 {{
@@ -2333,22 +2784,11 @@ If a category has no items, use an empty array."""
                 except (json.JSONDecodeError, ValueError) as e:
                     logger.warning(f"Failed to parse extraction JSON: {e}")
 
-            # Final fallback: Return empty specs
-            return {
-                "goals": [],
-                "requirements": [],
-                "tech_stack": [],
-                "constraints": []
-            }
+            return empty_specs
 
         except Exception as e:
             logger.error(f"Insight extraction failed: {e}")
-            return {
-                "goals": [],
-                "requirements": [],
-                "tech_stack": [],
-                "constraints": []
-            }
+            return empty_specs
 
     def _get_project_specs(self, project: Dict[str, Any]) -> Dict[str, Any]:
         """Get current project specifications"""
@@ -2674,6 +3114,271 @@ If a category has no items, use an empty array."""
                 "is_complete": False,
                 "recommendations": []
             }
+
+    # ========================================================================
+    # ARCHITECTURAL FIXES: Question Deduplication & Debug Support
+    # ========================================================================
+
+    def _generate_questions_deduplicated(
+        self,
+        topic: str,
+        level: str,
+        project: Any,
+        current_user: str
+    ) -> List[str]:
+        """
+        Generate new questions while avoiding duplication with previously asked ones.
+
+        This fixes the issue where the same questions were asked repeatedly.
+        """
+        try:
+            logger.info(f"Generating questions with deduplication for topic: {topic}")
+            self._add_debug_log(project, "info", f"Generating questions for topic: {topic}")
+
+            # Get questions from library counselor
+            # Fail gracefully - if deduplication fails, return empty to trigger fallback to main LLM
+            try:
+                counselor = self.agents.get("socratic_counselor")
+                if not counselor:
+                    logger.warning("socratic_counselor agent not available, using fallback")
+                    return []
+
+                counselor_result = counselor.process({
+                    "topic": topic,
+                    "level": level
+                })
+            except Exception as e:
+                logger.warning(f"Deduplication failed: {e}, falling back to main LLM generation")
+                return []
+
+            if counselor_result.get("status") != "success":
+                error_msg = f"Counselor returned error: {counselor_result.get('message')}"
+                logger.warning(error_msg)
+                self._add_debug_log(project, "warning", error_msg)
+                return []
+
+            new_questions = counselor_result.get("questions", [])
+            self._add_debug_log(project, "debug", f"Counselor generated {len(new_questions)} questions")
+            logger.debug(f"Counselor returned {len(new_questions)} questions")
+
+            # Get previously asked questions
+            asked_questions = getattr(project, "asked_questions", None) or []
+            skipped_questions = getattr(project, "skipped_questions", None) or []
+
+            asked_texts = [q.get("text", "").lower() for q in asked_questions]
+            skipped_texts = [q.get("text", "").lower() if isinstance(q, dict) else "" for q in skipped_questions]
+
+            logger.debug(f"Previously asked: {len(asked_texts)}, Skipped: {len(skipped_texts)}")
+            self._add_debug_log(project, "debug", f"Filtering against {len(asked_texts)} asked and {len(skipped_texts)} skipped questions")
+
+            # Filter out duplicates using fuzzy matching
+            deduplicated = []
+            filtered_count = 0
+            for question in new_questions:
+                q_lower = question.lower()
+
+                # Check if similar question was already asked
+                is_duplicate = any(
+                    self._is_similar_question(q_lower, prev)
+                    for prev in asked_texts + skipped_texts
+                )
+
+                if not is_duplicate:
+                    deduplicated.append(question)
+                    logger.debug(f"✓ New question: {question[:60]}...")
+                else:
+                    filtered_count += 1
+                    logger.debug(f"✗ Duplicate detected: {question[:60]}...")
+
+            self._add_debug_log(project, "debug", f"Filtered {filtered_count} duplicate questions")
+
+            # If we filtered out too many, keep some duplicates (but different)
+            if len(deduplicated) < 3 and len(new_questions) > len(deduplicated):
+                remaining = new_questions[len(deduplicated):]
+                deduplicated.extend(remaining[:max(0, 3 - len(deduplicated))])
+                added_msg = f"Added {max(0, 3 - len(deduplicated))} additional questions due to filtering"
+                logger.info(added_msg)
+                self._add_debug_log(project, "info", added_msg)
+
+            # Cache the questions on project
+            project.question_cache = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "questions": deduplicated,
+                "version": 1,
+                "deduplication_filtered": filtered_count
+            }
+
+            success_msg = f"✓ Generated {len(deduplicated)} deduplicated questions"
+            logger.info(success_msg)
+            self._add_debug_log(project, "success", success_msg)
+            return deduplicated
+
+        except Exception as e:
+            logger.error(f"Question deduplication failed: {e}")
+            return []
+
+    def _is_similar_question(self, q1: str, q2: str, threshold: float = 0.7) -> bool:
+        """Check if two questions are similar using simple heuristics."""
+        # Simple implementation: check for common keywords
+        q1_words = set(q1.lower().split())
+        q2_words = set(q2.lower().split())
+
+        if not q1_words or not q2_words:
+            return False
+
+        # Calculate Jaccard similarity
+        intersection = len(q1_words & q2_words)
+        union = len(q1_words | q2_words)
+        similarity = intersection / union if union > 0 else 0
+
+        return similarity >= threshold
+
+    def _collect_debug_logs(self, project: Any) -> List[Dict[str, Any]]:
+        """Collect debug logs that were generated during request processing."""
+        logs = getattr(project, "debug_logs", None) or []
+
+        # Filter to only logs from this session
+        current_time = datetime.now(timezone.utc).isoformat()
+
+        logger.debug(f"Collected {len(logs)} debug logs for response")
+        return logs
+
+    def _generate_suggestions(
+        self,
+        question_text: str,
+        project: Any
+    ) -> List[str]:
+        """
+        Generate 3-5 contextual suggestions for answering the given question.
+
+        This fixes the suggestions endpoint that was returning empty.
+        CRITICAL FIX: Now includes conversation history for context-aware suggestions.
+        """
+        try:
+            logger.info(f"Generating suggestions for question: {question_text[:60]}...")
+            self._add_debug_log(project, "info", f"Analyzing question for suggestions")
+
+            suggestions = []
+
+            # Analyze question to determine type
+            q_lower = question_text.lower()
+
+            # Extract project context
+            project_context = []
+            if getattr(project, "goals", None):
+                project_context.append(f"Project goal: {project.goals}")
+            if getattr(project, "tech_stack", None):
+                project_context.append(f"Tech stack: {', '.join(project.tech_stack)}")
+            if getattr(project, "requirements", None):
+                project_context.append(f"Requirements: {', '.join(project.requirements)}")
+
+            # CRITICAL FIX: Include conversation history in context
+            conversation_summary = self._get_conversation_summary(project)
+            if conversation_summary and conversation_summary != "No previous conversation":
+                project_context.append(f"Previous conversation: {conversation_summary[:200]}...")
+                self._add_debug_log(project, "debug", "Included conversation history in context")
+
+            self._add_debug_log(project, "debug", f"Project context: {len(project_context)} items")
+
+            # Generate context-specific suggestions
+            if any(word in q_lower for word in ["operation", "function", "perform", "compute"]):
+                # Operations question
+                suggestions = [
+                    "List the specific operations needed (e.g., addition, subtraction)",
+                    "Consider the order of operations",
+                    "Think about edge cases or special operations"
+                ]
+                self._add_debug_log(project, "debug", "Detected: Operations question")
+
+            elif any(word in q_lower for word in ["input", "get", "receive", "user"]):
+                # Input question
+                suggestions = [
+                    "Describe how the user will provide input",
+                    "Consider validation or constraints on input",
+                    "Think about error handling for invalid input"
+                ]
+                self._add_debug_log(project, "debug", "Detected: Input question")
+
+            elif any(word in q_lower for word in ["output", "display", "show", "result"]):
+                # Output question
+                suggestions = [
+                    "Describe the desired output format",
+                    "Consider clarity and readability",
+                    "Think about different ways to present results"
+                ]
+                self._add_debug_log(project, "debug", "Detected: Output question")
+
+            elif any(word in q_lower for word in ["technology", "tool", "framework", "library", "language"]):
+                # Tech question
+                suggestions = [
+                    "Research available tools and their trade-offs",
+                    "Consider integration with existing stack",
+                    "Evaluate learning curve and community support"
+                ]
+                self._add_debug_log(project, "debug", "Detected: Technology question")
+
+            else:
+                # Generic suggestions
+                suggestions = [
+                    "Consider the specific requirements related to this question",
+                    "Think about how this relates to your project goals",
+                    "Brainstorm multiple possible approaches"
+                ]
+                self._add_debug_log(project, "debug", "Detected: Generic question")
+
+            success_msg = f"✓ Generated {len(suggestions)} suggestions"
+            logger.info(success_msg)
+            self._add_debug_log(project, "success", success_msg)
+            return suggestions
+
+        except Exception as e:
+            error_msg = f"Suggestion generation failed: {e}"
+            logger.error(error_msg)
+            self._add_debug_log(project, "error", error_msg)
+            return []
+
+    def _get_conversation_summary(self, project: Any) -> str:
+        """Get a summary of conversation history for context."""
+        conversation = getattr(project, "conversation_history", None) or []
+
+        if not conversation:
+            return "No previous conversation"
+
+        # Get last 5 exchanges
+        recent = conversation[-10:] if len(conversation) > 10 else conversation
+
+        summary_parts = []
+        for exchange in recent:
+            if isinstance(exchange, dict):
+                role = exchange.get("role", "unknown")
+                content = exchange.get("content", "")[:100]
+                summary_parts.append(f"{role}: {content}")
+
+        return "\n".join(summary_parts)
+
+    def _add_debug_log(self, project: Any, level: str, message: str) -> None:
+        """
+        CRITICAL FIX #17: Add a debug log entry to the project.
+
+        Args:
+            project: ProjectContext object
+            level: Log level (info, debug, warning, error, success)
+            message: Log message
+        """
+        try:
+            if not hasattr(project, "debug_logs") or project.debug_logs is None:
+                project.debug_logs = []
+
+            log_entry = {
+                "level": level,
+                "message": message,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            project.debug_logs.append(log_entry)
+            logger.debug(f"[{level.upper()}] {message}")
+
+        except Exception as e:
+            logger.warning(f"Failed to add debug log: {e}")
 
 
 # Global instance

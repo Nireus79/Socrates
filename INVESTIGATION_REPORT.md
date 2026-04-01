@@ -5,9 +5,46 @@
 **Total Endpoints:** 480+
 **Total Routers:** 39
 **Libraries Integrated:** 14
-**Critical Issues Fixed:** 3/3 ✅
+**Critical Issues Fixed:** 7/7 ✅
 **Phases Implemented:** 3/3 ✅
+**Runtime Issues Fixed:** 4/4 ✅
 **Test Results:** All Features Verified ✅
+
+---
+
+## RECENT UPDATE: Runtime Library Incompatibilities Fixed ✅
+
+**Date:** 2026-04-01
+**Discovery Method:** Actual runtime testing (not code review)
+**Issues Fixed:** 4 critical compatibility issues
+
+### Issues Found and Fixed:
+
+1. **ConflictDetector Methods (socratic-conflict)**
+   - ✅ FIXED: Code called `detect_decision_conflict()`, `detect_data_conflict()`, `detect_workflow_conflict()`
+   - Reality: Library only provides `detect_conflicts(agent_states)`
+   - Solution: Refactored wrapper to convert conflicts to agent_states and use actual method
+   - File: `socratic_system/conflict_resolution/detector.py`
+
+2. **PromptSanitizer.sanitize() (socratic-security)**
+   - ✅ FIXED: Code called `sanitize(text)` which doesn't exist
+   - Reality: Library provides `sanitize_for_llm(user_input)` returns `SanitizedInput` object
+   - Solution: Updated to call actual method and extract `sanitized_input` field
+   - File: `backend/src/socrates_api/utils/prompt_security.py`
+
+3. **QueryProfiler Methods (socratic-performance)**
+   - ✅ FIXED: Code called non-existent `record_query()` and `get_slowest_queries(limit=N)`
+   - Reality: Library provides `get_stats()` method returning dict with slowest_queries key
+   - Solution: Changed all calls to use `get_stats()` and extract slowest_queries from dict
+   - Files: `backend/src/socrates_api/middleware/performance.py`
+
+4. **Project Deletion Not Filtering (database)**
+   - ✅ FIXED: Projects marked as deleted still appeared in lists
+   - Reality: `list_projects()` didn't filter `is_archived = 0` like `get_user_projects()` did
+   - Solution: Updated `list_projects()` to filter archived projects
+   - File: `backend/src/socrates_api/database.py` line 707
+
+**See:** `RUNTIME_FIXES_SUMMARY.md` for detailed technical breakdown
 
 ---
 

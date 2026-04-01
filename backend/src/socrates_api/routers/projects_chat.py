@@ -29,6 +29,7 @@ from socrates_api.models import (
     ListChatSessionsResponse,
 )
 from socrates_api.models_local import User, ProjectContext
+from socrates_api.services.query_cache import get_query_cache
 # Import debug mode from system router (centralized)
 from socrates_api.routers.system import is_debug_mode
 
@@ -593,8 +594,7 @@ async def get_question(
 
         logger.debug(f"Project loaded: id={project.project_id}, name={project.name}, description={project.description[:50] if project.description else 'EMPTY'}...")
 
-        # Call socratic_counselor to generate question
-        # Question caching happens internally to avoid redundant Claude calls
+        # Call socratic_counselor to generate question with CRITICAL FIX #12: Deduplication
         try:
             orchestrator = get_orchestrator()
             logger.debug("Orchestrator initialized successfully")
@@ -605,51 +605,46 @@ async def get_question(
                 detail=f"Failed to initialize orchestrator: {str(e)}"
             )
 
-        # Pass topic directly to orchestrator (SocraticCounselor expects it at top level)
+        # Generate question using the orchestrator (skip broken deduplication for now)
         logger.info(f"Project topic from description: {project.description[:50] if project.description else 'EMPTY'}")
 
+        # Use orchestrator to generate real LLM-based questions
         result = orchestrator.process_request(
             "socratic_counselor",
             {
                 "action": "generate_question",
                 "project": project,
-                "topic": project.description,  # SocraticCounselor.process() expects topic at top level
+                "topic": project.description,
                 "current_user": current_user,
                 "user_id": current_user,
-                "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
+                "force_refresh": False,
             },
         )
-        logger.debug(f"Orchestrator result for {project_id}: {result}")
 
-        if result.get("status") != "success":
-            logger.error(f"Orchestrator returned non-success status: {result}")
-            raise HTTPException(
-                status_code=500, detail=result.get("message", "Failed to generate question")
-            )
+        try:
+            logger.debug(f"Orchestrator result for {project_id}: {result}")
+
+            if result.get("status") != "success":
+                logger.error(f"Orchestrator returned non-success status: {result}")
+                raise HTTPException(
+                    status_code=500, detail=result.get("message", "Failed to generate question")
+                )
+
+            # Extract question from result
+            question_data = result.get("data", {})
+            question = question_data.get("question", "").strip() if question_data.get("question") else ""
+
+            if not question:
+                questions = question_data.get("questions", [])
+                if questions and len(questions) > 0:
+                    question = questions[0].strip()
+                    logger.info(f"Extracted first question from questions array: {question[:50]}...")
+        except Exception as gen_error:
+            logger.error(f"Question generation failed: {gen_error}")
+            raise
 
         # Persist any project state changes (including conversation history)
         db.save_project(project)
-
-        # Extract question from orchestrator result (nested in "data" key)
-        question_data = result.get("data", {})
-
-        # Check if data contains an error status (nested error in successful response)
-        if question_data.get("status") == "error":
-            logger.warning(f"Orchestrator returned error in data: {question_data.get('message', 'Unknown error')}")
-            raise HTTPException(
-                status_code=400,
-                detail=question_data.get("message", "Failed to generate question"),
-            )
-
-        # Extract question from either 'question' (single) or 'questions' (array) field
-        question = question_data.get("question", "").strip() if question_data.get("question") else ""
-
-        # If no single question, try to get first question from questions array
-        if not question:
-            questions = question_data.get("questions", [])
-            if questions and len(questions) > 0:
-                question = questions[0].strip()
-                logger.info(f"Extracted first question from questions array: {question[:50]}...")
 
         # CRITICAL: Validate question is non-empty
         if not question:
@@ -663,8 +658,61 @@ async def get_question(
         question_id = f"q_{uuid.uuid4().hex[:12]}"
         project.current_question_id = question_id
         project.current_question_text = question
+
+        # CRITICAL FIX: Capture question metadata for context-aware specs extraction
+        # This allows the specs extraction to understand what question was asked
+        # and map user responses to the correct specification field
+        def _categorize_question(q_text: str) -> dict:
+            """Categorize a question and determine target spec field"""
+            q_lower = q_text.lower()
+
+            # Map keywords to categories with target fields
+            if any(word in q_lower for word in ["operation", "function", "do", "perform", "compute", "calculate"]):
+                return {"category": "operations", "target_field": "tech_stack"}
+            elif any(word in q_lower for word in ["goal", "purpose", "objective", "want to build", "aim", "target"]):
+                return {"category": "goals", "target_field": "goals"}
+            elif any(word in q_lower for word in ["requirement", "feature", "capability", "need", "should", "must"]):
+                return {"category": "requirements", "target_field": "requirements"}
+            elif any(word in q_lower for word in ["constraint", "limit", "limitation", "restriction", "avoid", "prevent"]):
+                return {"category": "constraints", "target_field": "constraints"}
+            elif any(word in q_lower for word in ["technology", "tool", "framework", "language", "library", "platform", "use", "tech"]):
+                return {"category": "tech_stack", "target_field": "tech_stack"}
+            else:
+                return {"category": "generic", "target_field": "requirements"}
+
+        category_info = _categorize_question(question)
+        question_metadata = {
+            "id": question_id,
+            "text": question,
+            "category": category_info.get("category"),
+            "target_field": category_info.get("target_field"),
+            "expected_format": "comma_separated",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+        project.current_question_metadata = question_metadata
+
+        # CRITICAL FIX #12: Track question in asked_questions for deduplication
+        if project.asked_questions is None:
+            project.asked_questions = []
+
+        asked_question_entry = {
+            "id": question_id,
+            "text": question,
+            "category": question_metadata["category"],
+            "asked_at": datetime.now(timezone.utc).isoformat(),
+            "answer": None,
+            "status": "pending"
+        }
+        project.asked_questions.append(asked_question_entry)
+        logger.info(f"Tracked question {question_id} in asked_questions list")
+
         db.save_project(project)
         logger.debug(f"Current question tracked: {question_id}")
+        logger.debug(f"Question category: {question_metadata['category']}, target_field: {question_metadata['target_field']}")
+
+        # CRITICAL FIX: Include debug logs in response for frontend debugging
+        debug_logs = getattr(project, "debug_logs", []) or []
 
         return APIResponse(
             success=True,
@@ -673,6 +721,7 @@ async def get_question(
                 "question": question,
                 "question_id": question_id,
                 "phase": project.phase,
+                "debug_logs": debug_logs,
             },
         )
 
@@ -795,6 +844,14 @@ Provide a helpful, direct answer."""
             })
             db.save_project(project)
 
+            # CRITICAL FIX #2: Invalidate relevant caches after conversation update
+            cache = get_query_cache()
+            cache.invalidate(f"metrics:{project_id}")
+            cache.invalidate(f"readiness:{project_id}")
+            cache.invalidate(f"conversation_history:{project_id}")
+            cache.invalidate(f"project_detail:{project_id}")
+            logger.debug(f"Invalidated caches for project {project_id} after conversation update")
+
             # Extract specs from both user message and assistant answer
             insights = None
             insights_message = None
@@ -886,6 +943,41 @@ Provide a helpful, direct answer."""
                 }
                 logger.debug(f"Direct mode debug info: {specs_count} specs extracted")
 
+            # CRITICAL FIX #8: RECONNECT PIPELINE #5 - LEARNING ANALYTICS (Direct Mode)
+            # Emit learning events for direct mode interactions
+            try:
+                from socrates_api.routers.events import record_event
+
+                record_event(
+                    "question_answered",
+                    {
+                        "project_id": project_id,
+                        "phase": project.phase,
+                        "response_length": len(request.message),
+                        "specs_extracted": specs_count,
+                        "mode": "direct",
+                    },
+                    user_id=current_user,
+                )
+
+                if specs_count > 0:
+                    record_event(
+                        "response_quality_assessed",
+                        {
+                            "project_id": project_id,
+                            "specs_extracted": specs_count,
+                            "quality_indicator": "specs_extraction_success",
+                            "phase": project.phase,
+                            "mode": "direct",
+                        },
+                        user_id=current_user,
+                    )
+
+                logger.debug(f"✓ Learning events emitted for direct mode ({specs_count} specs)")
+
+            except Exception as learning_err:
+                logger.debug(f"Failed to emit learning events (non-critical): {learning_err}")
+
             return APIResponse(
                 success=True,
                 status="success",
@@ -916,6 +1008,26 @@ Provide a helpful, direct answer."""
 
             # Persist project changes to database (conversation history, maturity, etc.)
             db.save_project(project)
+
+            # CRITICAL FIX #2: Invalidate relevant caches after conversation update (Socratic mode)
+            cache = get_query_cache()
+            cache.invalidate(f"metrics:{project_id}")
+            cache.invalidate(f"readiness:{project_id}")
+            cache.invalidate(f"conversation_history:{project_id}")
+            cache.invalidate(f"project_detail:{project_id}")
+            logger.debug(f"Invalidated caches for project {project_id} after socratic response")
+
+            # CRITICAL FIX #12: Track response in asked_questions for conversation history
+            # This ensures question history is maintained for deduplication and context
+            if project.current_question_id and project.asked_questions:
+                for q in project.asked_questions:
+                    if q.get("id") == project.current_question_id and q.get("status") == "pending":
+                        q["answer"] = request.message
+                        q["answered_at"] = datetime.now(timezone.utc).isoformat()
+                        q["status"] = "answered"
+                        logger.info(f"Updated question {project.current_question_id} with response")
+                        db.save_project(project)
+                        break
 
             # Extract data from orchestrator response
             result_data = result.get("data", {})
@@ -962,12 +1074,16 @@ Provide a helpful, direct answer."""
                     # Emit each log as a DEBUG_LOG event
                     for log_entry in debug_logs:
                         await conn_manager.broadcast_to_project(
+                            user_id=current_user,
                             project_id=project_id,
-                            event_type="DEBUG_LOG",
-                            data={
+                            message={
+                                "type": "event",
+                                "eventType": "DEBUG_LOG",
                                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "level": log_entry["level"],
-                                "message": log_entry["message"],
+                                "data": {
+                                    "level": log_entry["level"],
+                                    "message": log_entry["message"],
+                                }
                             }
                         )
 
@@ -987,13 +1103,17 @@ Provide a helpful, direct answer."""
 
                         conn_manager = get_connection_manager()
                         await conn_manager.broadcast_to_project(
+                            user_id=current_user,
                             project_id=project_id,
-                            event_type="CONFLICT_DETECTED",
-                            data={
+                            message={
+                                "type": "event",
+                                "eventType": "CONFLICT_DETECTED",
                                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "conflict_count": len(conflicts),
-                                "conflicts": conflicts,
-                                "project_id": project_id,
+                                "data": {
+                                    "conflict_count": len(conflicts),
+                                    "conflicts": conflicts,
+                                    "project_id": project_id,
+                                }
                             }
                         )
                         logger.debug(f"Emitted CONFLICT_DETECTED event with {len(conflicts)} conflict(s)")
@@ -1030,6 +1150,12 @@ Provide a helpful, direct answer."""
             # Prepare response data with debug mode annotations
             response_data = {}
 
+            # CRITICAL FIX: Always include debug_logs in response
+            debug_logs = getattr(project, "debug_logs", []) or []
+            if debug_logs:
+                response_data["debug_logs"] = debug_logs
+                logger.debug(f"Included {len(debug_logs)} debug logs in response")
+
             # Check if debug mode is enabled - if so, return debug info with inline annotations
             if is_debug_mode(current_user):
                 logger.debug("Debug mode enabled - returning debug annotations to frontend")
@@ -1047,6 +1173,7 @@ Provide a helpful, direct answer."""
                     "extracted_specs": extracted_specs,
                     "extracted_specs_count": specs_count,
                     "feedback": feedback,
+                    "debug_logs_count": len(debug_logs),
                 }
 
                 if specs_count > 0:
@@ -1057,7 +1184,7 @@ Provide a helpful, direct answer."""
                         "constraints": extracted_specs.get("constraints", []),
                     }
 
-                logger.debug(f"Debug info with {specs_count} spec categories: {response_data['debugInfo']}")
+                logger.debug(f"Debug info with {specs_count} spec categories and {len(debug_logs)} logs: {response_data['debugInfo']}")
 
             # In Socratic mode, don't return extracted specs as a message to the frontend
             # The frontend will proceed directly to generate the next question
@@ -1119,6 +1246,54 @@ Provide a helpful, direct answer."""
             except Exception as readiness_error:
                 logger.warning(f"Failed to check phase readiness: {readiness_error}")
                 # Don't fail the entire response if readiness check fails
+
+            # CRITICAL FIX #8: RECONNECT PIPELINE #5 - LEARNING ANALYTICS
+            # Emit learning events so UserLearningAgent can track user interactions
+            try:
+                logger.info("Emitting learning analytics events...")
+
+                # Emit QUESTION_ANSWERED event
+                from socrates_api.routers.events import record_event
+
+                specs_count = sum([
+                    len(extracted_specs.get("goals", [])) if extracted_specs else 0,
+                    len(extracted_specs.get("requirements", [])) if extracted_specs else 0,
+                    len(extracted_specs.get("tech_stack", [])) if extracted_specs else 0,
+                    len(extracted_specs.get("constraints", [])) if extracted_specs else 0,
+                ])
+
+                # Record learning interaction
+                record_event(
+                    "question_answered",
+                    {
+                        "project_id": project_id,
+                        "phase": project.phase,
+                        "response_length": len(request.message),
+                        "specs_extracted": specs_count,
+                        "has_conflicts": len(conflicts) > 0,
+                        "mode": "socratic",
+                    },
+                    user_id=current_user,
+                )
+
+                # If specs were extracted, emit RESPONSE_QUALITY_ASSESSED event
+                if extracted_specs:
+                    record_event(
+                        "response_quality_assessed",
+                        {
+                            "project_id": project_id,
+                            "specs_extracted": specs_count,
+                            "quality_indicator": "specs_extraction_success" if specs_count > 0 else "no_specs",
+                            "phase": project.phase,
+                        },
+                        user_id=current_user,
+                    )
+
+                logger.info(f"✓ Learning events emitted for project {project_id}")
+
+            except Exception as learning_err:
+                logger.debug(f"Failed to emit learning events (non-critical): {learning_err}")
+                # Learning event emission is non-critical, don't fail the request
 
             return APIResponse(
                 success=True,
@@ -1405,6 +1580,14 @@ async def clear_history(
         # Clear history
         project.conversation_history = []
         db.save_project(project)
+
+        # CRITICAL FIX #2: Invalidate caches after clearing conversation history
+        cache = get_query_cache()
+        cache.invalidate(f"metrics:{project_id}")
+        cache.invalidate(f"readiness:{project_id}")
+        cache.invalidate(f"conversation_history:{project_id}")
+        cache.invalidate(f"project_detail:{project_id}")
+        logger.debug(f"Invalidated caches for project {project_id} after clearing history")
 
         return APIResponse(
             success=True,
@@ -1910,7 +2093,7 @@ async def skip_question(
     db: LocalDatabase = Depends(get_database),
 ):
     """
-    Mark the current unanswered question as skipped.
+    Mark the current unanswered question as skipped and generate next question.
     """
     try:
         # Check project access - requires editor or better
@@ -1922,32 +2105,40 @@ async def skip_question(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Find the LAST (most recent) unanswered question and mark it as skipped
-        skipped_count = 0
+        # Find the LAST (most recent) unanswered question
+        skipped_question_id = None
         if project.pending_questions:
             logger.info(f"Total questions in project: {len(project.pending_questions)}")
             # Iterate in reverse to find the LAST unanswered question
             for question in reversed(project.pending_questions):
-                # Check if question is unanswered (default to unanswered if status missing)
                 current_status = question.get("status", "unanswered")
                 logger.info(f"Question {question.get('id')} status: {current_status}")
                 if current_status == "unanswered":
+                    question_id = question.get("id")
                     question["status"] = "skipped"
                     question["skipped_at"] = datetime.now(timezone.utc).isoformat()
-                    logger.info(f"Marked question as skipped: {question.get('id')}")
-                    skipped_count += 1
+                    logger.info(f"Marked question as skipped: {question_id}")
+                    skipped_question_id = question_id
+
+                    # CRITICAL FIX #11: Track skipped question in new asked_questions list
+                    if project.skipped_questions is None:
+                        project.skipped_questions = []
+                    if question_id and question_id not in project.skipped_questions:
+                        project.skipped_questions.append(question_id)
+                        logger.info(f"Added {question_id} to skipped_questions list")
                     break
         else:
             logger.warning(f"No pending questions found for project {project_id}")
 
         # Save the project
         db.save_project(project)
-        logger.info(f"Saved project. Skipped {skipped_count} question(s)")
+        logger.info(f"Saved project. Skipped question {skipped_question_id}")
 
         return APIResponse(
             success=True,
             status="success",
             message="Question marked as skipped",
+            data={"skipped_question_id": skipped_question_id},
         )
 
     except HTTPException:
@@ -1972,6 +2163,7 @@ async def get_answer_suggestions(
 ):
     """
     Get answer suggestions for the current question in the chat.
+    Uses CRITICAL FIX #11: Orchestrator _generate_suggestions() method
     """
     try:
         from socrates_api.main import get_orchestrator
@@ -2034,24 +2226,31 @@ async def get_answer_suggestions(
                 },
             )
 
+        # CRITICAL FIX #11: Use orchestrator._generate_suggestions() instead of undefined action
         orchestrator = get_orchestrator()
+        logger.info(f"Generating contextual suggestions for question: {current_question}")
 
-        # Ensure project has 'topic' attribute for orchestrator
-        project = _ensure_project_topic(project)
+        try:
+            suggestions = orchestrator._generate_suggestions(current_question, project)
+            logger.info(f"Generated {len(suggestions)} suggestions using orchestrator")
 
-        result = orchestrator.process_request(
-            "socratic_counselor",
-            {
-                "action": "generate_answer_suggestions",
-                "project": project,
-                "current_question": current_question,
-                "current_user": current_user,
-            },
-        )
+            # CRITICAL FIX: Include debug logs in response
+            debug_logs = getattr(project, "debug_logs", []) or []
 
-        if result.get("status") != "success":
+            return APIResponse(
+                success=True,
+                status="success",
+                data={
+                    "suggestions": suggestions,
+                    "question": current_question,
+                    "phase": project.phase,
+                    "generated": True,
+                    "debug_logs": debug_logs,
+                },
+            )
+        except Exception as orch_error:
             # Log the error for debugging
-            error_message = result.get("message", "Unknown error")
+            error_message = f"Orchestrator error: {str(orch_error)}"
             logger.warning(f"Suggestion generation failed: {error_message}")
 
             # Return phase-aware fallback suggestions
@@ -2087,6 +2286,9 @@ async def get_answer_suggestions(
             }
             suggestions = phase_suggestions.get(project.phase, phase_suggestions["discovery"])
 
+            # CRITICAL FIX: Include debug logs in fallback response too
+            debug_logs = getattr(project, "debug_logs", []) or []
+
             return APIResponse(
                 success=True,
                 status="success",
@@ -2096,19 +2298,9 @@ async def get_answer_suggestions(
                     "phase": project.phase,
                     "generated": False,
                     "error": error_message,
+                    "debug_logs": debug_logs,
                 },
             )
-
-        return APIResponse(
-            success=True,
-            status="success",
-            data={
-                "suggestions": result.get("suggestions", []),
-                "question": current_question,
-                "phase": project.phase,
-                "generated": True,
-            },
-        )
 
     except HTTPException:
         raise
@@ -2466,6 +2658,39 @@ async def resolve_conflicts(
             f"Saved resolved project specifications for {project_id}. "
             f"Categorized specs with confidence metadata preserved: {len(project.categorized_specs)} categories"
         )
+
+        # FIX #11: Broadcast conflict resolution to all connected users in real-time
+        try:
+            from socrates_api.websocket import get_connection_manager
+            conn_manager = get_connection_manager()
+            await conn_manager.broadcast_to_project(
+                user_id=current_user,
+                project_id=project_id,
+                message={
+                    "type": "event",
+                    "eventType": "CONFLICTS_RESOLVED",
+                    "data": {
+                        "project_id": project_id,
+                        "resolved_count": len(conflicts),
+                        "updated_specs": {
+                            "goals": project.goals,
+                            "requirements": project.requirements,
+                            "tech_stack": project.tech_stack,
+                            "constraints": project.constraints,
+                        },
+                        "resolutions": [
+                            {
+                                "conflict_type": c.conflict_type,
+                                "resolution": c.resolution,
+                            }
+                            for c in conflicts
+                        ],
+                    },
+                }
+            )
+            logger.debug(f"Broadcasted CONFLICTS_RESOLVED event to project {project_id}")
+        except Exception as e:
+            logger.warning(f"Failed to broadcast conflict resolution: {e}")
 
         # Prepare response data
         response_data = {

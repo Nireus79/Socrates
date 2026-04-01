@@ -84,12 +84,17 @@ class SecurePromptHandler:
             return text  # Passthrough if sanitizer unavailable
 
         try:
-            # Try to sanitize if method exists
-            if hasattr(self.sanitizer, 'sanitize'):
+            # Try to use the actual library method: sanitize_for_llm()
+            if hasattr(self.sanitizer, 'sanitize_for_llm'):
+                result = self.sanitizer.sanitize_for_llm(text)
+                # The method returns a SanitizedInput object with sanitized_input field
+                sanitized = result.sanitized_input if hasattr(result, 'sanitized_input') else str(result)
+            elif hasattr(self.sanitizer, 'sanitize'):
+                # Fallback to old method name if it exists
                 sanitized = self.sanitizer.sanitize(text)
             else:
-                # Fallback: just return text if sanitize method not available
-                logger.debug("PromptSanitizer.sanitize() not available, skipping sanitization")
+                # Final fallback: just return text if sanitize methods not available
+                logger.debug("PromptSanitizer.sanitize_for_llm() or sanitize() not available, skipping sanitization")
                 sanitized = text
 
             if sanitized != text:

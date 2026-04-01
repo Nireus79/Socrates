@@ -70,91 +70,44 @@ class ConflictDetector:
 
         conflicts = []
 
-        # Check goals conflicts (decision type)
-        if "goals" in new_insights and project.goals:
-            try:
-                conflict = self.detector.detect_decision_conflict(
-                    decision_name="project_goals",
-                    proposals={
-                        "existing": (
-                            ", ".join(project.goals)
-                            if isinstance(project.goals, list)
-                            else str(project.goals)
-                        ),
-                        current_user: (
-                            ", ".join(new_insights["goals"])
-                            if isinstance(new_insights["goals"], list)
-                            else str(new_insights["goals"])
-                        ),
-                    },
-                    agents=["existing", current_user],
-                )
-                if conflict:
-                    conflicts.append(
-                        self._convert_to_conflict_info(conflict, "goals", project, current_user)
-                    )
-            except Exception as e:
-                self.logger.debug(f"Goals conflict detection failed: {e}")
+        # Use the actual library method: detect_conflicts(agent_states)
+        # Build agent states from project data
+        agent_states = {
+            "existing": {
+                "goal": ", ".join(project.goals) if project.goals else "",
+                "requirements": project.requirements or "",
+                "tech_stack": project.tech_stack or "",
+                "constraints": project.constraints or "",
+            },
+            current_user: {
+                "goal": ", ".join(new_insights.get("goals", [])) if isinstance(new_insights.get("goals"), list) else str(new_insights.get("goals", "")),
+                "requirements": new_insights.get("requirements", ""),
+                "tech_stack": new_insights.get("tech_stack", ""),
+                "constraints": new_insights.get("constraints", ""),
+            }
+        }
 
-        # Check requirements conflicts (data type)
-        if "requirements" in new_insights and project.requirements:
-            try:
-                conflict = self.detector.detect_data_conflict(
-                    field_name="requirements",
-                    values={
-                        "existing": project.requirements,
-                        current_user: new_insights["requirements"],
-                    },
-                    agents=["existing", current_user],
-                )
-                if conflict:
-                    conflicts.append(
-                        self._convert_to_conflict_info(
-                            conflict, "requirements", project, current_user
-                        )
-                    )
-            except Exception as e:
-                self.logger.debug(f"Requirements conflict detection failed: {e}")
+        try:
+            # Call the actual library method
+            library_conflicts = self.detector.detect_conflicts(agent_states)
 
-        # Check tech stack conflicts (data type)
-        if "tech_stack" in new_insights and project.tech_stack:
-            try:
-                conflict = self.detector.detect_data_conflict(
-                    field_name="tech_stack",
-                    values={
-                        "existing": project.tech_stack,
-                        current_user: new_insights["tech_stack"],
-                    },
-                    agents=["existing", current_user],
+            # Convert library conflicts to ConflictInfo
+            for lib_conflict in library_conflicts:
+                conflict_info = ConflictInfo(
+                    id=lib_conflict.id,
+                    field=lib_conflict.type,
+                    existing_value=agent_states["existing"].get(lib_conflict.type, ""),
+                    new_value=agent_states[current_user].get(lib_conflict.type, ""),
+                    severity=lib_conflict.severity,
+                    description=lib_conflict.description,
+                    suggested_resolution=f"Review and reconcile {lib_conflict.type} conflict",
+                    agents_involved=lib_conflict.agents,
                 )
-                if conflict:
-                    conflicts.append(
-                        self._convert_to_conflict_info(
-                            conflict, "tech_stack", project, current_user
-                        )
-                    )
-            except Exception as e:
-                self.logger.debug(f"Tech stack conflict detection failed: {e}")
-
-        # Check constraints conflicts (data type)
-        if "constraints" in new_insights and project.constraints:
-            try:
-                conflict = self.detector.detect_data_conflict(
-                    field_name="constraints",
-                    values={
-                        "existing": project.constraints,
-                        current_user: new_insights["constraints"],
-                    },
-                    agents=["existing", current_user],
-                )
-                if conflict:
-                    conflicts.append(
-                        self._convert_to_conflict_info(
-                            conflict, "constraints", project, current_user
-                        )
-                    )
-            except Exception as e:
-                self.logger.debug(f"Constraints conflict detection failed: {e}")
+                conflicts.append(conflict_info)
+        except Exception as e:
+            self.logger.debug(f"Conflict detection using library failed: {e}")
+            # Fallback: simple string comparison detection
+            conflicts.extend(self._detect_conflicts_fallback(project, new_insights, current_user))
 
         return conflicts
 
@@ -176,10 +129,18 @@ class ConflictDetector:
             return None
 
         try:
-            conflict = self.detector.detect_workflow_conflict(
-                workflow_id=workflow_id, conflicting_steps=steps, context=context or {}
-            )
-            return conflict
+            # Convert workflow steps to agent states for the actual library method
+            agent_states = {}
+            for step in steps:
+                agent_name = step.get("agent", f"step_{len(agent_states)}")
+                agent_states[agent_name] = {
+                    "goal": step.get("goal", ""),
+                    "action": step.get("action", ""),
+                }
+
+            conflicts = self.detector.detect_conflicts(agent_states)
+            # Return first conflict if any (for backward compatibility)
+            return conflicts[0] if conflicts else None
         except Exception as e:
             self.logger.error(f"Workflow conflict detection failed: {e}")
             return None
@@ -205,10 +166,17 @@ class ConflictDetector:
             return None
 
         try:
-            conflict = self.detector.detect_decision_conflict(
-                decision_name=decision_name, proposals=proposals, agents=agents
-            )
-            return conflict
+            # Convert proposals to agent states for the actual library method
+            agent_states = {}
+            for agent, proposal in proposals.items():
+                agent_states[agent] = {
+                    "goal": decision_name,
+                    "proposal": proposal,
+                }
+
+            conflicts = self.detector.detect_conflicts(agent_states)
+            # Return first conflict if any (for backward compatibility)
+            return conflicts[0] if conflicts else None
         except Exception as e:
             self.logger.error(f"Agent conflict detection failed: {e}")
             return None
@@ -250,6 +218,47 @@ class ConflictDetector:
             self.logger.info("All conflicts cleared")
         except Exception as e:
             self.logger.error(f"Failed to clear conflicts: {e}")
+
+    def _detect_conflicts_fallback(
+        self, project: ProjectContext, new_insights: Dict[str, Any], current_user: str
+    ) -> List[ConflictInfo]:
+        """
+        Fallback conflict detection using simple string comparison.
+
+        Args:
+            project: Current project context
+            new_insights: New insights to check
+            current_user: User making the change
+
+        Returns:
+            List of detected conflicts
+        """
+        conflicts = []
+
+        # Simple string comparison for basic conflicts
+        fields_to_check = ["goals", "requirements", "tech_stack", "constraints"]
+
+        for field in fields_to_check:
+            if field not in new_insights:
+                continue
+
+            existing = getattr(project, field, None)
+            new = new_insights.get(field)
+
+            if existing and new and str(existing).lower() != str(new).lower():
+                conflict_info = ConflictInfo(
+                    id=f"conflict_{field}_{ProjectIDGenerator.generate()}",
+                    field=field,
+                    existing_value=str(existing),
+                    new_value=str(new),
+                    severity="medium",
+                    description=f"Different {field}: '{existing}' vs '{new}'",
+                    suggested_resolution=f"Review and reconcile {field}",
+                    agents_involved=["existing", current_user],
+                )
+                conflicts.append(conflict_info)
+
+        return conflicts
 
     @staticmethod
     def _convert_to_conflict_info(

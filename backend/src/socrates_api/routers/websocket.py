@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 
 from socrates_api.auth import get_current_user
+from socrates_api.auth.jwt_handler import verify_access_token
 from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse
 from socrates_api.websocket import (
@@ -70,15 +71,33 @@ async def websocket_chat_endpoint(
     get_database()
 
     try:
-        # Verify user (token would be extracted from query params in real implementation)
-        # For now, we'll accept the connection and verify inside
-        user_id = None  # Would be extracted from token
+        # CRITICAL FIX #1: Validate JWT token for WebSocket authentication
+        if not token:
+            logger.warning(f"WebSocket connection attempt without token for project {project_id}")
+            await websocket.close(code=1008, reason="Authentication token required")
+            return
+
+        # Verify the JWT token
+        payload = verify_access_token(token)
+        if not payload:
+            logger.warning(f"Invalid token for WebSocket connection to project {project_id}")
+            await websocket.close(code=1008, reason="Invalid authentication token")
+            return
+
+        # Extract user_id from verified token payload
+        user_id = payload.get("sub")
+        if not user_id:
+            logger.warning(f"Token missing subject (user_id) for project {project_id}")
+            await websocket.close(code=1008, reason="Invalid token: missing user information")
+            return
+
+        logger.info(f"WebSocket authenticated: {connection_id} for user {user_id} on project {project_id}")
 
         # Accept connection
         try:
             await connection_manager.connect(
                 websocket,
-                user_id or "anonymous",
+                user_id,
                 project_id,
                 connection_id,
             )
@@ -86,7 +105,7 @@ async def websocket_chat_endpoint(
             await websocket.close(code=1008, reason=str(e))
             return
 
-        logger.info(f"WebSocket connected: {connection_id} for project {project_id}")
+        logger.info(f"WebSocket connected: {connection_id} for user {user_id} on project {project_id}")
 
         # Send welcome message
         await websocket.send_json(
@@ -302,29 +321,67 @@ async def _handle_chat_message(
                     logger.debug("Failed to generate hint:")
                     hint_text = "Try breaking this down into smaller parts."
 
-            # Save message to conversation history
-            project.conversation_history.append(
-                {
+            # CRITICAL FIX #8: Synchronize WebSocket messages with conversation_history atomically
+            try:
+                # Build message entries before modifying project state
+                user_message = {
                     "id": f"msg_{len(project.conversation_history)}",
                     "role": "user",
                     "content": message.content,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "mode": mode,
+                    "source": "websocket",  # Track message source for sync validation
                 }
-            )
 
-            # Save assistant response
-            project.conversation_history.append(
-                {
-                    "id": f"msg_{len(project.conversation_history)}",
+                assistant_message = {
+                    "id": f"msg_{len(project.conversation_history) + 1}",
                     "role": "assistant",
                     "content": ai_response,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "hint": hint_text if hint_text else None,
+                    "source": "websocket",
                 }
-            )
 
-            db.save_project(project)
+                # Use transaction to ensure atomic save
+                # CRITICAL FIX #8: If save fails, both messages are discarded from project state
+                project.conversation_history.append(user_message)
+                project.conversation_history.append(assistant_message)
+
+                # Persist to database
+                db.save_project(project)
+                logger.debug(
+                    f"WebSocket messages synchronized with database for project {project_id}: "
+                    f"user_msg={user_message['id']}, assistant_msg={assistant_message['id']}"
+                )
+
+                # CRITICAL FIX #2: Invalidate caches after WebSocket message sync
+                from socrates_api.services.query_cache import get_query_cache
+                cache = get_query_cache()
+                cache.invalidate(f"metrics:{project_id}")
+                cache.invalidate(f"readiness:{project_id}")
+                cache.invalidate(f"conversation_history:{project_id}")
+                cache.invalidate(f"project_detail:{project_id}")
+                logger.debug(f"WebSocket: Invalidated caches for project {project_id} after message sync")
+
+            except Exception as sync_error:
+                # CRITICAL FIX #8: Explicit error if sync fails
+                logger.error(
+                    f"Failed to synchronize WebSocket messages with conversation history: {str(sync_error)}",
+                    exc_info=True,
+                )
+                # Rollback in-memory changes to maintain consistency
+                if user_message in project.conversation_history:
+                    project.conversation_history.remove(user_message)
+                if assistant_message in project.conversation_history:
+                    project.conversation_history.remove(assistant_message)
+                # Notify client of sync failure
+                await websocket.send_json({
+                    "type": "error",
+                    "errorCode": "SYNC_FAILED",
+                    "errorMessage": "Failed to persist messages to database. Your message was not saved.",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                return
 
         except Exception as e:
             logger.debug("Error processing chat message with AI", exc_info=True)
@@ -1222,16 +1279,34 @@ async def websocket_collaboration_endpoint(
     Args:
         websocket: FastAPI WebSocket connection
         project_id: Project identifier
-        token: JWT token for authentication (optional)
+        token: JWT token for authentication (required)
     """
     connection_id = str(uuid.uuid4())
     connection_manager = get_connection_manager()
     db = get_database()
 
     try:
-        # Note: In production, would extract and verify user from token
-        # For now, using connection_id as identifier
-        user_id = connection_id
+        # CRITICAL FIX #1: Validate JWT token for WebSocket authentication (Collaboration endpoint)
+        if not token:
+            logger.warning(f"Collaboration WebSocket connection attempt without token for project {project_id}")
+            await websocket.close(code=1008, reason="Authentication token required")
+            return
+
+        # Verify the JWT token
+        payload = verify_access_token(token)
+        if not payload:
+            logger.warning(f"Invalid token for collaboration WebSocket connection to project {project_id}")
+            await websocket.close(code=1008, reason="Invalid authentication token")
+            return
+
+        # Extract user_id from verified token payload
+        user_id = payload.get("sub")
+        if not user_id:
+            logger.warning(f"Token missing subject (user_id) for collaboration project {project_id}")
+            await websocket.close(code=1008, reason="Invalid token: missing user information")
+            return
+
+        logger.info(f"Collaboration WebSocket authenticated: {connection_id} for user {user_id} on project {project_id}")
 
         # Accept connection
         try:
@@ -1245,7 +1320,7 @@ async def websocket_collaboration_endpoint(
             await websocket.close(code=1008, reason=str(e))
             return
 
-        logger.info(f"Collaboration WebSocket connected: {connection_id} for project {project_id}")
+        logger.info(f"Collaboration WebSocket connected: {connection_id} for user {user_id} on project {project_id}")
 
         # Send welcome message with presence info
         await websocket.send_json(

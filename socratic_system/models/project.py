@@ -52,6 +52,24 @@ class ProjectContext:
     )
     pending_questions: Optional[List[Dict]] = None  # Question queue for team projects
 
+    # Question context tracking for specs extraction (CRITICAL FIX)
+    current_question_id: Optional[str] = None  # ID of the current question being asked
+    current_question_text: Optional[str] = None  # Text of the current question
+    current_question_metadata: Optional[Dict[str, any]] = None  # Metadata about current question (category, target_field, etc.)
+
+    # ARCHITECTURAL FIX: Conversation tracking for question deduplication and history
+    asked_questions: Optional[List[Dict[str, any]]] = None  # Questions already asked with answers/status
+    # Example: [{"id": "q1", "text": "What operations...", "answer": "Add, subtract", "status": "answered"}]
+
+    skipped_questions: Optional[List[str]] = None  # IDs of questions user skipped
+    # Example: ["q3", "q5"]
+
+    question_cache: Optional[Dict[str, any]] = None  # Cache of generated questions
+    # Example: {"timestamp": "...", "questions": [...], "version": 1}
+
+    debug_logs: Optional[List[Dict[str, any]]] = None  # Debug logs collected during requests
+    # Example: [{"level": "info", "message": "...", "timestamp": "..."}]
+
     # Notes tracking
     notes: Optional[List[Dict]] = None  # Project notes list
 
@@ -138,6 +156,16 @@ class ProjectContext:
             self.notes = []
         if self.pending_questions is None:
             self.pending_questions = []
+
+        # CRITICAL FIX #18: Initialize conversation tracking fields (Phase 4)
+        if self.asked_questions is None:
+            self.asked_questions = []
+        if self.skipped_questions is None:
+            self.skipped_questions = []
+        if self.question_cache is None:
+            self.question_cache = {}
+        if self.debug_logs is None:
+            self.debug_logs = []
 
     def _initialize_team_members(self) -> None:
         """Initialize team members, migrating from legacy collaborators if needed"""
