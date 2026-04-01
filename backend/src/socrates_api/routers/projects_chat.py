@@ -1098,7 +1098,6 @@ Provide a helpful, direct answer."""
                 if is_debug_mode(current_user) or True:  # Always emit conflict event, even if debug off
                     try:
                         from socrates_api.websocket.connection_manager import get_connection_manager
-                        from datetime import datetime, timezone
 
                         conn_manager = get_connection_manager()
                         await conn_manager.broadcast_to_project(
