@@ -865,9 +865,82 @@ Provide a helpful, direct answer."""
             conflicts = result_data.get("conflicts", [])
             feedback = result_data.get("feedback", "")
 
+            # CRITICAL FIX #4: Emit debug logs in real-time when debug mode enabled
+            if is_debug_mode(current_user):
+                try:
+                    from socrates_api.websocket.connection_manager import get_connection_manager
+                    from socrates_api.models_local import EventType
+                    from datetime import datetime, timezone
+                    import json
+
+                    conn_manager = get_connection_manager()
+
+                    # Emit background processing logs
+                    debug_logs = [
+                        {"level": "info", "message": f"[Background] Extracting specifications from response..."},
+                        {"level": "debug", "message": f"[Background] Found {len(extracted_specs.get('goals', []))} goal(s)"},
+                        {"level": "debug", "message": f"[Background] Found {len(extracted_specs.get('requirements', []))} requirement(s)"},
+                        {"level": "debug", "message": f"[Background] Found {len(extracted_specs.get('tech_stack', []))} tech stack item(s)"},
+                        {"level": "debug", "message": f"[Background] Found {len(extracted_specs.get('constraints', []))} constraint(s)"},
+                        {"level": "info", "message": f"[Background] Checking for conflicts with existing specs..."},
+                    ]
+
+                    # If specs extracted, add success message
+                    specs_count = sum([
+                        len(extracted_specs.get("goals", [])),
+                        len(extracted_specs.get("requirements", [])),
+                        len(extracted_specs.get("tech_stack", [])),
+                        len(extracted_specs.get("constraints", [])),
+                    ])
+
+                    if specs_count > 0:
+                        debug_logs.append({"level": "success", "message": f"[Background] ✓ {specs_count} specs extracted and saved"})
+
+                    if len(conflicts) > 0:
+                        debug_logs.append({"level": "warning", "message": f"[Background] ⚠ {len(conflicts)} conflict(s) detected - user review needed"})
+                    else:
+                        debug_logs.append({"level": "success", "message": "[Background] ✓ No conflicts detected"})
+
+                    # Emit each log as a DEBUG_LOG event
+                    for log_entry in debug_logs:
+                        await conn_manager.broadcast_to_project(
+                            project_id=project_id,
+                            event_type="DEBUG_LOG",
+                            data={
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                "level": log_entry["level"],
+                                "message": log_entry["message"],
+                            }
+                        )
+
+                    logger.debug(f"Emitted {len(debug_logs)} debug log events for project {project_id}")
+                except Exception as e:
+                    logger.warning(f"Failed to emit debug logs: {e}")
+
             # Check if conflicts detected - if so, return them for frontend resolution
             if conflicts:
-                logger.info(f"Conflicts detected in Socratic mode: {len(conflicts)} conflict(s)")
+                logger.info(f"Conflicts detected in Socratic mode: {len(conflicts)} conflict(s)}")
+
+                # CRITICAL FIX #4: Emit CONFLICT_DETECTED event for real-time UI notification
+                if is_debug_mode(current_user) or True:  # Always emit conflict event, even if debug off
+                    try:
+                        from socrates_api.websocket.connection_manager import get_connection_manager
+                        from datetime import datetime, timezone
+
+                        conn_manager = get_connection_manager()
+                        await conn_manager.broadcast_to_project(
+                            project_id=project_id,
+                            event_type="CONFLICT_DETECTED",
+                            data={
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                "conflict_count": len(conflicts),
+                                "conflicts": conflicts,
+                                "project_id": project_id,
+                            }
+                        )
+                        logger.debug(f"Emitted CONFLICT_DETECTED event with {len(conflicts)} conflict(s)")
+                    except Exception as e:
+                        logger.warning(f"Failed to emit conflict detected event: {e}")
                 return APIResponse(
                     success=True,
                     status="success",
