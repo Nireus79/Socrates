@@ -1508,6 +1508,59 @@ class APIOrchestrator:
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
 
+    def _detect_actionable_intent(self, user_input: str) -> Optional[Dict[str, Any]]:
+        """
+        Detect actionable intents in user input (e.g., "skip question", "show hint").
+
+        Returns:
+            Dict with {
+                "intent": str,
+                "action": str,
+                "confidence": float,
+                "should_auto_execute": bool
+            }
+            or None if no actionable intent detected
+        """
+        user_input_lower = user_input.lower().strip()
+
+        # Define actionable intents with keywords and corresponding actions
+        intent_patterns = {
+            "skip_question": {
+                "keywords": ["skip", "next", "skip this", "move on", "next question"],
+                "action": "skip_question",
+                "confidence": 0.95,
+            },
+            "get_hint": {
+                "keywords": ["hint", "help", "show hint", "i need help", "what's the hint"],
+                "action": "get_hint",
+                "confidence": 0.90,
+            },
+            "show_conflict": {
+                "keywords": ["conflict", "explain conflict", "what's wrong", "what's the issue"],
+                "action": "explain_conflict",
+                "confidence": 0.85,
+            },
+            "show_answer": {
+                "keywords": ["answer", "show answer", "reveal", "what's the answer", "tell me the answer"],
+                "action": "show_answer",
+                "confidence": 0.80,
+            },
+        }
+
+        # Check for exact keyword matches
+        for intent, pattern in intent_patterns.items():
+            for keyword in pattern["keywords"]:
+                if keyword in user_input_lower:
+                    logger.debug(f"Detected actionable intent: {intent} (confidence: {pattern['confidence']})")
+                    return {
+                        "intent": intent,
+                        "action": pattern["action"],
+                        "confidence": pattern["confidence"],
+                        "should_auto_execute": pattern["confidence"] >= 0.85,
+                    }
+
+        return None
+
     def _handle_socratic_counselor(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle Socratic counselor requests for generating questions"""
         action = request_data.get("action", "")
@@ -1702,6 +1755,46 @@ class APIOrchestrator:
 
             logger.info(f"Processing response in Socratic mode: {response[:50]}...")
 
+            # CRITICAL FIX #4: Detect and auto-execute actionable intents from user input
+            # This handles cases like "skip", "hint", "explain conflict", etc.
+            detected_intent = self._detect_actionable_intent(response)
+            if detected_intent and detected_intent.get("should_auto_execute"):
+                logger.info(f"Auto-executing intent: {detected_intent['action']} (confidence: {detected_intent['confidence']})")
+
+                # Emit NLU_SUGGESTION_EXECUTED event for real-time UI updates
+                from socrates_api.models_local import EventType
+                event_data = {
+                    "user_id": current_user,
+                    "project_id": getattr(project, "project_id", project.get("project_id")) if hasattr(project, "get") else project.get("project_id"),
+                    "intent": detected_intent["intent"],
+                    "action": detected_intent["action"],
+                    "confidence": detected_intent["confidence"],
+                }
+                self.event_emitter.emit(EventType.NLU_SUGGESTION_EXECUTED, event_data)
+
+                # Auto-execute the action
+                action_result = self.process_request(
+                    "socratic_counselor",
+                    {
+                        "action": detected_intent["action"],
+                        "project": project,
+                        "current_user": current_user,
+                    }
+                )
+
+                # Return auto-executed action with NLU metadata
+                if action_result.get("status") == "success":
+                    return {
+                        "status": "success",
+                        "data": {
+                            **action_result.get("data", {}),
+                            "nlu_auto_executed": True,
+                            "detected_intent": detected_intent["intent"],
+                            "confidence": detected_intent["confidence"],
+                        },
+                        "message": f"Auto-executed: {detected_intent['action']}",
+                    }
+
             try:
                 # Extract specs from user's response using ContextAnalyzer agent
                 extracted_specs = self._extract_insights_fallback(response)
@@ -1868,6 +1961,78 @@ Provide only the hint text."""
                     "status": "success",
                     "data": {"hint": "Review your project requirements and consider what step comes next in your learning journey."},
                     "message": "Hint generated (fallback)",
+                }
+
+        elif action == "skip_question":
+            # Skip to the next question
+            project = request_data.get("project", {})
+            current_user = request_data.get("current_user", "")
+
+            logger.info(f"Skipping current question for user {current_user}")
+
+            try:
+                # Clear current question context
+                if hasattr(project, "current_question_id"):
+                    project.current_question_id = None
+                    project.current_question_text = None
+
+                # Save updated project
+                from socrates_api.database import get_database
+                db = get_database()
+                project_id = getattr(project, "project_id", project.get("project_id")) if hasattr(project, "get") else project.get("project_id")
+                if project_id:
+                    db.save_project(project_id, project)
+
+                # Return success - frontend will call get_question to fetch next question
+                return {
+                    "status": "success",
+                    "data": {
+                        "message": "Question skipped. Generating next question...",
+                        "action": "generate_question",
+                    },
+                    "message": "Question skipped",
+                }
+            except Exception as e:
+                logger.error(f"Error skipping question: {e}")
+                return {
+                    "status": "error",
+                    "message": f"Failed to skip question: {str(e)}",
+                }
+
+        elif action == "explain_conflict":
+            # Explain detected conflicts to the user
+            project = request_data.get("project", {})
+            conflicts = request_data.get("conflicts", [])
+
+            logger.info(f"Explaining {len(conflicts)} conflicts")
+
+            try:
+                if not conflicts:
+                    return {
+                        "status": "success",
+                        "data": {
+                            "explanation": "No conflicts detected. Your response aligns well with the project requirements.",
+                        },
+                        "message": "No conflicts to explain",
+                    }
+
+                # Use the helper function from projects_chat to generate user-friendly explanations
+                from socrates_api.routers.projects_chat import _generate_conflict_explanation
+                explanation = _generate_conflict_explanation(conflicts)
+
+                return {
+                    "status": "success",
+                    "data": {
+                        "explanation": explanation,
+                        "conflicts": conflicts,
+                    },
+                    "message": f"Explanation of {len(conflicts)} conflict(s)",
+                }
+            except Exception as e:
+                logger.error(f"Error explaining conflicts: {e}")
+                return {
+                    "status": "error",
+                    "message": f"Failed to explain conflicts: {str(e)}",
                 }
 
         else:
