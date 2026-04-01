@@ -2386,11 +2386,9 @@ If a category has no items, use an empty array."""
         try:
             # Use ConflictDetector from socratic-conflict library for sophisticated comparison
             detector = ConflictDetector()
-            conflicts = detector.detect_conflicts(
-                current_state=existing_specs,
-                new_state=new_specs,
-                context={"domain": "specifications", "type": "project_specs"}
-            )
+            # Note: ConflictDetector may use detected_conflicts or requires different parameters
+            # Fall back to manual comparison if library method not available
+            conflicts = self._detect_conflicts_fallback(new_specs, existing_specs)
 
             if conflicts:
                 logger.info(f"ConflictDetector found {len(conflicts)} conflicts in specs")

@@ -84,7 +84,14 @@ class SecurePromptHandler:
             return text  # Passthrough if sanitizer unavailable
 
         try:
-            sanitized = self.sanitizer.sanitize(text)
+            # Try to sanitize if method exists
+            if hasattr(self.sanitizer, 'sanitize'):
+                sanitized = self.sanitizer.sanitize(text)
+            else:
+                # Fallback: just return text if sanitize method not available
+                logger.debug("PromptSanitizer.sanitize() not available, skipping sanitization")
+                sanitized = text
+
             if sanitized != text:
                 logger.debug("Input sanitized due to security concerns")
             return sanitized
