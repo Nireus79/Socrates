@@ -1161,21 +1161,41 @@ Provide a helpful, direct answer."""
                 for i, conflict in enumerate(conflicts):
                     # Map backend field names to frontend field names
                     conflict_type = conflict.get("field") or conflict.get("type", "unknown")
+                    conflict_type = conflict_type.replace("_change", "").lower()
+
+                    # Determine old_value and new_value based on what changed
+                    added_items = conflict.get("added", [])
+                    removed_items = conflict.get("removed", [])
+
+                    # If items were added, the new_value is what was added
+                    # If items were removed, the old_value is what was removed
+                    if added_items:
+                        new_value = ", ".join(str(item) for item in added_items)
+                        old_value = "None" if not removed_items else ", ".join(str(item) for item in removed_items)
+                    elif removed_items:
+                        old_value = ", ".join(str(item) for item in removed_items)
+                        new_value = "None"
+                    else:
+                        old_value = conflict.get("old_value", "Unknown")
+                        new_value = conflict.get("new_value", "Unknown")
 
                     # Format conflict for frontend
                     formatted_conflict = {
                         "conflict_id": f"conflict_{i}",
-                        "conflict_type": conflict_type.replace("_change", "").lower(),
-                        "old_value": str(conflict.get("old_value") or ", ".join(conflict.get("removed", [])) or "None"),
-                        "new_value": str(conflict.get("new_value") or ", ".join(conflict.get("added", [])) or "None"),
+                        "conflict_type": conflict_type,
+                        "old_value": old_value,
+                        "new_value": new_value,
                         "old_author": "existing specs",
-                        "new_author": "user response",
+                        "new_author": "your response",
                         "severity": conflict.get("severity", "medium"),
-                        "suggestions": conflict.get("suggestions", []),
+                        "suggestions": conflict.get("suggestions", []) or [
+                            f"Review the proposed change in {conflict_type}"
+                        ],
                     }
                     formatted_conflicts.append(formatted_conflict)
 
                 response_data["conflicts"] = formatted_conflicts
+                response_data["conflicts_pending"] = True
                 logger.debug(f"Included {len(formatted_conflicts)} formatted conflicts in response")
 
             # Check if debug mode is enabled - if so, return debug info with inline annotations

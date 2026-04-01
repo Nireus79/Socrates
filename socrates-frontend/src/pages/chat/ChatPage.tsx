@@ -2037,13 +2037,16 @@ User: ${currentProject?.owner || 'N/A'}`;
           if (selectedProjectId) {
             try {
               await resolveConflict(selectedProjectId, resolution);
+              // Conflicts are cleared after successful resolution
             } catch (error) {
               console.error('Failed to resolve conflict:', error);
+              // Keep modal open if resolution fails
             }
           }
         }}
         onClose={() => {
-          clearConflicts();
+          // Don't clear conflicts on close - they stay pending until resolved
+          // User can see a "Pending Conflicts" indicator if needed
         }}
         isLoading={chatLoading}
       />
