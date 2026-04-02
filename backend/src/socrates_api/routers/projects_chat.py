@@ -994,7 +994,7 @@ Provide a helpful, direct answer."""
             conflicts = result.get("conflicts", [])
             phase_maturity = result.get("phase_maturity", 0)
             phase_complete = result.get("phase_complete", False)
-            feedback = result_data.get("feedback", "")
+            feedback = result.get("feedback", "")
 
             # CRITICAL FIX #4: Emit debug logs in real-time when debug mode enabled
             if is_debug_mode(current_user):
