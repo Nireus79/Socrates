@@ -1921,11 +1921,44 @@ class APIOrchestrator:
                         f"Calling SocraticCounselor for phase {phase} "
                         f"(KB gaps: {len(kb_gaps)}, KB coverage: {kb_coverage.get('coverage_percentage', 0)}%)"
                     )
-                    # For now, create a minimal response as library hasn't been updated yet
-                    question_response = self._get_fallback_question(phase)
+
+                    # Build topic from project goals and requirements
+                    project_context = context.get("project_context", {})
+                    goals = project_context.get("goals", [])
+                    requirements = project_context.get("requirements", [])
+                    topic = " ".join(goals[:2]) if goals else " ".join(requirements[:2]) if requirements else f"{phase.title()} phase"
+
+                    # Build request with all context (KB chunks, document understanding, conversation history)
+                    counselor_request = {
+                        "topic": topic,
+                        "phase": phase,
+                        "context": self._get_conversation_summary(project),
+                        "knowledge_base": {
+                            "chunks": context.get("knowledge_base_chunks", []),
+                            "gaps": context.get("kb_gaps", []),
+                            "coverage": kb_coverage.get("coverage_percentage", 0)
+                        },
+                        "document_understanding": context.get("document_understanding", {}),
+                        "recently_asked": context.get("previously_asked_questions", []),
+                    }
+
+                    # Include conversation history if available
+                    conversation_history = context.get("conversation_history", [])
+                    if conversation_history:
+                        counselor_request["conversation_history"] = conversation_history
+
+                    logger.debug(f"Calling counselor with topic '{topic}' and {len(context.get('knowledge_base_chunks', []))} KB chunks")
+                    question_response = counselor.process(counselor_request)
+
+                    # Ensure response has the expected structure
+                    if not isinstance(question_response, dict):
+                        question_response = {"question": str(question_response)}
+                    if "question" not in question_response:
+                        logger.warning("Counselor response missing 'question' field, using fallback")
+                        question_response = self._get_fallback_question(phase)
 
             except Exception as e:
-                logger.error(f"Failed to generate question via SocraticCounselor: {e}")
+                logger.error(f"Failed to generate question via SocraticCounselor: {e}", exc_info=True)
                 question_response = self._get_fallback_question(phase)
 
             # 4. Store generated question
