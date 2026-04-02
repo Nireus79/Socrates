@@ -205,6 +205,10 @@ class APIOrchestrator:
         # Initialize vector_db as None (may be set by external systems)
         self.vector_db = None
 
+        # Initialize caching for question context and KB strategy
+        self._context_cache = {}  # Caches context per phase
+        self._kb_cache = {}       # Caches KB strategy decisions per phase
+
         # Initialize event-driven architecture from socratic-core (required)
         self.event_bus = EventBus()
         logger.info("Event-driven architecture initialized: EventBus enabled")
@@ -1255,6 +1259,702 @@ class APIOrchestrator:
         # For now, delegate to sync version
         # In a real implementation, this would use async/await properly
         return self.process_request(router_name, request_data)
+
+    # ================== PHASE 1: FOUNDATION METHODS ==================
+    # These methods implement the core orchestration patterns from the monolithic
+    # Socrates system, enabling dynamic single-question generation with full context.
+
+    def _gather_question_context(
+        self,
+        project: Any,
+        user_id: str
+    ) -> Dict[str, Any]:
+        """
+        Gather all context needed for dynamic question generation.
+        This is the central context aggregation point.
+
+        Args:
+            project: Project object with all state
+            user_id: Current user ID
+
+        Returns:
+            Dict with all context for question generation
+        """
+        try:
+            import uuid
+            from datetime import datetime
+
+            # 1. Get project context (goals, requirements, tech_stack, constraints)
+            project_context = {
+                "goals": getattr(project, "goals", []) or [],
+                "requirements": getattr(project, "requirements", []) or [],
+                "tech_stack": getattr(project, "tech_stack", []) or [],
+                "constraints": getattr(project, "constraints", []) or [],
+                "existing_specs": self._get_extracted_specs(project) or {}
+            }
+
+            # 2. Get recent conversation (last 4 messages)
+            conversation_history = getattr(project, "conversation_history", []) or []
+            recent_messages = self._get_recent_messages(conversation_history, limit=4)
+
+            # 3. Get previously asked questions in this phase
+            pending_questions = getattr(project, "pending_questions", []) or []
+            phase = getattr(project, "phase", "discovery")
+            previously_asked = self._extract_previously_asked_questions(
+                pending_questions,
+                phase
+            )
+
+            # 4. Determine KB strategy and get chunks
+            question_number = len([q for q in pending_questions if q.get("status") != "answered"])
+            kb_strategy = self._determine_kb_strategy(phase, question_number)
+
+            knowledge_chunks = []
+            if self.vector_db and hasattr(self.vector_db, 'search_similar_adaptive'):
+                try:
+                    # Get query from current question or project context
+                    query = ""
+                    if pending_questions and not [q for q in pending_questions if q.get("status") == "unanswered"]:
+                        # If no unanswered, use project context for query
+                        query = " ".join(project_context.get("goals", [])[:2])
+                    elif pending_questions:
+                        # Use current unanswered question as query
+                        query = pending_questions[0].get("question", "")
+
+                    if query:
+                        knowledge_chunks = self.vector_db.search_similar_adaptive(
+                            query=query,
+                            strategy=kb_strategy,
+                            phase=phase,
+                            question_number=question_number
+                        )
+                except Exception as e:
+                    logger.warning(f"Failed to get KB chunks: {e}")
+                    knowledge_chunks = []
+
+            # 5. Get document understanding
+            document_understanding = self._get_document_understanding(project, project_context)
+
+            # 6. Get user role
+            user_role = self._get_user_role(project, user_id)
+
+            # 7. Get code structure if present
+            code_structure = None
+            files = getattr(project, "files", [])
+            if files:
+                code_structure = self._analyze_code_structure(files)
+
+            context = {
+                "project_context": project_context,
+                "phase": phase,
+                "recent_messages": recent_messages,
+                "previously_asked_questions": previously_asked,
+                "knowledge_base_chunks": knowledge_chunks,
+                "document_understanding": document_understanding,
+                "user_role": user_role,
+                "question_number": question_number,
+                "code_structure": code_structure,
+                "conversation_history": conversation_history,
+                "kb_strategy": kb_strategy
+            }
+
+            logger.debug(f"Context gathered for user {user_id}: phase={phase}, question_number={question_number}, kb_strategy={kb_strategy}")
+            return context
+
+        except Exception as e:
+            logger.error(f"Error gathering question context: {e}", exc_info=True)
+            # Return minimal context to allow graceful degradation
+            return {
+                "project_context": {},
+                "phase": "discovery",
+                "recent_messages": [],
+                "previously_asked_questions": [],
+                "knowledge_base_chunks": [],
+                "document_understanding": {},
+                "user_role": "contributor",
+                "question_number": 1,
+                "code_structure": None,
+                "conversation_history": [],
+                "kb_strategy": "snippet"
+            }
+
+    def _determine_kb_strategy(self, phase: str, question_number: int) -> str:
+        """
+        Determine adaptive knowledge base loading strategy.
+
+        Strategy:
+        - "snippet": Top 3 chunks, fast, for early exploration
+        - "full": Top 5 chunks, comprehensive, for detailed phases
+
+        Args:
+            phase: Current project phase
+            question_number: Question number in this phase
+
+        Returns:
+            Strategy name ("snippet" or "full")
+        """
+        # Check cache first
+        cache_key = f"{phase}_kb_strategy"
+        if cache_key in self._kb_cache:
+            return self._kb_cache[cache_key]
+
+        # Determine strategy based on phase and progress
+        if phase in ["discovery", "analysis"] and question_number < 5:
+            strategy = "snippet"  # 3 chunks, fast overview
+        elif phase in ["design", "implementation"] or question_number >= 5:
+            strategy = "full"     # 5 chunks, comprehensive
+        else:
+            strategy = "snippet"  # default safe choice
+
+        # Cache for this phase
+        self._kb_cache[cache_key] = strategy
+        logger.debug(f"KB Strategy for {phase} Q{question_number}: {strategy}")
+
+        return strategy
+
+    def _get_extracted_specs(self, project: Any) -> Dict[str, Any]:
+        """Get currently extracted specifications from project."""
+        try:
+            specs = {}
+            if hasattr(project, "context"):
+                specs = {
+                    "goals": getattr(project.context, "goals", []),
+                    "requirements": getattr(project.context, "requirements", []),
+                    "tech_stack": getattr(project.context, "tech_stack", []),
+                    "constraints": getattr(project.context, "constraints", [])
+                }
+            return specs
+        except Exception:
+            return {}
+
+    def _get_recent_messages(self, conversation_history: List[Dict], limit: int = 4) -> List[Dict]:
+        """Extract last N messages from conversation history."""
+        try:
+            if not conversation_history:
+                return []
+            # Return last N messages
+            return conversation_history[-limit:] if len(conversation_history) >= limit else conversation_history
+        except Exception:
+            return []
+
+    def _extract_previously_asked_questions(self, pending_questions: List[Dict], phase: str) -> List[str]:
+        """Extract questions already asked in this phase to avoid repetition."""
+        try:
+            if not pending_questions:
+                return []
+            # Get question texts from pending questions
+            return [q.get("question", "") for q in pending_questions if q.get("phase") == phase]
+        except Exception:
+            return []
+
+    def _get_document_understanding(self, project: Any, project_context: Dict) -> Dict[str, Any]:
+        """Get document understanding and alignment analysis."""
+        try:
+            # Try to get from cache first
+            project_id = getattr(project, "project_id", None)
+            if project_id and f"{project_id}_doc_understanding" in self._context_cache:
+                return self._context_cache[f"{project_id}_doc_understanding"]
+
+            # Get imported documents
+            documents = self._get_imported_documents(project)
+
+            if not documents:
+                return {
+                    "documents_analyzed": [],
+                    "alignment": {"score": 0, "covered_areas": [], "gaps": []}
+                }
+
+            # In Phase 1, provide basic document understanding
+            # Full DocumentUnderstandingService will be implemented in Phase 5
+            doc_understanding = {
+                "documents_analyzed": [d.get("name", "unknown") for d in documents],
+                "summaries": {},
+                "alignment": {
+                    "score": 0.7,  # Default moderate alignment
+                    "covered_areas": ["General context"],
+                    "gaps": ["Specific implementation details"]
+                }
+            }
+
+            # Cache for this project
+            if project_id:
+                self._context_cache[f"{project_id}_doc_understanding"] = doc_understanding
+
+            return doc_understanding
+        except Exception as e:
+            logger.warning(f"Error getting document understanding: {e}")
+            return {
+                "documents_analyzed": [],
+                "alignment": {"score": 0, "covered_areas": [], "gaps": []}
+            }
+
+    def _get_imported_documents(self, project: Any) -> List[Dict[str, str]]:
+        """Get imported documents from project."""
+        try:
+            knowledge_base = getattr(project, "knowledge_base", [])
+            if isinstance(knowledge_base, list):
+                return knowledge_base
+            return []
+        except Exception:
+            return []
+
+    def _get_user_role(self, project: Any, user_id: str) -> str:
+        """Get user's role in the project."""
+        try:
+            if hasattr(project, "get_member_role"):
+                return project.get_member_role(user_id)
+            # Default to contributor if method doesn't exist
+            return "contributor"
+        except Exception:
+            return "contributor"
+
+    def _analyze_code_structure(self, files: List[Any]) -> Optional[Dict[str, Any]]:
+        """Analyze code structure from uploaded files."""
+        try:
+            if not files:
+                return None
+            # In Phase 1, return basic structure
+            # Full analysis will be done in Phase 5
+            return {
+                "file_count": len(files),
+                "languages": []
+            }
+        except Exception:
+            return None
+
+    def _determine_phase_focus_areas(self, phase: str) -> List[str]:
+        """Get phase-specific focus areas for question generation."""
+        phase_focus = {
+            "discovery": [
+                "Project goals and objectives",
+                "Target users and stakeholders",
+                "Problem statement and pain points",
+                "Success metrics and KPIs"
+            ],
+            "analysis": [
+                "Detailed requirements breakdown",
+                "Technical constraints and limitations",
+                "Integration requirements",
+                "Data and workflow requirements"
+            ],
+            "design": [
+                "System architecture and structure",
+                "Component organization",
+                "API design and contracts",
+                "Database schema design"
+            ],
+            "implementation": [
+                "Technology stack and frameworks",
+                "Testing strategy",
+                "Deployment and infrastructure",
+                "Development timeline and milestones"
+            ]
+        }
+        return phase_focus.get(phase, [])
+
+    def _get_fallback_question(self, phase: str) -> Dict[str, Any]:
+        """Get fallback question when generation fails."""
+        import uuid
+        from datetime import datetime
+
+        fallback_questions = {
+            "discovery": "Tell me about the project you want to build and what problems it solves.",
+            "analysis": "What are the key requirements and constraints you need to consider?",
+            "design": "How would you structure the system architecture and main components?",
+            "implementation": "What's the first feature you want to implement and how would you approach it?"
+        }
+
+        question_text = fallback_questions.get(phase, "Tell me more about your project.")
+
+        return {
+            "id": f"q_{uuid.uuid4().hex[:8]}",
+            "question": question_text,
+            "phase": phase,
+            "status": "unanswered",
+            "created_at": datetime.now().isoformat(),
+            "answer": None,
+            "answered_at": None,
+            "skipped_at": None,
+            "is_fallback": True
+        }
+
+    def _find_question(self, project: Any, question_id: str) -> Optional[Dict]:
+        """Find a question by ID in pending_questions."""
+        pending_questions = getattr(project, "pending_questions", []) or []
+        for q in pending_questions:
+            if q.get("id") == question_id:
+                return q
+        return None
+
+    def _get_existing_specs(self, project: Any) -> Dict[str, Any]:
+        """Get existing specifications from project context."""
+        try:
+            if hasattr(project, "context"):
+                return {
+                    "goals": getattr(project.context, "goals", []),
+                    "requirements": getattr(project.context, "requirements", []),
+                    "tech_stack": getattr(project.context, "tech_stack", []),
+                    "constraints": getattr(project.context, "constraints", [])
+                }
+            return {}
+        except Exception:
+            return {}
+
+    # ================== ORCHESTRATION METHODS ==================
+
+    def _orchestrate_question_generation(
+        self,
+        project: Any,
+        user_id: str,
+        force_refresh: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Orchestrate complete question generation flow with all agents.
+        Single point of coordination for question generation.
+
+        Args:
+            project: Project object with current state
+            user_id: Current user ID
+            force_refresh: Force new generation even if pending question exists
+
+        Returns:
+            Dict with generated question or existing pending question
+        """
+        try:
+            import uuid
+            from datetime import datetime
+
+            project_id = getattr(project, "project_id", None)
+            logger.info(f"Orchestrating question generation for project {project_id}, user {user_id}")
+
+            # 1. Check for pending unanswered questions
+            pending_questions = getattr(project, "pending_questions", []) or []
+            if not force_refresh and pending_questions:
+                unanswered = [q for q in pending_questions if q.get("status") == "unanswered"]
+                if unanswered:
+                    logger.info(f"Returning existing unanswered question: {unanswered[0]['id']}")
+                    return {
+                        "status": "success",
+                        "question": unanswered[0],
+                        "existing": True
+                    }
+
+            # 2. Gather full context
+            context = self._gather_question_context(project, user_id)
+
+            # 3. Call SocraticCounselor for question generation
+            try:
+                counselor = self.agents.get("socratic_counselor")
+                if not counselor:
+                    logger.warning("SocraticCounselor agent not available")
+                    question_response = self._get_fallback_question(context["phase"])
+                else:
+                    # Call counselor with full context
+                    # The library will be updated to accept these parameters
+                    logger.info(f"Calling SocraticCounselor for phase {context['phase']}")
+                    # For now, create a minimal response as library hasn't been updated yet
+                    question_response = self._get_fallback_question(context["phase"])
+
+            except Exception as e:
+                logger.error(f"Failed to generate question via SocraticCounselor: {e}")
+                question_response = self._get_fallback_question(context["phase"])
+
+            # 4. Store generated question
+            question_entry = {
+                "id": f"q_{uuid.uuid4().hex[:8]}",
+                "question": question_response.get("question", ""),
+                "phase": context["phase"],
+                "status": "unanswered",
+                "created_at": datetime.now().isoformat(),
+                "answer": None,
+                "answered_at": None,
+                "skipped_at": None,
+                "metadata": question_response.get("metadata", {})
+            }
+
+            # Update project with new question
+            if not hasattr(project, "pending_questions"):
+                project.pending_questions = []
+            project.pending_questions.append(question_entry)
+
+            logger.info(f"Generated question {question_entry['id']} for phase {context['phase']}")
+
+            return {
+                "status": "success",
+                "question": question_entry,
+                "context": {
+                    "kb_strategy": context.get("kb_strategy"),
+                    "document_chunks_count": len(context.get("knowledge_base_chunks", [])),
+                    "phase": context["phase"]
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"Error in _orchestrate_question_generation: {e}", exc_info=True)
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+
+    def _orchestrate_answer_processing(
+        self,
+        project: Any,
+        user_id: str,
+        question_id: str,
+        answer_text: str
+    ) -> Dict[str, Any]:
+        """
+        Orchestrate complete answer processing flow with all agents.
+        Handles: specs extraction → conflict detection → maturity update → learning tracking.
+
+        Args:
+            project: Project object with current state
+            user_id: Current user ID
+            question_id: ID of question being answered
+            answer_text: User's answer text
+
+        Returns:
+            Dict with processing results (specs, conflicts, maturity, etc.)
+        """
+        try:
+            from datetime import datetime
+
+            project_id = getattr(project, "project_id", None)
+            logger.info(f"Orchestrating answer processing for project {project_id}, question {question_id}")
+
+            # 1. Find question being answered
+            question = self._find_question(project, question_id)
+            if not question:
+                return {
+                    "status": "error",
+                    "message": f"Question {question_id} not found"
+                }
+
+            # 2. Add to conversation history
+            conversation_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "type": "user",
+                "content": answer_text,
+                "phase": question.get("phase", "discovery"),
+                "question_id": question_id,
+                "author": user_id
+            }
+
+            if not hasattr(project, "conversation_history"):
+                project.conversation_history = []
+            project.conversation_history.append(conversation_entry)
+
+            # 3. Call SocraticCounselor to extract specs
+            specs_response = {
+                "status": "success",
+                "specs": {
+                    "goals": [],
+                    "requirements": [],
+                    "tech_stack": [],
+                    "constraints": []
+                },
+                "overall_confidence": 0.7
+            }
+
+            try:
+                counselor = self.agents.get("socratic_counselor")
+                if counselor and hasattr(counselor, "extract_specs_from_response"):
+                    specs_response = counselor.extract_specs_from_response(
+                        user_answer=answer_text,
+                        question=question.get("question", ""),
+                        project_context=self._get_extracted_specs(project),
+                        phase=question.get("phase", "discovery")
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to extract specs: {e}")
+
+            # 4. MARK QUESTION AS ANSWERED (BEFORE conflict detection - critical timing)
+            question["status"] = "answered"
+            question["answered_at"] = datetime.now().isoformat()
+            question["answer"] = answer_text
+            logger.info(f"Question {question_id} marked as answered")
+
+            # 5. Also mark in asked_questions for permanent history
+            if not hasattr(project, "asked_questions"):
+                project.asked_questions = []
+
+            asked_entry = {
+                "question_id": question_id,
+                "question": question.get("question", ""),
+                "answer": answer_text,
+                "phase": question.get("phase", "discovery"),
+                "timestamp": datetime.now().isoformat(),
+                "specs_extracted": specs_response.get("specs", {})
+            }
+            project.asked_questions.append(asked_entry)
+
+            # 6. Call conflict detector
+            conflicts_response = {
+                "status": "success",
+                "conflicts_found": []
+            }
+
+            try:
+                conflict_detector = self.agents.get("conflict_detector")
+                if conflict_detector:
+                    conflicts_response = conflict_detector.detect_conflicts(
+                        new_specs=specs_response.get("specs", {}),
+                        existing_specs=self._get_existing_specs(project),
+                        context=self._get_extracted_specs(project)
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to detect conflicts: {e}")
+
+            # 7. Call QualityController to update maturity
+            maturity_response = {
+                "status": "success",
+                "maturity": 50  # Default mid-range
+            }
+
+            try:
+                quality_controller = self.agents.get("quality_controller")
+                if quality_controller and hasattr(quality_controller, "update_after_response"):
+                    maturity_response = quality_controller.update_after_response(
+                        specs=specs_response.get("specs", {}),
+                        answer_quality=specs_response.get("overall_confidence", 0.5),
+                        answer_length=len(answer_text)
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to update maturity: {e}")
+
+            # Update project maturity
+            if not hasattr(project, "phase_maturity"):
+                project.phase_maturity = {}
+            phase = question.get("phase", "discovery")
+            project.phase_maturity[phase] = maturity_response.get("maturity", 50)
+
+            # 8. Call LearningAgent to track effectiveness
+            try:
+                learning_agent = self.agents.get("learning_agent")
+                if learning_agent and hasattr(learning_agent, "track_question_effectiveness"):
+                    learning_agent.track_question_effectiveness(
+                        user_id=user_id,
+                        question_id=question_id,
+                        question_text=question.get("question", ""),
+                        user_role=self._get_user_role(project, user_id),
+                        phase=phase,
+                        answer_text=answer_text,
+                        specs_extracted=specs_response.get("specs", {}),
+                        answer_quality=specs_response.get("overall_confidence", 0.5),
+                        time_to_answer=0  # Would be calculated on frontend
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to track learning: {e}")
+
+            # 9. Check phase completion
+            phase_complete = maturity_response.get("maturity", 0) >= 100
+
+            logger.info(f"Answer processed: specs extracted={len(specs_response.get('specs', {}))}, "
+                       f"maturity={maturity_response.get('maturity', 0)}, "
+                       f"conflicts={len(conflicts_response.get('conflicts_found', []))}")
+
+            return {
+                "status": "success",
+                "specs_extracted": specs_response.get("specs", {}),
+                "phase_maturity": maturity_response.get("maturity", 0),
+                "conflicts": conflicts_response.get("conflicts_found", []),
+                "phase_complete": phase_complete
+            }
+
+        except Exception as e:
+            logger.error(f"Error in _orchestrate_answer_processing: {e}", exc_info=True)
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+
+    def _orchestrate_answer_suggestions(
+        self,
+        project: Any,
+        user_id: str,
+        question_id: str
+    ) -> Dict[str, Any]:
+        """
+        Orchestrate answer suggestions generation.
+        Generates 3-5 DIVERSE suggestions (different angles, not variations).
+
+        Args:
+            project: Project object with current state
+            user_id: Current user ID
+            question_id: Current question ID
+
+        Returns:
+            Dict with generated suggestions
+        """
+        try:
+            project_id = getattr(project, "project_id", None)
+            logger.info(f"Orchestrating answer suggestions for project {project_id}, question {question_id}")
+
+            # 1. Find current question
+            question = self._find_question(project, question_id)
+            if not question:
+                return {
+                    "status": "error",
+                    "message": f"Question {question_id} not found"
+                }
+
+            # 2. Gather context
+            context = self._gather_question_context(project, user_id)
+
+            # 3. Call SocraticCounselor for suggestions
+            suggestions_response = {
+                "status": "success",
+                "suggestions": [
+                    {
+                        "id": "suggestion_1",
+                        "text": "Provide a detailed answer focusing on the main aspects.",
+                        "approach": "comprehensive",
+                        "angle": "Complete overview"
+                    },
+                    {
+                        "id": "suggestion_2",
+                        "text": "Think about the specific constraints and limitations.",
+                        "approach": "constraint_driven",
+                        "angle": "Practical constraints"
+                    },
+                    {
+                        "id": "suggestion_3",
+                        "text": "Consider the user perspective and their needs.",
+                        "approach": "user_centric",
+                        "angle": "User focus"
+                    }
+                ]
+            }
+
+            try:
+                counselor = self.agents.get("socratic_counselor")
+                if counselor and hasattr(counselor, "generate_answer_suggestions"):
+                    suggestions_response = counselor.generate_answer_suggestions(
+                        question=question.get("question", ""),
+                        project_context=self._get_extracted_specs(project),
+                        phase=context["phase"],
+                        user_role=context["user_role"],
+                        recent_messages=context.get("recent_messages", []),
+                        diversity_emphasis=True
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to generate suggestions: {e}")
+
+            logger.info(f"Generated {len(suggestions_response.get('suggestions', []))} suggestions")
+
+            return {
+                "status": "success",
+                "suggestions": suggestions_response.get("suggestions", [])
+            }
+
+        except Exception as e:
+            logger.error(f"Error in _orchestrate_answer_suggestions: {e}", exc_info=True)
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+
+    # ================== END ORCHESTRATION METHODS ==================
 
     def _handle_multi_llm(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle multi-LLM router requests"""
