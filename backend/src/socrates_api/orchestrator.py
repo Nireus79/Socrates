@@ -1928,7 +1928,18 @@ class APIOrchestrator:
 
             # 3. Call SocraticCounselor for question generation
             try:
-                counselor = self.agents.get("socratic_counselor")
+                # Try to get user-specific LLM client with their API key
+                user_llm_client = self._create_user_llm_client(user_id, provider="claude")
+                if user_llm_client:
+                    logger.debug(f"Using user-specific LLM client for {user_id}")
+                    # Create counselor with user's API key
+                    from socratic_agents import SocraticCounselor as BaseSocraticCounselor
+                    counselor = BaseSocraticCounselor(llm_client=user_llm_client, batch_size=1)
+                else:
+                    # Fall back to default counselor if user hasn't set API key
+                    logger.debug(f"No user API key for {user_id}, using default LLM client")
+                    counselor = self.agents.get("socratic_counselor")
+
                 if not counselor:
                     logger.warning("SocraticCounselor agent not available")
                     question_response = self._get_fallback_question(phase)
