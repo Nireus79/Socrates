@@ -1526,9 +1526,26 @@ class APIOrchestrator:
             from datetime import datetime
 
             # 1. Get project context (goals, requirements, tech_stack, constraints)
+            # If goals/requirements not explicitly set, extract from project description/name
+            goals = getattr(project, "goals", []) or []
+            if not goals or (isinstance(goals, str) and not goals.strip()):
+                # Use project name and description as fallback goals
+                project_name = getattr(project, "name", "")
+                project_desc = getattr(project, "description", "")
+                goals = [project_name] if project_name else []
+                if project_desc and not goals:
+                    goals = [project_desc[:100]]  # First 100 chars as goal
+
+            requirements = getattr(project, "requirements", []) or []
+            if not requirements:
+                # Use project description as fallback requirement
+                project_desc = getattr(project, "description", "")
+                if project_desc:
+                    requirements = [project_desc]
+
             project_context = {
-                "goals": getattr(project, "goals", []) or [],
-                "requirements": getattr(project, "requirements", []) or [],
+                "goals": goals if isinstance(goals, list) else [goals],
+                "requirements": requirements if isinstance(requirements, list) else [requirements],
                 "tech_stack": getattr(project, "tech_stack", []) or [],
                 "constraints": getattr(project, "constraints", []) or [],
                 "existing_specs": self._get_extracted_specs(project) or {}
@@ -1926,7 +1943,17 @@ class APIOrchestrator:
                     project_context = context.get("project_context", {})
                     goals = project_context.get("goals", [])
                     requirements = project_context.get("requirements", [])
-                    topic = " ".join(goals[:2]) if goals else " ".join(requirements[:2]) if requirements else f"{phase.title()} phase"
+                    project_name = getattr(project, "name", "")
+
+                    # Build topic: prefer goals, then requirements, then project name
+                    if goals:
+                        topic_parts = [str(g)[:50] for g in (goals if isinstance(goals, list) else [goals])][:2]
+                        topic = " - ".join(topic_parts) if topic_parts else project_name
+                    elif requirements:
+                        topic_parts = [str(r)[:50] for r in (requirements if isinstance(requirements, list) else [requirements])][:2]
+                        topic = " - ".join(topic_parts) if topic_parts else project_name
+                    else:
+                        topic = project_name if project_name else f"{phase.title()} phase"
 
                     # Build request with all context (KB chunks, document understanding, conversation history)
                     counselor_request = {
