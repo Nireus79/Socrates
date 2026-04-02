@@ -506,16 +506,28 @@ async def get_trends(
 
         # Call learning agent via orchestrator to get trends
         orchestrator = get_orchestrator()
+
+        # CRITICAL FIX #1: Build context for learning agent
+        context = orchestrator._build_agent_context(project)
+
         result = await orchestrator.process_request_async(
             "learning",
             {
                 "action": "get_trends",
                 "project": project,
+                "conversation_history": context["conversation_history"],
+                "conversation_summary": context["conversation_summary"],
                 "time_period": time_period,
             },
         )
 
         trends_response = result.get("data", {})
+
+        # CRITICAL FIX #2: Include debug logs in response
+        trends_response_with_debug = {
+            **trends_response,
+            "debug_logs": context.get("debug_logs", [])
+        }
 
         record_event(
             "trends_retrieved",
@@ -528,9 +540,10 @@ async def get_trends(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Trends retrieved",
-            data=trends_response,
+            data=trends_response_with_debug,
+            debug_logs=context.get("debug_logs"),
         )
 
     except HTTPException:
@@ -628,15 +641,27 @@ async def get_recommendations(
 
         # Call learning agent via orchestrator for recommendations
         orchestrator = get_orchestrator()
+
+        # CRITICAL FIX #1: Build context for learning agent
+        context = orchestrator._build_agent_context(project)
+
         result = await orchestrator.process_request_async(
             "learning",
             {
                 "action": "get_recommendations",
                 "project": project,
+                "conversation_history": context["conversation_history"],
+                "conversation_summary": context["conversation_summary"],
             },
         )
 
         recommendations_response = result.get("data", {})
+
+        # CRITICAL FIX #2: Include debug logs in response
+        recommendations_response_with_debug = {
+            **recommendations_response,
+            "debug_logs": context.get("debug_logs", [])
+        }
 
         record_event(
             "recommendations_retrieved",
@@ -648,9 +673,10 @@ async def get_recommendations(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Recommendations retrieved",
-            data=recommendations_response,
+            data=recommendations_response_with_debug,
+            debug_logs=context.get("debug_logs"),
         )
 
     except HTTPException:

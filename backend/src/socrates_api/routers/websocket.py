@@ -313,9 +313,21 @@ async def _handle_chat_message(
             hint_text = ""
             if request_hint:
                 try:
-                    hint_text = orchestrator.llm_client.generate_suggestions(
-                        f"Current question context: {message.content}", project
+                    # CRITICAL FIX #1: Build context for hint generation
+                    context = orchestrator._build_agent_context(project)
+
+                    # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
+                    hint_result = orchestrator.process_request(
+                        "context_analyzer",
+                        {
+                            "action": "generate_suggestions",
+                            "project": project,
+                            "conversation_history": context["conversation_history"],
+                            "conversation_summary": context["conversation_summary"],
+                            "context_text": message.content,
+                        }
                     )
+                    hint_text = hint_result.get("data", {}).get("suggestions", "Try breaking this down into smaller parts.")
                 except Exception as e:
                     logger.debug("Operation failed")
                     logger.debug("Failed to generate hint:")
@@ -491,9 +503,21 @@ async def _route_command(
         # Map common commands to handlers
         if command in ["hint", "help", "suggest"]:
             # Generate hint
-            hint = orchestrator.llm_client.generate_suggestions(
-                f"{command}: {args}" if args else "Help me with this task", project
+            # CRITICAL FIX #1: Build context for hint generation
+            context = orchestrator._build_agent_context(project)
+
+            # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
+            hint_result = orchestrator.process_request(
+                "context_analyzer",
+                {
+                    "action": "generate_suggestions",
+                    "project": project,
+                    "conversation_history": context["conversation_history"],
+                    "conversation_summary": context["conversation_summary"],
+                    "request": f"{command}: {args}" if args else "Help me with this task",
+                }
             )
+            hint = hint_result.get("data", {}).get("suggestions", "I'm here to help!")
             return {"status": "success", "message": hint}
 
         elif command == "summary":
@@ -909,11 +933,16 @@ async def request_hint(
 
             try:
                 orchestrator = get_orchestrator()
+                # CRITICAL FIX #1: Build context for question generation
+                context = orchestrator._build_agent_context(project)
+
                 question_result = await orchestrator.process_request_async(
                     "socratic_counselor",
                     {
                         "action": "generate_question",
                         "project": project,
+                        "conversation_history": context["conversation_history"],
+                        "conversation_summary": context["conversation_summary"],
                         "current_user": current_user,
                         "is_api_mode": True,
                     },
@@ -932,7 +961,21 @@ async def request_hint(
                 from socrates_api.main import get_orchestrator
 
                 orchestrator = get_orchestrator()
-                hint = orchestrator.llm_client.generate_suggestions(question, project)
+                # CRITICAL FIX #1: Build context for hint generation
+                context = orchestrator._build_agent_context(project)
+
+                # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
+                hint_result = orchestrator.process_request(
+                    "context_analyzer",
+                    {
+                        "action": "generate_suggestions",
+                        "project": project,
+                        "conversation_history": context["conversation_history"],
+                        "conversation_summary": context["conversation_summary"],
+                        "context_text": question,
+                    }
+                )
+                hint = hint_result.get("data", {}).get("suggestions", "Try thinking about the main objectives and requirements.")
             except Exception as e:
                 logger.debug("Error generating hint", exc_info=True)
                 hint = "Try thinking about the main objectives and requirements."
@@ -1078,12 +1121,17 @@ async def get_chat_summary(
 
             orchestrator = get_orchestrator()
 
+            # CRITICAL FIX #1: Build context for summary generation
+            context = orchestrator._build_agent_context(project)
+
             # Use context_analyzer to generate summary
             summary_result = orchestrator.process_request(
                 "context_analyzer",
                 {
                     "action": "generate_summary",
                     "project": project,
+                    "conversation_history": context["conversation_history"],
+                    "conversation_summary": context["conversation_summary"],
                     "limit": len(conversation_history),
                 },
             )
@@ -1102,7 +1150,7 @@ async def get_chat_summary(
 
                 orchestrator = get_orchestrator()
 
-                # Fallback: Use Claude directly to generate summary
+                # Fallback: Use orchestrator to generate summary instead of direct llm_client
                 conversation_text = "\n".join(
                     [
                         f"{msg.get('role', 'unknown').upper()}: {msg.get('content', '')}"
@@ -1110,19 +1158,16 @@ async def get_chat_summary(
                     ]
                 )
 
-                prompt = f"""Summarize this conversation in 2-3 sentences, then list 3-5 key points and insights.
-
-Conversation:
-{conversation_text}
-
-Provide response in JSON format:
-{{
-    "summary": "...",
-    "key_points": ["...", "..."],
-    "insights": ["...", "..."]
-}}"""
-
-                response = orchestrator.llm_client.generate_response(prompt)
+                # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
+                fallback_result = orchestrator.process_request(
+                    "context_analyzer",
+                    {
+                        "action": "summarize_conversation",
+                        "project": project,
+                        "conversation_text": conversation_text,
+                    }
+                )
+                response = fallback_result.get("data", {}).get("response", "{}")
 
                 # Parse response (assume JSON format)
                 import json

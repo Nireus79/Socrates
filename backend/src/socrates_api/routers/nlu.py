@@ -74,30 +74,32 @@ async def _extract_specs_from_input(text: str, context: Optional[dict] = None, u
 
         orchestrator = get_orchestrator()
 
-        # Try to use ContextAnalyzer agent first
-        agent = orchestrator.agents.get("context_analyzer")
-        if agent and orchestrator.llm_client:
-            try:
-                result = agent.process({
+        # CRITICAL FIX #3: Use orchestrator handler instead of direct agent access
+        # Try to use ContextAnalyzer through orchestrator
+        try:
+            result = orchestrator.process_request(
+                "context_analyzer",
+                {
                     "action": "analyze",
                     "content": text
-                })
+                }
+            )
 
-                if result and result.get("status") == "success":
-                    data = result.get("data", {})
-                    specs = {
-                        "goals": data.get("goals", []),
-                        "requirements": data.get("requirements", []),
-                        "tech_stack": data.get("tech_stack", []),
-                        "constraints": data.get("constraints", [])
-                    }
+            if result and result.get("status") == "success":
+                data = result.get("data", {})
+                specs = {
+                    "goals": data.get("goals", []),
+                    "requirements": data.get("requirements", []),
+                    "tech_stack": data.get("tech_stack", []),
+                    "constraints": data.get("constraints", [])
+                }
 
-                    # Only return if at least one spec was extracted
-                    if any(specs.values()):
-                        logger.debug(f"ContextAnalyzer extracted specs: {specs}")
-                        return specs
-            except Exception as e:
-                logger.debug(f"ContextAnalyzer extraction failed: {e}")
+                # Only return if at least one spec was extracted
+                if any(specs.values()):
+                    logger.debug(f"ContextAnalyzer extracted specs: {specs}")
+                    return specs
+        except Exception as e:
+            logger.debug(f"ContextAnalyzer extraction failed: {e}")
 
         # Fallback: Use orchestrator's direct_chat extract_insights action
         if orchestrator.llm_client:
@@ -156,10 +158,23 @@ Extract the following in JSON format:
 
 Respond ONLY with valid JSON."""
 
-        response = orchestrator.llm_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
+        # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
+        entity_result = orchestrator.process_request(
+            "context_analyzer",
+            {
+                "action": "extract_entities",
+                "text": text,
+                "user_id": user_id or "nlu_interpreter",
+            }
+        )
+
+        if entity_result.get("status") == "success":
+            response = entity_result.get("data", {}).get("response", "{}")
+        else:
+            response = "{}"
 
         try:
-            entities = json.loads(response)
+            entities = json.loads(response) if isinstance(response, str) else response
             logger.debug(f"Extracted entities: {entities}")
             return entities
         except json.JSONDecodeError:

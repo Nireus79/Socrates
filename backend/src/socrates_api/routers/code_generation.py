@@ -183,12 +183,17 @@ async def generate_code(
 
             orchestrator = get_orchestrator()
 
+            # CRITICAL FIX #1: Build context for code generation
+            context = orchestrator._build_agent_context(project)
+
             # Use code generator agent via orchestrator routing (not direct call)
             result = await orchestrator.process_request_async(
                 "code_generator",
                 {
                     "action": "generate_artifact",
                     "project": project,
+                    "conversation_history": context["conversation_history"],
+                    "conversation_summary": context["conversation_summary"],
                     "language": language,
                     "requirements": specification,
                     "current_user": current_user,
@@ -1011,16 +1016,27 @@ async def generate_documentation(
 
             logger.info(f"Generating {artifact_type} documentation using Claude AI")
 
-            # Use Claude client to generate comprehensive documentation
-            documentation = orchestrator.llm_client.generate_documentation(
-                project=project,
-                artifact=latest_artifact,
-                artifact_type=artifact_type,
-                user_auth_method=user_auth_method,
-                user_id=current_user,
+            # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
+            doc_result = orchestrator.process_request(
+                "code_generator",
+                {
+                    "action": "generate_documentation",
+                    "project": project,
+                    "artifact": latest_artifact,
+                    "artifact_type": artifact_type,
+                    "user_id": current_user,
+                }
             )
 
-            logger.info(f"Documentation generated successfully ({len(documentation)} characters)")
+            if doc_result.get("status") == "success":
+                documentation = doc_result.get("data", {}).get("documentation", "")
+            else:
+                documentation = ""
+
+            if documentation:
+                logger.info(f"Documentation generated successfully ({len(documentation)} characters)")
+            else:
+                logger.warning("Documentation generation returned empty result, will use fallback")
 
         except Exception as e:
             logger.debug("Error generating documentation with Claude AI", exc_info=True)
