@@ -60,6 +60,7 @@ interface ProjectState {
 
   undo: () => void;
   redo: () => void;
+  removeProjectFromList: (projectId: string) => void;
   clearError: () => void;
 }
 
@@ -183,15 +184,15 @@ export const useProjectStore = create<ProjectState>((set) => ({
     }
   },
 
-  // Delete (archive) project
+  // Delete (permanently remove) project
   deleteProject: async (projectId: string) => {
     set({ isLoading: true, error: null });
     try {
       await projectsAPI.deleteProject(projectId);
+      // CRITICAL FIX #15: Remove project from list instead of just marking archived
+      // Backend permanently deletes the project, so frontend should remove it immediately
       set((state) => ({
-        projects: state.projects.map((p) =>
-          p.project_id === projectId ? { ...p, is_archived: true } : p
-        ),
+        projects: state.projects.filter((p) => p.project_id !== projectId),
         currentProject: state.currentProject?.project_id === projectId ? null : state.currentProject,
         isLoading: false,
       }));
@@ -443,6 +444,15 @@ export const useProjectStore = create<ProjectState>((set) => ({
       }
       return state;
     });
+  },
+
+  // Handle PROJECT_DELETED WebSocket event
+  // CRITICAL FIX #15: Remove deleted project from state when WebSocket event received
+  removeProjectFromList: (projectId: string) => {
+    set((state) => ({
+      projects: state.projects.filter((p) => p.project_id !== projectId),
+      currentProject: state.currentProject?.project_id === projectId ? null : state.currentProject,
+    }));
   },
 
   // Clear error

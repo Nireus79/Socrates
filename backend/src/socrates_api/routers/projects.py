@@ -714,6 +714,42 @@ async def delete_project(
 
         logger.info(f"Project {project_id} permanently deleted by {current_user}")
 
+        # CRITICAL FIX #14: Invalidate query cache for project list
+        # Ensures that subsequent /projects list calls return updated data
+        try:
+            from socrates_api.services.query_cache import get_query_cache
+
+            cache = get_query_cache()
+            cache.invalidate(f"projects:{current_user}")
+            cache.invalidate(f"project_list:{current_user}")
+            logger.debug(f"Invalidated project list caches for user {current_user}")
+        except Exception as e:
+            logger.debug(f"Failed to invalidate project cache (non-critical): {e}")
+
+        # Broadcast project deletion to all connected clients
+        # This ensures frontend caches are invalidated and deleted project disappears immediately
+        try:
+            from socrates_api.websocket.connection_manager import get_connection_manager
+
+            conn_manager = get_connection_manager()
+            await conn_manager.broadcast_to_project(
+                user_id=current_user,
+                project_id=project_id,
+                message={
+                    "type": "event",
+                    "eventType": "PROJECT_DELETED",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "data": {
+                        "project_id": project_id,
+                        "project_name": project_name,
+                        "deleted_by": current_user,
+                    }
+                }
+            )
+            logger.debug(f"Broadcasted PROJECT_DELETED event for {project_id}")
+        except Exception as e:
+            logger.debug(f"Failed to broadcast project deletion (non-critical): {e}")
+
         return APIResponse(
             success=True,
             status="success",

@@ -1410,12 +1410,13 @@ async def restore_account(
 
 def _store_refresh_token(db: LocalDatabase, username: str, token: str) -> None:
     """
-    Store refresh token in database.
+    Store refresh token in database with retry logic.
 
     Securely stores refresh token with:
     1. Token hashing using bcrypt
     2. Expiration time extracted from JWT claims
     3. Storage in refresh_tokens table with proper indexes
+    4. Retry logic with exponential backoff for SQLite lock contention
 
     Args:
         db: Database connection
@@ -1423,7 +1424,7 @@ def _store_refresh_token(db: LocalDatabase, username: str, token: str) -> None:
         token: JWT refresh token string
 
     Raises:
-        Exception: If database operation fails
+        Exception: If database operation fails after retries
     """
     try:
         # Decode token to extract expiration time (without verification, just decode)
@@ -1446,45 +1447,69 @@ def _store_refresh_token(db: LocalDatabase, username: str, token: str) -> None:
         # Generate unique ID for this token record
         token_id = IDGenerator.token()
 
-        # Get database connection from the LocalDatabase object
-        # We need to access the underlying sqlite3 connection
-        conn = sqlite3.connect(db.db_path)
-        cursor = conn.cursor()
+        # CRITICAL FIX #13: Add retry logic with exponential backoff for SQLite lock contention
+        max_retries = 3
+        retry_delay = 0.1  # Start with 100ms
+        last_error = None
 
-        try:
-            # Delete any existing non-revoked tokens for this user to avoid duplication
-            # (typically want one active refresh token per user)
-            cursor.execute(
-                """
-                DELETE FROM refresh_tokens
-                WHERE user_id = ? AND revoked_at IS NULL
-                """,
-                (username,),
-            )
+        for attempt in range(max_retries):
+            try:
+                # Get database connection with 10-second timeout for lock contention
+                conn = sqlite3.connect(db.db_path, timeout=10.0)
+                cursor = conn.cursor()
 
-            # Insert new refresh token
-            cursor.execute(
-                """
-                INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    token_id,
-                    username,
-                    token_hash,
-                    expires_at.isoformat(),
-                    datetime.now(timezone.utc).isoformat(),
-                ),
-            )
+                try:
+                    # Delete any existing non-revoked tokens for this user to avoid duplication
+                    # (typically want one active refresh token per user)
+                    cursor.execute(
+                        """
+                        DELETE FROM refresh_tokens
+                        WHERE user_id = ? AND revoked_at IS NULL
+                        """,
+                        (username,),
+                    )
 
-            conn.commit()
-            logger.debug(
-                f"Refresh token stored for user {username} (expires: {expires_at.isoformat()})"
-            )
+                    # Insert new refresh token
+                    cursor.execute(
+                        """
+                        INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (
+                            token_id,
+                            username,
+                            token_hash,
+                            expires_at.isoformat(),
+                            datetime.now(timezone.utc).isoformat(),
+                        ),
+                    )
 
-        finally:
-            cursor.close()
-            conn.close()
+                    conn.commit()
+                    logger.debug(
+                        f"Refresh token stored for user {username} (expires: {expires_at.isoformat()})"
+                    )
+                    return  # Success - exit function
+
+                finally:
+                    cursor.close()
+                    conn.close()
+
+            except sqlite3.OperationalError as e:
+                if "database is locked" in str(e) and attempt < max_retries - 1:
+                    # Database locked - retry with exponential backoff
+                    last_error = e
+                    logger.debug(
+                        f"Database locked storing refresh token for {username}, "
+                        f"retrying in {retry_delay:.2f}s (attempt {attempt + 1}/{max_retries})"
+                    )
+                    import time
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    raise
+
+        # All retries exhausted
+        raise last_error or Exception("Failed to store refresh token after retries")
 
     except Exception as e:
         logger.error(f"Error storing refresh token for user {username}: {str(e)}")
