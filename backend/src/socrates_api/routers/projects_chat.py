@@ -563,21 +563,31 @@ async def get_chat_messages(
 async def get_question(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    force_refresh: bool = False,
 ):
     """
     Get the next Socratic question for a project.
 
+    PHASE 2: Redesigned endpoint using orchestration methods.
+
+    Flow:
+    1. Load project (validate exists)
+    2. Call orchestrator._orchestrate_question_generation()
+    3. Save project with new pending question
+    4. Return question to frontend
+
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        force_refresh: Force new generation (skip pending)
 
     Returns:
-        SuccessResponse with question
+        APIResponse with single question
     """
     try:
         from socrates_api.main import get_orchestrator
 
-        logger.info(f"Getting question for project {project_id}")
+        logger.info(f"PHASE 2: Getting question for project {project_id}, user {current_user}")
 
         # Load project
         db = get_database()
@@ -585,45 +595,19 @@ async def get_question(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Project must have a description (enforced at creation time)
-        if not project.description:
+        # Validate project has context
+        if not project.description and not getattr(project, "context", None):
             raise HTTPException(
                 status_code=400,
-                detail="Project must have a description/topic. Please edit your project and add one.",
+                detail="Project must have a description or context. Please edit your project.",
             )
 
-        logger.debug(f"Project loaded: id={project.project_id}, name={project.name}, description={project.description[:50] if project.description else 'EMPTY'}...")
+        logger.debug(f"Project loaded: id={project_id}, phase={project.phase}")
 
-        # CRITICAL FIX #17: Check for unanswered questions in the current batch before generating new ones
-        # The counselor returns 3 questions at once; we should use all of them before generating new ones
-        if project.pending_questions:
-            logger.info(f"Found {len(project.pending_questions)} pending questions in current batch")
-            # Look for the first unanswered question
-            for q in project.pending_questions:
-                if q.get("status") == "pending" and not q.get("answer"):
-                    logger.info(f"Returning pending question from batch: {q.get('id')}")
-                    pending_question = q.get("text", "")
-                    if pending_question:
-                        # Update current question context
-                        project.current_question_id = q.get("id")
-                        project.current_question_text = pending_question
-                        db.save_project(project)
-
-                        return APIResponse(
-                            success=True,
-                            status="success",
-                            data={
-                                "question": pending_question,
-                                "question_id": q.get("id"),
-                                "phase": project.phase,
-                                "debug_logs": getattr(project, "debug_logs", []) or [],
-                            },
-                        )
-
-        # Call socratic_counselor to generate question
+        # Initialize orchestrator
         try:
             orchestrator = get_orchestrator()
-            logger.debug("Orchestrator initialized successfully")
+            logger.debug("Orchestrator initialized for Phase 2")
         except Exception as e:
             logger.error(f"Failed to initialize orchestrator: {e}")
             raise HTTPException(
@@ -631,148 +615,56 @@ async def get_question(
                 detail=f"Failed to initialize orchestrator: {str(e)}"
             )
 
-        # Generate question using the orchestrator
-        logger.info(f"Project topic from description: {project.description[:50] if project.description else 'EMPTY'}")
+        # PHASE 2: Call new orchestration method
+        # This handles:
+        # - Checking for pending unanswered questions
+        # - Gathering full context (KB, documents, previous questions, role)
+        # - Generating single dynamic question
+        # - Storing in pending_questions
+        logger.info(f"Calling _orchestrate_question_generation for project {project_id}")
 
-        # Use orchestrator to generate real LLM-based questions
-        result = orchestrator.process_request(
-            "socratic_counselor",
-            {
-                "action": "generate_question",
-                "project": project,
-                "topic": project.description,
-                "current_user": current_user,
-                "user_id": current_user,
-                "force_refresh": False,
-            },
+        result = orchestrator._orchestrate_question_generation(
+            project=project,
+            user_id=current_user,
+            force_refresh=force_refresh
         )
 
-        try:
-            logger.debug(f"Orchestrator result for {project_id}: {result}")
-
-            if result.get("status") != "success":
-                logger.error(f"Orchestrator returned non-success status: {result}")
-                raise HTTPException(
-                    status_code=500, detail=result.get("message", "Failed to generate question")
-                )
-
-            # Extract SINGLE question from result (monolithic design: one question at a time)
-            # The SocraticCounselor may return multiple questions, but we only use the first one
-            # This allows dynamic question generation based on conversation flow
-            question_data = result.get("data", {})
-            question = question_data.get("question", "").strip() if question_data.get("question") else ""
-
-            if not question:
-                # If single question not in "question" field, try "questions" array
-                questions = question_data.get("questions", [])
-                if questions and len(questions) > 0:
-                    # CRITICAL: Only extract FIRST question (not all)
-                    # This matches monolithic version's single-question-per-interaction design
-                    question = questions[0].strip() if isinstance(questions[0], str) else ""
-                    logger.info(f"Extracted first question from batch of {len(questions)}; question: {question[:80]}...")
-        except Exception as gen_error:
-            logger.error(f"Question generation failed: {gen_error}")
-            raise
-
-        # Persist any project state changes (including conversation history)
-        db.save_project(project)
-
-        # CRITICAL: Validate question is non-empty
-        if not question:
-            logger.error(f"Orchestrator returned empty question. Result: {result}, Data: {question_data}, Question: '{question}'")
+        if result.get("status") != "success":
+            logger.error(f"Question generation failed: {result.get('message', 'Unknown error')}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=question_data.get("message", "Failed to generate question"),
+                status_code=500,
+                detail=result.get("message", "Failed to generate question")
             )
 
-        # PHASE 2.2: Track current question context for hints/suggestions
-        question_id = f"q_{uuid.uuid4().hex[:12]}"
+        # Extract question from orchestration result
+        question_data = result.get("question", {})
+        question_text = question_data.get("question", "")
+        question_id = question_data.get("id", "")
+
+        if not question_text or not question_id:
+            logger.error(f"Orchestration returned invalid question: {question_data}")
+            raise HTTPException(
+                status_code=500,
+                detail="Generated question is invalid"
+            )
+
+        logger.info(f"Generated question {question_id}: '{question_text[:80]}...'")
+
+        # Update project current question tracking (for context in suggestions/hints)
         project.current_question_id = question_id
-        project.current_question_text = question
+        project.current_question_text = question_text
 
-        # CRITICAL FIX: Capture question metadata for context-aware specs extraction
-        # This allows the specs extraction to understand what question was asked
-        # and map user responses to the correct specification field
-        def _categorize_question(q_text: str) -> dict:
-            """Categorize a question and determine target spec field"""
-            q_lower = q_text.lower()
-
-            # Map keywords to categories with target fields
-            if any(word in q_lower for word in ["operation", "function", "do", "perform", "compute", "calculate"]):
-                return {"category": "operations", "target_field": "tech_stack"}
-            elif any(word in q_lower for word in ["goal", "purpose", "objective", "want to build", "aim", "target"]):
-                return {"category": "goals", "target_field": "goals"}
-            elif any(word in q_lower for word in ["requirement", "feature", "capability", "need", "should", "must"]):
-                return {"category": "requirements", "target_field": "requirements"}
-            elif any(word in q_lower for word in ["constraint", "limit", "limitation", "restriction", "avoid", "prevent"]):
-                return {"category": "constraints", "target_field": "constraints"}
-            elif any(word in q_lower for word in ["technology", "tool", "framework", "language", "library", "platform", "use", "tech"]):
-                return {"category": "tech_stack", "target_field": "tech_stack"}
-            else:
-                return {"category": "generic", "target_field": "requirements"}
-
-        category_info = _categorize_question(question)
-        question_metadata = {
-            "id": question_id,
-            "text": question,
-            "category": category_info.get("category"),
-            "target_field": category_info.get("target_field"),
-            "expected_format": "comma_separated",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-
-        project.current_question_metadata = question_metadata
-
-        # MONOLITHIC DESIGN FIX: Store SINGLE question at a time (not batches)
-        # This matches the original Socratic workflow where questions are asked dynamically
-        # based on conversation flow, not generated in predetermined batches
-        if project.pending_questions is None:
-            project.pending_questions = []
-
-        # Generate unique ID for this question
-        question_id = f"q_{uuid.uuid4().hex[:12]}"
-
-        # Store ONLY the current question (monolithic design)
-        pending_entry = {
-            "id": question_id,
-            "text": question,
-            "asked_at": datetime.now(timezone.utc).isoformat(),
-            "answer": None,
-            "status": "pending"
-        }
-        project.pending_questions.append(pending_entry)
-        logger.info(f"Added single question to pending queue: {question_id} - '{question[:80]}...'")
-
-        # CRITICAL FIX #12: Track question in asked_questions for history
-        if project.asked_questions is None:
-            project.asked_questions = []
-
-        asked_question_entry = {
-            "id": question_id,
-            "text": question,
-            "category": question_metadata["category"],
-            "asked_at": datetime.now(timezone.utc).isoformat(),
-            "answer": None,
-            "status": "pending"
-        }
-        project.asked_questions.append(asked_question_entry)
-        logger.info(f"Tracked question {question_id} in asked_questions list")
-
+        # Save project with updated pending questions
         db.save_project(project)
-        logger.debug(f"Current question tracked: {question_id}")
-        logger.debug(f"Question category: {question_metadata['category']}, target_field: {question_metadata['target_field']}")
-
-        # CRITICAL FIX: Include debug logs in response for frontend debugging
-        debug_logs = getattr(project, "debug_logs", []) or []
 
         return APIResponse(
             success=True,
             status="success",
             data={
-                "question": question,
+                "question": question_text,
                 "question_id": question_id,
                 "phase": project.phase,
-                "debug_logs": debug_logs,
+                "context": result.get("context", {}),
             },
         )
 
@@ -1035,32 +927,53 @@ Provide a helpful, direct answer."""
                 data=response_data,
             )
         else:
-            # Socratic mode: Use the existing Socratic questioning approach
-            logger.info("Processing message in SOCRATIC mode")
+            # Socratic mode: PHASE 2 - Use new orchestration method
+            logger.info("PHASE 2: Processing message in SOCRATIC mode")
 
+            # Get current question ID from request or project context
+            question_id = getattr(request, "question_id", None) or getattr(project, "current_question_id", None)
 
-            # Call socratic_counselor to process response
-            # Pre-extracted insights caching and async processing happen internally
-            result = orchestrator.process_request(
-                "socratic_counselor",
-                {
-                    "action": "process_response",
-                    "project": project,
-                    "response": request.message,
-                    "current_user": current_user,
-                    "is_api_mode": True,  # Indicate API mode to handle conflicts differently
-                },
+            if not question_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="No active question. Please request a new question first."
+                )
+
+            # PHASE 2: Call new orchestration method for answer processing
+            # This handles:
+            # - Adding to conversation history
+            # - Extracting specifications
+            # - Marking question as answered (BEFORE conflict detection)
+            # - Detecting conflicts (non-blocking)
+            # - Updating phase maturity
+            # - Tracking question effectiveness
+            logger.info(f"Calling _orchestrate_answer_processing for question {question_id}")
+
+            result = orchestrator._orchestrate_answer_processing(
+                project=project,
+                user_id=current_user,
+                question_id=question_id,
+                answer_text=request.message
             )
 
             if result.get("status") != "success":
                 raise HTTPException(
-                    status_code=500, detail=result.get("message", "Failed to process message")
+                    status_code=500,
+                    detail=result.get("message", "Failed to process message")
                 )
 
-            # Persist project changes to database (conversation history, maturity, etc.)
+            # Persist project changes to database
             db.save_project(project)
 
-            # CRITICAL FIX #2: Invalidate relevant caches after conversation update (Socratic mode)
+            # PHASE 2: Orchestration method already handles all of the following:
+            # - Adding to conversation_history
+            # - Extracting specs
+            # - Marking question as answered (in both pending_questions and asked_questions)
+            # - Detecting conflicts
+            # - Updating phase maturity
+            # So we don't need to do these manually anymore
+
+            # Invalidate caches after conversation update
             cache = get_query_cache()
             cache.invalidate(f"metrics:{project_id}")
             cache.invalidate(f"readiness:{project_id}")
@@ -1068,34 +981,11 @@ Provide a helpful, direct answer."""
             cache.invalidate(f"project_detail:{project_id}")
             logger.debug(f"Invalidated caches for project {project_id} after socratic response")
 
-            # CRITICAL FIX #12: Track response in asked_questions for conversation history
-            # This ensures question history is maintained for deduplication and context
-            if project.current_question_id and project.asked_questions:
-                for q in project.asked_questions:
-                    if q.get("id") == project.current_question_id and q.get("status") == "pending":
-                        q["answer"] = request.message
-                        q["answered_at"] = datetime.now(timezone.utc).isoformat()
-                        q["status"] = "answered"
-                        logger.info(f"Updated question {project.current_question_id} with response")
-                        db.save_project(project)
-                        break
-
-            # CRITICAL FIX #17: MUST also update pending_questions with answer status
-            # This ensures get_question returns the NEXT unanswered question from batch, not the same one again
-            if project.current_question_id and project.pending_questions:
-                for q in project.pending_questions:
-                    if q.get("id") == project.current_question_id:
-                        q["answer"] = request.message
-                        q["answered_at"] = datetime.now(timezone.utc).isoformat()
-                        q["status"] = "answered"
-                        logger.info(f"Marked question {project.current_question_id} as answered in pending_questions batch")
-                        db.save_project(project)
-                        break
-
-            # Extract data from orchestrator response
-            result_data = result.get("data", {})
-            extracted_specs = result_data.get("extracted_specs", {})
-            conflicts = result_data.get("conflicts", [])
+            # Extract data from new orchestration method response
+            extracted_specs = result.get("specs_extracted", {})
+            conflicts = result.get("conflicts", [])
+            phase_maturity = result.get("phase_maturity", 0)
+            phase_complete = result.get("phase_complete", False)
             feedback = result_data.get("feedback", "")
 
             # CRITICAL FIX #4: Emit debug logs in real-time when debug mode enabled
@@ -2839,4 +2729,261 @@ async def resolve_conflicts(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Operation failed. Please try again later.",
+        )
+
+
+# ================== PHASE 2: NEW ENDPOINTS ==================
+
+@router.post(
+    "/{project_id}/chat/suggestions",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get answer suggestions for current question",
+)
+async def get_suggestions(
+    project_id: str,
+    request: Dict[str, str],
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get diverse answer suggestions for the current question.
+
+    PHASE 2: Uses new orchestration method to generate suggestions.
+
+    Returns 3-5 DIVERSE suggestions with different approaches:
+    - Different methodologies
+    - Different perspectives
+    - Different scopes
+    - Different strategies
+
+    NOT variations on the same answer - truly different angles.
+
+    Args:
+        project_id: Project ID
+        request: Dict containing question_id
+        current_user: Authenticated user
+
+    Returns:
+        APIResponse with diverse suggestions
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"PHASE 2: Getting suggestions for project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Get orchestrator
+        orchestrator = get_orchestrator()
+
+        # Call orchestration method
+        result = orchestrator._orchestrate_answer_suggestions(
+            project=project,
+            user_id=current_user,
+            question_id=request.get("question_id", "")
+        )
+
+        if result.get("status") != "success":
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("message", "Failed to generate suggestions")
+            )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "suggestions": result.get("suggestions", [])
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting suggestions: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate suggestions",
+        )
+
+
+@router.post(
+    "/{project_id}/chat/skip",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Skip current question",
+)
+async def skip_question(
+    project_id: str,
+    request: Dict[str, str],
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Skip the current unanswered question.
+
+    PHASE 2: Marks question as skipped and moves to next question.
+
+    User can reopen the skipped question later to answer it.
+
+    Args:
+        project_id: Project ID
+        request: Dict containing question_id
+        current_user: Authenticated user
+
+    Returns:
+        APIResponse with next question
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+        from datetime import datetime, timezone
+
+        logger.info(f"PHASE 2: Skipping question in project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        question_id = request.get("question_id", "")
+        if not question_id:
+            raise HTTPException(status_code=400, detail="question_id required")
+
+        # Find and mark question as skipped
+        found = False
+        for q in project.pending_questions or []:
+            if q.get("id") == question_id:
+                q["status"] = "skipped"
+                q["skipped_at"] = datetime.now(timezone.utc).isoformat()
+                found = True
+                logger.info(f"Marked question {question_id} as skipped")
+                break
+
+        if not found:
+            raise HTTPException(status_code=404, detail="Question not found")
+
+        # Save project
+        db.save_project(project)
+
+        # Get next question
+        orchestrator = get_orchestrator()
+        next_result = orchestrator._orchestrate_question_generation(
+            project=project,
+            user_id=current_user,
+            force_refresh=False
+        )
+
+        if next_result.get("status") != "success":
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to get next question"
+            )
+
+        question_data = next_result.get("question", {})
+
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "message": f"Question skipped",
+                "next_question": question_data.get("question", ""),
+                "next_question_id": question_data.get("id", ""),
+                "phase": project.phase,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error skipping question: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to skip question",
+        )
+
+
+@router.post(
+    "/{project_id}/chat/reopen",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reopen previously skipped question",
+)
+async def reopen_question(
+    project_id: str,
+    request: Dict[str, str],
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Reopen a previously skipped question for answering.
+
+    PHASE 2: Reverts question from skipped to unanswered state.
+
+    User can now answer the reopened question.
+
+    Args:
+        project_id: Project ID
+        request: Dict containing question_id
+        current_user: Authenticated user
+
+    Returns:
+        APIResponse with reopened question
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"PHASE 2: Reopening question in project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        question_id = request.get("question_id", "")
+        if not question_id:
+            raise HTTPException(status_code=400, detail="question_id required")
+
+        # Find and reopen question
+        found = False
+        reopened_question = None
+        for q in project.pending_questions or []:
+            if q.get("id") == question_id:
+                if q.get("status") != "skipped":
+                    raise HTTPException(status_code=400, detail="Question is not skipped")
+
+                q["status"] = "unanswered"
+                q["skipped_at"] = None
+                reopened_question = q
+                found = True
+                logger.info(f"Marked question {question_id} as unanswered (reopened)")
+                break
+
+        if not found:
+            raise HTTPException(status_code=404, detail="Question not found")
+
+        # Save project
+        db.save_project(project)
+
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "message": f"Question reopened",
+                "question": reopened_question.get("question", ""),
+                "question_id": reopened_question.get("id", ""),
+                "phase": project.phase,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reopening question: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to reopen question",
         )
