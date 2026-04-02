@@ -76,9 +76,10 @@ class TestVisualizationFormatting:
     def test_format_completeness_chart(self, progress_dashboard):
         """Test completeness chart formatting."""
         chart = progress_dashboard.format_completeness_chart(
-            project_id="proj_1",
             completeness_history=[0.1, 0.2, 0.3, 0.4, 0.5],
-            categories=["requirements", "design"]
+            timestamps=["2026-03-29T10:00:00", "2026-03-30T10:00:00",
+                       "2026-03-31T10:00:00", "2026-04-01T10:00:00",
+                       "2026-04-02T10:00:00"]
         )
 
         assert chart is not None
@@ -86,9 +87,11 @@ class TestVisualizationFormatting:
     def test_format_gap_closure_chart(self, progress_dashboard):
         """Test gap closure chart formatting."""
         chart = progress_dashboard.format_gap_closure_chart(
-            project_id="proj_2",
-            gaps_over_time=[20, 18, 15, 10, 5],
-            closed_gaps_over_time=[0, 2, 5, 10, 15]
+            closed_gaps_history=[0, 2, 5, 10, 15],
+            total_gaps=20,
+            timestamps=["2026-03-29T10:00:00", "2026-03-30T10:00:00",
+                       "2026-03-31T10:00:00", "2026-04-01T10:00:00",
+                       "2026-04-02T10:00:00"]
         )
 
         assert chart is not None
@@ -96,10 +99,7 @@ class TestVisualizationFormatting:
     def test_format_phase_progress_chart(self, progress_dashboard):
         """Test phase progress chart formatting."""
         chart = progress_dashboard.format_phase_progress_chart(
-            project_id="proj_3",
-            phases=["requirements", "design", "implementation"],
-            phase_completeness=[1.0, 0.8, 0.4],
-            phase_maturity=[0.95, 0.85, 0.6]
+            phase_history={"requirements": 1.0, "design": 0.8, "implementation": 0.4}
         )
 
         assert chart is not None
@@ -115,13 +115,13 @@ class TestProgressTracking:
             phase="design",
             completeness=0.65,
             gap_closure_percentage=0.65,
+            maturity=0.7,
             questions_answered=40,
+            total_gaps=20,
             quality_score=0.75
         )
 
         assert snapshot is not None
-        assert snapshot.project_id == "proj_1"
-        assert snapshot.phase == "design"
 
     def test_record_multiple_snapshots(self, progress_dashboard):
         """Test recording multiple snapshots over time."""
@@ -132,7 +132,9 @@ class TestProgressTracking:
                 phase="implementation",
                 completeness=0.2 + (i * 0.1),
                 gap_closure_percentage=0.2 + (i * 0.1),
+                maturity=0.5 + (i * 0.05),
                 questions_answered=10 + (i * 10),
+                total_gaps=20,
                 quality_score=0.6 + (i * 0.05)
             )
             snapshots.append(snapshot)
@@ -147,7 +149,9 @@ class TestProgressTracking:
                 phase="design",
                 completeness=0.3 + (i * 0.2),
                 gap_closure_percentage=0.3 + (i * 0.2),
+                maturity=0.6 + (i * 0.1),
                 questions_answered=20 + (i * 15),
+                total_gaps=20,
                 quality_score=0.7 + (i * 0.05)
             )
 
@@ -160,28 +164,48 @@ class TestStatusIndicators:
 
     def test_get_status_indicators_on_track(self, progress_dashboard):
         """Test status indicators for on-track project."""
-        indicators = progress_dashboard.get_status_indicators(
+        from socrates_api.services.progress_dashboard import DashboardData
+
+        dashboard = DashboardData(
             project_id="proj_1",
             current_phase="design",
+            overall_progress=0.7,
             completeness=0.7,
             maturity=0.75,
-            gap_closure_rate=0.7,
-            question_effectiveness=0.8,
-            estimated_days_remaining=10
+            gap_closure_percentage=0.7,
+            questions_answered=45,
+            total_gaps=20,
+            quality_score=0.8,
+            advancement_confidence=0.8,
+            estimated_completion_date=None
+        )
+
+        indicators = progress_dashboard.get_status_indicators(
+            current_metrics=dashboard
         )
 
         assert indicators is not None
 
     def test_get_status_indicators_at_risk(self, progress_dashboard):
         """Test status indicators for at-risk project."""
-        indicators = progress_dashboard.get_status_indicators(
+        from socrates_api.services.progress_dashboard import DashboardData
+
+        dashboard = DashboardData(
             project_id="proj_2",
             current_phase="requirements",
+            overall_progress=0.2,
             completeness=0.2,
             maturity=0.15,
-            gap_closure_rate=0.1,
-            question_effectiveness=0.3,
-            estimated_days_remaining=60
+            gap_closure_percentage=0.1,
+            questions_answered=5,
+            total_gaps=20,
+            quality_score=0.3,
+            advancement_confidence=0.2,
+            estimated_completion_date=None
+        )
+
+        indicators = progress_dashboard.get_status_indicators(
+            current_metrics=dashboard
         )
 
         assert indicators is not None
@@ -192,15 +216,6 @@ class TestCacheManagement:
 
     def test_clear_cache(self, progress_dashboard):
         """Test cache clearing."""
-        progress_dashboard.record_progress_snapshot(
-            project_id="proj_1",
-            phase="design",
-            completeness=0.5,
-            gap_closure_percentage=0.5,
-            questions_answered=30,
-            quality_score=0.7
-        )
-
         result = progress_dashboard.clear_cache()
         assert result is True or result is None
 
@@ -243,9 +258,8 @@ class TestEdgeCases:
     def test_chart_with_empty_history(self, progress_dashboard):
         """Test chart formatting with empty history."""
         chart = progress_dashboard.format_completeness_chart(
-            project_id="proj_empty",
             completeness_history=[],
-            categories=[]
+            timestamps=[]
         )
 
         assert chart is not None

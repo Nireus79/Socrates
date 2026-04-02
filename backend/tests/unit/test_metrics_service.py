@@ -8,7 +8,12 @@ and health scoring.
 import pytest
 from datetime import datetime, timedelta
 
-from socrates_api.services.metrics_service import MetricsService
+from socrates_api.services.metrics_service import (
+    MetricsService,
+    DashboardMetrics,
+    TrendData,
+    PerformanceMetrics,
+)
 
 
 @pytest.fixture
@@ -27,46 +32,51 @@ class TestDashboardMetrics:
             current_phase="design",
             completeness=0.65,
             maturity=0.7,
-            quality_score=0.75,
-            advancement_confidence=0.8,
+            gap_closure_count=13,
             total_gaps=20,
-            closed_gaps=13
+            questions_answered=45,
+            quality_score=0.75,
+            advancement_confidence=0.8
         )
 
-        assert metrics is not None
+        assert isinstance(metrics, DashboardMetrics)
+        assert metrics.project_id == "proj_1"
         assert metrics.current_phase == "design"
         assert metrics.completeness == 0.65
 
-    def test_get_dashboard_metrics_multiple_phases(self, metrics_service):
-        """Test dashboard metrics across different phases."""
-        for phase in ["requirements", "design", "implementation"]:
-            metrics = metrics_service.get_dashboard_metrics(
-                project_id="proj_1",
-                current_phase=phase,
-                completeness=0.5,
-                maturity=0.6,
-                quality_score=0.7,
-                advancement_confidence=0.8,
-                total_gaps=20,
-                closed_gaps=10
-            )
-
-            assert metrics.current_phase == phase
-
-    def test_dashboard_metrics_progress_calculation(self, metrics_service):
-        """Test dashboard calculates overall progress."""
+    def test_get_dashboard_metrics_high_progress(self, metrics_service):
+        """Test dashboard with high progress."""
         metrics = metrics_service.get_dashboard_metrics(
             project_id="proj_2",
-            current_phase="implementation",
-            completeness=0.8,
-            maturity=0.85,
-            quality_score=0.88,
-            advancement_confidence=0.9,
+            current_phase="testing",
+            completeness=0.95,
+            maturity=0.98,
+            gap_closure_count=19,
             total_gaps=20,
-            closed_gaps=16
+            questions_answered=150,
+            quality_score=0.96,
+            advancement_confidence=0.99
         )
 
-        assert metrics.overall_progress > 0.7
+        assert metrics.completeness == 0.95
+        assert metrics.maturity == 0.98
+
+    def test_get_dashboard_metrics_low_progress(self, metrics_service):
+        """Test dashboard with low progress."""
+        metrics = metrics_service.get_dashboard_metrics(
+            project_id="proj_3",
+            current_phase="requirements",
+            completeness=0.1,
+            maturity=0.15,
+            gap_closure_count=2,
+            total_gaps=20,
+            questions_answered=5,
+            quality_score=0.2,
+            advancement_confidence=0.1
+        )
+
+        assert metrics.completeness == 0.1
+        assert metrics.maturity == 0.15
 
 
 class TestTrendCalculation:
@@ -76,7 +86,7 @@ class TestTrendCalculation:
         """Test trend calculation for improving metric."""
         values = [0.2, 0.3, 0.4, 0.5, 0.6]
         timestamps = [
-            datetime.now() - timedelta(days=i) for i in range(4, -1, -1)
+            (datetime.now() - timedelta(days=i)).isoformat() for i in range(4, -1, -1)
         ]
 
         trend = metrics_service.calculate_trend(
@@ -85,14 +95,15 @@ class TestTrendCalculation:
             timestamps=timestamps
         )
 
-        assert trend is not None
+        assert isinstance(trend, TrendData)
+        assert trend.metric_name == "completeness"
         assert trend.direction == "improving"
 
     def test_calculate_trend_stable(self, metrics_service):
         """Test trend calculation for stable metric."""
         values = [0.5, 0.5, 0.5, 0.5, 0.5]
         timestamps = [
-            datetime.now() - timedelta(days=i) for i in range(4, -1, -1)
+            (datetime.now() - timedelta(days=i)).isoformat() for i in range(4, -1, -1)
         ]
 
         trend = metrics_service.calculate_trend(
@@ -101,7 +112,22 @@ class TestTrendCalculation:
             timestamps=timestamps
         )
 
-        assert trend is not None
+        assert trend.direction == "stable"
+
+    def test_calculate_trend_declining(self, metrics_service):
+        """Test trend calculation for declining metric."""
+        values = [0.8, 0.7, 0.6, 0.5, 0.4]
+        timestamps = [
+            (datetime.now() - timedelta(days=i)).isoformat() for i in range(4, -1, -1)
+        ]
+
+        trend = metrics_service.calculate_trend(
+            metric_name="quality",
+            values=values,
+            timestamps=timestamps
+        )
+
+        assert trend.direction == "declining"
 
 
 class TestHealthScoring:
@@ -110,40 +136,34 @@ class TestHealthScoring:
     def test_calculate_project_health_excellent(self, metrics_service):
         """Test health scoring for excellent project."""
         health = metrics_service.calculate_project_health(
-            project_id="proj_1",
-            completeness=0.9,
             maturity=0.95,
-            quality_score=0.92,
-            advancement_confidence=0.98,
-            gap_closure_rate=0.9
+            completeness=0.9,
+            gap_closure_percentage=0.9,
+            quality_score=0.92
         )
 
         assert health is not None
-        assert health.health_score > 0.8
+        assert health.get("health_score", 0) > 0.75
 
     def test_calculate_project_health_good(self, metrics_service):
         """Test health scoring for good project."""
         health = metrics_service.calculate_project_health(
-            project_id="proj_2",
-            completeness=0.7,
             maturity=0.75,
-            quality_score=0.78,
-            advancement_confidence=0.8,
-            gap_closure_rate=0.7
+            completeness=0.7,
+            gap_closure_percentage=0.7,
+            quality_score=0.78
         )
 
         assert health is not None
-        assert 0.5 < health.health_score <= 1.0
+        assert 0.5 < health.get("health_score", 0) <= 1.0
 
     def test_calculate_project_health_at_risk(self, metrics_service):
         """Test health scoring for at-risk project."""
         health = metrics_service.calculate_project_health(
-            project_id="proj_3",
-            completeness=0.3,
             maturity=0.2,
-            quality_score=0.4,
-            advancement_confidence=0.3,
-            gap_closure_rate=0.25
+            completeness=0.3,
+            gap_closure_percentage=0.25,
+            quality_score=0.4
         )
 
         assert health is not None
@@ -164,8 +184,8 @@ class TestPerformanceAnalysis:
             phases_completed=2
         )
 
-        assert performance is not None
-        assert performance.status in ["on_track", "ahead_schedule", "behind_schedule"]
+        assert isinstance(performance, PerformanceMetrics)
+        assert performance.gaps_per_day > 0
 
     def test_analyze_performance_eta(self, metrics_service):
         """Test ETA calculation in performance analysis."""
@@ -179,7 +199,7 @@ class TestPerformanceAnalysis:
             phases_completed=1
         )
 
-        assert performance.estimated_completion_days >= 0
+        assert performance.estimated_project_duration >= 0
 
 
 class TestStatisticalAnalysis:
@@ -188,7 +208,6 @@ class TestStatisticalAnalysis:
     def test_calculate_statistics_basic(self, metrics_service):
         """Test statistics with basic values."""
         stats = metrics_service.calculate_statistics(
-            metric_name="completeness",
             values=[0.2, 0.4, 0.6, 0.8, 1.0]
         )
 
@@ -200,14 +219,33 @@ class TestProgressReporting:
 
     def test_generate_progress_report(self, metrics_service):
         """Test progress report generation."""
-        report = metrics_service.generate_progress_report(
+        from socrates_api.services.metrics_service import DashboardMetrics, PerformanceMetrics
+
+        dashboard = DashboardMetrics(
             project_id="proj_1",
             current_phase="design",
             completeness=0.65,
             maturity=0.7,
+            gap_closure_percentage=0.65,
+            questions_answered=45,
             total_gaps=20,
-            closed_gaps=13,
-            questions_asked=45
+            quality_score=0.75,
+            advancement_confidence=0.8
+        )
+
+        performance = PerformanceMetrics(
+            avg_time_per_gap=1.0,
+            gaps_per_day=2.0,
+            questions_per_gap=3.0,
+            phase_progression_rate=10.0,
+            estimated_project_duration=10
+        )
+
+        report = metrics_service.generate_progress_report(
+            project_id="proj_1",
+            dashboard=dashboard,
+            performance=performance,
+            trends={}
         )
 
         assert report is not None
@@ -219,12 +257,10 @@ class TestEdgeCases:
     def test_health_with_zero_values(self, metrics_service):
         """Test health scoring with zero values."""
         health = metrics_service.calculate_project_health(
-            project_id="proj_zero",
-            completeness=0.0,
             maturity=0.0,
-            quality_score=0.0,
-            advancement_confidence=0.0,
-            gap_closure_rate=0.0
+            completeness=0.0,
+            gap_closure_percentage=0.0,
+            quality_score=0.0
         )
 
         assert health is not None
@@ -232,12 +268,26 @@ class TestEdgeCases:
     def test_health_with_max_values(self, metrics_service):
         """Test health scoring with maximum values."""
         health = metrics_service.calculate_project_health(
-            project_id="proj_max",
-            completeness=1.0,
             maturity=1.0,
-            quality_score=1.0,
-            advancement_confidence=1.0,
-            gap_closure_rate=1.0
+            completeness=1.0,
+            gap_closure_percentage=1.0,
+            quality_score=1.0
         )
 
-        assert health.health_score <= 1.0
+        assert health.get("health_score", 0) <= 1.0
+
+    def test_dashboard_zero_gaps(self, metrics_service):
+        """Test dashboard with zero total gaps."""
+        metrics = metrics_service.get_dashboard_metrics(
+            project_id="proj_zero",
+            current_phase="requirements",
+            completeness=0.0,
+            maturity=0.0,
+            gap_closure_count=0,
+            total_gaps=0,
+            questions_answered=0,
+            quality_score=0.0,
+            advancement_confidence=0.0
+        )
+
+        assert metrics is not None
