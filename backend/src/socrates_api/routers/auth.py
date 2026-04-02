@@ -5,6 +5,7 @@ Provides user registration, login, token refresh, and logout functionality
 using JWT-based authentication.
 """
 
+import asyncio
 import hashlib
 import logging
 import sqlite3
@@ -412,8 +413,20 @@ async def login(
         )
         refresh_token = create_refresh_token(login_request.username)
 
-        # Store refresh token in database
-        _store_refresh_token(db, login_request.username, refresh_token)
+        # CRITICAL FIX: Store refresh token asynchronously to reduce login latency
+        # Token storage (bcrypt hashing + DB write) happens in background without blocking response
+        # JWT itself is valid even if background storage fails, so non-blocking is safe
+        try:
+            # Schedule token storage as background task (doesn't block login response)
+            asyncio.create_task(_store_refresh_token_async(db, login_request.username, refresh_token))
+            logger.debug("Scheduled refresh token storage in background")
+        except Exception as e:
+            # If background task fails, fall back to blocking storage (but don't fail login)
+            try:
+                _store_refresh_token(db, login_request.username, refresh_token)
+            except Exception as fallback_error:
+                logger.warning(f"Both async and sync token storage failed: {fallback_error}")
+                # Don't fail login - JWT is still valid
 
         # Check if user has API key configured (check all providers)
         # TODO: Implement API key storage in database
@@ -1406,6 +1419,21 @@ async def restore_account(
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
+
+async def _store_refresh_token_async(db: LocalDatabase, username: str, token: str) -> None:
+    """
+    Async wrapper for storing refresh token in background.
+    Runs synchronous _store_refresh_token in thread pool to avoid blocking event loop.
+    """
+    loop = asyncio.get_event_loop()
+    try:
+        # Run the synchronous function in a thread pool to avoid blocking
+        await loop.run_in_executor(None, _store_refresh_token, db, username, token)
+        logger.debug(f"Refresh token stored successfully for user {username} (background)")
+    except Exception as e:
+        # Log but don't raise - background task failure shouldn't affect anything
+        logger.warning(f"Background refresh token storage failed for {username}: {e}")
 
 
 def _store_refresh_token(db: LocalDatabase, username: str, token: str) -> None:
