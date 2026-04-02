@@ -202,6 +202,9 @@ class APIOrchestrator:
         self.profiler = None
         self.cache = None
 
+        # Initialize vector_db as None (may be set by external systems)
+        self.vector_db = None
+
         # Initialize event-driven architecture from socratic-core (required)
         self.event_bus = EventBus()
         logger.info("Event-driven architecture initialized: EventBus enabled")
@@ -2850,77 +2853,91 @@ If a category has no items, use an empty array."""
             return self._detect_conflicts_fallback(new_specs, existing_specs)
 
     def _detect_conflicts_fallback(self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Fallback conflict detection when agent is unavailable"""
+        """Fallback conflict detection when agent is unavailable
+
+        CRITICAL FIX: Only detect conflicts when there are existing specs to conflict with.
+        If no specs have been set yet, new specs are not conflicts - they are initial specs.
+        """
         conflicts = []
 
-        # Check for conflicting goals
-        new_goals = set(str(g).lower() for g in new_specs.get("goals", []) if g)
-        existing_goals = set(str(g).lower() for g in existing_specs.get("goals", []) if g)
+        # Check if there are ANY existing specs at all
+        has_existing_goals = bool(existing_specs.get("goals"))
+        has_existing_requirements = bool(existing_specs.get("requirements"))
+        has_existing_tech = bool(existing_specs.get("tech_stack"))
+        has_existing_constraints = bool(existing_specs.get("constraints"))
 
-        # Detect contradictory goals (simple heuristic)
-        goal_conflicts = new_goals - existing_goals
-        if goal_conflicts:
-            for goal in goal_conflicts:
+        # Check for conflicting goals (only if goals already exist)
+        if has_existing_goals:
+            new_goals = set(str(g).lower() for g in new_specs.get("goals", []) if g)
+            existing_goals = set(str(g).lower() for g in existing_specs.get("goals", []) if g)
+
+            # Detect contradictory goals (simple heuristic)
+            goal_conflicts = new_goals - existing_goals
+            if goal_conflicts:
+                for goal in goal_conflicts:
+                    conflicts.append({
+                        "type": "goal_change",
+                        "old_value": list(existing_goals)[:1] if existing_goals else None,
+                        "new_value": goal,
+                        "severity": "info",
+                        "description": f"New goal detected: {goal}"
+                    })
+
+        # Check for tech stack conflicts (only if tech stack already exists)
+        if has_existing_tech:
+            new_tech = set(str(t).lower() for t in new_specs.get("tech_stack", []) if t)
+            existing_tech = set(str(t).lower() for t in existing_specs.get("tech_stack", []) if t)
+
+            tech_additions = new_tech - existing_tech
+            tech_removals = existing_tech - new_tech
+
+            if tech_additions:
                 conflicts.append({
-                    "type": "goal_change",
-                    "old_value": list(existing_goals)[:1] if existing_goals else None,
-                    "new_value": goal,
-                    "severity": "info",
-                    "description": f"New goal detected: {goal}"
+                    "type": "tech_stack_change",
+                    "field": "tech_stack",
+                    "added": list(tech_additions),
+                    "severity": "warning",
+                    "description": f"New technologies proposed: {', '.join(tech_additions)}"
                 })
 
-        # Check for tech stack conflicts
-        new_tech = set(str(t).lower() for t in new_specs.get("tech_stack", []) if t)
-        existing_tech = set(str(t).lower() for t in existing_specs.get("tech_stack", []) if t)
+            if tech_removals:
+                conflicts.append({
+                    "type": "tech_stack_change",
+                    "field": "tech_stack",
+                    "removed": list(tech_removals),
+                    "severity": "info",
+                    "description": f"Technologies no longer mentioned: {', '.join(tech_removals)}"
+                })
 
-        tech_additions = new_tech - existing_tech
-        tech_removals = existing_tech - new_tech
+        # Check for new requirements (only if requirements already exist)
+        if has_existing_requirements:
+            new_reqs = set(str(r).lower() for r in new_specs.get("requirements", []) if r)
+            existing_reqs = set(str(r).lower() for r in existing_specs.get("requirements", []) if r)
 
-        if tech_additions:
-            conflicts.append({
-                "type": "tech_stack_change",
-                "field": "tech_stack",
-                "added": list(tech_additions),
-                "severity": "warning",
-                "description": f"New technologies proposed: {', '.join(tech_additions)}"
-            })
+            req_additions = new_reqs - existing_reqs
+            if req_additions:
+                conflicts.append({
+                    "type": "requirements_change",
+                    "field": "requirements",
+                    "added": list(req_additions),
+                    "severity": "info",
+                    "description": f"New requirements: {', '.join(req_additions)}"
+                })
 
-        if tech_removals:
-            conflicts.append({
-                "type": "tech_stack_change",
-                "field": "tech_stack",
-                "removed": list(tech_removals),
-                "severity": "info",
-                "description": f"Technologies no longer mentioned: {', '.join(tech_removals)}"
-            })
+        # Check for constraints (only if constraints already exist)
+        if has_existing_constraints:
+            new_constraints = set(str(c).lower() for c in new_specs.get("constraints", []) if c)
+            existing_constraints = set(str(c).lower() for c in existing_specs.get("constraints", []) if c)
 
-        # Check for new requirements
-        new_reqs = set(str(r).lower() for r in new_specs.get("requirements", []) if r)
-        existing_reqs = set(str(r).lower() for r in existing_specs.get("requirements", []) if r)
-
-        req_additions = new_reqs - existing_reqs
-        if req_additions:
-            conflicts.append({
-                "type": "requirements_change",
-                "field": "requirements",
-                "added": list(req_additions),
-                "severity": "info",
-                "description": f"New requirements: {', '.join(req_additions)}"
-            })
-
-        # Check for constraints
-        new_constraints = set(str(c).lower() for c in new_specs.get("constraints", []) if c)
-        existing_constraints = set(str(c).lower() for c in existing_specs.get("constraints", []) if c)
-
-        constraint_additions = new_constraints - existing_constraints
-        if constraint_additions:
-            conflicts.append({
-                "type": "constraints_change",
-                "field": "constraints",
-                "added": list(constraint_additions),
-                "severity": "warning",
-                "description": f"New constraints: {', '.join(constraint_additions)}"
-            })
+            constraint_additions = new_constraints - existing_constraints
+            if constraint_additions:
+                conflicts.append({
+                    "type": "constraints_change",
+                    "field": "constraints",
+                    "added": list(constraint_additions),
+                    "severity": "warning",
+                    "description": f"New constraints: {', '.join(constraint_additions)}"
+                })
 
         return conflicts
 

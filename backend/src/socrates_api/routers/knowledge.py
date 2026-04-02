@@ -127,7 +127,7 @@ async def list_documents(
         for doc in paginated_docs:
             # Get actual chunk count from vector database
             chunk_count = 0
-            if orchestrator and orchestrator.vector_db:
+            if orchestrator and hasattr(orchestrator, 'vector_db') and orchestrator.vector_db:
                 doc_source = doc.get("source") or doc["title"]
                 project_id = doc.get("project_id")
                 chunk_count = orchestrator.vector_db.count_chunks_by_source(doc_source, project_id)
@@ -225,7 +225,7 @@ async def get_all_knowledge_sources(
             documents = db.get_project_knowledge_documents(project_id)
             for doc in documents:
                 chunk_count = 0
-                if orchestrator and orchestrator.vector_db:
+                if orchestrator and hasattr(orchestrator, 'vector_db') and orchestrator.vector_db:
                     doc_source = doc.get("source") or doc["title"]
                     chunk_count = orchestrator.vector_db.count_chunks_by_source(doc_source, project_id)
 
@@ -247,7 +247,7 @@ async def get_all_knowledge_sources(
             if hasattr(project, 'notes') and project.notes:
                 for note in project.notes:
                     chunk_count = 0
-                    if orchestrator and orchestrator.vector_db:
+                    if orchestrator and hasattr(orchestrator, 'vector_db') and orchestrator.vector_db:
                         chunk_count = orchestrator.vector_db.count_chunks_by_source(
                             f"note_{note.note_id}", project_id
                         )
@@ -273,7 +273,7 @@ async def get_all_knowledge_sources(
                 readme_chunks = 0
                 code_chunks = 0
 
-                if orchestrator and orchestrator.vector_db:
+                if orchestrator and hasattr(orchestrator, 'vector_db') and orchestrator.vector_db:
                     # Count README chunks
                     readme_chunks = orchestrator.vector_db.count_chunks_by_source("README.md", project_id)
                     # Count code file chunks (they all have source_type: github_code)
