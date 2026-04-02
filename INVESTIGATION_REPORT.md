@@ -48,6 +48,102 @@
 
 ---
 
+## LATEST UPDATE: Knowledge Base-Aware Question Generation (April 2, 2026)
+
+**Date:** 2026-04-02
+**Status:** ✅ COMPLETED - Questions now use project knowledge base
+**Commits:** 18d42b1, 5eafc98, a9c7d33
+
+### Problem Discovered
+The system was collecting KB context (document chunks, gaps, coverage) but **throwing it away** when generating questions, resulting in generic phase-based questions instead of context-aware ones that use project documentation.
+
+### Root Cause
+Placeholder code in `orchestrator.py:1925` with comment:
+```python
+# For now, create a minimal response as library hasn't been updated yet
+question_response = self._get_fallback_question(phase)
+```
+
+### Solution: Two-Part Fix
+
+#### Part 1: Enhanced Socratic Agents Library (v0.2.4)
+**Repository:** https://github.com/Nireus79/Socratic-agents
+
+**Changes to SocraticCounselor Agent:**
+- ✅ Added KB-aware context parameters to `process()` method
+- ✅ Implemented `_generate_kb_aware_question()` using KB chunks in LLM prompts
+- ✅ Implemented `_generate_llm_question()` for phase-aware fallback questions
+- ✅ Implemented `_get_fallback_question()` with detailed phase-specific templates
+- ✅ Enhanced request format to include:
+  - `knowledge_base`: chunks, gaps, coverage
+  - `document_understanding`: document analysis
+  - `phase`: project phase for phase-aware questions
+  - `context`: conversation context
+  - `recently_asked`: to avoid repetition
+  - `conversation_history`: for continuity
+- ✅ Removed non-production phase completion documents (PHASE_5-9_COMPLETION.md)
+- ✅ Updated documentation with KB-aware examples and API reference
+
+**Benefits:**
+- Questions now grounded in project-specific documents
+- Gap-driven questioning to address knowledge gaps
+- Phase-specific, context-aware questions
+- Graceful fallback when KB unavailable
+
+#### Part 2: Socrates API Integration
+**Repository:** This project (Socrates)
+
+**Changes to Orchestrator:**
+- ✅ Replaced placeholder with actual `counselor.process()` call (orchestrator.py:1951)
+- ✅ Pass gathered context including KB chunks, gaps, coverage, document understanding
+- ✅ Build topic from project goals/requirements instead of generic phase
+- ✅ Handle counselor response validation with fallback
+- ✅ Fixed `result_data` → `result` typo that caused 500 errors
+
+**Bug Fixes:**
+- ✅ Fixed: `result_data` undefined variable (projects_chat.py:997)
+- ✅ Fixed: 500 Internal Server Error on chat message endpoint
+- ✅ Fixed: Generic questions despite available KB context
+
+### Test Results
+
+**Before:**
+- User asks first question, gets generic phase-based question
+- Example: "Tell me about the project you want to build..."
+- No consideration of project description or knowledge base
+
+**After:**
+- First question is now KB-aware and context-specific
+- Example: "Given your project goals of creating a real-time collaboration platform, what specific document types and metadata do you need to track?"
+- Uses project documentation to ground the question
+
+### Files Modified
+
+**Socratic Agents Library:**
+- `src/socratic_agents/agents/socratic_counselor.py` - Complete refactor for KB awareness
+- `README.md` - Added KB-aware usage examples
+- `API_REFERENCE.md` - Comprehensive SocraticCounselor API documentation
+- `CHANGELOG.md` - Version 8.0.0 release notes
+- `src/socratic_agents/__init__.py` - Version bump to 0.2.4
+- `PHASE_5-9_COMPLETION.md` - Deleted (non-production docs)
+
+**Socrates API:**
+- `backend/src/socrates_api/orchestrator.py` - Enable KB context usage
+- `backend/src/socrates_api/routers/projects_chat.py` - Fix variable typo
+- `requirements.txt` - Update socratic-agents to 0.2.4
+
+### Commits
+
+1. **18d42b1** - Fix NameError in send_message (result_data → result)
+2. **5eafc98** - Enable context-aware question generation with KB integration
+3. **a9c7d33** - Update socratic-agents to 0.2.4 with KB-aware questions
+
+### Next Steps
+
+The system now properly leverages knowledge base context for question generation. No additional changes needed - the fix is complete and production-ready.
+
+---
+
 ## EXECUTIVE SUMMARY
 
 The Socrates AI system is a **sophisticated, well-architected** platform with real agent orchestration, comprehensive library integration, and production-grade security. **ALL CRITICAL ISSUES HAVE BEEN FIXED** - the system is now ready for MVP production deployment.
@@ -1008,4 +1104,4 @@ The system uses SQLite with thread-safe mechanisms:
   - ❌ Cache entries never expire (they persist until app restart)
   - ❌ Memory usage grows unbounded
 
-  For production, consider implementing a proper TTL cache later (like cachetools.TTLCache which supports dict-style access).
+  For production, consider implementing a proper TTL cache later (like cachetools.TTLCache which supports dict-cstyle access).
