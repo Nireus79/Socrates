@@ -305,7 +305,13 @@ class APIOrchestrator:
 
             # Get user's preferred model for this provider
             user_model = db.get_provider_model(user_id, provider)
-            model = user_model or provider_meta.models[0]
+
+            # Use user's model if available and valid, otherwise fall back to haiku
+            if user_model:
+                model = user_model
+            else:
+                # Default to haiku if no user preference
+                model = "claude-3-5-haiku-20241022"
 
             # Create LLM client with production-grade features from socrates-nexus
             from socrates_nexus import LLMConfig

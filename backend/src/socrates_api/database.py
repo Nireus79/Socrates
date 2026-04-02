@@ -1755,14 +1755,14 @@ class LocalDatabase:
 
             # Fallback to sensible defaults
             defaults = {
-                "anthropic": "claude-3-sonnet",
+                "anthropic": "claude-3-5-haiku-20241022",
                 "openai": "gpt-4",
                 "google": "gemini-pro"
             }
-            return defaults.get(provider, "claude-3-sonnet")
+            return defaults.get(provider, "claude-3-5-haiku-20241022")
         except Exception as e:
             logger.error(f"Failed to get provider model: {e}")
-            return "claude-3-sonnet"
+            return "claude-3-5-haiku-20241022"
 
     def delete_project(self, project_id: str) -> bool:
         """
