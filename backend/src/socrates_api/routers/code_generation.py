@@ -1016,6 +1016,9 @@ async def generate_documentation(
 
             logger.info(f"Generating {artifact_type} documentation using Claude AI")
 
+            # CRITICAL FIX #1: Build context for code generator
+            context = orchestrator._build_agent_context(project)
+
             # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
             doc_result = orchestrator.process_request(
                 "code_generator",
@@ -1025,6 +1028,7 @@ async def generate_documentation(
                     "artifact": latest_artifact,
                     "artifact_type": artifact_type,
                     "user_id": current_user,
+                    "context": context,
                 }
             )
 

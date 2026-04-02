@@ -569,6 +569,13 @@ async def import_file(
         logger.debug(f"Saved temp file: {temp_file}")
 
         try:
+            # CRITICAL FIX #1: Build context for document agent
+            context = {}
+            if project_id:
+                project = db.load_project(project_id)
+                if project:
+                    context = orchestrator._build_agent_context(project)
+
             # Process via DocumentProcessorAgent
             result = orchestrator.process_request(
                 "document_agent",
@@ -577,6 +584,7 @@ async def import_file(
                     "file_path": str(temp_file),
                     "original_filename": file.filename,
                     "project_id": project_id,
+                    "context": context,
                 },
             )
 
@@ -736,6 +744,13 @@ async def import_url(
         # Create document ID first (for source consistency)
         doc_id = IDGenerator.document()
 
+        # CRITICAL FIX #1: Build context for document agent
+        context = {}
+        if project_id:
+            project = db.load_project(project_id)
+            if project:
+                context = orchestrator._build_agent_context(project)
+
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(
             "document_agent",
@@ -744,6 +759,7 @@ async def import_url(
                 "url": url,
                 "project_id": project_id,
                 "document_id": doc_id,  # Pass doc_id for source name consistency
+                "context": context,
             },
         )
 
@@ -875,6 +891,13 @@ async def import_text(
                     detail=error_msg,
                 )
 
+        # CRITICAL FIX #1: Build context for document agent
+        context = {}
+        if project_id:
+            project = db.load_project(project_id)
+            if project:
+                context = orchestrator._build_agent_context(project)
+
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(
             "document_agent",
@@ -884,6 +907,7 @@ async def import_text(
                 "title": title or "Untitled",
                 "project_id": project_id,
                 "document_id": doc_id,  # Pass doc_id for source name consistency
+                "context": context,
             },
         )
 
@@ -1242,6 +1266,14 @@ async def bulk_import_documents(
                 try:
                     # Process file
                     doc_id = IDGenerator.document()
+
+                    # CRITICAL FIX #1: Build context for document agent
+                    context = {}
+                    if project_id:
+                        project = db.load_project(project_id)
+                        if project:
+                            context = orchestrator._build_agent_context(project)
+
                     result = orchestrator.process_request(
                         "document_agent",
                         {
@@ -1250,6 +1282,7 @@ async def bulk_import_documents(
                             "file_name": file.filename,
                             "user_id": current_user,
                             "project_id": project_id,
+                            "context": context,
                         },
                     )
 
@@ -1437,6 +1470,13 @@ async def add_knowledge_entry(
             from socrates_api.auth.project_access import check_project_access as rbac_check
             await rbac_check(project_id, current_user, db, min_role="editor")
 
+        # CRITICAL FIX #1: Build context for document agent
+        context = {}
+        if project_id:
+            project = db.load_project(project_id)
+            if project:
+                context = orchestrator._build_agent_context(project)
+
         # Process as text import with category metadata
         result = orchestrator.process_request(
             "document_agent",
@@ -1445,6 +1485,7 @@ async def add_knowledge_entry(
                 "content": content,
                 "title": f"{category} entry",
                 "project_id": project_id,
+                "context": context,
             },
         )
 
