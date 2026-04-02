@@ -889,13 +889,13 @@ async def import_text(
 
         logger.debug(f"DocumentProcessor result: {result}")
 
-        # Save metadata
+        # Save metadata (store FULL content, not truncated)
         db.save_knowledge_document(
             user_id=current_user,
             project_id=project_id,
             doc_id=doc_id,
             title=title or "Untitled",
-            content=content[:1000],
+            content=content,
             source=doc_id,  # Use same doc_id as source for vector DB matching
             document_type="text",
         )
@@ -1450,14 +1450,14 @@ async def add_knowledge_entry(
 
         logger.debug(f"DocumentProcessor result: {result}")
 
-        # Save metadata
+        # Save metadata (store FULL content, not truncated)
         entry_id = str(uuid.uuid4())
         db.save_knowledge_document(
             user_id=current_user,
             project_id=project_id,
             doc_id=entry_id,
             title=f"{category} entry",
-            content=content[:1000],
+            content=content,
             source="manual_entry",
             document_type=category,
         )
