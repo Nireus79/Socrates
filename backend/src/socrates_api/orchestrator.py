@@ -209,6 +209,19 @@ class APIOrchestrator:
         self._context_cache = {}  # Caches context per phase
         self._kb_cache = {}       # Caches KB strategy decisions per phase
 
+        # Initialize knowledge services for Phase 5
+        self.knowledge_service = None
+        self.vector_db_service = None
+        self.document_understanding_service = None
+        self._initialize_knowledge_services()
+
+        # Initialize Phase 6 advancement tracking and metrics services
+        self.advancement_tracker = None
+        self.metrics_service = None
+        self.learning_service = None
+        self.progress_dashboard = None
+        self._initialize_advancement_services()
+
         # Initialize event-driven architecture from socratic-core (required)
         self.event_bus = EventBus()
         logger.info("Event-driven architecture initialized: EventBus enabled")
@@ -354,7 +367,7 @@ class APIOrchestrator:
             "code_validator": CodeValidator(llm_client=self.llm_client),
 
             # Project and learning coordination
-            "socratic_counselor": SocraticCounselor(llm_client=self.llm_client),
+            "socratic_counselor": SocraticCounselor(llm_client=self.llm_client, batch_size=1),
             "project_manager": ProjectManager(llm_client=self.llm_client),
 
             # Quality and skill management
@@ -679,6 +692,172 @@ class APIOrchestrator:
         except Exception as e:
             logger.error(f"Failed to get all phases maturity: {e}", exc_info=True)
             raise
+
+    def validate_phase_advancement(
+        self,
+        project: Any,
+        target_phase: Optional[str] = None,
+        force: bool = False
+    ) -> Dict[str, Any]:
+        """
+        PHASE 4: Validate if a project can advance to the target phase.
+
+        Checks if phase advancement requirements are met, including maturity thresholds.
+        Allows force advancement if authorized by user.
+
+        Args:
+            project: ProjectContext object
+            target_phase: Desired next phase (None = auto-advance to next phase)
+            force: If True, bypass maturity requirements (owner override)
+
+        Returns:
+            Dictionary with validation results:
+            {
+                "can_advance": bool,
+                "reason": str,
+                "current_phase": str,
+                "target_phase": str,
+                "maturity": int (current phase %),
+                "maturity_threshold": int,
+                "missing_requirements": list,
+                "focus_areas": list,
+                "force_used": bool (if forced)
+            }
+        """
+        try:
+            current_phase = getattr(project, "phase", "discovery")
+            valid_phases = ["discovery", "analysis", "design", "implementation"]
+
+            # Validate current phase
+            if current_phase not in valid_phases:
+                return {
+                    "can_advance": False,
+                    "reason": f"Invalid current phase: {current_phase}",
+                    "current_phase": current_phase,
+                    "target_phase": target_phase,
+                    "maturity": 0,
+                    "maturity_threshold": 100,
+                    "missing_requirements": ["Valid phase required"],
+                    "focus_areas": [],
+                }
+
+            # Determine target phase
+            if target_phase:
+                # Validate target phase
+                if target_phase not in valid_phases:
+                    return {
+                        "can_advance": False,
+                        "reason": f"Invalid target phase: {target_phase}",
+                        "current_phase": current_phase,
+                        "target_phase": target_phase,
+                        "maturity": 0,
+                        "maturity_threshold": 100,
+                        "missing_requirements": [f"Invalid phase {target_phase}"],
+                        "focus_areas": [],
+                    }
+
+                # Ensure target is after current (no skipping phases in strict mode)
+                current_idx = valid_phases.index(current_phase)
+                target_idx = valid_phases.index(target_phase)
+
+                if target_idx <= current_idx and not force:
+                    return {
+                        "can_advance": False,
+                        "reason": f"Cannot advance backwards from {current_phase} to {target_phase}",
+                        "current_phase": current_phase,
+                        "target_phase": target_phase,
+                        "maturity": 0,
+                        "maturity_threshold": 100,
+                        "missing_requirements": ["Target phase must be after current phase"],
+                        "focus_areas": [],
+                    }
+            else:
+                # Auto-advance to next phase
+                current_idx = valid_phases.index(current_phase)
+                target_phase = valid_phases[current_idx + 1] if current_idx < len(valid_phases) - 1 else current_phase
+
+            # If forcing advancement, skip maturity checks
+            if force:
+                logger.warning(
+                    f"Force advancement from {current_phase} to {target_phase} "
+                    f"for project {getattr(project, 'project_id', 'unknown')}"
+                )
+                return {
+                    "can_advance": True,
+                    "reason": "Advancement forced by authorized user",
+                    "current_phase": current_phase,
+                    "target_phase": target_phase,
+                    "maturity": 0,
+                    "maturity_threshold": 100,
+                    "missing_requirements": [],
+                    "focus_areas": [],
+                    "force_used": True,
+                }
+
+            # PHASE 4: Check maturity threshold (100% required for normal advancement)
+            try:
+                maturity_data = self.calculate_phase_maturity(project)
+                # Extract maturity percentage - structure is {"maturity": {"percentage": float, ...}}
+                maturity_pct = maturity_data.get("maturity", {}).get("percentage", 0)
+            except Exception as e:
+                logger.warning(f"Failed to calculate maturity for advancement validation: {e}")
+                maturity_pct = 0
+
+            # Determine if advancement is allowed
+            maturity_threshold = 100  # 100% required for phase advancement
+            can_advance = maturity_pct >= maturity_threshold
+
+            logger.info(
+                f"Phase advancement validation for {getattr(project, 'project_id', 'unknown')}: "
+                f"{current_phase}->{target_phase}, maturity={maturity_pct}%, "
+                f"can_advance={can_advance}"
+            )
+
+            if can_advance:
+                return {
+                    "can_advance": True,
+                    "reason": f"Phase {current_phase} is fully specified ({maturity_pct}% maturity)",
+                    "current_phase": current_phase,
+                    "target_phase": target_phase,
+                    "maturity": int(maturity_pct),
+                    "maturity_threshold": maturity_threshold,
+                    "missing_requirements": [],
+                    "focus_areas": [],
+                }
+            else:
+                # Calculate what's missing
+                missing_pct = maturity_threshold - maturity_pct
+                missing_estimate = max(1, int(missing_pct / 5))  # Rough estimate
+
+                return {
+                    "can_advance": False,
+                    "reason": (
+                        f"Phase {current_phase} is {int(maturity_pct)}% complete. "
+                        f"Need {int(missing_pct)}% more to reach 100% and advance to {target_phase}."
+                    ),
+                    "current_phase": current_phase,
+                    "target_phase": target_phase,
+                    "maturity": int(maturity_pct),
+                    "maturity_threshold": maturity_threshold,
+                    "missing_requirements": [
+                        f"Complete {missing_estimate} more questions to reach 100%",
+                        "Define all required specifications",
+                    ],
+                    "focus_areas": maturity_data.get("maturity", {}).get("warnings", []) or [],
+                }
+
+        except Exception as e:
+            logger.error(f"Phase advancement validation failed: {e}", exc_info=True)
+            return {
+                "can_advance": False,
+                "reason": "Advancement validation failed. Please try again.",
+                "current_phase": getattr(project, "phase", "unknown"),
+                "target_phase": target_phase,
+                "maturity": 0,
+                "maturity_threshold": 100,
+                "missing_requirements": ["System error during validation"],
+                "focus_areas": [],
+            }
 
     def guide_learning(self, topic: str, level: str = "beginner") -> Dict[str, Any]:
         """Guide learning using SocraticCounselor agent"""
@@ -1087,6 +1266,68 @@ class APIOrchestrator:
             self.event_bus.emit(event_type, event_data)
         except Exception as e:
             logger.error(f"Failed to emit event {event_type}: {e}", exc_info=True)
+
+    def _initialize_knowledge_services(self) -> None:
+        """Initialize Phase 5 knowledge base services (KB-aware question generation)"""
+        try:
+            from socrates_api.services.knowledge_service import (
+                KnowledgeService,
+                VectorDBService,
+                DocumentUnderstandingService
+            )
+
+            # Initialize knowledge services
+            self.knowledge_service = KnowledgeService(
+                vector_db=self.vector_db,
+                document_repo=None  # Will be set when available
+            )
+
+            self.vector_db_service = VectorDBService(vector_db=self.vector_db)
+            self.document_understanding_service = DocumentUnderstandingService()
+
+            logger.info("Phase 5 Knowledge Services initialized: "
+                       "KnowledgeService, VectorDBService, DocumentUnderstandingService")
+
+        except ImportError as e:
+            logger.warning(f"Knowledge services not available: {e}")
+            self.knowledge_service = None
+            self.vector_db_service = None
+            self.document_understanding_service = None
+        except Exception as e:
+            logger.error(f"Failed to initialize knowledge services: {e}", exc_info=True)
+            self.knowledge_service = None
+            self.vector_db_service = None
+            self.document_understanding_service = None
+
+    def _initialize_advancement_services(self) -> None:
+        """Initialize Phase 6 advancement tracking and metrics services"""
+        try:
+            from socrates_api.services.advancement_tracker import AdvancementTracker
+            from socrates_api.services.metrics_service import MetricsService
+            from socrates_api.services.learning_service import LearningService
+            from socrates_api.services.progress_dashboard import ProgressDashboard
+
+            # Initialize Phase 6 services
+            self.advancement_tracker = AdvancementTracker()
+            self.metrics_service = MetricsService()
+            self.learning_service = LearningService()
+            self.progress_dashboard = ProgressDashboard()
+
+            logger.info("Phase 6 Advancement Services initialized: "
+                       "AdvancementTracker, MetricsService, LearningService, ProgressDashboard")
+
+        except ImportError as e:
+            logger.warning(f"Advancement services not available: {e}")
+            self.advancement_tracker = None
+            self.metrics_service = None
+            self.learning_service = None
+            self.progress_dashboard = None
+        except Exception as e:
+            logger.error(f"Failed to initialize advancement services: {e}", exc_info=True)
+            self.advancement_tracker = None
+            self.metrics_service = None
+            self.learning_service = None
+            self.progress_dashboard = None
 
     def _initialize_performance_monitoring(self) -> None:
         """Initialize performance monitoring tools"""
@@ -1610,7 +1851,13 @@ class APIOrchestrator:
     ) -> Dict[str, Any]:
         """
         Orchestrate complete question generation flow with all agents.
-        Single point of coordination for question generation.
+        PHASE 5: Enhanced with KB-aware capabilities.
+
+        Single point of coordination for question generation with:
+        - Knowledge gap identification
+        - Gap-driven question prioritization
+        - KB coverage tracking
+        - Document-informed context
 
         Args:
             project: Project object with current state
@@ -1642,34 +1889,58 @@ class APIOrchestrator:
             # 2. Gather full context
             context = self._gather_question_context(project, user_id)
 
+            # PHASE 5: Identify KB gaps and optimize chunks
+            phase = context.get("phase", "discovery")
+            question_number = context.get("question_number", 1)
+
+            # 2a. PHASE 5: Identify specification gaps from KB documents
+            kb_gaps = self._identify_knowledge_gaps(project)
+            context["kb_gaps"] = kb_gaps
+            context["gaps_count"] = len(kb_gaps)
+
+            # 2b. PHASE 5: Get KB chunks optimized for gap closure
+            if kb_gaps:
+                optimal_chunks = self._get_optimal_kb_chunks(project, phase, question_number, kb_gaps)
+                context["optimal_kb_chunks"] = optimal_chunks
+                logger.debug(f"Added {len(optimal_chunks)} optimal KB chunks addressing gaps")
+
+            # 2c. PHASE 5: Calculate KB coverage
+            kb_coverage = self._calculate_kb_coverage(project)
+            context["kb_coverage"] = kb_coverage
+            logger.debug(f"KB coverage: {kb_coverage.get('coverage_percentage', 0)}%")
+
             # 3. Call SocraticCounselor for question generation
             try:
                 counselor = self.agents.get("socratic_counselor")
                 if not counselor:
                     logger.warning("SocraticCounselor agent not available")
-                    question_response = self._get_fallback_question(context["phase"])
+                    question_response = self._get_fallback_question(phase)
                 else:
-                    # Call counselor with full context
-                    # The library will be updated to accept these parameters
-                    logger.info(f"Calling SocraticCounselor for phase {context['phase']}")
+                    # Call counselor with full KB-aware context
+                    logger.info(
+                        f"Calling SocraticCounselor for phase {phase} "
+                        f"(KB gaps: {len(kb_gaps)}, KB coverage: {kb_coverage.get('coverage_percentage', 0)}%)"
+                    )
                     # For now, create a minimal response as library hasn't been updated yet
-                    question_response = self._get_fallback_question(context["phase"])
+                    question_response = self._get_fallback_question(phase)
 
             except Exception as e:
                 logger.error(f"Failed to generate question via SocraticCounselor: {e}")
-                question_response = self._get_fallback_question(context["phase"])
+                question_response = self._get_fallback_question(phase)
 
             # 4. Store generated question
             question_entry = {
                 "id": f"q_{uuid.uuid4().hex[:8]}",
                 "question": question_response.get("question", ""),
-                "phase": context["phase"],
+                "phase": phase,
                 "status": "unanswered",
                 "created_at": datetime.now().isoformat(),
                 "answer": None,
                 "answered_at": None,
                 "skipped_at": None,
-                "metadata": question_response.get("metadata", {})
+                "metadata": question_response.get("metadata", {}),
+                # PHASE 5: Track KB gaps addressed by this question
+                "kb_gaps_addressed": self._extract_gaps_from_question(question_entry) if "question" in question_response else []
             }
 
             # Update project with new question
@@ -1677,7 +1948,10 @@ class APIOrchestrator:
                 project.pending_questions = []
             project.pending_questions.append(question_entry)
 
-            logger.info(f"Generated question {question_entry['id']} for phase {context['phase']}")
+            logger.info(
+                f"Generated question {question_entry['id']} for phase {phase} "
+                f"(addresses {len(question_entry.get('kb_gaps_addressed', []))} KB gaps)"
+            )
 
             return {
                 "status": "success",
@@ -1685,7 +1959,11 @@ class APIOrchestrator:
                 "context": {
                     "kb_strategy": context.get("kb_strategy"),
                     "document_chunks_count": len(context.get("knowledge_base_chunks", [])),
-                    "phase": context["phase"]
+                    "phase": phase,
+                    # PHASE 5: Add KB-aware context
+                    "kb_gaps_identified": len(kb_gaps),
+                    "kb_coverage_percentage": kb_coverage.get("coverage_percentage", 0),
+                    "gaps_addressed_by_question": len(question_entry.get("kb_gaps_addressed", []))
                 }
             }
 
@@ -1853,12 +2131,103 @@ class APIOrchestrator:
                        f"maturity={maturity_response.get('maturity', 0)}, "
                        f"conflicts={len(conflicts_response.get('conflicts_found', []))}")
 
+            # ============================================================
+            # PHASE 6: Advancement Tracking & Metrics
+            # ============================================================
+            advancement_data = {}
+
+            try:
+                if self.advancement_tracker:
+                    # 10a. Record gap closure
+                    extracted_specs = specs_response.get("specs", {})
+                    if extracted_specs:
+                        self.advancement_tracker.record_gap_closure(
+                            project_id=project_id,
+                            gap_id=f"gap_{question_id}",
+                            question_id=question_id,
+                            answer_text=answer_text,
+                            closure_confidence=specs_response.get("overall_confidence", 0.7)
+                        )
+                        logger.debug(f"Gap closure recorded for question {question_id}")
+
+                    # 10b. Calculate completeness
+                    total_gaps = getattr(project, "total_gaps", 20)
+                    gaps_identified = len(getattr(project, "identified_gaps", []))
+                    closed_gaps = len(getattr(project, "closed_gaps", []))
+
+                    completeness = self.advancement_tracker.calculate_completeness(
+                        project_id=project_id,
+                        total_gaps=total_gaps,
+                        identified_gaps=gaps_identified,
+                        closed_gaps=closed_gaps,
+                        project_specs=extracted_specs
+                    )
+                    advancement_data["completeness"] = completeness
+
+                    # 10c. Calculate advancement metrics
+                    maturity_value = maturity_response.get("maturity", 50) / 100.0
+                    advancement_metrics = self.advancement_tracker.calculate_advancement_metrics(
+                        project_id=project_id,
+                        phase=phase,
+                        maturity=maturity_value,
+                        total_gaps=total_gaps,
+                        closed_gaps=closed_gaps + 1,
+                        question_count=len(getattr(project, "asked_questions", [])) + 1
+                    )
+                    advancement_data["advancement_metrics"] = advancement_metrics
+
+                    logger.info(f"Advancement metrics: completeness={completeness.overall:.2%}, "
+                               f"maturity={maturity_value:.2%}, quality={advancement_metrics.quality_score:.2%}")
+
+            except Exception as e:
+                logger.warning(f"Failed to track advancement: {e}")
+
+            # 10d. Get dashboard metrics
+            try:
+                if self.metrics_service:
+                    dashboard_metrics = self.metrics_service.get_dashboard_metrics(
+                        project_id=project_id,
+                        current_phase=phase,
+                        completeness=advancement_data.get("completeness", {}).overall if "completeness" in advancement_data else 0.5,
+                        maturity=maturity_response.get("maturity", 0) / 100.0,
+                        gap_closure_count=getattr(project, "closed_gaps_count", 5),
+                        total_gaps=total_gaps,
+                        questions_answered=len(getattr(project, "asked_questions", [])) + 1,
+                        quality_score=advancement_data.get("advancement_metrics", {}).quality_score if "advancement_metrics" in advancement_data else 0.7,
+                        advancement_confidence=advancement_data.get("advancement_metrics", {}).confidence if "advancement_metrics" in advancement_data else 0.75
+                    )
+                    advancement_data["dashboard_metrics"] = dashboard_metrics
+                    logger.debug(f"Dashboard metrics aggregated for project {project_id}")
+
+            except Exception as e:
+                logger.warning(f"Failed to get dashboard metrics: {e}")
+
+            # 10e. Record progress snapshot
+            try:
+                if self.progress_dashboard:
+                    self.progress_dashboard.record_progress_snapshot(
+                        project_id=project_id,
+                        phase=phase,
+                        completeness=advancement_data.get("completeness", {}).overall if "completeness" in advancement_data else 0.5,
+                        gap_closure_percentage=advancement_data.get("advancement_metrics", {}).gap_closure_rate if "advancement_metrics" in advancement_data else 0.6,
+                        maturity=maturity_response.get("maturity", 0) / 100.0,
+                        questions_answered=len(getattr(project, "asked_questions", [])) + 1,
+                        total_gaps=total_gaps,
+                        quality_score=advancement_data.get("advancement_metrics", {}).quality_score if "advancement_metrics" in advancement_data else 0.7
+                    )
+                    logger.debug(f"Progress snapshot recorded for project {project_id}")
+
+            except Exception as e:
+                logger.warning(f"Failed to record progress snapshot: {e}")
+
             return {
                 "status": "success",
                 "specs_extracted": specs_response.get("specs", {}),
                 "phase_maturity": maturity_response.get("maturity", 0),
                 "conflicts": conflicts_response.get("conflicts_found", []),
-                "phase_complete": phase_complete
+                "phase_complete": phase_complete,
+                # PHASE 6: Include advancement data
+                "advancement": advancement_data
             }
 
         except Exception as e:
@@ -4131,6 +4500,311 @@ If a category has no items, use an empty array."""
                 summary_parts.append(f"{role}: {content}")
 
         return "\n".join(summary_parts)
+
+    # ========================================================================
+    # Phase 5: KB-Aware Question Generation Methods
+    # ========================================================================
+
+    def _identify_knowledge_gaps(self, project: Any) -> List[Dict[str, Any]]:
+        """
+        PHASE 5: Identify specification gaps not covered by KB documents.
+
+        Uses DocumentUnderstandingService to find gaps between:
+        - Project specifications
+        - Imported documents
+
+        Args:
+            project: Project object with knowledge base
+
+        Returns:
+            List of gap dictionaries with topic, severity, priority
+        """
+        try:
+            if not self.document_understanding_service:
+                logger.debug("Document Understanding Service not available")
+                return []
+
+            # Get imported documents
+            documents = self._get_imported_documents(project)
+            if not documents:
+                logger.debug("No imported documents to analyze for gaps")
+                return []
+
+            # Get project specifications
+            project_specs = {
+                "goals": getattr(project, "goals", []) or [],
+                "requirements": getattr(project, "requirements", []) or [],
+                "tech_stack": getattr(project, "tech_stack", []) or [],
+                "constraints": getattr(project, "constraints", []) or []
+            }
+
+            # Use knowledge service to identify gaps
+            if not self.knowledge_service:
+                logger.debug("Knowledge Service not available")
+                return []
+
+            gaps = self.knowledge_service.identify_gaps(documents, project_specs)
+
+            # Convert to dictionaries for API responses
+            gap_list = [
+                {
+                    "gap_id": gap.gap_id,
+                    "category": gap.category,
+                    "topic": gap.topic,
+                    "severity": gap.severity,
+                    "priority_score": gap.priority_score,
+                    "suggested_question": gap.suggested_question,
+                    "mentioned_documents": gap.mentioned_documents
+                }
+                for gap in gaps
+            ]
+
+            logger.debug(f"Identified {len(gap_list)} specification gaps for project")
+            return gap_list
+
+        except Exception as e:
+            logger.error(f"Error identifying knowledge gaps: {e}")
+            return []
+
+    def _get_optimal_kb_chunks(
+        self,
+        project: Any,
+        phase: str,
+        question_number: int,
+        gaps: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        PHASE 5: Get KB chunks optimized for current context.
+
+        Uses VectorDBService to:
+        - Select strategy (snippet vs full) based on phase
+        - Prioritize chunks addressing high-value gaps
+        - Filter by relevance threshold
+
+        Args:
+            project: Project object
+            phase: Current project phase
+            question_number: Question number in phase
+            gaps: Identified specification gaps
+
+        Returns:
+            List of optimized document chunks
+        """
+        try:
+            if not self.vector_db_service:
+                logger.debug("Vector DB Service not available")
+                return []
+
+            # Get imported documents
+            documents = self._get_imported_documents(project)
+            if not documents:
+                return []
+
+            # Determine search query from gaps (high priority topics)
+            gap_topics = [gap.get("topic", "") for gap in gaps[:3]]
+            query = " ".join(gap_topics) if gap_topics else "project specifications"
+
+            # Get optimal chunks using vector DB service
+            chunks = self.vector_db_service.get_optimal_chunks(
+                query=query,
+                project_id=getattr(project, "project_id", ""),
+                phase=phase,
+                question_number=question_number,
+                documents=documents
+            )
+
+            # Convert to dictionaries for API responses
+            chunk_list = [chunk.to_dict() for chunk in chunks]
+
+            logger.debug(
+                f"Retrieved {len(chunk_list)} optimal KB chunks "
+                f"for phase={phase}, question={question_number}"
+            )
+
+            return chunk_list
+
+        except Exception as e:
+            logger.error(f"Error getting optimal KB chunks: {e}")
+            return []
+
+    def _calculate_kb_coverage(self, project: Any) -> Dict[str, Any]:
+        """
+        PHASE 5: Calculate KB document coverage percentage.
+
+        Measures how comprehensively documents cover:
+        - Project goals
+        - Requirements
+        - Technical specifications
+        - Constraints
+
+        Args:
+            project: Project object
+
+        Returns:
+            Coverage dictionary with percentage and details
+        """
+        try:
+            if not self.document_understanding_service:
+                logger.debug("Document Understanding Service not available")
+                return {"coverage_percentage": 0, "covered_areas": [], "gaps": []}
+
+            # Get documents
+            documents = self._get_imported_documents(project)
+            if not documents:
+                return {"coverage_percentage": 0, "covered_areas": [], "gaps": []}
+
+            # Analyze each document
+            covered_concepts = set()
+            total_concepts = set()
+
+            for doc in documents:
+                concepts = self.document_understanding_service.extract_concepts(doc)
+                concept_terms = {c.term for c in concepts}
+                covered_concepts.update(concept_terms)
+
+            # Get project specifications
+            required_concepts = set()
+            for spec_list in [
+                getattr(project, "goals", []),
+                getattr(project, "requirements", []),
+                getattr(project, "constraints", [])
+            ]:
+                if isinstance(spec_list, list):
+                    required_concepts.update(str(s).lower().split() for s in spec_list)
+
+            # Calculate coverage
+            if required_concepts:
+                coverage_pct = len(covered_concepts & required_concepts) / len(required_concepts) * 100
+            else:
+                coverage_pct = 0
+
+            # Identify gaps
+            gaps = required_concepts - covered_concepts
+
+            coverage = {
+                "coverage_percentage": min(100, int(coverage_pct)),
+                "covered_areas": list(covered_concepts)[:10],
+                "gaps": list(gaps)[:10],
+                "documents_analyzed": len(documents),
+                "concepts_found": len(covered_concepts)
+            }
+
+            logger.debug(f"KB coverage calculated: {coverage_pct:.1f}%")
+            return coverage
+
+        except Exception as e:
+            logger.error(f"Error calculating KB coverage: {e}")
+            return {"coverage_percentage": 0, "covered_areas": [], "gaps": []}
+
+    def _extract_gaps_from_question(self, question: Dict[str, Any]) -> List[str]:
+        """
+        PHASE 5: Extract which gaps a question addresses.
+
+        Analyzes question content to determine which specification
+        gaps it helps address.
+
+        Args:
+            question: Question dictionary
+
+        Returns:
+            List of gap IDs that question addresses
+        """
+        try:
+            question_text = question.get("question", "").lower()
+            gaps_addressed = []
+
+            # Gap detection keywords
+            gap_keywords = {
+                "security": ["security", "authentication", "authorization", "encryption"],
+                "performance": ["performance", "speed", "latency", "throughput"],
+                "scalability": ["scale", "scalable", "millions", "concurrent"],
+                "architecture": ["architecture", "design", "components", "structure"],
+                "requirements": ["require", "requirement", "must", "should"]
+            }
+
+            for gap_type, keywords in gap_keywords.items():
+                if any(keyword in question_text for keyword in keywords):
+                    gaps_addressed.append(f"gap_{gap_type}")
+
+            logger.debug(f"Question addresses {len(gaps_addressed)} gap types")
+            return gaps_addressed
+
+        except Exception as e:
+            logger.error(f"Error extracting gaps from question: {e}")
+            return []
+
+    def _prioritize_by_kb_gaps(
+        self,
+        project: Any,
+        potential_questions: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        PHASE 5: Prioritize questions that address high-value KB gaps.
+
+        Scoring factors:
+        - Gap importance (severity and priority)
+        - Gap frequency (how often mentioned)
+        - Gap impact (affects other specs)
+        - Coverage potential (question can address it)
+
+        Args:
+            project: Project object
+            potential_questions: List of candidate questions
+
+        Returns:
+            Questions ranked by gap-addressing value
+        """
+        try:
+            if not potential_questions:
+                return []
+
+            # Get identified gaps
+            gaps = self._identify_knowledge_gaps(project)
+            if not gaps:
+                logger.debug("No gaps identified for prioritization")
+                return potential_questions
+
+            # Score each question by how well it addresses gaps
+            scored_questions = []
+
+            for question in potential_questions:
+                gap_score = 0.0
+
+                # Check which gaps this question addresses
+                addressed_gaps = self._extract_gaps_from_question(question)
+
+                # Sum priority scores of addressed gaps
+                for addressed_gap in addressed_gaps:
+                    for gap in gaps:
+                        if gap.get("gap_id") == addressed_gap:
+                            gap_score += gap.get("priority_score", 0)
+
+                # Add gap score to question metadata
+                question_with_score = {
+                    **question,
+                    "gap_addressing_score": gap_score,
+                    "gaps_addressed": addressed_gaps
+                }
+
+                scored_questions.append(question_with_score)
+
+            # Sort by gap-addressing score (descending)
+            prioritized = sorted(
+                scored_questions,
+                key=lambda q: q.get("gap_addressing_score", 0),
+                reverse=True
+            )
+
+            logger.debug(
+                f"Prioritized {len(prioritized)} questions by KB gaps. "
+                f"Top question addresses {prioritized[0].get('gaps_addressed', [])} if available"
+            )
+
+            return prioritized
+
+        except Exception as e:
+            logger.error(f"Error prioritizing by KB gaps: {e}")
+            return potential_questions
 
     def _add_debug_log(self, project: Any, level: str, message: str) -> None:
         """
