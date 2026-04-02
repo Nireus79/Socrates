@@ -253,7 +253,7 @@ class APIOrchestrator:
 
             config = LLMConfig(
                 provider="anthropic",
-                model="claude-3-sonnet",
+                model="claude-3-5-haiku-20241022",
                 api_key=api_key,
                 cache_responses=True,           # Cache responses for performance
                 cache_ttl=3600,                 # Cache for 1 hour
@@ -969,7 +969,7 @@ class APIOrchestrator:
             logger.error(f"Agent execution failed for {agent_name}: {e}")
             return {"status": "error", "message": str(e)}
 
-    def call_llm(self, prompt: str, model: str = "claude-3-sonnet", **kwargs) -> Dict[str, Any]:
+    def call_llm(self, prompt: str, model: str = "claude-3-5-haiku-20241022", **kwargs) -> Dict[str, Any]:
         """Call LLM via socrates-nexus"""
         try:
             # Use existing LLM client if available
@@ -994,7 +994,7 @@ class APIOrchestrator:
 
     def list_llm_models(self) -> List[str]:
         """List available LLM models"""
-        return ["claude-3-sonnet", "claude-3-opus", "gpt-4", "gpt-3.5-turbo"]
+        return ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022", "claude-opus-4-20250514", "claude-opus-4-1"]
 
     def analyze_code_quality(self, code: str, filename: str = "code.py") -> Dict[str, Any]:
         """Analyze code quality (stub - requires socratic-analyzer)"""
@@ -3507,7 +3507,7 @@ Provide only the hint text."""
                         # Use socrates-nexus with production features for insights extraction
                         raw_client = LLMClient(
                             provider=provider,
-                            model="claude-3-sonnet",
+                            model="claude-3-5-haiku-20241022",
                             api_key=user_api_key,
                             cache_responses=True,           # Cache responses for performance
                             cache_ttl=3600,                 # Cache for 1 hour
