@@ -4830,6 +4830,102 @@ If a category has no items, use an empty array."""
         except Exception as e:
             logger.warning(f"Failed to add debug log: {e}")
 
+    def _build_agent_context(self, project: Any, conversation_only: bool = False) -> Dict[str, Any]:
+        """
+        Build complete context for agent requests (CRITICAL FIX #1).
+
+        Ensures agents have access to:
+        - Full project object
+        - Extracted conversation history
+        - Conversation summary
+        - Debug logs for response inclusion
+
+        Args:
+            project: Project object loaded from database
+            conversation_only: If True, only return conversation data (for stateless operations)
+
+        Returns:
+            Dictionary with keys: project, conversation_history, conversation_summary, debug_logs
+        """
+        try:
+            conversation_history = getattr(project, "conversation_history", []) or []
+            conversation_summary = self._generate_conversation_summary(project) if conversation_history else ""
+            debug_logs = getattr(project, "debug_logs", []) or []
+
+            context = {
+                "project": project,
+                "conversation_history": conversation_history,
+                "conversation_summary": conversation_summary,
+                "debug_logs": debug_logs,
+            }
+
+            if conversation_only:
+                return {
+                    "conversation_history": conversation_history,
+                    "conversation_summary": conversation_summary,
+                }
+
+            return context
+
+        except Exception as e:
+            logger.error(f"Error building agent context: {e}")
+            return {
+                "project": project,
+                "conversation_history": [],
+                "conversation_summary": "",
+                "debug_logs": [],
+            }
+
+    def _generate_conversation_summary(self, project: Any) -> str:
+        """
+        Generate a summary of the conversation for agent context (CRITICAL FIX #1).
+
+        This should be fast and non-blocking. Extracts last 5 exchanges.
+        """
+        try:
+            if not hasattr(project, "conversation_history") or not project.conversation_history:
+                return ""
+
+            # Get last 10 messages (or less if fewer exist)
+            recent = project.conversation_history[-10:] if len(project.conversation_history) > 10 else project.conversation_history
+
+            summary_parts = []
+            for item in recent:
+                if isinstance(item, dict):
+                    if item.get("type") == "question":
+                        content = item.get("content", "")[:100]
+                        summary_parts.append(f"Q: {content}")
+                    elif item.get("type") == "answer":
+                        content = item.get("content", "")[:100]
+                        summary_parts.append(f"A: {content}")
+
+            return " | ".join(summary_parts)
+
+        except Exception as e:
+            logger.warning(f"Failed to generate conversation summary: {e}")
+            return ""
+
+    def _wrap_agent_response(self, agent_result: Dict[str, Any], debug_logs: Optional[List[Dict]] = None) -> Dict[str, Any]:
+        """
+        Wrap an agent response to include debug information (CRITICAL FIX #2).
+
+        Ensures all API responses have consistent structure.
+
+        Args:
+            agent_result: Result dictionary from agent.process()
+            debug_logs: Optional list of debug log entries
+
+        Returns:
+            Wrapped response with debug_logs included
+        """
+        return {
+            "status": agent_result.get("status", "error"),
+            "data": agent_result.get("data", {}),
+            "debug_logs": debug_logs or [],
+            "metadata": agent_result.get("metadata", {}),
+            "message": agent_result.get("message", "")
+        }
+
 
 # Global instance
 _orchestrator_instance: Optional[APIOrchestrator] = None

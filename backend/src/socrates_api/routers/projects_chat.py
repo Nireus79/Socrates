@@ -657,6 +657,12 @@ async def get_question(
         # Save project with updated pending questions
         db.save_project(project)
 
+        # CRITICAL FIX #2: Build context for debug logs
+        context = orchestrator._build_agent_context(project)
+
+        # CRITICAL FIX #2: Wrap response with debug logs
+        wrapped_response = orchestrator._wrap_agent_response(result, context.get("debug_logs"))
+
         return APIResponse(
             success=True,
             status="success",
@@ -665,7 +671,9 @@ async def get_question(
                 "question_id": question_id,
                 "phase": project.phase,
                 "context": result.get("context", {}),
+                **wrapped_response,
             },
+            debug_logs=context.get("debug_logs"),
         )
 
     except HTTPException:
@@ -1332,10 +1340,14 @@ Provide a helpful, direct answer."""
                 logger.debug(f"Failed to emit learning events (non-critical): {learning_err}")
                 # Learning event emission is non-critical, don't fail the request
 
+            # CRITICAL FIX #2: Build context for debug logs
+            context = orchestrator._build_agent_context(project)
+
             return APIResponse(
                 success=True,
                 status="success",
                 data=response_data,
+                debug_logs=context.get("debug_logs"),
             )
 
     except HTTPException:
@@ -1371,6 +1383,8 @@ async def get_history(
         SuccessResponse with conversation history
     """
     try:
+        from socrates_api.orchestrator import get_orchestrator
+
         logger.info(f"Getting chat history for project: {project_id}")
 
         # Load project
@@ -1382,8 +1396,12 @@ async def get_history(
         # Convert dict to ProjectContext if needed
         project = project_dict
 
+        # CRITICAL FIX #1: Build complete context
+        orchestrator = get_orchestrator()
+        context = orchestrator._build_agent_context(project)
+
         # Get conversation history from project
-        history = getattr(project, "conversation_history", []) or []
+        history = context.get("conversation_history", []) or []
 
         # Apply limit if specified
         if limit and limit > 0:
@@ -1398,6 +1416,7 @@ async def get_history(
                 "mode": getattr(project, "chat_mode", "socratic"),
                 "total": len(history),
             },
+            debug_logs=context.get("debug_logs"),
         )
 
     except HTTPException:
@@ -1498,6 +1517,9 @@ async def get_hint(
         # Call orchestrator to generate context-aware hint
         orchestrator = get_orchestrator()
 
+        # CRITICAL FIX #1: Build complete context with conversation history
+        context = orchestrator._build_agent_context(project)
+
         # Ensure project has 'topic' attribute for orchestrator
         project = _ensure_project_topic(project)
 
@@ -1506,6 +1528,8 @@ async def get_hint(
             {
                 "action": "generate_hint",
                 "project": project,
+                "conversation_history": context["conversation_history"],
+                "conversation_summary": context["conversation_summary"],
                 "current_user": current_user,
                 "question_id": getattr(project, "current_question_id", None),
                 "question_text": getattr(project, "current_question_text", None),
@@ -1530,10 +1554,12 @@ async def get_hint(
                     "phase": project.phase if project else "unknown",
                 }
 
+            # CRITICAL FIX #2: Include debug logs
             return APIResponse(
                 success=True,
                 status="success",
                 data=response_data,
+                debug_logs=context.get("debug_logs"),
             )
 
         hint = result.get("data", {}).get("hint") or result.get("hint", "Continue working on your project.")
@@ -1569,10 +1595,12 @@ async def get_hint(
             }
             logger.debug(f"Hint generated from {response_data['debugInfo']['hint_source']}")
 
+        # CRITICAL FIX #2: Include debug logs
         return APIResponse(
             success=True,
             status="success",
             data=response_data,
+            debug_logs=context.get("debug_logs"),
         )
 
     except HTTPException:

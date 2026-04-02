@@ -35,6 +35,7 @@ class APIResponse(BaseModel):
     - data: the actual response data (optional, varies by endpoint)
     - message: optional message to user
     - error_code: machine-readable error code (for errors)
+    - debug_logs: system debug information for debugging (CRITICAL FIX #2)
     - timestamp: when the response was generated
     """
 
@@ -46,6 +47,9 @@ class APIResponse(BaseModel):
                 "message": "Operation completed successfully",
                 "data": {"project_id": "proj_abc123", "name": "My Project"},
                 "error_code": None,
+                "debug_logs": [
+                    {"timestamp": "2026-01-08T12:30:45.123456Z", "level": "INFO", "message": "Processing started"}
+                ],
                 "timestamp": "2026-01-08T12:30:45.123456Z",
             }
         }
@@ -63,6 +67,9 @@ class APIResponse(BaseModel):
     )
     error_code: Optional[str] = Field(
         None, description="Machine-readable error code for programmatic handling"
+    )
+    debug_logs: Optional[List[Dict[str, Any]]] = Field(
+        None, description="Debug log entries for backend operations and troubleshooting (CRITICAL FIX #2)"
     )
     timestamp: Optional[str] = Field(
         None, description="ISO 8601 timestamp when response was generated"
