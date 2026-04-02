@@ -594,7 +594,32 @@ async def get_question(
 
         logger.debug(f"Project loaded: id={project.project_id}, name={project.name}, description={project.description[:50] if project.description else 'EMPTY'}...")
 
-        # Call socratic_counselor to generate question with CRITICAL FIX #12: Deduplication
+        # CRITICAL FIX #16: Check for pending questions before generating new ones
+        # This prevents repeating questions and ensures we go through the question sequence
+        if project.asked_questions:
+            # Look for the first unanswered question
+            for q in project.asked_questions:
+                if q.get("status") == "pending" and not q.get("answer"):
+                    logger.info(f"Found pending question {q.get('id')}, returning it instead of generating new")
+                    pending_question = q.get("text", "")
+                    if pending_question:
+                        # Update current question context
+                        project.current_question_id = q.get("id")
+                        project.current_question_text = pending_question
+                        db.save_project(project)
+
+                        return APIResponse(
+                            success=True,
+                            status="success",
+                            data={
+                                "question": pending_question,
+                                "question_id": q.get("id"),
+                                "phase": project.phase,
+                                "debug_logs": getattr(project, "debug_logs", []) or [],
+                            },
+                        )
+
+        # Call socratic_counselor to generate question
         try:
             orchestrator = get_orchestrator()
             logger.debug("Orchestrator initialized successfully")
@@ -605,7 +630,7 @@ async def get_question(
                 detail=f"Failed to initialize orchestrator: {str(e)}"
             )
 
-        # Generate question using the orchestrator (skip broken deduplication for now)
+        # Generate question using the orchestrator
         logger.info(f"Project topic from description: {project.description[:50] if project.description else 'EMPTY'}")
 
         # Use orchestrator to generate real LLM-based questions

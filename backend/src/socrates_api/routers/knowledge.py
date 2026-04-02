@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database, LocalDatabase
 from socrates_api.models import APIResponse, BulkImportData, ErrorResponse
-from socrates_api.models_local import User
+from socrates_api.models_local import User, StorageQuotaManager
 from socrates_api.utils import IDGenerator
 # Database import replaced with local module
 
