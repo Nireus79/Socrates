@@ -385,22 +385,25 @@ async def create_project(
                 from socrates_api.main import app_state
 
                 orchestrator = app_state.get("orchestrator")
-                if orchestrator and hasattr(orchestrator, "llm_client"):
-                    # Check if LLMClient has extract_insights method
-                    if hasattr(orchestrator.llm_client, 'extract_insights') and callable(orchestrator.llm_client.extract_insights):
-                        try:
-                            insights = await orchestrator.llm_client.extract_insights(
-                                context_to_analyze, project
-                            )
+                if orchestrator:
+                    # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
+                    try:
+                        insights_result = orchestrator.process_request(
+                            "context_analyzer",
+                            {
+                                "action": "analyze",
+                                "content": context_to_analyze,
+                            }
+                        )
+                        if insights_result.get("status") == "success":
+                            insights = insights_result.get("data", {})
                             if insights:
                                 # Apply extracted insights to project (goals, requirements, tech_stack, constraints)
                                 _apply_initial_insights_to_project(project, insights)
                                 logger.info("Initial specifications extracted and applied to project")
-                        except (AttributeError, TypeError) as e:
-                            logger.debug(f"LLMClient.extract_insights failed: {e}")
-                            logger.debug("Using fallback insight extraction")
-                    else:
-                        logger.debug("LLMClient.extract_insights not available, skipping insights extraction")
+                    except (AttributeError, TypeError) as e:
+                        logger.debug(f"Orchestrator insight extraction failed: {e}")
+                        logger.debug("Using fallback insight extraction")
             except Exception as e:
                 logger.debug("Operation failed")
                 logger.warning(f"Could not analyze project context: {str(e)}")

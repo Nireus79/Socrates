@@ -305,7 +305,16 @@ async def ask_question(
 
         # Get answer from Claude
         logger.info("[free-session] Calling Claude API...")
-        answer = orchestrator.llm_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=current_user)
+        # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
+        answer_result = orchestrator.process_request(
+            "direct_chat",
+            {
+                "action": "generate_answer",
+                "prompt": prompt,
+                "user_id": current_user,
+            }
+        )
+        answer = answer_result.get("data", {}).get("answer", "") if answer_result.get("status") == "success" else ""
         logger.info(
             f"[free-session] Claude response received, length={len(answer) if answer else 0}"
         )
