@@ -11,7 +11,7 @@ Provides REST endpoints for chat operations on projects including:
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
