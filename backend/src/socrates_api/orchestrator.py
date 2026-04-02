@@ -7,36 +7,33 @@ Provides unified interface for REST API endpoints to call agents and orchestrato
 
 import logging
 import os
-from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 # Import MaturityCalculator from socratic-maturity library (required)
 from socrates_maturity import MaturityCalculator
 
-# Import SocraticCounselor from socratic-agents library (required)
-from socratic_agents import SocraticCounselor
-
 # Import LLMClient from socrates-nexus for production-grade LLM handling
 from socrates_nexus import LLMClient
 
-# Import conflict resolution from socratic-conflict library (required)
-from socratic_conflict import ConflictDetector, ResolutionStrategy
+# Import SocraticCounselor from socratic-agents library (required)
+from socratic_agents import SocraticCounselor
 
-# Import all 4 security components from socratic-security (required)
-from socratic_security import (
-    PromptInjectionDetector,
-    PathValidator,
-    SandboxExecutor,
-    SafeFilename,
-)
+# Import conflict resolution from socratic-conflict library (required)
+from socratic_conflict import ConflictDetector
 
 # Import foundation services from socratic-core library (required)
 from socratic_core import (
     EventBus,
-    BaseService,
-    ServiceOrchestrator as CoreOrchestrator,
+)
+
+# Import all 4 security components from socratic-security (required)
+from socratic_security import (
+    PathValidator,
+    PromptInjectionDetector,
+    SafeFilename,
 )
 
 
@@ -44,8 +41,16 @@ def _get_valid_model_for_provider(provider: str, preferred_model: Optional[str] 
     """Get a valid model name for the given provider"""
     # Map of provider to valid model names (ordered by preference)
     valid_models = {
-        "claude": ["claude-haiku-4-5-20251001", "claude-3-5-sonnet-20241022", "claude-opus-4-20250514"],
-        "anthropic": ["claude-haiku-4-5-20251001", "claude-3-5-sonnet-20241022", "claude-opus-4-20250514"],
+        "claude": [
+            "claude-haiku-4-5-20251001",
+            "claude-3-5-sonnet-20241022",
+            "claude-opus-4-20250514",
+        ],
+        "anthropic": [
+            "claude-haiku-4-5-20251001",
+            "claude-3-5-sonnet-20241022",
+            "claude-opus-4-20250514",
+        ],
         "openai": ["gpt-4o-mini", "gpt-4-turbo", "gpt-4o"],
         "gemini": ["gemini-1.5-flash", "gemini-pro", "gemini-1.5-pro"],
         "ollama": ["llama2", "mistral", "neural-chat"],
@@ -66,7 +71,7 @@ class LLMClientAdapter:
         """Wrap an LLMClient instance"""
         self.llm_client = llm_client
         # Delegate attribute access to wrapped client
-        self.provider = getattr(llm_client, 'provider', None)
+        self.provider = getattr(llm_client, "provider", None)
         # Initialize security handler
         self._init_security()
 
@@ -74,6 +79,7 @@ class LLMClientAdapter:
         """Initialize prompt security validation"""
         try:
             from socrates_api.utils.prompt_security import get_prompt_handler
+
             self.prompt_handler = get_prompt_handler()
         except ImportError:
             logger.warning("Prompt security module not available")
@@ -92,7 +98,9 @@ class LLMClientAdapter:
                 is_safe, sanitized_prompt = self.prompt_handler.validate_prompt(prompt)
                 if not is_safe:
                     logger.error("Prompt validation failed - potential injection attack")
-                    raise ValueError("Prompt validation failed - input contains potential injection")
+                    raise ValueError(
+                        "Prompt validation failed - input contains potential injection"
+                    )
                 prompt = sanitized_prompt
 
             # Use the chat method that LLMClient actually provides
@@ -105,22 +113,22 @@ class LLMClientAdapter:
                 return response
             elif isinstance(response, dict):
                 # If response is a dict, look for content field
-                if 'content' in response:
-                    content = response['content']
+                if "content" in response:
+                    content = response["content"]
                     if isinstance(content, str):
                         return content
                     elif isinstance(content, list):
                         # If content is a list, extract text from each item
                         texts = []
                         for item in content:
-                            if isinstance(item, dict) and 'text' in item:
-                                texts.append(item['text'])
+                            if isinstance(item, dict) and "text" in item:
+                                texts.append(item["text"])
                             elif isinstance(item, str):
                                 texts.append(item)
-                        return ' '.join(texts) if texts else str(response)
+                        return " ".join(texts) if texts else str(response)
                 # Fallback: convert entire dict to string
                 return str(response)
-            elif hasattr(response, 'content'):
+            elif hasattr(response, "content"):
                 # If response has content attribute
                 content = response.content
                 if isinstance(content, str):
@@ -129,11 +137,11 @@ class LLMClientAdapter:
                     # Extract text from list items
                     texts = []
                     for item in content:
-                        if isinstance(item, dict) and 'text' in item:
-                            texts.append(item['text'])
+                        if isinstance(item, dict) and "text" in item:
+                            texts.append(item["text"])
                         elif isinstance(item, str):
                             texts.append(item)
-                    return ' '.join(texts) if texts else str(response)
+                    return " ".join(texts) if texts else str(response)
                 else:
                     return str(response)
             else:
@@ -158,9 +166,9 @@ class LLMClientAdapter:
 
         # Remove parameters that conflict for certain models
         # Claude Haiku doesn't allow both temperature and top_p
-        if 'temperature' in kwargs and 'top_p' in kwargs:
+        if "temperature" in kwargs and "top_p" in kwargs:
             # Prefer temperature for Haiku
-            del kwargs['top_p']
+            del kwargs["top_p"]
         return self.llm_client.chat(messages, **kwargs)
 
     def stream(self, messages, **kwargs):
@@ -177,8 +185,8 @@ class LLMClientAdapter:
             messages = sanitized
 
         # Remove parameters that conflict for certain models
-        if 'temperature' in kwargs and 'top_p' in kwargs:
-            del kwargs['top_p']
+        if "temperature" in kwargs and "top_p" in kwargs:
+            del kwargs["top_p"]
         return self.llm_client.stream(messages, **kwargs)
 
     def __getattr__(self, name):
@@ -207,7 +215,7 @@ class APIOrchestrator:
 
         # Initialize caching for question context and KB strategy
         self._context_cache = {}  # Caches context per phase
-        self._kb_cache = {}       # Caches KB strategy decisions per phase
+        self._kb_cache = {}  # Caches KB strategy decisions per phase
 
         # Initialize knowledge services for Phase 5
         self.knowledge_service = None
@@ -234,16 +242,20 @@ class APIOrchestrator:
         self._initialize_documentation()
         self._initialize_performance_monitoring()
         self._setup_event_listeners()
-        logger.info("API Orchestrator initialized with real agents, event-driven architecture, and shared models")
+        logger.info(
+            "API Orchestrator initialized with real agents, event-driven architecture, and shared models"
+        )
 
     def _create_llm_client(self) -> Optional[Any]:
-        """Create LLM client with production-grade features from socrates-nexus"""
+        """Create LLM client with production-grade features from socrates-nexus, with model fallback"""
         try:
             # Use provided API key, or fall back to environment variable
-            api_key = self.api_key or os.getenv('ANTHROPIC_API_KEY', '')
+            api_key = self.api_key or os.getenv("ANTHROPIC_API_KEY", "")
 
             if not api_key:
-                logger.debug("No API key provided (neither in config nor ANTHROPIC_API_KEY env var) - LLM client will be None")
+                logger.debug(
+                    "No API key provided (neither in config nor ANTHROPIC_API_KEY env var) - LLM client will be None"
+                )
                 return None
 
             # Create LLMClient with full socrates-nexus capabilities:
@@ -251,31 +263,59 @@ class APIOrchestrator:
             # - Retry logic for reliability
             from socrates_nexus import LLMConfig
 
-            config = LLMConfig(
-                provider="anthropic",
-                model="claude-3-5-haiku-20241022",
-                api_key=api_key,
-                cache_responses=True,           # Cache responses for performance
-                cache_ttl=3600,                 # Cache for 1 hour
-                retry_attempts=3,               # Retry up to 3 times on failure
-                retry_backoff_factor=2.0        # Exponential backoff for retries
+            # List of models to try (in priority order)
+            models_to_try = [
+                "claude-3-5-haiku",  # Generic haiku (preferred)
+                "claude-3-5-haiku-20241022",  # Specific date version
+                "claude-3-haiku-20240307",  # Older haiku
+                "claude-3-5-sonnet-20241022",  # Fallback to sonnet
+                "claude-opus-4-20250514",  # Fallback to opus
+            ]
+
+            last_error = None
+
+            for model in models_to_try:
+                try:
+                    config = LLMConfig(
+                        provider="anthropic",
+                        model=model,
+                        api_key=api_key,
+                        cache_responses=True,  # Cache responses for performance
+                        cache_ttl=3600,  # Cache for 1 hour
+                        retry_attempts=3,  # Retry up to 3 times on failure
+                        retry_backoff_factor=2.0,  # Exponential backoff for retries
+                    )
+                    raw_client = LLMClient(config=config)
+                    logger.info(
+                        f"LLM client created with model '{model}' and production features: "
+                        "response_caching=True, retry_attempts=3"
+                    )
+                    # WRAP with adapter for socratic-agents compatibility
+                    wrapped_client = LLMClientAdapter(raw_client)
+                    logger.debug("LLMClient wrapped with LLMClientAdapter for agent compatibility")
+                    return wrapped_client
+
+                except Exception as model_error:
+                    last_error = model_error
+                    logger.debug(
+                        f"Model '{model}' initialization failed: {model_error}, trying next..."
+                    )
+                    continue
+
+            # If all models failed, raise the last error
+            error_msg = (
+                f"All LLM models failed. Last error with model '{models_to_try[-1]}': {last_error}"
             )
-            raw_client = LLMClient(config=config)
-            logger.info(
-                "LLM client created with production features: "
-                "response_caching=True, retry_attempts=3"
-            )
-            # WRAP with adapter for socratic-agents compatibility
-            wrapped_client = LLMClientAdapter(raw_client)
-            logger.debug("LLMClient wrapped with LLMClientAdapter for agent compatibility")
-            return wrapped_client
+            logger.error(error_msg, exc_info=True)
+            raise Exception(error_msg)
+
         except Exception as e:
             logger.error(f"Failed to create LLM client: {e}", exc_info=True)
             raise  # Fail fast instead of returning None
 
     def _create_user_llm_client(self, user_id: str, provider: str = "claude") -> Optional[Any]:
         """
-        Create LLM client with user's stored API key.
+        Create LLM client with user's stored API key, with model fallback support.
 
         Args:
             user_id: User identifier
@@ -306,33 +346,59 @@ class APIOrchestrator:
             # Get user's preferred model for this provider
             user_model = db.get_provider_model(user_id, provider)
 
-            # Use user's model if available and valid, otherwise fall back to haiku
+            # Build list of models to try (in priority order)
+            models_to_try = []
             if user_model:
-                model = user_model
-            else:
-                # Default to haiku if no user preference
-                model = "claude-3-5-haiku-20241022"
+                models_to_try.append(user_model)  # User's preferred model first
 
-            # Create LLM client with production-grade features from socrates-nexus
+            # Add default haiku models in order of preference
+            models_to_try.extend(
+                [
+                    "claude-3-5-haiku",  # Generic version (preferred)
+                    "claude-3-5-haiku-20241022",  # Specific date version
+                    "claude-3-haiku-20240307",  # Older version
+                    "claude-3-5-sonnet-20241022",  # Fallback to sonnet
+                ]
+            )
+
+            # Try each model in order
             from socrates_nexus import LLMConfig
 
-            config = LLMConfig(
-                provider=provider,
-                model=model,
-                api_key=api_key,
-                cache_responses=True,           # Cache responses for performance
-                cache_ttl=3600,                 # Cache for 1 hour
-                retry_attempts=3,               # Retry up to 3 times on failure
-                retry_backoff_factor=2.0        # Exponential backoff for retries
-            )
-            raw_client = LLMClient(config=config)
-            logger.info(
-                f"LLM client created for user {user_id} with provider {provider}/{model} "
-                "and production features: response_caching=True, retry_attempts=3"
-            )
-            # WRAP with adapter for socratic-agents compatibility
-            wrapped_client = LLMClientAdapter(raw_client)
-            return wrapped_client
+            last_error = None
+
+            for model in models_to_try:
+                try:
+                    config = LLMConfig(
+                        provider=provider,
+                        model=model,
+                        api_key=api_key,
+                        cache_responses=True,  # Cache responses for performance
+                        cache_ttl=3600,  # Cache for 1 hour
+                        retry_attempts=3,  # Retry up to 3 times on failure
+                        retry_backoff_factor=2.0,  # Exponential backoff for retries
+                    )
+                    raw_client = LLMClient(config=config)
+                    logger.info(
+                        f"LLM client created for user {user_id} with provider {provider}/{model} "
+                        "and production features: response_caching=True, retry_attempts=3"
+                    )
+                    # WRAP with adapter for socratic-agents compatibility
+                    wrapped_client = LLMClientAdapter(raw_client)
+                    return wrapped_client
+
+                except Exception as model_error:
+                    last_error = model_error
+                    logger.debug(
+                        f"Model {model} failed for user {user_id}: {model_error}, trying next..."
+                    )
+                    continue
+
+            # If all models failed, log the error from the last attempt
+            if last_error:
+                logger.warning(
+                    f"All LLM models failed for user {user_id}. Last error: {last_error}"
+                )
+            return None
 
         except Exception as e:
             logger.warning(f"Failed to create user LLM client: {e}")
@@ -344,24 +410,25 @@ class APIOrchestrator:
             AgentConflictDetector,
             CodeGenerator,
             CodeValidator,
-            ConflictDetector,
             ContextAnalyzer,
             DocumentProcessor,
-            KnowledgeManager as AgentKnowledgeManager,
             LearningAgent,
             NoteManager,
             ProjectManager,
             QualityController,
             SkillGeneratorAgent,
-            SocraticCounselor as BaseSocraticCounselor,
             SystemMonitor,
             UserManager,
+        )
+        from socratic_agents import (
+            KnowledgeManager as AgentKnowledgeManager,
         )
 
         # Try to import CodeAnalyzer from socratic_analyzer
         code_analyzer = None
         try:
             from socratic_analyzer import CodeAnalyzer
+
             code_analyzer = CodeAnalyzer()
         except ImportError:
             logger.warning("socratic_analyzer not available; CodeAnalyzer will not be initialized")
@@ -371,31 +438,24 @@ class APIOrchestrator:
             # Code analysis and generation
             "code_generator": CodeGenerator(llm_client=self.llm_client),
             "code_validator": CodeValidator(llm_client=self.llm_client),
-
             # Project and learning coordination
             "socratic_counselor": SocraticCounselor(llm_client=self.llm_client, batch_size=1),
             "project_manager": ProjectManager(llm_client=self.llm_client),
-
             # Quality and skill management
             "quality_controller": QualityController(llm_client=self.llm_client),
             "skill_generator": SkillGeneratorAgent(llm_client=self.llm_client),
-
             # Learning and development
             "learning_agent": LearningAgent(llm_client=self.llm_client),
-
             # Analysis
             "context_analyzer": ContextAnalyzer(llm_client=self.llm_client),
             "code_analyzer": code_analyzer,  # From socratic_analyzer
-
             # Knowledge and documentation
             "user_manager": UserManager(llm_client=self.llm_client),
             "agent_knowledge_manager": AgentKnowledgeManager(llm_client=self.llm_client),
             "document_processor": DocumentProcessor(llm_client=self.llm_client),
             "note_manager": NoteManager(llm_client=self.llm_client),
-
             # System management
             "system_monitor": SystemMonitor(llm_client=self.llm_client),
-
             # Conflict resolution
             "conflict_detector": AgentConflictDetector(llm_client=self.llm_client),
         }
@@ -579,7 +639,9 @@ class APIOrchestrator:
         """
         try:
             # Initialize calculator with project type
-            calculator = MaturityCalculator(project_type=getattr(project, "project_type", "software"))
+            calculator = MaturityCalculator(
+                project_type=getattr(project, "project_type", "software")
+            )
 
             # Get current phase
             phase = getattr(project, "phase", "discovery")
@@ -611,7 +673,7 @@ class APIOrchestrator:
                     "category_scores": category_scores,
                     "estimated_phase": phase_estimate,
                     "is_ready": maturity_result.get("is_ready", False),
-                    "warnings": maturity_result.get("warnings", [])
+                    "warnings": maturity_result.get("warnings", []),
                 },
                 "phase_readiness": {
                     "is_ready": maturity_result.get("is_ready", False),
@@ -619,7 +681,7 @@ class APIOrchestrator:
                     "complete_threshold": 95.0,  # 95% for complete
                     "current_maturity": maturity_pct,
                     "next_phase": phase_estimate if phase_estimate != phase else None,
-                }
+                },
             }
         except Exception as e:
             logger.error(f"Failed to calculate phase maturity: {e}", exc_info=True)
@@ -643,7 +705,9 @@ class APIOrchestrator:
         """
         try:
             # Initialize calculator with project type
-            calculator = MaturityCalculator(project_type=getattr(project, "project_type", "software"))
+            calculator = MaturityCalculator(
+                project_type=getattr(project, "project_type", "software")
+            )
             categorized_specs = getattr(project, "categorized_specs", {}) or {}
 
             # Valid phases in order
@@ -663,7 +727,7 @@ class APIOrchestrator:
                     "is_ready": maturity_result.get("is_ready", False),
                     "category_scores": maturity_result.get("category_scores", {}),
                     "warnings": maturity_result.get("warnings", []),
-                    "estimated_next_phase": maturity_result.get("estimated_phase")
+                    "estimated_next_phase": maturity_result.get("estimated_phase"),
                 }
                 phase_scores.append(maturity_pct)
 
@@ -693,17 +757,14 @@ class APIOrchestrator:
                     "phases_started": sum(1 for m in phase_scores if m > 0),
                     "phases_ready": sum(1 for m in phase_scores if m >= 70.0),
                     "phases_complete": sum(1 for m in phase_scores if m >= 95.0),
-                }
+                },
             }
         except Exception as e:
             logger.error(f"Failed to get all phases maturity: {e}", exc_info=True)
             raise
 
     def validate_phase_advancement(
-        self,
-        project: Any,
-        target_phase: Optional[str] = None,
-        force: bool = False
+        self, project: Any, target_phase: Optional[str] = None, force: bool = False
     ) -> Dict[str, Any]:
         """
         PHASE 4: Validate if a project can advance to the target phase.
@@ -780,7 +841,11 @@ class APIOrchestrator:
             else:
                 # Auto-advance to next phase
                 current_idx = valid_phases.index(current_phase)
-                target_phase = valid_phases[current_idx + 1] if current_idx < len(valid_phases) - 1 else current_phase
+                target_phase = (
+                    valid_phases[current_idx + 1]
+                    if current_idx < len(valid_phases) - 1
+                    else current_phase
+                )
 
             # If forcing advancement, skip maturity checks
             if force:
@@ -975,7 +1040,7 @@ class APIOrchestrator:
             logger.error(f"Agent execution failed for {agent_name}: {e}")
             return {"status": "error", "message": str(e)}
 
-    def call_llm(self, prompt: str, model: str = "claude-3-5-haiku-20241022", **kwargs) -> Dict[str, Any]:
+    def call_llm(self, prompt: str, model: str = "claude-3-5-haiku", **kwargs) -> Dict[str, Any]:
         """Call LLM via socrates-nexus"""
         try:
             # Use existing LLM client if available
@@ -999,8 +1064,15 @@ class APIOrchestrator:
             return {"status": "error", "message": str(e)}
 
     def list_llm_models(self) -> List[str]:
-        """List available LLM models"""
-        return ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022", "claude-opus-4-20250514", "claude-opus-4-1"]
+        """List available LLM models (in priority order)"""
+        return [
+            "claude-3-5-haiku",  # Generic version (preferred if available)
+            "claude-3-5-haiku-20241022",  # Specific date version (fallback)
+            "claude-3-haiku-20240307",  # Older haiku version
+            "claude-3-5-sonnet-20241022",  # Sonnet as additional fallback
+            "claude-opus-4-20250514",  # Opus as final fallback
+            "claude-opus-4-1",  # Generic opus
+        ]
 
     def analyze_code_quality(self, code: str, filename: str = "code.py") -> Dict[str, Any]:
         """Analyze code quality (stub - requires socratic-analyzer)"""
@@ -1174,11 +1246,7 @@ class APIOrchestrator:
             Dictionary with validation results and status
         """
         try:
-            validation_results = {
-                "status": "valid",
-                "checks": {},
-                "warnings": []
-            }
+            validation_results = {"status": "valid", "checks": {}, "warnings": []}
 
             # 1. Check for prompt injection attacks
             injection_detector = PromptInjectionDetector()
@@ -1186,7 +1254,7 @@ class APIOrchestrator:
             validation_results["checks"]["prompt_injection"] = {
                 "is_safe": not injection_risk.get("is_injection_attempt", False),
                 "confidence": injection_risk.get("confidence", 0.0),
-                "risk_level": injection_risk.get("risk_level", "low")
+                "risk_level": injection_risk.get("risk_level", "low"),
             }
             if injection_risk.get("is_injection_attempt"):
                 validation_results["warnings"].append("Potential prompt injection detected")
@@ -1202,7 +1270,9 @@ class APIOrchestrator:
 
             # 3. Validate general input integrity
             safe_filename = SafeFilename()
-            is_valid = safe_filename.is_safe(user_input) if input_type in ["filename", "path"] else True
+            is_valid = (
+                safe_filename.is_safe(user_input) if input_type in ["filename", "path"] else True
+            )
             validation_results["checks"]["input_validity"] = {"is_valid": is_valid}
             if not is_valid:
                 validation_results["warnings"].append(input_validator.get_error_message())
@@ -1219,22 +1289,18 @@ class APIOrchestrator:
                 return {
                     "status": "blocked",
                     "message": "Input validation failed - security policy violated",
-                    "details": validation_results
+                    "details": validation_results,
                 }
 
             return {
                 "status": "valid",
                 "message": "Input validation passed",
-                "details": validation_results
+                "details": validation_results,
             }
 
         except Exception as e:
             logger.error(f"Input validation error: {e}", exc_info=True)
-            return {
-                "status": "error",
-                "message": "Security validation failed",
-                "error": str(e)
-            }
+            return {"status": "error", "message": "Security validation failed", "error": str(e)}
 
     def _setup_event_listeners(self) -> None:
         """Setup event listeners for event-driven architecture from socratic-core"""
@@ -1277,22 +1343,23 @@ class APIOrchestrator:
         """Initialize Phase 5 knowledge base services (KB-aware question generation)"""
         try:
             from socrates_api.services.knowledge_service import (
+                DocumentUnderstandingService,
                 KnowledgeService,
                 VectorDBService,
-                DocumentUnderstandingService
             )
 
             # Initialize knowledge services
             self.knowledge_service = KnowledgeService(
-                vector_db=self.vector_db,
-                document_repo=None  # Will be set when available
+                vector_db=self.vector_db, document_repo=None  # Will be set when available
             )
 
             self.vector_db_service = VectorDBService(vector_db=self.vector_db)
             self.document_understanding_service = DocumentUnderstandingService()
 
-            logger.info("Phase 5 Knowledge Services initialized: "
-                       "KnowledgeService, VectorDBService, DocumentUnderstandingService")
+            logger.info(
+                "Phase 5 Knowledge Services initialized: "
+                "KnowledgeService, VectorDBService, DocumentUnderstandingService"
+            )
 
         except ImportError as e:
             logger.warning(f"Knowledge services not available: {e}")
@@ -1309,8 +1376,8 @@ class APIOrchestrator:
         """Initialize Phase 6 advancement tracking and metrics services"""
         try:
             from socrates_api.services.advancement_tracker import AdvancementTracker
-            from socrates_api.services.metrics_service import MetricsService
             from socrates_api.services.learning_service import LearningService
+            from socrates_api.services.metrics_service import MetricsService
             from socrates_api.services.progress_dashboard import ProgressDashboard
 
             # Initialize Phase 6 services
@@ -1319,8 +1386,10 @@ class APIOrchestrator:
             self.learning_service = LearningService()
             self.progress_dashboard = ProgressDashboard()
 
-            logger.info("Phase 6 Advancement Services initialized: "
-                       "AdvancementTracker, MetricsService, LearningService, ProgressDashboard")
+            logger.info(
+                "Phase 6 Advancement Services initialized: "
+                "AdvancementTracker, MetricsService, LearningService, ProgressDashboard"
+            )
 
         except ImportError as e:
             logger.warning(f"Advancement services not available: {e}")
@@ -1511,11 +1580,7 @@ class APIOrchestrator:
     # These methods implement the core orchestration patterns from the monolithic
     # Socrates system, enabling dynamic single-question generation with full context.
 
-    def _gather_question_context(
-        self,
-        project: Any,
-        user_id: str
-    ) -> Dict[str, Any]:
+    def _gather_question_context(self, project: Any, user_id: str) -> Dict[str, Any]:
         """
         Gather all context needed for dynamic question generation.
         This is the central context aggregation point.
@@ -1528,8 +1593,6 @@ class APIOrchestrator:
             Dict with all context for question generation
         """
         try:
-            import uuid
-            from datetime import datetime
 
             # 1. Get project context (goals, requirements, tech_stack, constraints)
             # If goals/requirements not explicitly set, extract from project description/name
@@ -1554,7 +1617,7 @@ class APIOrchestrator:
                 "requirements": requirements if isinstance(requirements, list) else [requirements],
                 "tech_stack": getattr(project, "tech_stack", []) or [],
                 "constraints": getattr(project, "constraints", []) or [],
-                "existing_specs": self._get_extracted_specs(project) or {}
+                "existing_specs": self._get_extracted_specs(project) or {},
             }
 
             # 2. Get recent conversation (last 4 messages)
@@ -1564,21 +1627,20 @@ class APIOrchestrator:
             # 3. Get previously asked questions in this phase
             pending_questions = getattr(project, "pending_questions", []) or []
             phase = getattr(project, "phase", "discovery")
-            previously_asked = self._extract_previously_asked_questions(
-                pending_questions,
-                phase
-            )
+            previously_asked = self._extract_previously_asked_questions(pending_questions, phase)
 
             # 4. Determine KB strategy and get chunks
             question_number = len([q for q in pending_questions if q.get("status") != "answered"])
             kb_strategy = self._determine_kb_strategy(phase, question_number)
 
             knowledge_chunks = []
-            if self.vector_db and hasattr(self.vector_db, 'search_similar_adaptive'):
+            if self.vector_db and hasattr(self.vector_db, "search_similar_adaptive"):
                 try:
                     # Get query from current question or project context
                     query = ""
-                    if pending_questions and not [q for q in pending_questions if q.get("status") == "unanswered"]:
+                    if pending_questions and not [
+                        q for q in pending_questions if q.get("status") == "unanswered"
+                    ]:
                         # If no unanswered, use project context for query
                         query = " ".join(project_context.get("goals", [])[:2])
                     elif pending_questions:
@@ -1590,7 +1652,7 @@ class APIOrchestrator:
                             query=query,
                             strategy=kb_strategy,
                             phase=phase,
-                            question_number=question_number
+                            question_number=question_number,
                         )
                 except Exception as e:
                     logger.warning(f"Failed to get KB chunks: {e}")
@@ -1619,10 +1681,12 @@ class APIOrchestrator:
                 "question_number": question_number,
                 "code_structure": code_structure,
                 "conversation_history": conversation_history,
-                "kb_strategy": kb_strategy
+                "kb_strategy": kb_strategy,
             }
 
-            logger.debug(f"Context gathered for user {user_id}: phase={phase}, question_number={question_number}, kb_strategy={kb_strategy}")
+            logger.debug(
+                f"Context gathered for user {user_id}: phase={phase}, question_number={question_number}, kb_strategy={kb_strategy}"
+            )
             return context
 
         except Exception as e:
@@ -1639,7 +1703,7 @@ class APIOrchestrator:
                 "question_number": 1,
                 "code_structure": None,
                 "conversation_history": [],
-                "kb_strategy": "snippet"
+                "kb_strategy": "snippet",
             }
 
     def _determine_kb_strategy(self, phase: str, question_number: int) -> str:
@@ -1666,7 +1730,7 @@ class APIOrchestrator:
         if phase in ["discovery", "analysis"] and question_number < 5:
             strategy = "snippet"  # 3 chunks, fast overview
         elif phase in ["design", "implementation"] or question_number >= 5:
-            strategy = "full"     # 5 chunks, comprehensive
+            strategy = "full"  # 5 chunks, comprehensive
         else:
             strategy = "snippet"  # default safe choice
 
@@ -1685,7 +1749,7 @@ class APIOrchestrator:
                     "goals": getattr(project.context, "goals", []),
                     "requirements": getattr(project.context, "requirements", []),
                     "tech_stack": getattr(project.context, "tech_stack", []),
-                    "constraints": getattr(project.context, "constraints", [])
+                    "constraints": getattr(project.context, "constraints", []),
                 }
             return specs
         except Exception:
@@ -1697,11 +1761,17 @@ class APIOrchestrator:
             if not conversation_history:
                 return []
             # Return last N messages
-            return conversation_history[-limit:] if len(conversation_history) >= limit else conversation_history
+            return (
+                conversation_history[-limit:]
+                if len(conversation_history) >= limit
+                else conversation_history
+            )
         except Exception:
             return []
 
-    def _extract_previously_asked_questions(self, pending_questions: List[Dict], phase: str) -> List[str]:
+    def _extract_previously_asked_questions(
+        self, pending_questions: List[Dict], phase: str
+    ) -> List[str]:
         """Extract questions already asked in this phase to avoid repetition."""
         try:
             if not pending_questions:
@@ -1725,7 +1795,7 @@ class APIOrchestrator:
             if not documents:
                 return {
                     "documents_analyzed": [],
-                    "alignment": {"score": 0, "covered_areas": [], "gaps": []}
+                    "alignment": {"score": 0, "covered_areas": [], "gaps": []},
                 }
 
             # In Phase 1, provide basic document understanding
@@ -1736,8 +1806,8 @@ class APIOrchestrator:
                 "alignment": {
                     "score": 0.7,  # Default moderate alignment
                     "covered_areas": ["General context"],
-                    "gaps": ["Specific implementation details"]
-                }
+                    "gaps": ["Specific implementation details"],
+                },
             }
 
             # Cache for this project
@@ -1749,7 +1819,7 @@ class APIOrchestrator:
             logger.warning(f"Error getting document understanding: {e}")
             return {
                 "documents_analyzed": [],
-                "alignment": {"score": 0, "covered_areas": [], "gaps": []}
+                "alignment": {"score": 0, "covered_areas": [], "gaps": []},
             }
 
     def _get_imported_documents(self, project: Any) -> List[Dict[str, str]]:
@@ -1779,10 +1849,7 @@ class APIOrchestrator:
                 return None
             # In Phase 1, return basic structure
             # Full analysis will be done in Phase 5
-            return {
-                "file_count": len(files),
-                "languages": []
-            }
+            return {"file_count": len(files), "languages": []}
         except Exception:
             return None
 
@@ -1793,26 +1860,26 @@ class APIOrchestrator:
                 "Project goals and objectives",
                 "Target users and stakeholders",
                 "Problem statement and pain points",
-                "Success metrics and KPIs"
+                "Success metrics and KPIs",
             ],
             "analysis": [
                 "Detailed requirements breakdown",
                 "Technical constraints and limitations",
                 "Integration requirements",
-                "Data and workflow requirements"
+                "Data and workflow requirements",
             ],
             "design": [
                 "System architecture and structure",
                 "Component organization",
                 "API design and contracts",
-                "Database schema design"
+                "Database schema design",
             ],
             "implementation": [
                 "Technology stack and frameworks",
                 "Testing strategy",
                 "Deployment and infrastructure",
-                "Development timeline and milestones"
-            ]
+                "Development timeline and milestones",
+            ],
         }
         return phase_focus.get(phase, [])
 
@@ -1825,7 +1892,7 @@ class APIOrchestrator:
             "discovery": "Tell me about the project you want to build and what problems it solves.",
             "analysis": "What are the key requirements and constraints you need to consider?",
             "design": "How would you structure the system architecture and main components?",
-            "implementation": "What's the first feature you want to implement and how would you approach it?"
+            "implementation": "What's the first feature you want to implement and how would you approach it?",
         }
 
         question_text = fallback_questions.get(phase, "Tell me more about your project.")
@@ -1839,7 +1906,7 @@ class APIOrchestrator:
             "answer": None,
             "answered_at": None,
             "skipped_at": None,
-            "is_fallback": True
+            "is_fallback": True,
         }
 
     def _find_question(self, project: Any, question_id: str) -> Optional[Dict]:
@@ -1858,7 +1925,7 @@ class APIOrchestrator:
                     "goals": getattr(project.context, "goals", []),
                     "requirements": getattr(project.context, "requirements", []),
                     "tech_stack": getattr(project.context, "tech_stack", []),
-                    "constraints": getattr(project.context, "constraints", [])
+                    "constraints": getattr(project.context, "constraints", []),
                 }
             return {}
         except Exception:
@@ -1867,10 +1934,7 @@ class APIOrchestrator:
     # ================== ORCHESTRATION METHODS ==================
 
     def _orchestrate_question_generation(
-        self,
-        project: Any,
-        user_id: str,
-        force_refresh: bool = False
+        self, project: Any, user_id: str, force_refresh: bool = False
     ) -> Dict[str, Any]:
         """
         Orchestrate complete question generation flow with all agents.
@@ -1895,7 +1959,9 @@ class APIOrchestrator:
             from datetime import datetime
 
             project_id = getattr(project, "project_id", None)
-            logger.info(f"Orchestrating question generation for project {project_id}, user {user_id}")
+            logger.info(
+                f"Orchestrating question generation for project {project_id}, user {user_id}"
+            )
 
             # 1. Check for pending unanswered questions
             pending_questions = getattr(project, "pending_questions", []) or []
@@ -1903,11 +1969,7 @@ class APIOrchestrator:
                 unanswered = [q for q in pending_questions if q.get("status") == "unanswered"]
                 if unanswered:
                     logger.info(f"Returning existing unanswered question: {unanswered[0]['id']}")
-                    return {
-                        "status": "success",
-                        "question": unanswered[0],
-                        "existing": True
-                    }
+                    return {"status": "success", "question": unanswered[0], "existing": True}
 
             # 2. Gather full context
             context = self._gather_question_context(project, user_id)
@@ -1923,7 +1985,9 @@ class APIOrchestrator:
 
             # 2b. PHASE 5: Get KB chunks optimized for gap closure
             if kb_gaps:
-                optimal_chunks = self._get_optimal_kb_chunks(project, phase, question_number, kb_gaps)
+                optimal_chunks = self._get_optimal_kb_chunks(
+                    project, phase, question_number, kb_gaps
+                )
                 context["optimal_kb_chunks"] = optimal_chunks
                 logger.debug(f"Added {len(optimal_chunks)} optimal KB chunks addressing gaps")
 
@@ -1933,24 +1997,50 @@ class APIOrchestrator:
             logger.debug(f"KB coverage: {kb_coverage.get('coverage_percentage', 0)}%")
 
             # 3. Call SocraticCounselor for question generation
+            debug_logs = []
             try:
                 # Try to get user-specific LLM client with their API key
                 user_llm_client = self._create_user_llm_client(user_id, provider="claude")
                 if user_llm_client:
+                    debug_logs.append(
+                        {
+                            "level": "info",
+                            "message": f"Using user-specific LLM client for {user_id}",
+                        }
+                    )
                     logger.debug(f"Using user-specific LLM client for {user_id}")
                     # Create counselor with user's API key
                     from socratic_agents import SocraticCounselor as BaseSocraticCounselor
+
                     counselor = BaseSocraticCounselor(llm_client=user_llm_client, batch_size=1)
                 else:
                     # Fall back to default counselor if user hasn't set API key
+                    debug_logs.append(
+                        {
+                            "level": "info",
+                            "message": f"No user API key for {user_id}, using default LLM client",
+                        }
+                    )
                     logger.debug(f"No user API key for {user_id}, using default LLM client")
                     counselor = self.agents.get("socratic_counselor")
 
                 if not counselor:
+                    debug_logs.append(
+                        {
+                            "level": "warning",
+                            "message": "SocraticCounselor agent not available, using static fallback",
+                        }
+                    )
                     logger.warning("SocraticCounselor agent not available")
                     question_response = self._get_fallback_question(phase)
                 else:
                     # Call counselor with full KB-aware context
+                    debug_logs.append(
+                        {
+                            "level": "info",
+                            "message": f"Calling SocraticCounselor for phase {phase} (KB gaps: {len(kb_gaps)}, KB coverage: {kb_coverage.get('coverage_percentage', 0)}%)",
+                        }
+                    )
                     logger.info(
                         f"Calling SocraticCounselor for phase {phase} "
                         f"(KB gaps: {len(kb_gaps)}, KB coverage: {kb_coverage.get('coverage_percentage', 0)}%)"
@@ -1964,10 +2054,17 @@ class APIOrchestrator:
 
                     # Build topic: prefer goals, then requirements, then project name
                     if goals:
-                        topic_parts = [str(g)[:50] for g in (goals if isinstance(goals, list) else [goals])][:2]
+                        topic_parts = [
+                            str(g)[:50] for g in (goals if isinstance(goals, list) else [goals])
+                        ][:2]
                         topic = " - ".join(topic_parts) if topic_parts else project_name
                     elif requirements:
-                        topic_parts = [str(r)[:50] for r in (requirements if isinstance(requirements, list) else [requirements])][:2]
+                        topic_parts = [
+                            str(r)[:50]
+                            for r in (
+                                requirements if isinstance(requirements, list) else [requirements]
+                            )
+                        ][:2]
                         topic = " - ".join(topic_parts) if topic_parts else project_name
                     else:
                         topic = project_name if project_name else f"{phase.title()} phase"
@@ -1980,7 +2077,7 @@ class APIOrchestrator:
                         "knowledge_base": {
                             "chunks": context.get("knowledge_base_chunks", []),
                             "gaps": context.get("kb_gaps", []),
-                            "coverage": kb_coverage.get("coverage_percentage", 0)
+                            "coverage": kb_coverage.get("coverage_percentage", 0),
                         },
                         "document_understanding": context.get("document_understanding", {}),
                         "recently_asked": context.get("previously_asked_questions", []),
@@ -1991,19 +2088,47 @@ class APIOrchestrator:
                     if conversation_history:
                         counselor_request["conversation_history"] = conversation_history
 
-                    logger.debug(f"Calling counselor with topic '{topic}' and {len(context.get('knowledge_base_chunks', []))} KB chunks")
+                    debug_logs.append(
+                        {
+                            "level": "debug",
+                            "message": f"Calling counselor with topic '{topic}' and {len(context.get('knowledge_base_chunks', []))} KB chunks",
+                        }
+                    )
+                    logger.debug(
+                        f"Calling counselor with topic '{topic}' and {len(context.get('knowledge_base_chunks', []))} KB chunks"
+                    )
                     question_response = counselor.process(counselor_request)
 
                     # Ensure response has the expected structure
                     if not isinstance(question_response, dict):
                         question_response = {"question": str(question_response)}
                     if "question" not in question_response:
-                        logger.warning("Counselor response missing 'question' field, using fallback")
+                        debug_logs.append(
+                            {
+                                "level": "warning",
+                                "message": "Counselor response missing 'question' field, using fallback",
+                            }
+                        )
+                        logger.warning(
+                            "Counselor response missing 'question' field, using fallback"
+                        )
                         question_response = self._get_fallback_question(phase)
+                    else:
+                        debug_logs.append(
+                            {
+                                "level": "success",
+                                "message": f"✓ Generated KB-aware question (KB coverage: {kb_coverage.get('coverage_percentage', 0)}%)",
+                            }
+                        )
 
             except Exception as e:
-                logger.error(f"Failed to generate question via SocraticCounselor: {e}", exc_info=True)
+                error_msg = f"Failed to generate question via SocraticCounselor: {str(e)}"
+                debug_logs.append({"level": "error", "message": error_msg})
+                logger.error(error_msg, exc_info=True)
                 question_response = self._get_fallback_question(phase)
+                debug_logs.append(
+                    {"level": "info", "message": "Using static fallback question due to LLM error"}
+                )
 
             # 4. Store generated question
             # Extract gaps before creating the question_entry (needed for PHASE 5)
@@ -2023,7 +2148,7 @@ class APIOrchestrator:
                 "skipped_at": None,
                 "metadata": question_response.get("metadata", {}),
                 # PHASE 5: Track KB gaps addressed by this question
-                "kb_gaps_addressed": kb_gaps_addressed
+                "kb_gaps_addressed": kb_gaps_addressed,
             }
 
             # Update project with new question
@@ -2036,6 +2161,11 @@ class APIOrchestrator:
                 f"(addresses {len(question_entry.get('kb_gaps_addressed', []))} KB gaps)"
             )
 
+            # Store debug logs in project for later retrieval
+            if not hasattr(project, "debug_logs"):
+                project.debug_logs = []
+            project.debug_logs.extend(debug_logs)
+
             return {
                 "status": "success",
                 "question": question_entry,
@@ -2046,23 +2176,24 @@ class APIOrchestrator:
                     # PHASE 5: Add KB-aware context
                     "kb_gaps_identified": len(kb_gaps),
                     "kb_coverage_percentage": kb_coverage.get("coverage_percentage", 0),
-                    "gaps_addressed_by_question": len(question_entry.get("kb_gaps_addressed", []))
-                }
+                    "gaps_addressed_by_question": len(question_entry.get("kb_gaps_addressed", [])),
+                },
+                "debug_logs": debug_logs,
             }
 
         except Exception as e:
-            logger.error(f"Error in _orchestrate_question_generation: {e}", exc_info=True)
+            error_msg = str(e)
+            logger.error(f"Error in _orchestrate_question_generation: {error_msg}", exc_info=True)
             return {
                 "status": "error",
-                "message": str(e)
+                "message": error_msg,
+                "debug_logs": [
+                    {"level": "error", "message": f"Question generation failed: {error_msg}"}
+                ],
             }
 
     def _orchestrate_answer_processing(
-        self,
-        project: Any,
-        user_id: str,
-        question_id: str,
-        answer_text: str
+        self, project: Any, user_id: str, question_id: str, answer_text: str
     ) -> Dict[str, Any]:
         """
         Orchestrate complete answer processing flow with all agents.
@@ -2081,15 +2212,14 @@ class APIOrchestrator:
             from datetime import datetime
 
             project_id = getattr(project, "project_id", None)
-            logger.info(f"Orchestrating answer processing for project {project_id}, question {question_id}")
+            logger.info(
+                f"Orchestrating answer processing for project {project_id}, question {question_id}"
+            )
 
             # 1. Find question being answered
             question = self._find_question(project, question_id)
             if not question:
-                return {
-                    "status": "error",
-                    "message": f"Question {question_id} not found"
-                }
+                return {"status": "error", "message": f"Question {question_id} not found"}
 
             # 2. Add to conversation history
             conversation_entry = {
@@ -2098,7 +2228,7 @@ class APIOrchestrator:
                 "content": answer_text,
                 "phase": question.get("phase", "discovery"),
                 "question_id": question_id,
-                "author": user_id
+                "author": user_id,
             }
 
             if not hasattr(project, "conversation_history"):
@@ -2108,13 +2238,8 @@ class APIOrchestrator:
             # 3. Call SocraticCounselor to extract specs
             specs_response = {
                 "status": "success",
-                "specs": {
-                    "goals": [],
-                    "requirements": [],
-                    "tech_stack": [],
-                    "constraints": []
-                },
-                "overall_confidence": 0.7
+                "specs": {"goals": [], "requirements": [], "tech_stack": [], "constraints": []},
+                "overall_confidence": 0.7,
             }
 
             try:
@@ -2124,7 +2249,7 @@ class APIOrchestrator:
                         user_answer=answer_text,
                         question=question.get("question", ""),
                         project_context=self._get_extracted_specs(project),
-                        phase=question.get("phase", "discovery")
+                        phase=question.get("phase", "discovery"),
                     )
             except Exception as e:
                 logger.warning(f"Failed to extract specs: {e}")
@@ -2145,15 +2270,12 @@ class APIOrchestrator:
                 "answer": answer_text,
                 "phase": question.get("phase", "discovery"),
                 "timestamp": datetime.now().isoformat(),
-                "specs_extracted": specs_response.get("specs", {})
+                "specs_extracted": specs_response.get("specs", {}),
             }
             project.asked_questions.append(asked_entry)
 
             # 6. Call conflict detector
-            conflicts_response = {
-                "status": "success",
-                "conflicts_found": []
-            }
+            conflicts_response = {"status": "success", "conflicts_found": []}
 
             try:
                 conflict_detector = self.agents.get("conflict_detector")
@@ -2161,16 +2283,13 @@ class APIOrchestrator:
                     conflicts_response = conflict_detector.detect_conflicts(
                         new_specs=specs_response.get("specs", {}),
                         existing_specs=self._get_existing_specs(project),
-                        context=self._get_extracted_specs(project)
+                        context=self._get_extracted_specs(project),
                     )
             except Exception as e:
                 logger.warning(f"Failed to detect conflicts: {e}")
 
             # 7. Call QualityController to update maturity
-            maturity_response = {
-                "status": "success",
-                "maturity": 50  # Default mid-range
-            }
+            maturity_response = {"status": "success", "maturity": 50}  # Default mid-range
 
             try:
                 quality_controller = self.agents.get("quality_controller")
@@ -2178,7 +2297,7 @@ class APIOrchestrator:
                     maturity_response = quality_controller.update_after_response(
                         specs=specs_response.get("specs", {}),
                         answer_quality=specs_response.get("overall_confidence", 0.5),
-                        answer_length=len(answer_text)
+                        answer_length=len(answer_text),
                     )
             except Exception as e:
                 logger.warning(f"Failed to update maturity: {e}")
@@ -2202,7 +2321,7 @@ class APIOrchestrator:
                         answer_text=answer_text,
                         specs_extracted=specs_response.get("specs", {}),
                         answer_quality=specs_response.get("overall_confidence", 0.5),
-                        time_to_answer=0  # Would be calculated on frontend
+                        time_to_answer=0,  # Would be calculated on frontend
                     )
             except Exception as e:
                 logger.warning(f"Failed to track learning: {e}")
@@ -2210,9 +2329,11 @@ class APIOrchestrator:
             # 9. Check phase completion
             phase_complete = maturity_response.get("maturity", 0) >= 100
 
-            logger.info(f"Answer processed: specs extracted={len(specs_response.get('specs', {}))}, "
-                       f"maturity={maturity_response.get('maturity', 0)}, "
-                       f"conflicts={len(conflicts_response.get('conflicts_found', []))}")
+            logger.info(
+                f"Answer processed: specs extracted={len(specs_response.get('specs', {}))}, "
+                f"maturity={maturity_response.get('maturity', 0)}, "
+                f"conflicts={len(conflicts_response.get('conflicts_found', []))}"
+            )
 
             # ============================================================
             # PHASE 6: Advancement Tracking & Metrics
@@ -2229,7 +2350,7 @@ class APIOrchestrator:
                             gap_id=f"gap_{question_id}",
                             question_id=question_id,
                             answer_text=answer_text,
-                            closure_confidence=specs_response.get("overall_confidence", 0.7)
+                            closure_confidence=specs_response.get("overall_confidence", 0.7),
                         )
                         logger.debug(f"Gap closure recorded for question {question_id}")
 
@@ -2243,7 +2364,7 @@ class APIOrchestrator:
                         total_gaps=total_gaps,
                         identified_gaps=gaps_identified,
                         closed_gaps=closed_gaps,
-                        project_specs=extracted_specs
+                        project_specs=extracted_specs,
                     )
                     advancement_data["completeness"] = completeness
 
@@ -2255,12 +2376,14 @@ class APIOrchestrator:
                         maturity=maturity_value,
                         total_gaps=total_gaps,
                         closed_gaps=closed_gaps + 1,
-                        question_count=len(getattr(project, "asked_questions", [])) + 1
+                        question_count=len(getattr(project, "asked_questions", [])) + 1,
                     )
                     advancement_data["advancement_metrics"] = advancement_metrics
 
-                    logger.info(f"Advancement metrics: completeness={completeness.overall:.2%}, "
-                               f"maturity={maturity_value:.2%}, quality={advancement_metrics.quality_score:.2%}")
+                    logger.info(
+                        f"Advancement metrics: completeness={completeness.overall:.2%}, "
+                        f"maturity={maturity_value:.2%}, quality={advancement_metrics.quality_score:.2%}"
+                    )
 
             except Exception as e:
                 logger.warning(f"Failed to track advancement: {e}")
@@ -2271,13 +2394,25 @@ class APIOrchestrator:
                     dashboard_metrics = self.metrics_service.get_dashboard_metrics(
                         project_id=project_id,
                         current_phase=phase,
-                        completeness=advancement_data.get("completeness", {}).overall if "completeness" in advancement_data else 0.5,
+                        completeness=(
+                            advancement_data.get("completeness", {}).overall
+                            if "completeness" in advancement_data
+                            else 0.5
+                        ),
                         maturity=maturity_response.get("maturity", 0) / 100.0,
                         gap_closure_count=getattr(project, "closed_gaps_count", 5),
                         total_gaps=total_gaps,
                         questions_answered=len(getattr(project, "asked_questions", [])) + 1,
-                        quality_score=advancement_data.get("advancement_metrics", {}).quality_score if "advancement_metrics" in advancement_data else 0.7,
-                        advancement_confidence=advancement_data.get("advancement_metrics", {}).confidence if "advancement_metrics" in advancement_data else 0.75
+                        quality_score=(
+                            advancement_data.get("advancement_metrics", {}).quality_score
+                            if "advancement_metrics" in advancement_data
+                            else 0.7
+                        ),
+                        advancement_confidence=(
+                            advancement_data.get("advancement_metrics", {}).confidence
+                            if "advancement_metrics" in advancement_data
+                            else 0.75
+                        ),
                     )
                     advancement_data["dashboard_metrics"] = dashboard_metrics
                     logger.debug(f"Dashboard metrics aggregated for project {project_id}")
@@ -2291,12 +2426,24 @@ class APIOrchestrator:
                     self.progress_dashboard.record_progress_snapshot(
                         project_id=project_id,
                         phase=phase,
-                        completeness=advancement_data.get("completeness", {}).overall if "completeness" in advancement_data else 0.5,
-                        gap_closure_percentage=advancement_data.get("advancement_metrics", {}).gap_closure_rate if "advancement_metrics" in advancement_data else 0.6,
+                        completeness=(
+                            advancement_data.get("completeness", {}).overall
+                            if "completeness" in advancement_data
+                            else 0.5
+                        ),
+                        gap_closure_percentage=(
+                            advancement_data.get("advancement_metrics", {}).gap_closure_rate
+                            if "advancement_metrics" in advancement_data
+                            else 0.6
+                        ),
                         maturity=maturity_response.get("maturity", 0) / 100.0,
                         questions_answered=len(getattr(project, "asked_questions", [])) + 1,
                         total_gaps=total_gaps,
-                        quality_score=advancement_data.get("advancement_metrics", {}).quality_score if "advancement_metrics" in advancement_data else 0.7
+                        quality_score=(
+                            advancement_data.get("advancement_metrics", {}).quality_score
+                            if "advancement_metrics" in advancement_data
+                            else 0.7
+                        ),
                     )
                     logger.debug(f"Progress snapshot recorded for project {project_id}")
 
@@ -2310,21 +2457,15 @@ class APIOrchestrator:
                 "conflicts": conflicts_response.get("conflicts_found", []),
                 "phase_complete": phase_complete,
                 # PHASE 6: Include advancement data
-                "advancement": advancement_data
+                "advancement": advancement_data,
             }
 
         except Exception as e:
             logger.error(f"Error in _orchestrate_answer_processing: {e}", exc_info=True)
-            return {
-                "status": "error",
-                "message": str(e)
-            }
+            return {"status": "error", "message": str(e)}
 
     def _orchestrate_answer_suggestions(
-        self,
-        project: Any,
-        user_id: str,
-        question_id: str
+        self, project: Any, user_id: str, question_id: str
     ) -> Dict[str, Any]:
         """
         Orchestrate answer suggestions generation.
@@ -2340,15 +2481,14 @@ class APIOrchestrator:
         """
         try:
             project_id = getattr(project, "project_id", None)
-            logger.info(f"Orchestrating answer suggestions for project {project_id}, question {question_id}")
+            logger.info(
+                f"Orchestrating answer suggestions for project {project_id}, question {question_id}"
+            )
 
             # 1. Find current question
             question = self._find_question(project, question_id)
             if not question:
-                return {
-                    "status": "error",
-                    "message": f"Question {question_id} not found"
-                }
+                return {"status": "error", "message": f"Question {question_id} not found"}
 
             # 2. Gather context
             context = self._gather_question_context(project, user_id)
@@ -2361,21 +2501,21 @@ class APIOrchestrator:
                         "id": "suggestion_1",
                         "text": "Provide a detailed answer focusing on the main aspects.",
                         "approach": "comprehensive",
-                        "angle": "Complete overview"
+                        "angle": "Complete overview",
                     },
                     {
                         "id": "suggestion_2",
                         "text": "Think about the specific constraints and limitations.",
                         "approach": "constraint_driven",
-                        "angle": "Practical constraints"
+                        "angle": "Practical constraints",
                     },
                     {
                         "id": "suggestion_3",
                         "text": "Consider the user perspective and their needs.",
                         "approach": "user_centric",
-                        "angle": "User focus"
-                    }
-                ]
+                        "angle": "User focus",
+                    },
+                ],
             }
 
             try:
@@ -2387,24 +2527,18 @@ class APIOrchestrator:
                         phase=context["phase"],
                         user_role=context["user_role"],
                         recent_messages=context.get("recent_messages", []),
-                        diversity_emphasis=True
+                        diversity_emphasis=True,
                     )
             except Exception as e:
                 logger.warning(f"Failed to generate suggestions: {e}")
 
             logger.info(f"Generated {len(suggestions_response.get('suggestions', []))} suggestions")
 
-            return {
-                "status": "success",
-                "suggestions": suggestions_response.get("suggestions", [])
-            }
+            return {"status": "success", "suggestions": suggestions_response.get("suggestions", [])}
 
         except Exception as e:
             logger.error(f"Error in _orchestrate_answer_suggestions: {e}", exc_info=True)
-            return {
-                "status": "error",
-                "message": str(e)
-            }
+            return {"status": "error", "message": str(e)}
 
     # ================== END ORCHESTRATION METHODS ==================
 
@@ -2421,6 +2555,7 @@ class APIOrchestrator:
 
             try:
                 from socrates_api.database import get_database
+
                 db = get_database()
 
                 # Get all available providers with metadata
@@ -2443,23 +2578,18 @@ class APIOrchestrator:
                 }
             except Exception as e:
                 logger.error(f"Failed to list providers: {e}", exc_info=True)
-                return {
-                    "status": "error",
-                    "message": str(e)
-                }
+                return {"status": "error", "message": str(e)}
 
         elif action == "get_provider_config":
             # Return user's current provider configuration
             user_id = request_data.get("user_id", "")
 
             if not user_id:
-                return {
-                    "status": "error",
-                    "message": "user_id is required"
-                }
+                return {"status": "error", "message": "user_id is required"}
 
             try:
                 from socrates_api.database import get_database
+
                 db = get_database()
 
                 # Get user's actual provider preferences
@@ -2479,10 +2609,7 @@ class APIOrchestrator:
                 }
             except Exception as e:
                 logger.error(f"Failed to get provider config: {e}", exc_info=True)
-                return {
-                    "status": "error",
-                    "message": str(e)
-                }
+                return {"status": "error", "message": str(e)}
 
         elif action == "set_default_provider":
             # Set user's default LLM provider
@@ -2490,13 +2617,11 @@ class APIOrchestrator:
             provider = request_data.get("provider", "anthropic")
 
             if not user_id:
-                return {
-                    "status": "error",
-                    "message": "user_id is required"
-                }
+                return {"status": "error", "message": "user_id is required"}
 
             try:
                 from socrates_api.database import get_database
+
                 db = get_database()
                 success = db.set_user_default_provider(user_id, provider)
 
@@ -2505,19 +2630,13 @@ class APIOrchestrator:
                     return {
                         "status": "success",
                         "data": {"default_provider": provider},
-                        "message": f"Default provider set to {provider}"
+                        "message": f"Default provider set to {provider}",
                     }
                 else:
-                    return {
-                        "status": "error",
-                        "message": "Failed to set default provider"
-                    }
+                    return {"status": "error", "message": "Failed to set default provider"}
             except Exception as e:
                 logger.error(f"Failed to set default provider: {e}", exc_info=True)
-                return {
-                    "status": "error",
-                    "message": str(e)
-                }
+                return {"status": "error", "message": str(e)}
 
         elif action == "set_provider_model":
             # Set user's preferred model for a provider
@@ -2526,13 +2645,11 @@ class APIOrchestrator:
             model = request_data.get("model", "")
 
             if not user_id or not model:
-                return {
-                    "status": "error",
-                    "message": "user_id and model are required"
-                }
+                return {"status": "error", "message": "user_id and model are required"}
 
             try:
                 from socrates_api.database import get_database
+
                 db = get_database()
                 success = db.set_provider_model(user_id, provider, model)
 
@@ -2541,19 +2658,13 @@ class APIOrchestrator:
                     return {
                         "status": "success",
                         "data": {"provider": provider, "model": model},
-                        "message": f"Model set to {model} for {provider}"
+                        "message": f"Model set to {model} for {provider}",
                     }
                 else:
-                    return {
-                        "status": "error",
-                        "message": "Failed to set provider model"
-                    }
+                    return {"status": "error", "message": "Failed to set provider model"}
             except Exception as e:
                 logger.error(f"Failed to set provider model: {e}", exc_info=True)
-                return {
-                    "status": "error",
-                    "message": str(e)
-                }
+                return {"status": "error", "message": str(e)}
 
         elif action == "update_api_key":
             # Update API key for provider
@@ -2591,13 +2702,11 @@ class APIOrchestrator:
             api_key = request_data.get("api_key", "")
 
             if not user_id or not api_key:
-                return {
-                    "status": "error",
-                    "message": "user_id and api_key are required"
-                }
+                return {"status": "error", "message": "user_id and api_key are required"}
 
             try:
                 from socrates_api.database import get_database
+
                 db = get_database()
                 success = db.save_api_key(user_id, provider, api_key)
 
@@ -2606,19 +2715,13 @@ class APIOrchestrator:
                     return {
                         "status": "success",
                         "data": {"provider": provider},
-                        "message": f"API key saved for {provider}"
+                        "message": f"API key saved for {provider}",
                     }
                 else:
-                    return {
-                        "status": "error",
-                        "message": "Failed to save API key"
-                    }
+                    return {"status": "error", "message": "Failed to save API key"}
             except Exception as e:
                 logger.error(f"Failed to handle add_api_key: {e}", exc_info=True)
-                return {
-                    "status": "error",
-                    "message": str(e)
-                }
+                return {"status": "error", "message": str(e)}
 
         elif action == "remove_api_key":
             # Delete user's API key for a provider
@@ -2626,33 +2729,22 @@ class APIOrchestrator:
             provider = request_data.get("provider", "anthropic")
 
             if not user_id:
-                return {
-                    "status": "error",
-                    "message": "user_id is required"
-                }
+                return {"status": "error", "message": "user_id is required"}
 
             try:
                 from socrates_api.database import get_database
+
                 db = get_database()
                 success = db.delete_api_key(user_id, provider)
 
                 if success:
                     logger.info(f"API key removed for user {user_id} provider {provider}")
-                    return {
-                        "status": "success",
-                        "message": f"API key removed for {provider}"
-                    }
+                    return {"status": "success", "message": f"API key removed for {provider}"}
                 else:
-                    return {
-                        "status": "error",
-                        "message": "API key not found"
-                    }
+                    return {"status": "error", "message": "API key not found"}
             except Exception as e:
                 logger.error(f"Failed to handle remove_api_key: {e}", exc_info=True)
-                return {
-                    "status": "error",
-                    "message": str(e)
-                }
+                return {"status": "error", "message": str(e)}
 
         elif action == "set_auth_method":
             # Set authentication method for a provider (e.g., API key vs subscription)
@@ -2661,21 +2753,15 @@ class APIOrchestrator:
             auth_method = request_data.get("auth_method", "api_key")
 
             if not user_id:
-                return {
-                    "status": "error",
-                    "message": "user_id is required"
-                }
+                return {"status": "error", "message": "user_id is required"}
 
             # For now, just acknowledge the setting
             # In a full implementation, this would be stored and used
             logger.info(f"Auth method set for user {user_id} provider {provider}: {auth_method}")
             return {
                 "status": "success",
-                "data": {
-                    "provider": provider,
-                    "auth_method": auth_method
-                },
-                "message": f"Auth method updated for {provider}"
+                "data": {"provider": provider, "auth_method": auth_method},
+                "message": f"Auth method updated for {provider}",
             }
 
         else:
@@ -2714,7 +2800,13 @@ class APIOrchestrator:
                 "confidence": 0.85,
             },
             "show_answer": {
-                "keywords": ["answer", "show answer", "reveal", "what's the answer", "tell me the answer"],
+                "keywords": [
+                    "answer",
+                    "show answer",
+                    "reveal",
+                    "what's the answer",
+                    "tell me the answer",
+                ],
                 "action": "show_answer",
                 "confidence": 0.80,
             },
@@ -2724,7 +2816,9 @@ class APIOrchestrator:
         for intent, pattern in intent_patterns.items():
             for keyword in pattern["keywords"]:
                 if keyword in user_input_lower:
-                    logger.debug(f"Detected actionable intent: {intent} (confidence: {pattern['confidence']})")
+                    logger.debug(
+                        f"Detected actionable intent: {intent} (confidence: {pattern['confidence']})"
+                    )
                     return {
                         "intent": intent,
                         "action": pattern["action"],
@@ -2745,7 +2839,9 @@ class APIOrchestrator:
             user_id = request_data.get("user_id", "")
             force_refresh = request_data.get("force_refresh", False)
 
-            logger.info(f"_handle_socratic_counselor generate_question: topic={topic[:50] if topic else 'EMPTY'}")
+            logger.info(
+                f"_handle_socratic_counselor generate_question: topic={topic[:50] if topic else 'EMPTY'}"
+            )
 
             # Get project ID and phase for caching
             project_id = getattr(project, "project_id", None) or project.get("project_id")
@@ -2759,16 +2855,16 @@ class APIOrchestrator:
             if not force_refresh and project_id:
                 try:
                     from socrates_api.database import get_database
+
                     db = get_database()
                     cached_questions = db.get_cached_questions(
-                        project_id=project_id,
-                        phase=phase,
-                        exclude_recent=3
+                        project_id=project_id, phase=phase, exclude_recent=3
                     )
 
                     if cached_questions:
                         # Use a random cached question
                         import random
+
                         question_data = random.choice(cached_questions)
                         question_text = question_data.get("question_text")
                         cache_id = question_data.get("cache_id")
@@ -2801,6 +2897,7 @@ class APIOrchestrator:
             try:
                 # Try to get user's API key
                 from socrates_api.database import get_database
+
                 db = get_database()
 
                 # Get user's preferred provider and model
@@ -2817,7 +2914,9 @@ class APIOrchestrator:
                             user_api_key = fallback_key
                             stored_model = db.get_provider_model(user_id, provider)
                             model = _get_valid_model_for_provider(provider, stored_model)
-                            logger.info(f"No key for default provider, using fallback provider: {provider}/{model}")
+                            logger.info(
+                                f"No key for default provider, using fallback provider: {provider}/{model}"
+                            )
                             break
 
                 # Create LLM client with user's key if available
@@ -2829,10 +2928,10 @@ class APIOrchestrator:
                             provider=provider,
                             model=model,
                             api_key=user_api_key,
-                            cache_responses=True,           # Cache responses for performance
-                            cache_ttl=3600,                 # Cache for 1 hour
-                            retry_attempts=3,               # Retry up to 3 times on failure
-                            retry_backoff_factor=2.0        # Exponential backoff for retries
+                            cache_responses=True,  # Cache responses for performance
+                            cache_ttl=3600,  # Cache for 1 hour
+                            retry_attempts=3,  # Retry up to 3 times on failure
+                            retry_backoff_factor=2.0,  # Exponential backoff for retries
                         )
                         # Wrap with adapter for SocraticCounselor compatibility
                         llm_client_to_use = LLMClientAdapter(raw_client)
@@ -2841,7 +2940,9 @@ class APIOrchestrator:
                             "and production features: token_tracking=True, response_caching=True"
                         )
                     except Exception as e:
-                        logger.warning(f"Failed to create LLMClient with user key: {e}", exc_info=True)
+                        logger.warning(
+                            f"Failed to create LLMClient with user key: {e}", exc_info=True
+                        )
                         llm_client_to_use = self.llm_client
                 else:
                     llm_client_to_use = self.llm_client
@@ -2859,7 +2960,9 @@ class APIOrchestrator:
                         # Use real agent to generate question
                         # SocraticCounselor expects topic at top level
                         # CRITICAL FIX: Include conversation history for context-aware question generation
-                        logger.info(f"Calling counselor.process() with topic: {topic[:50] if topic else 'EMPTY'}")
+                        logger.info(
+                            f"Calling counselor.process() with topic: {topic[:50] if topic else 'EMPTY'}"
+                        )
                         conversation_summary = self._get_conversation_summary(project)
 
                         # Build request with conversation context
@@ -2872,7 +2975,9 @@ class APIOrchestrator:
                         conversation_history = getattr(project, "conversation_history", [])
                         if conversation_history:
                             counselor_request["conversation_history"] = conversation_history
-                            logger.debug(f"Including {len(conversation_history)} conversation history entries for context")
+                            logger.debug(
+                                f"Including {len(conversation_history)} conversation history entries for context"
+                            )
 
                         result = counselor.process(counselor_request)
                         logger.info(f"counselor.process() returned: {result}")
@@ -2881,12 +2986,13 @@ class APIOrchestrator:
                         if project_id and result.get("question"):
                             try:
                                 from socrates_api.database import get_database
+
                                 db = get_database()
                                 db.save_cached_question(
                                     project_id=project_id,
                                     phase=phase,
                                     category=None,
-                                    question_text=result.get("question")
+                                    question_text=result.get("question"),
                                 )
                                 logger.info(f"Cached new question for project {project_id}")
 
@@ -2895,7 +3001,11 @@ class APIOrchestrator:
                             except Exception as e:
                                 logger.warning(f"Failed to cache generated question: {e}")
 
-                        return {"status": "success", "data": result, "message": "Question generated"}
+                        return {
+                            "status": "success",
+                            "data": result,
+                            "message": "Question generated",
+                        }
                     finally:
                         # Restore original client
                         counselor.llm_client = original_llm_client
@@ -2947,13 +3057,20 @@ class APIOrchestrator:
             # This handles cases like "skip", "hint", "explain conflict", etc.
             detected_intent = self._detect_actionable_intent(response)
             if detected_intent and detected_intent.get("should_auto_execute"):
-                logger.info(f"Auto-executing intent: {detected_intent['action']} (confidence: {detected_intent['confidence']})")
+                logger.info(
+                    f"Auto-executing intent: {detected_intent['action']} (confidence: {detected_intent['confidence']})"
+                )
 
                 # Emit NLU_SUGGESTION_EXECUTED event for real-time UI updates
                 from socrates_api.models_local import EventType
+
                 event_data = {
                     "user_id": current_user,
-                    "project_id": getattr(project, "project_id", project.get("project_id")) if hasattr(project, "get") else project.get("project_id"),
+                    "project_id": (
+                        getattr(project, "project_id", project.get("project_id"))
+                        if hasattr(project, "get")
+                        else project.get("project_id")
+                    ),
                     "intent": detected_intent["intent"],
                     "action": detected_intent["action"],
                     "confidence": detected_intent["confidence"],
@@ -2967,7 +3084,7 @@ class APIOrchestrator:
                         "action": detected_intent["action"],
                         "project": project,
                         "current_user": current_user,
-                    }
+                    },
                 )
 
                 # Return auto-executed action with NLU metadata
@@ -2989,10 +3106,14 @@ class APIOrchestrator:
                 question_text = getattr(project, "current_question_text", None)
                 question_metadata = getattr(project, "current_question_metadata", {})
 
-                logger.debug(f"Processing response with question context:")
+                logger.debug("Processing response with question context:")
                 logger.debug(f"  Question: {question_text}")
-                logger.debug(f"  Category: {question_metadata.get('category', 'unknown') if question_metadata else 'unknown'}")
-                logger.debug(f"  Target field: {question_metadata.get('target_field', 'unknown') if question_metadata else 'unknown'}")
+                logger.debug(
+                    f"  Category: {question_metadata.get('category', 'unknown') if question_metadata else 'unknown'}"
+                )
+                logger.debug(
+                    f"  Target field: {question_metadata.get('target_field', 'unknown') if question_metadata else 'unknown'}"
+                )
 
                 extracted_specs = self._extract_insights_fallback(
                     response_text=response,
@@ -3011,10 +3132,15 @@ class APIOrchestrator:
 
                 # CRITICAL FIX #1: Auto-save extracted specs with metadata
                 # This ensures specs are persisted and not lost after response processing
-                project_id = getattr(project, "project_id", project.get("project_id")) if hasattr(project, "get") or hasattr(project, "project_id") else None
+                project_id = (
+                    getattr(project, "project_id", project.get("project_id"))
+                    if hasattr(project, "get") or hasattr(project, "project_id")
+                    else None
+                )
                 if project_id and extracted_specs:
                     try:
                         from socrates_api.database import get_database
+
                         db = get_database()
                         db.save_extracted_specs(
                             project_id=project_id,
@@ -3026,7 +3152,7 @@ class APIOrchestrator:
                                 "user_id": current_user,
                                 "conflict_count": len(conflicts),
                                 "has_conflicts": len(conflicts) > 0,
-                            }
+                            },
                         )
                         logger.info(f"✓ Extracted specs persisted for project {project_id}")
                     except Exception as e:
@@ -3036,7 +3162,7 @@ class APIOrchestrator:
                 # CRITICAL FIX #6: RECONNECT PIPELINE #4 - KNOWLEDGE BASE INTEGRATION
                 # Add extracted specs to vector database so they become project knowledge
                 # This enables project-specific question generation instead of generic questions
-                if project_id and extracted_specs and hasattr(self, 'vector_db') and self.vector_db:
+                if project_id and extracted_specs and hasattr(self, "vector_db") and self.vector_db:
                     try:
                         logger.info("Adding extracted specs to knowledge base...")
 
@@ -3058,12 +3184,16 @@ class APIOrchestrator:
                                                 "spec_value": item,
                                                 "source": "dialogue_response",
                                                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                                            }
+                                            },
                                         )
                                     except Exception as vec_err:
-                                        logger.debug(f"Failed to add spec '{item}' to vector DB: {vec_err}")
+                                        logger.debug(
+                                            f"Failed to add spec '{item}' to vector DB: {vec_err}"
+                                        )
 
-                        logger.info(f"✓ Added {sum(len(items) for items in extracted_specs.values() if items)} specs to knowledge base")
+                        logger.info(
+                            f"✓ Added {sum(len(items) for items in extracted_specs.values() if items)} specs to knowledge base"
+                        )
 
                     except Exception as kb_err:
                         logger.warning(f"Failed to integrate with knowledge base: {kb_err}")
@@ -3089,7 +3219,7 @@ class APIOrchestrator:
                                 "project": project,
                                 "insights": extracted_specs,
                                 "current_user": current_user,
-                            }
+                            },
                         )
 
                         if maturity_result.get("status") == "success":
@@ -3118,12 +3248,16 @@ class APIOrchestrator:
 
                                 old_score = getattr(project, "_old_maturity_score", 0.0)
                                 new_score = maturity_info.get("overall_score", 0.0)
-                                logger.info(f"✓ Project maturity recalculated: {old_score:.1f}% → {new_score:.1f}%")
+                                logger.info(
+                                    f"✓ Project maturity recalculated: {old_score:.1f}% → {new_score:.1f}%"
+                                )
 
                                 # Emit event for maturity update (RECONNECT PIPELINE)
                                 try:
                                     from socrates_api.models_local import EventType
-                                    from socrates_api.websocket.connection_manager import get_connection_manager
+                                    from socrates_api.websocket.connection_manager import (
+                                        get_connection_manager,
+                                    )
 
                                     event_data = {
                                         "project_id": getattr(project, "project_id", ""),
@@ -3144,15 +3278,19 @@ class APIOrchestrator:
                                                 "type": "event",
                                                 "eventType": "MATURITY_UPDATED",
                                                 "data": event_data,
-                                            }
+                                            },
                                         )
                                         logger.debug("Emitted MATURITY_UPDATED event")
                                     except Exception as event_err:
                                         logger.debug(f"Could not emit maturity event: {event_err}")
                                 except Exception as event_init_err:
-                                    logger.debug(f"Could not initialize event system: {event_init_err}")
+                                    logger.debug(
+                                        f"Could not initialize event system: {event_init_err}"
+                                    )
                         else:
-                            logger.warning(f"Maturity recalculation returned non-success: {maturity_result.get('message')}")
+                            logger.warning(
+                                f"Maturity recalculation returned non-success: {maturity_result.get('message')}"
+                            )
 
                     except Exception as maturity_err:
                         # Maturity recalculation is important but not critical
@@ -3163,6 +3301,7 @@ class APIOrchestrator:
                     # CRITICAL: Save project with updated maturity
                     try:
                         from socrates_api.database import get_database
+
                         db = get_database()
                         db.save_project(project)
                         logger.info("✓ Project saved with updated maturity scores")
@@ -3176,7 +3315,9 @@ class APIOrchestrator:
                         "extracted_specs": extracted_specs,
                         "conflicts": conflicts,
                         "maturity_update": maturity_update_data,  # Include maturity in response
-                        "next_action": "generate_question" if not conflicts else "resolve_conflicts",
+                        "next_action": (
+                            "generate_question" if not conflicts else "resolve_conflicts"
+                        ),
                     },
                     "message": "Response processed successfully",
                 }
@@ -3206,8 +3347,16 @@ class APIOrchestrator:
                 if agent and self.llm_client:
                     try:
                         # Get project context for hint generation
-                        phase = getattr(project, "phase", project.get("phase", "discovery")) if hasattr(project, "get") else project.get("phase", "discovery")
-                        goals = getattr(project, "goals", project.get("goals", "")) if hasattr(project, "get") else project.get("goals", "")
+                        phase = (
+                            getattr(project, "phase", project.get("phase", "discovery"))
+                            if hasattr(project, "get")
+                            else project.get("phase", "discovery")
+                        )
+                        goals = (
+                            getattr(project, "goals", project.get("goals", ""))
+                            if hasattr(project, "get")
+                            else project.get("goals", "")
+                        )
 
                         hint_prompt = f"""You are a Socratic tutor. A student is working on a project in the '{phase}' phase.
 
@@ -3221,19 +3370,23 @@ Generate a brief, encouraging hint that guides the student to think about the ne
 
 Provide only the hint text, no additional commentary."""
 
-                        result = agent.process({
-                            "action": "generate",
-                            "prompt": hint_prompt,
-                            "context": {
-                                "phase": phase,
-                                "goals": goals,
+                        result = agent.process(
+                            {
+                                "action": "generate",
+                                "prompt": hint_prompt,
+                                "context": {
+                                    "phase": phase,
+                                    "goals": goals,
+                                },
                             }
-                        })
+                        )
 
                         if result and result.get("status") == "success":
                             hint = result.get("data", {}).get("hint") or result.get("hint")
                             if hint:
-                                logger.info(f"Generated hint using SkillGeneratorAgent: {hint[:50]}...")
+                                logger.info(
+                                    f"Generated hint using SkillGeneratorAgent: {hint[:50]}..."
+                                )
                                 return {
                                     "status": "success",
                                     "data": {"hint": hint},
@@ -3244,8 +3397,16 @@ Provide only the hint text, no additional commentary."""
 
                 # Fallback: Generate hint using LLM client
                 if self.llm_client:
-                    phase = getattr(project, "phase", project.get("phase", "discovery")) if hasattr(project, "get") else project.get("phase", "discovery")
-                    goals = getattr(project, "goals", project.get("goals", "")) if hasattr(project, "get") else project.get("goals", "")
+                    phase = (
+                        getattr(project, "phase", project.get("phase", "discovery"))
+                        if hasattr(project, "get")
+                        else project.get("phase", "discovery")
+                    )
+                    goals = (
+                        getattr(project, "goals", project.get("goals", ""))
+                        if hasattr(project, "get")
+                        else project.get("goals", "")
+                    )
 
                     hint_prompt = f"""You are a Socratic tutor. A student is working on a project in the '{phase}' phase.
 
@@ -3269,7 +3430,11 @@ Provide only the hint text."""
                         }
 
                 # Final fallback: Generic phase-aware hint
-                phase = getattr(project, "phase", project.get("phase", "discovery")) if hasattr(project, "get") else project.get("phase", "discovery")
+                phase = (
+                    getattr(project, "phase", project.get("phase", "discovery"))
+                    if hasattr(project, "get")
+                    else project.get("phase", "discovery")
+                )
 
                 phase_hints = {
                     "discovery": "Consider what problem you're trying to solve. What are the key requirements and constraints?",
@@ -3280,7 +3445,10 @@ Provide only the hint text."""
                     "deployment": "What are the steps to make your project accessible to users? Start with the most critical one.",
                 }
 
-                hint = phase_hints.get(phase, "Review your project progress and identify the next logical step in your development journey.")
+                hint = phase_hints.get(
+                    phase,
+                    "Review your project progress and identify the next logical step in your development journey.",
+                )
 
                 logger.info(f"Using fallback hint for phase {phase}")
                 return {
@@ -3293,7 +3461,9 @@ Provide only the hint text."""
                 logger.error(f"Failed to generate hint: {e}", exc_info=True)
                 return {
                     "status": "success",
-                    "data": {"hint": "Review your project requirements and consider what step comes next in your learning journey."},
+                    "data": {
+                        "hint": "Review your project requirements and consider what step comes next in your learning journey."
+                    },
                     "message": "Hint generated (fallback)",
                 }
 
@@ -3312,8 +3482,13 @@ Provide only the hint text."""
 
                 # Save updated project
                 from socrates_api.database import get_database
+
                 db = get_database()
-                project_id = getattr(project, "project_id", project.get("project_id")) if hasattr(project, "get") else project.get("project_id")
+                project_id = (
+                    getattr(project, "project_id", project.get("project_id"))
+                    if hasattr(project, "get")
+                    else project.get("project_id")
+                )
                 if project_id:
                     db.save_project(project_id, project)
 
@@ -3352,6 +3527,7 @@ Provide only the hint text."""
 
                 # Use the helper function from projects_chat to generate user-friendly explanations
                 from socrates_api.routers.projects_chat import _generate_conflict_explanation
+
                 explanation = _generate_conflict_explanation(conflicts)
 
                 return {
@@ -3382,14 +3558,12 @@ Provide only the hint text."""
             user_id = request_data.get("user_id", "")
 
             if not prompt:
-                return {
-                    "status": "error",
-                    "message": "Prompt is required"
-                }
+                return {"status": "error", "message": "Prompt is required"}
 
             try:
                 # Try to get user's API key
                 from socrates_api.database import get_database
+
                 db = get_database()
 
                 # Get user's preferred provider and model
@@ -3406,7 +3580,9 @@ Provide only the hint text."""
                             user_api_key = fallback_key
                             stored_model = db.get_provider_model(user_id, provider)
                             model = _get_valid_model_for_provider(provider, stored_model)
-                            logger.info(f"No key for default provider, using fallback provider: {provider}/{model}")
+                            logger.info(
+                                f"No key for default provider, using fallback provider: {provider}/{model}"
+                            )
                             break
 
                 # Create LLM client with user's key if available
@@ -3418,10 +3594,10 @@ Provide only the hint text."""
                             provider=provider,
                             model=model,
                             api_key=user_api_key,
-                            cache_responses=True,           # Cache responses for performance
-                            cache_ttl=3600,                 # Cache for 1 hour
-                            retry_attempts=3,               # Retry up to 3 times on failure
-                            retry_backoff_factor=2.0        # Exponential backoff for retries
+                            cache_responses=True,  # Cache responses for performance
+                            cache_ttl=3600,  # Cache for 1 hour
+                            retry_attempts=3,  # Retry up to 3 times on failure
+                            retry_backoff_factor=2.0,  # Exponential backoff for retries
                         )
                         # Wrap with adapter for compatibility
                         llm_client_to_use = LLMClientAdapter(raw_client)
@@ -3430,46 +3606,41 @@ Provide only the hint text."""
                             "and production features: token_tracking=True, response_caching=True"
                         )
                     except Exception as e:
-                        logger.warning(f"Failed to create LLMClient with user key: {e}", exc_info=True)
+                        logger.warning(
+                            f"Failed to create LLMClient with user key: {e}", exc_info=True
+                        )
                         llm_client_to_use = self.llm_client
                 else:
                     llm_client_to_use = self.llm_client
                     if llm_client_to_use:
-                        logger.info(f"No user API key for {user_id}, using global API key in direct mode")
+                        logger.info(
+                            f"No user API key for {user_id}, using global API key in direct mode"
+                        )
                     else:
                         logger.warning(f"No user API key and no global API key for user {user_id}")
 
                 if not llm_client_to_use:
                     return {
                         "status": "error",
-                        "message": "No API key available for response generation"
+                        "message": "No API key available for response generation",
                     }
 
                 # Generate answer using the appropriate LLM client
                 answer = llm_client_to_use.generate_response(prompt)
 
                 if not answer:
-                    return {
-                        "status": "error",
-                        "message": "Failed to generate answer"
-                    }
+                    return {"status": "error", "message": "Failed to generate answer"}
 
                 logger.info(f"Generated direct answer for user {user_id}")
                 return {
                     "status": "success",
-                    "data": {
-                        "answer": answer,
-                        "user_id": user_id
-                    },
-                    "message": "Answer generated"
+                    "data": {"answer": answer, "user_id": user_id},
+                    "message": "Answer generated",
                 }
 
             except Exception as e:
                 logger.error(f"Failed to generate direct answer: {e}", exc_info=True)
-                return {
-                    "status": "error",
-                    "message": str(e)
-                }
+                return {"status": "error", "message": str(e)}
 
         elif action == "extract_insights":
             # Extract specs/insights from text
@@ -3478,14 +3649,12 @@ Provide only the hint text."""
             project = request_data.get("project", {})
 
             if not text:
-                return {
-                    "status": "error",
-                    "message": "Text is required for insight extraction"
-                }
+                return {"status": "error", "message": "Text is required for insight extraction"}
 
             try:
                 # Try to get user's API key
                 from socrates_api.database import get_database
+
                 db = get_database()
                 user_api_key = db.get_api_key(user_id, "anthropic")
                 provider = "anthropic"
@@ -3496,38 +3665,58 @@ Provide only the hint text."""
                         "claude": "claude-3-5-sonnet-20241022",
                         "openai": "gpt-4-turbo",
                         "gemini": "gemini-pro",
-                        "ollama": "llama2"
+                        "ollama": "llama2",
                     }
                     for fallback_provider in ["claude", "openai", "gemini", "ollama"]:
                         fallback_key = db.get_api_key(user_id, fallback_provider)
                         if fallback_key:
                             provider = fallback_provider
                             user_api_key = fallback_key
-                            logger.info(f"No anthropic key, using fallback provider for insights: {provider}")
+                            logger.info(
+                                f"No anthropic key, using fallback provider for insights: {provider}"
+                            )
                             break
 
                 # Create LLM client with user's key if available
                 llm_client_to_use = None
                 if user_api_key:
-                    try:
-                        # Use socrates-nexus with production features for insights extraction
-                        raw_client = LLMClient(
-                            provider=provider,
-                            model="claude-3-5-haiku-20241022",
-                            api_key=user_api_key,
-                            cache_responses=True,           # Cache responses for performance
-                            cache_ttl=3600,                 # Cache for 1 hour
-                            retry_attempts=3,               # Retry up to 3 times on failure
-                            retry_backoff_factor=2.0        # Exponential backoff for retries
+                    # Try multiple models in case one isn't available
+                    models_to_try = [
+                        "claude-3-5-haiku",
+                        "claude-3-5-haiku-20241022",
+                        "claude-3-haiku-20240307",
+                        "claude-3-5-sonnet-20241022",
+                    ]
+                    for model_name in models_to_try:
+                        try:
+                            # Use socrates-nexus with production features for insights extraction
+                            raw_client = LLMClient(
+                                provider=provider,
+                                model=model_name,
+                                api_key=user_api_key,
+                                cache_responses=True,  # Cache responses for performance
+                                cache_ttl=3600,  # Cache for 1 hour
+                                retry_attempts=3,  # Retry up to 3 times on failure
+                                retry_backoff_factor=2.0,  # Exponential backoff for retries
+                            )
+                            # Wrap with adapter for compatibility
+                            llm_client_to_use = LLMClientAdapter(raw_client)
+                            logger.info(
+                                f"Using user API key for insights extraction with model '{model_name}' for user {user_id} "
+                                "with production features: token_tracking=True, response_caching=True"
+                            )
+                            break
+                        except Exception as e:
+                            logger.debug(
+                                f"Model '{model_name}' failed for insights extraction: {e}, trying next..."
+                            )
+                            continue
+
+                    # If all models failed, fall back to default LLM client
+                    if not llm_client_to_use:
+                        logger.warning(
+                            "All models failed for insights extraction, using default LLM client"
                         )
-                        # Wrap with adapter for compatibility
-                        llm_client_to_use = LLMClientAdapter(raw_client)
-                        logger.info(
-                            f"Using user API key for insights extraction for user {user_id} "
-                            "with production features: token_tracking=True, response_caching=True"
-                        )
-                    except Exception as e:
-                        logger.warning(f"Failed to create LLMClient with user key: {e}", exc_info=True)
                         llm_client_to_use = self.llm_client
                 else:
                     llm_client_to_use = self.llm_client
@@ -3537,7 +3726,7 @@ Provide only the hint text."""
                     return {
                         "status": "success",
                         "data": {},
-                        "message": "No API key for insight extraction (non-critical)"
+                        "message": "No API key for insight extraction (non-critical)",
                     }
 
                 # Extract insights/specs using Claude
@@ -3568,9 +3757,10 @@ If a category has no items, use an empty array."""
                 # Parse JSON response
                 try:
                     import json
+
                     # Find JSON in response
-                    start_idx = response.find('{')
-                    end_idx = response.rfind('}') + 1
+                    start_idx = response.find("{")
+                    end_idx = response.rfind("}") + 1
                     if start_idx >= 0 and end_idx > start_idx:
                         json_str = response[start_idx:end_idx]
                         insights = json.loads(json_str)
@@ -3578,7 +3768,7 @@ If a category has no items, use an empty array."""
                         return {
                             "status": "success",
                             "data": insights,
-                            "message": "Insights extracted"
+                            "message": "Insights extracted",
                         }
                 except (json.JSONDecodeError, ValueError) as e:
                     logger.warning(f"Failed to parse insights JSON: {e}")
@@ -3586,13 +3776,8 @@ If a category has no items, use an empty array."""
                 # If parsing failed, return empty insights
                 return {
                     "status": "success",
-                    "data": {
-                        "goals": [],
-                        "requirements": [],
-                        "tech_stack": [],
-                        "constraints": []
-                    },
-                    "message": "No structured insights extracted"
+                    "data": {"goals": [], "requirements": [], "tech_stack": [], "constraints": []},
+                    "message": "No structured insights extracted",
                 }
 
             except Exception as e:
@@ -3600,7 +3785,7 @@ If a category has no items, use an empty array."""
                 return {
                     "status": "success",
                     "data": {},
-                    "message": "Insight extraction failed (non-critical)"
+                    "message": "Insight extraction failed (non-critical)",
                 }
 
         else:
@@ -3626,7 +3811,7 @@ If a category has no items, use an empty array."""
                 return {
                     "status": "success" if isinstance(result, dict) else "error",
                     "data": result if isinstance(result, dict) else {"result": result},
-                    "message": "Quality assessment completed"
+                    "message": "Quality assessment completed",
                 }
         except Exception as e:
             logger.error(f"Error in quality controller handler: {e}")
@@ -3652,7 +3837,7 @@ If a category has no items, use an empty array."""
                 return {
                     "status": "success" if isinstance(result, dict) else "error",
                     "data": result if isinstance(result, dict) else {"result": result},
-                    "message": f"Document processing action '{action}' completed"
+                    "message": f"Document processing action '{action}' completed",
                 }
         except Exception as e:
             logger.error(f"Error in document processor handler: {e}")
@@ -3679,18 +3864,13 @@ If a category has no items, use an empty array."""
         Returns:
             Dictionary with extracted specs: {goals, requirements, tech_stack, constraints}
         """
-        import json
-        import re
 
-        logger.debug(f"Extracting insights from: '{response_text}' (question_category: {question_metadata.get('category') if question_metadata else 'none'})")
+        logger.debug(
+            f"Extracting insights from: '{response_text}' (question_category: {question_metadata.get('category') if question_metadata else 'none'})"
+        )
 
         # Initialize empty specs structure
-        empty_specs = {
-            "goals": [],
-            "requirements": [],
-            "tech_stack": [],
-            "constraints": []
-        }
+        empty_specs = {"goals": [], "requirements": [], "tech_stack": [], "constraints": []}
 
         # Handle empty response
         if not response_text or not response_text.strip():
@@ -3704,7 +3884,9 @@ If a category has no items, use an empty array."""
         if question_metadata:
             target_field = question_metadata.get("target_field")
             category = question_metadata.get("category")
-            logger.debug(f"Using question metadata: target_field={target_field}, category={category}")
+            logger.debug(
+                f"Using question metadata: target_field={target_field}, category={category}"
+            )
 
         # If we have a target field, use category-specific parsing
         if target_field and category:
@@ -3712,7 +3894,7 @@ If a category has no items, use an empty array."""
                 response_text=response_text,
                 category=category,
                 target_field=target_field,
-                question_text=question_text
+                question_text=question_text,
             )
 
         # If we have a question but no metadata, try to detect category
@@ -3720,13 +3902,15 @@ If a category has no items, use an empty array."""
             detected_category = self._detect_question_category(question_text)
             detected_field = self._map_category_to_field(detected_category)
 
-            logger.debug(f"Detected category from question: {detected_category} → field: {detected_field}")
+            logger.debug(
+                f"Detected category from question: {detected_category} → field: {detected_field}"
+            )
 
             return self._extract_specs_by_category(
                 response_text=response_text,
                 category=detected_category,
                 target_field=detected_field,
-                question_text=question_text
+                question_text=question_text,
             )
 
         # Last resort: Use generic LLM-based extraction (existing behavior)
@@ -3734,20 +3918,11 @@ If a category has no items, use an empty array."""
         return self._generic_llm_extraction(response_text)
 
     def _extract_specs_by_category(
-        self,
-        response_text: str,
-        category: str,
-        target_field: str,
-        question_text: str = None
+        self, response_text: str, category: str, target_field: str, question_text: str = None
     ) -> Dict[str, Any]:
         """Extract specs based on question category with targeted parsing"""
 
-        empty_specs = {
-            "goals": [],
-            "requirements": [],
-            "tech_stack": [],
-            "constraints": []
-        }
+        empty_specs = {"goals": [], "requirements": [], "tech_stack": [], "constraints": []}
 
         logger.debug(f"Extracting {category} specs from response: '{response_text}'")
 
@@ -3797,7 +3972,7 @@ If a category has no items, use an empty array."""
         # Also handle: "addition, subtraction, multiplication"
 
         # Split on comma, semicolon, "and", "or", or multiple spaces
-        items = re.split(r'[,;\s]+(?:and\s+|or\s+)?', text)
+        items = re.split(r"[,;\s]+(?:and\s+|or\s+)?", text)
 
         # Clean up and filter empty items
         items = [item.strip() for item in items if item.strip()]
@@ -3847,12 +4022,13 @@ If a category has no items, use an empty array."""
         text = text.strip()
 
         # Single-line goal
-        if '\n' not in text and len(text) < 200:
+        if "\n" not in text and len(text) < 200:
             return [text] if text else []
 
         # Multiple goals (split on newline or numbering)
         import re
-        goals = re.split(r'\n|^\d+\.\s*', text)
+
+        goals = re.split(r"\n|^\d+\.\s*", text)
         goals = [g.strip() for g in goals if g.strip()]
 
         logger.debug(f"Parsed goals: {goals}")
@@ -3865,10 +4041,8 @@ If a category has no items, use an empty array."""
 
         # Split on newlines or bullet points or numbering
         import re
-        requirements = re.split(
-            r'\n+|^[\-\*\+]\s*|^\d+\.\s*',
-            text
-        )
+
+        requirements = re.split(r"\n+|^[\-\*\+]\s*|^\d+\.\s*", text)
         requirements = [r.strip() for r in requirements if r.strip()]
 
         # Further split on "and" if single items are long
@@ -3876,7 +4050,7 @@ If a category has no items, use an empty array."""
         for req in requirements:
             if " and " in req and len(req) > 50:
                 # Split compound requirements
-                parts = re.split(r'\s+and\s+', req)
+                parts = re.split(r"\s+and\s+", req)
                 final_requirements.extend([p.strip() for p in parts])
             else:
                 final_requirements.append(req)
@@ -3898,19 +4072,51 @@ If a category has no items, use an empty array."""
         q_lower = question_text.lower()
 
         # Check for each category in order of specificity
-        if any(word in q_lower for word in ["operation", "perform", "function", "can do", "compute", "calculate"]):
+        if any(
+            word in q_lower
+            for word in ["operation", "perform", "function", "can do", "compute", "calculate"]
+        ):
             return "operations"
 
-        elif any(word in q_lower for word in ["goal", "purpose", "objective", "want to build", "main goal", "aim", "target"]):
+        elif any(
+            word in q_lower
+            for word in [
+                "goal",
+                "purpose",
+                "objective",
+                "want to build",
+                "main goal",
+                "aim",
+                "target",
+            ]
+        ):
             return "goals"
 
-        elif any(word in q_lower for word in ["requirement", "feature", "capability", "need", "should", "must"]):
+        elif any(
+            word in q_lower
+            for word in ["requirement", "feature", "capability", "need", "should", "must"]
+        ):
             return "requirements"
 
-        elif any(word in q_lower for word in ["constraint", "limit", "limitation", "restriction", "avoid", "prevent"]):
+        elif any(
+            word in q_lower
+            for word in ["constraint", "limit", "limitation", "restriction", "avoid", "prevent"]
+        ):
             return "constraints"
 
-        elif any(word in q_lower for word in ["technology", "tool", "framework", "language", "library", "platform", "use", "tech"]):
+        elif any(
+            word in q_lower
+            for word in [
+                "technology",
+                "tool",
+                "framework",
+                "language",
+                "library",
+                "platform",
+                "use",
+                "tech",
+            ]
+        ):
             return "tech_stack"
 
         return "generic"
@@ -3932,12 +4138,7 @@ If a category has no items, use an empty array."""
     def _generic_llm_extraction(self, response_text: str) -> Dict[str, Any]:
         """Fallback: Use LLM to generically extract specs"""
 
-        empty_specs = {
-            "goals": [],
-            "requirements": [],
-            "tech_stack": [],
-            "constraints": []
-        }
+        empty_specs = {"goals": [], "requirements": [], "tech_stack": [], "constraints": []}
 
         try:
             # Try to use ContextAnalyzer agent first
@@ -3951,7 +4152,7 @@ If a category has no items, use an empty array."""
                             "goals": data.get("goals", []),
                             "requirements": data.get("requirements", []),
                             "tech_stack": data.get("tech_stack", []),
-                            "constraints": data.get("constraints", [])
+                            "constraints": data.get("constraints", []),
                         }
                 except Exception as e:
                     logger.warning(f"ContextAnalyzer failed, using LLM fallback: {e}")
@@ -3984,8 +4185,9 @@ If a category has no items, use an empty array."""
                 # Parse JSON response
                 try:
                     import json
-                    start_idx = response.find('{')
-                    end_idx = response.rfind('}') + 1
+
+                    start_idx = response.find("{")
+                    end_idx = response.rfind("}") + 1
                     if start_idx >= 0 and end_idx > start_idx:
                         json_str = response[start_idx:end_idx]
                         insights = json.loads(json_str)
@@ -3993,7 +4195,7 @@ If a category has no items, use an empty array."""
                             "goals": insights.get("goals", []),
                             "requirements": insights.get("requirements", []),
                             "tech_stack": insights.get("tech_stack", []),
-                            "constraints": insights.get("constraints", [])
+                            "constraints": insights.get("constraints", []),
                         }
                 except (json.JSONDecodeError, ValueError) as e:
                     logger.warning(f"Failed to parse extraction JSON: {e}")
@@ -4008,10 +4210,26 @@ If a category has no items, use an empty array."""
         """Get current project specifications"""
         try:
             # Handle both dict and object access patterns
-            goals = getattr(project, "goals", project.get("goals", "")) if hasattr(project, "get") or hasattr(project, "goals") else ""
-            requirements = getattr(project, "requirements", project.get("requirements", [])) if hasattr(project, "get") or hasattr(project, "requirements") else []
-            tech_stack = getattr(project, "tech_stack", project.get("tech_stack", [])) if hasattr(project, "get") or hasattr(project, "tech_stack") else []
-            constraints = getattr(project, "constraints", project.get("constraints", [])) if hasattr(project, "get") or hasattr(project, "constraints") else []
+            goals = (
+                getattr(project, "goals", project.get("goals", ""))
+                if hasattr(project, "get") or hasattr(project, "goals")
+                else ""
+            )
+            requirements = (
+                getattr(project, "requirements", project.get("requirements", []))
+                if hasattr(project, "get") or hasattr(project, "requirements")
+                else []
+            )
+            tech_stack = (
+                getattr(project, "tech_stack", project.get("tech_stack", []))
+                if hasattr(project, "get") or hasattr(project, "tech_stack")
+                else []
+            )
+            constraints = (
+                getattr(project, "constraints", project.get("constraints", []))
+                if hasattr(project, "get") or hasattr(project, "constraints")
+                else []
+            )
 
             # Normalize goals to list if it's a string
             if isinstance(goals, str) and goals:
@@ -4023,19 +4241,16 @@ If a category has no items, use an empty array."""
                 "goals": goals if isinstance(goals, list) else [str(goals)] if goals else [],
                 "requirements": requirements if isinstance(requirements, list) else [],
                 "tech_stack": tech_stack if isinstance(tech_stack, list) else [],
-                "constraints": constraints if isinstance(constraints, list) else []
+                "constraints": constraints if isinstance(constraints, list) else [],
             }
 
         except Exception as e:
             logger.error(f"Failed to get project specs: {e}")
-            return {
-                "goals": [],
-                "requirements": [],
-                "tech_stack": [],
-                "constraints": []
-            }
+            return {"goals": [], "requirements": [], "tech_stack": [], "constraints": []}
 
-    def _compare_specs(self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _compare_specs(
+        self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Compare new specs against existing specs and detect conflicts using socratic-conflict"""
         try:
             # Use ConflictDetector from socratic-conflict library for sophisticated comparison
@@ -4052,7 +4267,9 @@ If a category has no items, use an empty array."""
                 high = [c for c in conflicts if c.get("severity") == "high"]
                 medium = [c for c in conflicts if c.get("severity") == "medium"]
 
-                logger.info(f"Conflict breakdown - Critical: {len(critical)}, High: {len(high)}, Medium: {len(medium)}")
+                logger.info(
+                    f"Conflict breakdown - Critical: {len(critical)}, High: {len(high)}, Medium: {len(medium)}"
+                )
             else:
                 logger.debug("No conflicts detected in specs")
 
@@ -4063,7 +4280,9 @@ If a category has no items, use an empty array."""
             # Fallback: Manual conflict detection
             return self._detect_conflicts_fallback(new_specs, existing_specs)
 
-    def _detect_conflicts_fallback(self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _detect_conflicts_fallback(
+        self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Fallback conflict detection when agent is unavailable
 
         CRITICAL FIX: Only detect conflicts when there are existing specs to conflict with.
@@ -4086,13 +4305,15 @@ If a category has no items, use an empty array."""
             goal_conflicts = new_goals - existing_goals
             if goal_conflicts:
                 for goal in goal_conflicts:
-                    conflicts.append({
-                        "type": "goal_change",
-                        "old_value": list(existing_goals)[:1] if existing_goals else None,
-                        "new_value": goal,
-                        "severity": "info",
-                        "description": f"New goal detected: {goal}"
-                    })
+                    conflicts.append(
+                        {
+                            "type": "goal_change",
+                            "old_value": list(existing_goals)[:1] if existing_goals else None,
+                            "new_value": goal,
+                            "severity": "info",
+                            "description": f"New goal detected: {goal}",
+                        }
+                    )
 
         # Check for tech stack conflicts (only if tech stack already exists)
         if has_existing_tech:
@@ -4103,22 +4324,26 @@ If a category has no items, use an empty array."""
             tech_removals = existing_tech - new_tech
 
             if tech_additions:
-                conflicts.append({
-                    "type": "tech_stack_change",
-                    "field": "tech_stack",
-                    "added": list(tech_additions),
-                    "severity": "warning",
-                    "description": f"New technologies proposed: {', '.join(tech_additions)}"
-                })
+                conflicts.append(
+                    {
+                        "type": "tech_stack_change",
+                        "field": "tech_stack",
+                        "added": list(tech_additions),
+                        "severity": "warning",
+                        "description": f"New technologies proposed: {', '.join(tech_additions)}",
+                    }
+                )
 
             if tech_removals:
-                conflicts.append({
-                    "type": "tech_stack_change",
-                    "field": "tech_stack",
-                    "removed": list(tech_removals),
-                    "severity": "info",
-                    "description": f"Technologies no longer mentioned: {', '.join(tech_removals)}"
-                })
+                conflicts.append(
+                    {
+                        "type": "tech_stack_change",
+                        "field": "tech_stack",
+                        "removed": list(tech_removals),
+                        "severity": "info",
+                        "description": f"Technologies no longer mentioned: {', '.join(tech_removals)}",
+                    }
+                )
 
         # Check for new requirements (only if requirements already exist)
         if has_existing_requirements:
@@ -4127,32 +4352,40 @@ If a category has no items, use an empty array."""
 
             req_additions = new_reqs - existing_reqs
             if req_additions:
-                conflicts.append({
-                    "type": "requirements_change",
-                    "field": "requirements",
-                    "added": list(req_additions),
-                    "severity": "info",
-                    "description": f"New requirements: {', '.join(req_additions)}"
-                })
+                conflicts.append(
+                    {
+                        "type": "requirements_change",
+                        "field": "requirements",
+                        "added": list(req_additions),
+                        "severity": "info",
+                        "description": f"New requirements: {', '.join(req_additions)}",
+                    }
+                )
 
         # Check for constraints (only if constraints already exist)
         if has_existing_constraints:
             new_constraints = set(str(c).lower() for c in new_specs.get("constraints", []) if c)
-            existing_constraints = set(str(c).lower() for c in existing_specs.get("constraints", []) if c)
+            existing_constraints = set(
+                str(c).lower() for c in existing_specs.get("constraints", []) if c
+            )
 
             constraint_additions = new_constraints - existing_constraints
             if constraint_additions:
-                conflicts.append({
-                    "type": "constraints_change",
-                    "field": "constraints",
-                    "added": list(constraint_additions),
-                    "severity": "warning",
-                    "description": f"New constraints: {', '.join(constraint_additions)}"
-                })
+                conflicts.append(
+                    {
+                        "type": "constraints_change",
+                        "field": "constraints",
+                        "added": list(constraint_additions),
+                        "severity": "warning",
+                        "description": f"New constraints: {', '.join(constraint_additions)}",
+                    }
+                )
 
         return conflicts
 
-    def _generate_feedback(self, extracted_specs: Dict[str, Any], conflicts: List[Dict[str, Any]]) -> str:
+    def _generate_feedback(
+        self, extracted_specs: Dict[str, Any], conflicts: List[Dict[str, Any]]
+    ) -> str:
         """Generate natural language feedback for the user"""
         feedback_parts = []
 
@@ -4177,10 +4410,16 @@ If a category has no items, use an empty array."""
             if len(conflicts) == 1:
                 feedback_parts.append("I noticed one point that may need clarification. ")
             else:
-                feedback_parts.append(f"I noticed {len(conflicts)} points that may need clarification. ")
-            feedback_parts.append("Let me ask you some follow-up questions to explore these further.")
+                feedback_parts.append(
+                    f"I noticed {len(conflicts)} points that may need clarification. "
+                )
+            feedback_parts.append(
+                "Let me ask you some follow-up questions to explore these further."
+            )
         else:
-            feedback_parts.append("This aligns well with what we've discussed. Let me ask another question to deepen our understanding.")
+            feedback_parts.append(
+                "This aligns well with what we've discussed. Let me ask another question to deepen our understanding."
+            )
 
         return "".join(feedback_parts)
 
@@ -4188,7 +4427,7 @@ If a category has no items, use an empty array."""
         self,
         conflicts: List[Dict[str, Any]],
         new_specs: Dict[str, Any],
-        existing_specs: Dict[str, Any]
+        existing_specs: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
         Resolve detected conflicts using multiple strategies from socratic-conflict library.
@@ -4210,32 +4449,36 @@ If a category has no items, use an empty array."""
                 "status": "resolved",
                 "strategy": "default",
                 "resolution": "conflicts processed",
-                "merged_state": {**existing_specs, **new_specs}
+                "merged_state": {**existing_specs, **new_specs},
             }
 
             if resolution_result.get("status") == "resolved":
-                logger.info(f"Resolved {len(conflicts)} conflicts using {resolution_result.get('strategy')}")
+                logger.info(
+                    f"Resolved {len(conflicts)} conflicts using {resolution_result.get('strategy')}"
+                )
                 return {
                     "status": "resolved",
                     "strategy": resolution_result.get("strategy"),
                     "resolution": resolution_result.get("resolution"),
-                    "merged_state": resolution_result.get("merged_state")
+                    "merged_state": resolution_result.get("merged_state"),
                 }
             elif resolution_result.get("status") == "partial":
-                logger.info(f"Partially resolved {len(conflicts)} conflicts - some require human review")
+                logger.info(
+                    f"Partially resolved {len(conflicts)} conflicts - some require human review"
+                )
                 return {
                     "status": "partial",
                     "resolved_conflicts": resolution_result.get("resolved_conflicts", []),
                     "unresolved_conflicts": resolution_result.get("unresolved_conflicts", []),
-                    "requires_review": True
+                    "requires_review": True,
                 }
             else:
-                logger.warning(f"Failed to resolve conflicts - marking for escalation")
+                logger.warning("Failed to resolve conflicts - marking for escalation")
                 return {
                     "status": "escalated",
                     "conflicts": conflicts,
                     "requires_review": True,
-                    "recommended_action": "human_review"
+                    "recommended_action": "human_review",
                 }
 
         except Exception as e:
@@ -4244,7 +4487,7 @@ If a category has no items, use an empty array."""
                 "status": "error",
                 "error": str(e),
                 "conflicts": conflicts,
-                "requires_review": True
+                "requires_review": True,
             }
 
     def _check_phase_readiness(self, project) -> Dict[str, Any]:
@@ -4285,7 +4528,11 @@ If a category has no items, use an empty array."""
             valid_phases = ["discovery", "analysis", "design", "implementation"]
             try:
                 current_index = valid_phases.index(phase)
-                next_phase = valid_phases[current_index + 1] if current_index < len(valid_phases) - 1 else None
+                next_phase = (
+                    valid_phases[current_index + 1]
+                    if current_index < len(valid_phases) - 1
+                    else None
+                )
             except (ValueError, IndexError):
                 next_phase = None
 
@@ -4293,31 +4540,39 @@ If a category has no items, use an empty array."""
             recommendations = []
             if status == "complete":
                 if next_phase:
-                    recommendations.append({
-                        "type": "phase_advancement",
-                        "message": f"Your {phase} phase is complete! Ready to advance to {next_phase}.",
-                        "action": "advance_phase"
-                    })
+                    recommendations.append(
+                        {
+                            "type": "phase_advancement",
+                            "message": f"Your {phase} phase is complete! Ready to advance to {next_phase}.",
+                            "action": "advance_phase",
+                        }
+                    )
                 else:
-                    recommendations.append({
-                        "type": "project_complete",
-                        "message": f"Congratulations! Your project has completed all phases.",
-                        "action": "finalize_project"
-                    })
+                    recommendations.append(
+                        {
+                            "type": "project_complete",
+                            "message": "Congratulations! Your project has completed all phases.",
+                            "action": "finalize_project",
+                        }
+                    )
             elif status == "ready":
-                recommendations.append({
-                    "type": "phase_ready",
-                    "message": f"Your {phase} phase is {current_score:.0%} complete and ready to advance.",
-                    "action": "consider_advancement"
-                })
+                recommendations.append(
+                    {
+                        "type": "phase_ready",
+                        "message": f"Your {phase} phase is {current_score:.0%} complete and ready to advance.",
+                        "action": "consider_advancement",
+                    }
+                )
             elif status == "in_progress":
                 # Calculate what's missing
                 remaining = (READY_THRESHOLD - current_score) * 100
-                recommendations.append({
-                    "type": "continue_work",
-                    "message": f"Continue working on {phase} phase. {remaining:.0f}% more needed to be ready.",
-                    "action": "answer_questions"
-                })
+                recommendations.append(
+                    {
+                        "type": "continue_work",
+                        "message": f"Continue working on {phase} phase. {remaining:.0f}% more needed to be ready.",
+                        "action": "answer_questions",
+                    }
+                )
 
             return {
                 "phase": phase,
@@ -4340,7 +4595,7 @@ If a category has no items, use an empty array."""
                 "status": "unknown",
                 "is_ready": False,
                 "is_complete": False,
-                "recommendations": []
+                "recommendations": [],
             }
 
     # ========================================================================
@@ -4348,11 +4603,7 @@ If a category has no items, use an empty array."""
     # ========================================================================
 
     def _generate_questions_deduplicated(
-        self,
-        topic: str,
-        level: str,
-        project: Any,
-        current_user: str
+        self, topic: str, level: str, project: Any, current_user: str
     ) -> List[str]:
         """
         Generate new questions while avoiding duplication with previously asked ones.
@@ -4371,10 +4622,7 @@ If a category has no items, use an empty array."""
                     logger.warning("socratic_counselor agent not available, using fallback")
                     return []
 
-                counselor_result = counselor.process({
-                    "topic": topic,
-                    "level": level
-                })
+                counselor_result = counselor.process({"topic": topic, "level": level})
             except Exception as e:
                 logger.warning(f"Deduplication failed: {e}, falling back to main LLM generation")
                 return []
@@ -4386,7 +4634,9 @@ If a category has no items, use an empty array."""
                 return []
 
             new_questions = counselor_result.get("questions", [])
-            self._add_debug_log(project, "debug", f"Counselor generated {len(new_questions)} questions")
+            self._add_debug_log(
+                project, "debug", f"Counselor generated {len(new_questions)} questions"
+            )
             logger.debug(f"Counselor returned {len(new_questions)} questions")
 
             # Get previously asked questions
@@ -4394,10 +4644,16 @@ If a category has no items, use an empty array."""
             skipped_questions = getattr(project, "skipped_questions", None) or []
 
             asked_texts = [q.get("text", "").lower() for q in asked_questions]
-            skipped_texts = [q.get("text", "").lower() if isinstance(q, dict) else "" for q in skipped_questions]
+            skipped_texts = [
+                q.get("text", "").lower() if isinstance(q, dict) else "" for q in skipped_questions
+            ]
 
             logger.debug(f"Previously asked: {len(asked_texts)}, Skipped: {len(skipped_texts)}")
-            self._add_debug_log(project, "debug", f"Filtering against {len(asked_texts)} asked and {len(skipped_texts)} skipped questions")
+            self._add_debug_log(
+                project,
+                "debug",
+                f"Filtering against {len(asked_texts)} asked and {len(skipped_texts)} skipped questions",
+            )
 
             # Filter out duplicates using fuzzy matching
             deduplicated = []
@@ -4407,8 +4663,7 @@ If a category has no items, use an empty array."""
 
                 # Check if similar question was already asked
                 is_duplicate = any(
-                    self._is_similar_question(q_lower, prev)
-                    for prev in asked_texts + skipped_texts
+                    self._is_similar_question(q_lower, prev) for prev in asked_texts + skipped_texts
                 )
 
                 if not is_duplicate:
@@ -4422,9 +4677,11 @@ If a category has no items, use an empty array."""
 
             # If we filtered out too many, keep some duplicates (but different)
             if len(deduplicated) < 3 and len(new_questions) > len(deduplicated):
-                remaining = new_questions[len(deduplicated):]
-                deduplicated.extend(remaining[:max(0, 3 - len(deduplicated))])
-                added_msg = f"Added {max(0, 3 - len(deduplicated))} additional questions due to filtering"
+                remaining = new_questions[len(deduplicated) :]
+                deduplicated.extend(remaining[: max(0, 3 - len(deduplicated))])
+                added_msg = (
+                    f"Added {max(0, 3 - len(deduplicated))} additional questions due to filtering"
+                )
                 logger.info(added_msg)
                 self._add_debug_log(project, "info", added_msg)
 
@@ -4433,7 +4690,7 @@ If a category has no items, use an empty array."""
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "questions": deduplicated,
                 "version": 1,
-                "deduplication_filtered": filtered_count
+                "deduplication_filtered": filtered_count,
             }
 
             success_msg = f"✓ Generated {len(deduplicated)} deduplicated questions"
@@ -4471,11 +4728,7 @@ If a category has no items, use an empty array."""
         logger.debug(f"Collected {len(logs)} debug logs for response")
         return logs
 
-    def _generate_suggestions(
-        self,
-        question_text: str,
-        project: Any
-    ) -> List[str]:
+    def _generate_suggestions(self, question_text: str, project: Any) -> List[str]:
         """
         Generate 3-5 contextual suggestions for answering the given question.
 
@@ -4484,7 +4737,7 @@ If a category has no items, use an empty array."""
         """
         try:
             logger.info(f"Generating suggestions for question: {question_text[:60]}...")
-            self._add_debug_log(project, "info", f"Analyzing question for suggestions")
+            self._add_debug_log(project, "info", "Analyzing question for suggestions")
 
             suggestions = []
 
@@ -4514,7 +4767,7 @@ If a category has no items, use an empty array."""
                 suggestions = [
                     "List the specific operations needed (e.g., addition, subtraction)",
                     "Consider the order of operations",
-                    "Think about edge cases or special operations"
+                    "Think about edge cases or special operations",
                 ]
                 self._add_debug_log(project, "debug", "Detected: Operations question")
 
@@ -4523,7 +4776,7 @@ If a category has no items, use an empty array."""
                 suggestions = [
                     "Describe how the user will provide input",
                     "Consider validation or constraints on input",
-                    "Think about error handling for invalid input"
+                    "Think about error handling for invalid input",
                 ]
                 self._add_debug_log(project, "debug", "Detected: Input question")
 
@@ -4532,16 +4785,19 @@ If a category has no items, use an empty array."""
                 suggestions = [
                     "Describe the desired output format",
                     "Consider clarity and readability",
-                    "Think about different ways to present results"
+                    "Think about different ways to present results",
                 ]
                 self._add_debug_log(project, "debug", "Detected: Output question")
 
-            elif any(word in q_lower for word in ["technology", "tool", "framework", "library", "language"]):
+            elif any(
+                word in q_lower
+                for word in ["technology", "tool", "framework", "library", "language"]
+            ):
                 # Tech question
                 suggestions = [
                     "Research available tools and their trade-offs",
                     "Consider integration with existing stack",
-                    "Evaluate learning curve and community support"
+                    "Evaluate learning curve and community support",
                 ]
                 self._add_debug_log(project, "debug", "Detected: Technology question")
 
@@ -4550,7 +4806,7 @@ If a category has no items, use an empty array."""
                 suggestions = [
                     "Consider the specific requirements related to this question",
                     "Think about how this relates to your project goals",
-                    "Brainstorm multiple possible approaches"
+                    "Brainstorm multiple possible approaches",
                 ]
                 self._add_debug_log(project, "debug", "Detected: Generic question")
 
@@ -4618,7 +4874,7 @@ If a category has no items, use an empty array."""
                 "goals": getattr(project, "goals", []) or [],
                 "requirements": getattr(project, "requirements", []) or [],
                 "tech_stack": getattr(project, "tech_stack", []) or [],
-                "constraints": getattr(project, "constraints", []) or []
+                "constraints": getattr(project, "constraints", []) or [],
             }
 
             # Use knowledge service to identify gaps
@@ -4637,7 +4893,7 @@ If a category has no items, use an empty array."""
                     "severity": gap.severity,
                     "priority_score": gap.priority_score,
                     "suggested_question": gap.suggested_question,
-                    "mentioned_documents": gap.mentioned_documents
+                    "mentioned_documents": gap.mentioned_documents,
                 }
                 for gap in gaps
             ]
@@ -4650,11 +4906,7 @@ If a category has no items, use an empty array."""
             return []
 
     def _get_optimal_kb_chunks(
-        self,
-        project: Any,
-        phase: str,
-        question_number: int,
-        gaps: List[Dict[str, Any]]
+        self, project: Any, phase: str, question_number: int, gaps: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """
         PHASE 5: Get KB chunks optimized for current context.
@@ -4693,7 +4945,7 @@ If a category has no items, use an empty array."""
                 project_id=getattr(project, "project_id", ""),
                 phase=phase,
                 question_number=question_number,
-                documents=documents
+                documents=documents,
             )
 
             # Convert to dictionaries for API responses
@@ -4750,14 +5002,16 @@ If a category has no items, use an empty array."""
             for spec_list in [
                 getattr(project, "goals", []),
                 getattr(project, "requirements", []),
-                getattr(project, "constraints", [])
+                getattr(project, "constraints", []),
             ]:
                 if isinstance(spec_list, list):
                     required_concepts.update(str(s).lower().split() for s in spec_list)
 
             # Calculate coverage
             if required_concepts:
-                coverage_pct = len(covered_concepts & required_concepts) / len(required_concepts) * 100
+                coverage_pct = (
+                    len(covered_concepts & required_concepts) / len(required_concepts) * 100
+                )
             else:
                 coverage_pct = 0
 
@@ -4769,7 +5023,7 @@ If a category has no items, use an empty array."""
                 "covered_areas": list(covered_concepts)[:10],
                 "gaps": list(gaps)[:10],
                 "documents_analyzed": len(documents),
-                "concepts_found": len(covered_concepts)
+                "concepts_found": len(covered_concepts),
             }
 
             logger.debug(f"KB coverage calculated: {coverage_pct:.1f}%")
@@ -4802,7 +5056,7 @@ If a category has no items, use an empty array."""
                 "performance": ["performance", "speed", "latency", "throughput"],
                 "scalability": ["scale", "scalable", "millions", "concurrent"],
                 "architecture": ["architecture", "design", "components", "structure"],
-                "requirements": ["require", "requirement", "must", "should"]
+                "requirements": ["require", "requirement", "must", "should"],
             }
 
             for gap_type, keywords in gap_keywords.items():
@@ -4817,9 +5071,7 @@ If a category has no items, use an empty array."""
             return []
 
     def _prioritize_by_kb_gaps(
-        self,
-        project: Any,
-        potential_questions: List[Dict[str, Any]]
+        self, project: Any, potential_questions: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """
         PHASE 5: Prioritize questions that address high-value KB gaps.
@@ -4866,16 +5118,14 @@ If a category has no items, use an empty array."""
                 question_with_score = {
                     **question,
                     "gap_addressing_score": gap_score,
-                    "gaps_addressed": addressed_gaps
+                    "gaps_addressed": addressed_gaps,
                 }
 
                 scored_questions.append(question_with_score)
 
             # Sort by gap-addressing score (descending)
             prioritized = sorted(
-                scored_questions,
-                key=lambda q: q.get("gap_addressing_score", 0),
-                reverse=True
+                scored_questions, key=lambda q: q.get("gap_addressing_score", 0), reverse=True
             )
 
             logger.debug(
@@ -4905,7 +5155,7 @@ If a category has no items, use an empty array."""
             log_entry = {
                 "level": level,
                 "message": message,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             project.debug_logs.append(log_entry)
             logger.debug(f"[{level.upper()}] {message}")
@@ -4932,7 +5182,9 @@ If a category has no items, use an empty array."""
         """
         try:
             conversation_history = getattr(project, "conversation_history", []) or []
-            conversation_summary = self._generate_conversation_summary(project) if conversation_history else ""
+            conversation_summary = (
+                self._generate_conversation_summary(project) if conversation_history else ""
+            )
             debug_logs = getattr(project, "debug_logs", []) or []
 
             context = {
@@ -4970,7 +5222,11 @@ If a category has no items, use an empty array."""
                 return ""
 
             # Get last 10 messages (or less if fewer exist)
-            recent = project.conversation_history[-10:] if len(project.conversation_history) > 10 else project.conversation_history
+            recent = (
+                project.conversation_history[-10:]
+                if len(project.conversation_history) > 10
+                else project.conversation_history
+            )
 
             summary_parts = []
             for item in recent:
@@ -4988,7 +5244,9 @@ If a category has no items, use an empty array."""
             logger.warning(f"Failed to generate conversation summary: {e}")
             return ""
 
-    def _wrap_agent_response(self, agent_result: Dict[str, Any], debug_logs: Optional[List[Dict]] = None) -> Dict[str, Any]:
+    def _wrap_agent_response(
+        self, agent_result: Dict[str, Any], debug_logs: Optional[List[Dict]] = None
+    ) -> Dict[str, Any]:
         """
         Wrap an agent response to include debug information (CRITICAL FIX #2).
 
@@ -5006,7 +5264,7 @@ If a category has no items, use an empty array."""
             "data": agent_result.get("data", {}),
             "debug_logs": debug_logs or [],
             "metadata": agent_result.get("metadata", {}),
-            "message": agent_result.get("message", "")
+            "message": agent_result.get("message", ""),
         }
 
 
