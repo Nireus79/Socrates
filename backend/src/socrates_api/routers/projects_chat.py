@@ -594,13 +594,14 @@ async def get_question(
 
         logger.debug(f"Project loaded: id={project.project_id}, name={project.name}, description={project.description[:50] if project.description else 'EMPTY'}...")
 
-        # CRITICAL FIX #16: Check for pending questions before generating new ones
-        # This prevents repeating questions and ensures we go through the question sequence
-        if project.asked_questions:
+        # CRITICAL FIX #17: Check for unanswered questions in the current batch before generating new ones
+        # The counselor returns 3 questions at once; we should use all of them before generating new ones
+        if project.pending_questions:
+            logger.info(f"Found {len(project.pending_questions)} pending questions in current batch")
             # Look for the first unanswered question
-            for q in project.asked_questions:
+            for q in project.pending_questions:
                 if q.get("status") == "pending" and not q.get("answer"):
-                    logger.info(f"Found pending question {q.get('id')}, returning it instead of generating new")
+                    logger.info(f"Returning pending question from batch: {q.get('id')}")
                     pending_question = q.get("text", "")
                     if pending_question:
                         # Update current question context
@@ -655,15 +656,17 @@ async def get_question(
                     status_code=500, detail=result.get("message", "Failed to generate question")
                 )
 
-            # Extract question from result
+            # Extract questions from result - CRITICAL FIX #17: Store ALL questions, not just first
             question_data = result.get("data", {})
             question = question_data.get("question", "").strip() if question_data.get("question") else ""
+            all_questions = []
 
             if not question:
                 questions = question_data.get("questions", [])
                 if questions and len(questions) > 0:
-                    question = questions[0].strip()
-                    logger.info(f"Extracted first question from questions array: {question[:50]}...")
+                    all_questions = [q.strip() for q in questions if q.strip()]
+                    question = all_questions[0]
+                    logger.info(f"Extracted {len(all_questions)} questions from counselor; first: {question[:50]}...")
         except Exception as gen_error:
             logger.error(f"Question generation failed: {gen_error}")
             raise
@@ -717,7 +720,32 @@ async def get_question(
 
         project.current_question_metadata = question_metadata
 
-        # CRITICAL FIX #12: Track question in asked_questions for deduplication
+        # CRITICAL FIX #17: Store all questions from batch in pending_questions
+        # This allows us to return Q2 and Q3 before generating new questions
+        if project.pending_questions is None:
+            project.pending_questions = []
+
+        # Clear old batch if all were answered, otherwise keep them
+        if all_questions and all_questions != [q.get("text") for q in project.pending_questions if q.get("status") == "pending"]:
+            # New batch from counselor - clear old pending questions and add new batch
+            project.pending_questions = []
+            question_ids = {}
+            for idx, q_text in enumerate(all_questions):
+                q_id = f"q_{uuid.uuid4().hex[:12]}"
+                question_ids[q_text] = q_id
+                pending_entry = {
+                    "id": q_id,
+                    "text": q_text,
+                    "asked_at": datetime.now(timezone.utc).isoformat(),
+                    "answer": None,
+                    "status": "pending"
+                }
+                project.pending_questions.append(pending_entry)
+                logger.debug(f"Added question {idx+1}/{len(all_questions)} to pending batch: {q_id}")
+            # Use the first question's ID
+            question_id = question_ids.get(question, f"q_{uuid.uuid4().hex[:12]}")
+
+        # CRITICAL FIX #12: Track question in asked_questions for history
         if project.asked_questions is None:
             project.asked_questions = []
 
@@ -1051,6 +1079,18 @@ Provide a helpful, direct answer."""
                         q["answered_at"] = datetime.now(timezone.utc).isoformat()
                         q["status"] = "answered"
                         logger.info(f"Updated question {project.current_question_id} with response")
+                        db.save_project(project)
+                        break
+
+            # CRITICAL FIX #17: MUST also update pending_questions with answer status
+            # This ensures get_question returns the NEXT unanswered question from batch, not the same one again
+            if project.current_question_id and project.pending_questions:
+                for q in project.pending_questions:
+                    if q.get("id") == project.current_question_id:
+                        q["answer"] = request.message
+                        q["answered_at"] = datetime.now(timezone.utc).isoformat()
+                        q["status"] = "answered"
+                        logger.info(f"Marked question {project.current_question_id} as answered in pending_questions batch")
                         db.save_project(project)
                         break
 
