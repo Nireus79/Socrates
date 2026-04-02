@@ -1227,6 +1227,13 @@ class APIOrchestrator:
                 return self._handle_socratic_counselor(request_data)
             elif router_name == "direct_chat":
                 return self._handle_direct_chat(request_data)
+            elif router_name == "quality_controller":
+                return self._handle_quality_controller(request_data)
+            elif router_name == "document_agent":
+                # Alias for document_processor agent
+                return self._handle_document_processor(request_data)
+            elif router_name == "document_processor":
+                return self._handle_document_processor(request_data)
             else:
                 # Generic fallback for unknown routers - return sensible defaults
                 logger.warning(f"Unknown router: {router_name}, returning generic response")
@@ -2446,6 +2453,58 @@ If a category has no items, use an empty array."""
 
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def _handle_quality_controller(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle quality controller requests for code quality assessment and maturity updates"""
+        action = request_data.get("action", "")
+        agent = self.agents.get("quality_controller")
+
+        if not agent:
+            logger.warning("QualityController agent not available")
+            return {"status": "error", "message": "QualityController not available"}
+
+        try:
+            # Delegate to quality controller agent
+            result = agent.process(request_data)
+
+            if isinstance(result, dict) and result.get("status") == "success":
+                return result
+            else:
+                # If agent returns non-dict or error status, wrap it
+                return {
+                    "status": "success" if isinstance(result, dict) else "error",
+                    "data": result if isinstance(result, dict) else {"result": result},
+                    "message": "Quality assessment completed"
+                }
+        except Exception as e:
+            logger.error(f"Error in quality controller handler: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _handle_document_processor(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle document processing requests (import, processing, etc.)"""
+        action = request_data.get("action", "")
+        agent = self.agents.get("document_processor")
+
+        if not agent:
+            logger.warning("DocumentProcessor agent not available")
+            return {"status": "error", "message": "DocumentProcessor not available"}
+
+        try:
+            # Delegate to document processor agent
+            result = agent.process(request_data)
+
+            if isinstance(result, dict) and result.get("status") == "success":
+                return result
+            else:
+                # If agent returns non-dict or error status, wrap it
+                return {
+                    "status": "success" if isinstance(result, dict) else "error",
+                    "data": result if isinstance(result, dict) else {"result": result},
+                    "message": f"Document processing action '{action}' completed"
+                }
+        except Exception as e:
+            logger.error(f"Error in document processor handler: {e}")
+            return {"status": "error", "message": str(e)}
 
     def _extract_insights_fallback(
         self,
