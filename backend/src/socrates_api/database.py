@@ -647,7 +647,9 @@ class LocalDatabase:
         project.metadata = json.loads(row[8] or "{}")
 
         # CRITICAL FIX #16: Load conversation history from metadata
-        # Restore asked_questions, skipped_questions, question_cache, debug_logs
+        # Restore pending_questions, asked_questions, skipped_questions, question_cache, debug_logs
+        if "pending_questions" in project.metadata:
+            project.pending_questions = project.metadata.get("pending_questions", [])
         if "asked_questions" in project.metadata:
             project.asked_questions = project.metadata.get("asked_questions", [])
         if "skipped_questions" in project.metadata:
@@ -1136,6 +1138,8 @@ class LocalDatabase:
             metadata_dict = getattr(project, "metadata", {}).copy() if hasattr(project, "metadata") else {}
 
             # Store conversation tracking fields in metadata
+            if hasattr(project, "pending_questions") and project.pending_questions:
+                metadata_dict["pending_questions"] = project.pending_questions
             if hasattr(project, "asked_questions") and project.asked_questions:
                 metadata_dict["asked_questions"] = project.asked_questions
             if hasattr(project, "skipped_questions") and project.skipped_questions:
