@@ -1929,9 +1929,15 @@ class APIOrchestrator:
                 question_response = self._get_fallback_question(phase)
 
             # 4. Store generated question
+            # Extract gaps before creating the question_entry (needed for PHASE 5)
+            question_text = question_response.get("question", "")
+            kb_gaps_addressed = []
+            if "question" in question_response and question_text:
+                kb_gaps_addressed = self._extract_gaps_from_question({"question": question_text})
+
             question_entry = {
                 "id": f"q_{uuid.uuid4().hex[:8]}",
-                "question": question_response.get("question", ""),
+                "question": question_text,
                 "phase": phase,
                 "status": "unanswered",
                 "created_at": datetime.now().isoformat(),
@@ -1940,7 +1946,7 @@ class APIOrchestrator:
                 "skipped_at": None,
                 "metadata": question_response.get("metadata", {}),
                 # PHASE 5: Track KB gaps addressed by this question
-                "kb_gaps_addressed": self._extract_gaps_from_question(question_entry) if "question" in question_response else []
+                "kb_gaps_addressed": kb_gaps_addressed
             }
 
             # Update project with new question
