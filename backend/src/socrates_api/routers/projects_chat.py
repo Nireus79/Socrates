@@ -656,17 +656,20 @@ async def get_question(
                     status_code=500, detail=result.get("message", "Failed to generate question")
                 )
 
-            # Extract questions from result - CRITICAL FIX #17: Store ALL questions, not just first
+            # Extract SINGLE question from result (monolithic design: one question at a time)
+            # The SocraticCounselor may return multiple questions, but we only use the first one
+            # This allows dynamic question generation based on conversation flow
             question_data = result.get("data", {})
             question = question_data.get("question", "").strip() if question_data.get("question") else ""
-            all_questions = []
 
             if not question:
+                # If single question not in "question" field, try "questions" array
                 questions = question_data.get("questions", [])
                 if questions and len(questions) > 0:
-                    all_questions = [q.strip() for q in questions if q.strip()]
-                    question = all_questions[0]
-                    logger.info(f"Extracted {len(all_questions)} questions from counselor; first: {question[:50]}...")
+                    # CRITICAL: Only extract FIRST question (not all)
+                    # This matches monolithic version's single-question-per-interaction design
+                    question = questions[0].strip() if isinstance(questions[0], str) else ""
+                    logger.info(f"Extracted first question from batch of {len(questions)}; question: {question[:80]}...")
         except Exception as gen_error:
             logger.error(f"Question generation failed: {gen_error}")
             raise
@@ -720,30 +723,25 @@ async def get_question(
 
         project.current_question_metadata = question_metadata
 
-        # CRITICAL FIX #17: Store all questions from batch in pending_questions
-        # This allows us to return Q2 and Q3 before generating new questions
+        # MONOLITHIC DESIGN FIX: Store SINGLE question at a time (not batches)
+        # This matches the original Socratic workflow where questions are asked dynamically
+        # based on conversation flow, not generated in predetermined batches
         if project.pending_questions is None:
             project.pending_questions = []
 
-        # Clear old batch if all were answered, otherwise keep them
-        if all_questions and all_questions != [q.get("text") for q in project.pending_questions if q.get("status") == "pending"]:
-            # New batch from counselor - clear old pending questions and add new batch
-            project.pending_questions = []
-            question_ids = {}
-            for idx, q_text in enumerate(all_questions):
-                q_id = f"q_{uuid.uuid4().hex[:12]}"
-                question_ids[q_text] = q_id
-                pending_entry = {
-                    "id": q_id,
-                    "text": q_text,
-                    "asked_at": datetime.now(timezone.utc).isoformat(),
-                    "answer": None,
-                    "status": "pending"
-                }
-                project.pending_questions.append(pending_entry)
-                logger.debug(f"Added question {idx+1}/{len(all_questions)} to pending batch: {q_id}")
-            # Use the first question's ID
-            question_id = question_ids.get(question, f"q_{uuid.uuid4().hex[:12]}")
+        # Generate unique ID for this question
+        question_id = f"q_{uuid.uuid4().hex[:12]}"
+
+        # Store ONLY the current question (monolithic design)
+        pending_entry = {
+            "id": question_id,
+            "text": question,
+            "asked_at": datetime.now(timezone.utc).isoformat(),
+            "answer": None,
+            "status": "pending"
+        }
+        project.pending_questions.append(pending_entry)
+        logger.info(f"Added single question to pending queue: {question_id} - '{question[:80]}...'")
 
         # CRITICAL FIX #12: Track question in asked_questions for history
         if project.asked_questions is None:
