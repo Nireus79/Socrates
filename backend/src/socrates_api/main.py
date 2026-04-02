@@ -78,6 +78,7 @@ from .routers import (
     llm_router,
     nlu_router,
     notes_router,
+    phase6_router,
     progress_router,
     projects_chat_router,
     projects_router,
@@ -553,6 +554,7 @@ _include_router_safe(system_router, "system")
 _include_router_safe(nlu_router, "nlu")
 _include_router_safe(free_session_router, "free_session")
 _include_router_safe(chat_sessions_router, "chat_sessions")
+_include_router_safe(phase6_router, "phase6")
 
 # Phase 4: Skills Ecosystem Routers
 app.include_router(

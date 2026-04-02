@@ -90,6 +90,52 @@ def _project_to_response(project: ProjectContext) -> ProjectResponse:
     )
 
 
+def _get_next_phase(current_phase: str) -> str:
+    """Get the next phase in the sequence."""
+    phases = ["discovery", "analysis", "design", "implementation"]
+    try:
+        current_index = phases.index(current_phase)
+        if current_index < len(phases) - 1:
+            return phases[current_index + 1]
+    except (ValueError, IndexError):
+        pass
+    return phases[-1]  # Return last phase if invalid
+
+
+def _generate_advancement_prompt(project: ProjectContext, maturity_data: dict) -> str:
+    """Generate a user-friendly prompt for phase advancement."""
+    current_phase = project.phase or "discovery"
+    maturity_pct = maturity_data.get("maturity_percentage", 0)
+    next_phase = _get_next_phase(current_phase)
+
+    phase_names = {
+        "discovery": "Discovery",
+        "analysis": "Analysis",
+        "design": "Design",
+        "implementation": "Implementation"
+    }
+
+    current_phase_name = phase_names.get(current_phase, current_phase.title())
+    next_phase_name = phase_names.get(next_phase, next_phase.title())
+
+    if maturity_pct >= 100:
+        return (
+            f"Excellent work! Your {current_phase_name} phase is now 100% complete with all "
+            f"specifications defined. You're ready to advance to the {next_phase_name} phase. "
+            f"Click 'Advance Phase' to continue with your project."
+        )
+    elif maturity_pct >= 80:
+        return (
+            f"Great progress! Your {current_phase_name} phase is {int(maturity_pct)}% complete. "
+            f"Keep answering questions to reach 100% completion and unlock the {next_phase_name} phase."
+        )
+    else:
+        return (
+            f"You're making good progress in the {current_phase_name} phase ({int(maturity_pct)}% complete). "
+            f"Continue answering questions to build a solid foundation for the {next_phase_name} phase."
+        )
+
+
 @router.get(
     "",
     status_code=status.HTTP_200_OK,
@@ -1284,29 +1330,74 @@ async def advance_phase(
                 detail=f"Project '{project_id}' not found",
             )
 
-        # Determine the new phase
-        valid_phases = ["discovery", "analysis", "design", "implementation"]
         old_phase = project.phase or "discovery"
 
-        if request and request.phase:
-            # Use the provided phase
-            new_phase = request.phase
-            if new_phase not in valid_phases:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid phase. Must be one of: {', '.join(valid_phases)}",
-                )
-        else:
-            # Auto-advance to the next phase
-            try:
-                current_index = valid_phases.index(old_phase)
-                if current_index < len(valid_phases) - 1:
-                    new_phase = valid_phases[current_index + 1]
-                else:
-                    new_phase = valid_phases[-1]  # Stay at the last phase
-            except (ValueError, IndexError):
-                new_phase = "discovery"  # Default to discovery if phase is invalid
+        # PHASE 4: Validate phase advancement
+        try:
+            from socrates_api.main import app_state
+            orchestrator = app_state.get("orchestrator")
 
+            force_advance = getattr(request, "force_advance", False) if request else False
+            target_phase = getattr(request, "phase", None) if request else None
+
+            if orchestrator:
+                # Use orchestrator validation
+                validation = orchestrator.validate_phase_advancement(
+                    project,
+                    target_phase=target_phase,
+                    force=force_advance
+                )
+
+                if not validation.get("can_advance"):
+                    # Advancement not allowed
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=validation.get("reason", "Cannot advance phase at this time"),
+                    )
+
+                new_phase = validation.get("target_phase", old_phase)
+
+                # Log if force was used
+                if validation.get("force_used"):
+                    logger.warning(
+                        f"Force advancement from {old_phase} to {new_phase} "
+                        f"for project {project_id} by user {current_user}"
+                    )
+            else:
+                # Fallback: old validation logic if orchestrator unavailable
+                logger.warning("Orchestrator not available, using fallback phase validation")
+                valid_phases = ["discovery", "analysis", "design", "implementation"]
+
+                if target_phase:
+                    # Use the provided phase
+                    new_phase = target_phase
+                    if new_phase not in valid_phases:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Invalid phase. Must be one of: {', '.join(valid_phases)}",
+                        )
+                else:
+                    # Auto-advance to the next phase
+                    try:
+                        current_index = valid_phases.index(old_phase)
+                        if current_index < len(valid_phases) - 1:
+                            new_phase = valid_phases[current_index + 1]
+                        else:
+                            new_phase = valid_phases[-1]  # Stay at the last phase
+                    except (ValueError, IndexError):
+                        new_phase = "discovery"  # Default to discovery if phase is invalid
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Phase advancement validation failed: {e}")
+            # Fail safe: don't advance on validation error
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error validating phase advancement. Please try again.",
+            )
+
+        # Update project phase
         project.phase = new_phase
         project.updated_at = datetime.now(timezone.utc)
 
@@ -1422,6 +1513,132 @@ async def rollback_phase(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error rolling back project phase",
+        )
+
+
+@router.get(
+    "/{project_id}/phase/advancement-prompt",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get phase advancement prompt when phase is near/complete",
+    responses={
+        200: {"description": "Advancement prompt retrieved successfully"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_phase_advancement_prompt(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: LocalDatabase = Depends(get_database),
+):
+    """
+    Get phase advancement prompt when phase is near or complete.
+
+    Generates a user-friendly prompt asking if they're ready to advance to the next phase.
+    This is called when a project phase reaches maturity >= 80% and ready_to_advance >= 100%.
+
+    Args:
+        project_id: Project identifier
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with advancement prompt and metadata
+    """
+    try:
+        # Check project access - viewers can see prompt
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        # PHASE 4: Calculate maturity for current phase
+        try:
+            from socrates_api.main import app_state
+            orchestrator = app_state.get("orchestrator")
+
+            if orchestrator:
+                maturity_data = orchestrator.calculate_phase_maturity(project)
+            else:
+                # Fallback: provide default data matching actual structure from calculate_phase_maturity
+                maturity_data = {
+                    "status": "unavailable",
+                    "phase": current_phase,
+                    "maturity": {
+                        "percentage": 0,
+                        "score": 0.0,
+                        "warnings": []
+                    },
+                    "phase_readiness": {
+                        "is_ready": False,
+                        "current_maturity": 0
+                    }
+                }
+        except Exception as e:
+            logger.warning(f"Failed to calculate phase maturity: {e}")
+            maturity_data = {
+                "status": "error",
+                "phase": current_phase,
+                "maturity": {
+                    "percentage": 0,
+                    "score": 0.0,
+                    "warnings": []
+                },
+                "phase_readiness": {
+                    "is_ready": False,
+                    "current_maturity": 0
+                }
+            }
+
+        current_phase = project.phase or "discovery"
+        maturity_pct = maturity_data.get("maturity_percentage", 0)
+        next_phase = _get_next_phase(current_phase)
+
+        # Generate user-friendly prompt
+        prompt_text = _generate_advancement_prompt(project, maturity_data)
+
+        # Determine if user can advance
+        can_advance = maturity_pct >= 100
+
+        logger.info(
+            f"Phase advancement prompt requested for project {project_id}: "
+            f"phase={current_phase}, maturity={maturity_pct}%, can_advance={can_advance}"
+        )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "project_id": project_id,
+                "current_phase": current_phase,
+                "next_phase": next_phase,
+                "maturity": {
+                    "percentage": maturity_pct,
+                    "formatted": f"{int(maturity_pct)}%",
+                    "ready_to_advance": can_advance,
+                },
+                "prompt": prompt_text,
+                "can_advance": can_advance,
+                "recommendation": (
+                    f"Ready to advance to {next_phase.title()}?" if can_advance
+                    else "Keep answering questions to reach 100% completion"
+                ),
+                "focus_areas": maturity_data.get("focus_areas", []),
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting phase advancement prompt: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving phase advancement prompt",
         )
 
 

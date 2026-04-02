@@ -59,6 +59,7 @@ system_router = _import_router("system_router", "system")
 nlu_router = _import_router("nlu_router", "nlu")
 free_session_router = _import_router("free_session_router", "free_session")
 chat_sessions_router = _import_router("chat_sessions_router", "chat_sessions")
+phase6_router = _import_router("phase6_router", "phase6_endpoints")
 
 # Collaboration router has different variable name
 try:

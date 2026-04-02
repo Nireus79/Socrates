@@ -122,12 +122,14 @@ class UpdateProjectRequest(BaseModel):
             "example": {
                 "name": "Updated Project Name",
                 "phase": "implementation",
+                "force_advance": False,
             }
         },
     )
 
     name: Optional[str] = Field(None, min_length=1, max_length=200, description="Project name")
     phase: Optional[str] = Field(None, description="Project phase")
+    force_advance: Optional[bool] = Field(False, description="PHASE 4: Override maturity check when advancing phase")
 
     @field_validator("name", "phase")
     @classmethod

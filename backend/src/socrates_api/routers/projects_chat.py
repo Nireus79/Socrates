@@ -1186,7 +1186,7 @@ Provide a helpful, direct answer."""
             # This keeps the Socratic dialogue clean and uninterrupted
             # (Unless debug mode is enabled, specs are returned in debugInfo field)
 
-            # Check phase readiness and add readiness status
+            # PHASE 4: Check phase readiness and add readiness status with advancement prompt
             try:
                 from socrates_api.main import get_orchestrator
                 orchestrator = get_orchestrator()
@@ -1202,15 +1202,57 @@ Provide a helpful, direct answer."""
                 if phase_readiness and (phase_readiness.get("is_complete") or phase_readiness.get("is_ready")):
                     response_data["phase_readiness"] = phase_readiness
 
+                    # PHASE 4: Generate advancement prompt when phase is complete or ready
                     if phase_readiness.get("is_complete"):
+                        # Phase is 100% complete - ready to advance
+                        maturity_pct = phase_readiness.get("maturity_percentage", 100)
+                        current_phase = project.phase or "discovery"
+
+                        # Get next phase in sequence (phase order is fixed)
+                        phases = ["discovery", "analysis", "design", "implementation"]
+                        try:
+                            current_idx = phases.index(current_phase)
+                            next_phase = phases[current_idx + 1] if current_idx < len(phases) - 1 else phases[-1]
+                        except (ValueError, IndexError):
+                            next_phase = phases[-1]  # Default to last phase
+
+                        response_data["phase_complete"] = True
+                        response_data["current_phase"] = current_phase
+                        response_data["next_phase"] = next_phase
+                        response_data["maturity"] = {
+                            "percentage": maturity_pct,
+                            "formatted": f"{int(maturity_pct)}%",
+                        }
+                        response_data["advancement_prompt"] = (
+                            f"Congratulations! Your {current_phase.title()} phase is now 100% complete "
+                            f"with all specifications defined. Ready to advance to the {next_phase.title()} phase?"
+                        )
+                        response_data["can_advance"] = True
+
                         logger.info(
                             f"Phase {project.phase} is COMPLETE for project {project_id} "
-                            f"({phase_readiness.get('maturity_percentage')}% maturity)"
+                            f"({maturity_pct}% maturity) - advancement available"
                         )
-                    else:
+                    elif phase_readiness.get("is_ready"):
+                        # Phase is near complete (80%+) - encourage completion
+                        maturity_pct = phase_readiness.get("maturity_percentage", 0)
+                        current_phase = project.phase or "discovery"
+
+                        response_data["phase_ready"] = True
+                        response_data["current_phase"] = current_phase
+                        response_data["maturity"] = {
+                            "percentage": maturity_pct,
+                            "formatted": f"{int(maturity_pct)}%",
+                        }
+                        response_data["advancement_prompt"] = (
+                            f"Great progress! Your {current_phase.title()} phase is {int(maturity_pct)}% complete. "
+                            f"Keep answering questions to reach 100% and unlock phase advancement."
+                        )
+                        response_data["can_advance"] = False
+
                         logger.info(
                             f"Phase {project.phase} is READY for project {project_id} "
-                            f"({phase_readiness.get('maturity_percentage')}% maturity)"
+                            f"({maturity_pct}% maturity) - approaching completion"
                         )
 
                 # Optional: Auto-advance if enabled and phase is complete
@@ -1226,8 +1268,8 @@ Provide a helpful, direct answer."""
                             # Clear question cache for old phase
                             try:
                                 db.clear_question_cache(project_id, phase=old_phase)
-                            except:
-                                pass
+                            except Exception as cache_err:
+                                logger.debug(f"Failed to clear question cache during auto-advance: {cache_err}")
 
                             logger.info(
                                 f"Auto-advanced project {project_id} from "
