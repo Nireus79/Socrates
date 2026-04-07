@@ -48,6 +48,12 @@ pytest.log
 .env
 .env.local
 .env.*.local
+.env.production
+.env.production.local
+deployment/configurations/.env
+deployment/configurations/.env.local
+deployment/configurations/.env.production
+deployment/configurations/.env.production.local
 
 # Logs
 *.log

@@ -1,0 +1,192 @@
+OPTION A QUICK REFERENCE CARD
+========================================
+Print this or keep open while implementing
+
+CURRENT PHASE STATUS
+────────────────────────────────────
+DAY 1-3:   Phase 0a - socratic-agents
+DAY 4-5:   Phase 0b - Library audit
+DAY 6-15:  Phase 0c - Fix other libraries
+DAY 16-20: Phase 1 - Integration
+DAY 21-23: Phase 2 - Production
+
+
+PHASE 0a: socratic-agents (CRITICAL PATH)
+────────────────────────────────────────
+Files to Modify:
+• socratic-agents-repo/src/socratic_agents/agents/socratic_counselor.py (MAIN)
+• socratic-agents-repo/src/socratic_agents/__init__.py
+• socratic-agents-repo/CHANGELOG.md
+• socratic-agents-repo/README.md
+
+Methods to Extract (Priority Order):
+⭐ 1. _generate_question() - CRITICAL
+⭐ 2. _process_response() - CRITICAL
+  3. _generate_dynamic_question()
+  4. _generate_static_question()
+  5. _extract_insights_only()
+  6. _handle_conflict_detection()
+  7. _update_project_and_maturity()
+  8. _track_question_effectiveness()
+  9. _check_phase_completion()
+  10. _advance_phase() / _rollback_phase()
+
+Critical Adaptation:
+Remove: self.orchestrator.database.save_project(project)
+Replace with: return {"status": "success", "data": {...}}
+
+Testing:
+pytest tests/agents/test_socratic_counselor.py -v
+pytest tests/agents/test_socratic_counselor.py::test_full_dialogue_flow -v
+
+Publish:
+cd socratic-agents-repo
+python -m build
+python -m twine upload dist/
+
+
+PHASE 0b: Library Audit
+─────────────────────────────────
+Libraries to Audit (in order):
+1. socratic-conflict (HIGH)
+2. socratic-learning (HIGH)
+3. socratic-rag (MEDIUM)
+4. socratic-maturity (HIGH)
+5. socratic-core (MEDIUM)
+6. Others...
+
+Extract Command:
+git show Monolithic-Socrates:socratic_system/path/to/file.py > /tmp/source.py
+grep "def " /tmp/source.py | wc -l
+
+
+PHASE 0c: Fix Libraries
+────────────────────────
+Per-Library Process:
+1. Create AUDIT_socratic-XXX.md
+2. Extract methods from monolithic
+3. Implement in PyPI
+4. Write tests
+5. Publish new version
+
+Effort Breakdown:
+• socratic-conflict: 8-10 hours
+• socratic-learning: 10-12 hours
+• socratic-rag: 10-12 hours
+• socratic-maturity: 6-8 hours
+• Others: 15-20 hours combined
+
+
+PHASE 1: Integration
+────────────────────
+Main File: backend/src/socrates_api/orchestrator.py
+
+Key Methods:
+• _orchestrate_question_generation() (8-10 hours)
+• _orchestrate_answer_processing() (8-10 hours)
+
+⚠️ CRITICAL: Next question MUST be generated after answer processing
+
+Also Update:
+backend/src/socrates_api/routers/projects_chat.py
+- send_message endpoint to include next_question
+
+
+PHASE 2: Production
+──────────────────
+Pre-Deployment:
+☐ All Phase 1 tests passing
+☐ No placeholder code
+☐ Database schema verified
+☐ Documentation updated
+
+
+KEY REFERENCE POINTS
+──────────────────────────────────
+Monolithic Example:
+• Branch: Monolithic-Socrates
+• File: socratic_system/agents/socratic_counselor.py
+• Lines: ~1500 (complete)
+
+PyPI Current:
+• Repo: socratic-agents-repo
+• File: src/socratic_agents/agents/socratic_counselor.py
+• Lines: ~420 (incomplete)
+
+Modular Socrates:
+• Repo: Socrates
+• File: backend/src/socrates_api/orchestrator.py
+• Status: Should use fixed PyPI libraries
+
+
+CRITICAL SUCCESS FACTORS
+────────────────────────
+✅ MUST DO:
+1. Extract from monolithic EXACTLY
+2. Test each method independently
+3. Test full dialogue flow before publishing
+4. Fix socratic-agents FIRST (foundation)
+5. No placeholder code
+
+❌ MUST NOT DO:
+1. Skip testing
+2. Publish incomplete work
+3. Try to integrate before Phase 0 complete
+4. Change approach mid-phase
+
+
+DOCUMENTATION REFERENCE
+──────────────────────────────────
+Stuck on Phase 0a?
+→ ROOT_CAUSE_ANALYSIS.md (code examples)
+
+Don't understand what to extract?
+→ LIBRARY_AUDIT_AND_REMEDIATION_PLAN.md
+
+Implementation details for Phase 1?
+→ IMPLEMENTATION_REQUIREMENTS.md
+
+Daily checklist?
+→ OPTION_A_EXECUTION_GUIDE.md
+
+
+TIMELINE
+────────
+Week 1: Phase 0a (22 hours) + Phase 0b (3-5 hours)
+Week 2-3: Phase 0c (35-40 hours)
+Week 4: Phase 1 (20-30 hours) + Phase 2 (5-10 hours)
+
+Total: 85-100 hours over 3-4 weeks
+
+
+GIT WORKFLOW
+────────────
+git checkout -b fix/option-a-remediation
+git add .
+git commit -m "work: [Phase] - Description"
+git push
+
+Final PR when all phases complete
+
+
+DAILY STATUS TRACKING
+─────────────────────
+DATE: 2026-04-XX
+PHASE: [0a/0b/0c/1/2]
+HOURS SPENT: X
+BLOCKERS: None / [Description]
+NEXT: [Tomorrow's task]
+
+
+YOU'VE GOT THIS!
+────────────────────────────────────
+✅ You have the monolithic example
+✅ You know exactly what to extract
+✅ You have comprehensive templates
+✅ You have detailed checklists
+
+Start in 3 days with Phase 0a.
+Focus on socratic-agents first.
+Everything depends on it.
+
+Trust the process.
