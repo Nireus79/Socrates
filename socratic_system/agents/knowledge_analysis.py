@@ -8,6 +8,7 @@ When new knowledge is imported (PDFs, code repos, web pages, notes), this agent:
 4. Emits events for UI updates
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict
@@ -66,6 +67,23 @@ class KnowledgeAnalysisAgent(Agent):
             return self._regenerate_questions(request)
         elif action == "get_knowledge_gaps":
             return self._get_knowledge_gaps(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process knowledge analysis requests asynchronously.
+
+        Overrides base class to provide true async vector database operations.
+        """
+        action = request.get("action")
+
+        if action == "analyze_knowledge":
+            return await self._analyze_knowledge_async(request)
+        elif action == "regenerate_questions":
+            return await self._regenerate_questions_async(request)
+        elif action == "get_knowledge_gaps":
+            return await self._get_knowledge_gaps_async(request)
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
 
@@ -132,6 +150,10 @@ class KnowledgeAnalysisAgent(Agent):
         except Exception as e:
             self.logger.error(f"Error handling document import: {str(e)}", exc_info=True)
 
+    async def _analyze_knowledge_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze knowledge asynchronously with vector DB operations"""
+        return await asyncio.to_thread(self._analyze_knowledge, request)
+
     def _analyze_knowledge(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
         Analyze imported knowledge in context of project goals.
@@ -193,6 +215,10 @@ class KnowledgeAnalysisAgent(Agent):
             self.logger.error(f"Error analyzing knowledge: {str(e)}")
             return {"status": "error", "message": f"Analysis failed: {str(e)}"}
 
+    async def _regenerate_questions_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Regenerate questions asynchronously with database operations"""
+        return await asyncio.to_thread(self._regenerate_questions, request)
+
     def _regenerate_questions(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
         Regenerate questions based on new knowledge analysis.
@@ -250,6 +276,10 @@ class KnowledgeAnalysisAgent(Agent):
         except Exception as e:
             self.logger.error(f"Error regenerating questions: {str(e)}")
             return {"status": "error", "message": f"Regeneration failed: {str(e)}"}
+
+    async def _get_knowledge_gaps_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get knowledge gaps asynchronously with database operations"""
+        return await asyncio.to_thread(self._get_knowledge_gaps, request)
 
     def _get_knowledge_gaps(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -449,16 +479,3 @@ class KnowledgeAnalysisAgent(Agent):
         except Exception as e:
             self.logger.debug(f"Error suggesting focus areas: {e}")
             return []
-
-    def emit_event(self, event_type, data: Dict[str, Any]) -> None:
-        """
-        Emit an event to the event system.
-
-        Args:
-            event_type: Type of event to emit
-            data: Event data
-        """
-        try:
-            self.orchestrator.event_emitter.emit(event_type, data)
-        except Exception as e:
-            self.logger.debug(f"Error emitting event: {e}")
