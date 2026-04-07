@@ -3,7 +3,6 @@ Document processing for importing files into projects
 Extracts content from PDFs, text files, code files, pasted text, and web pages
 """
 
-import asyncio
 import os
 import re
 from datetime import datetime
@@ -39,31 +38,6 @@ class DocumentProcessorAgent(Agent):
             return self._list_documents(request)
 
         return {"status": "error", "message": "Unknown action"}
-
-    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process document import requests asynchronously with true async I/O.
-
-        Overrides base class to provide true async file I/O operations.
-        """
-        action = request.get("action")
-
-        if action == "import_file":
-            return await self._import_file_async(request)
-        elif action == "import_directory":
-            return await self._import_directory_async(request)
-        elif action == "import_text":
-            return await self._import_text_async(request)
-        elif action == "import_url":
-            return await self._import_url_async(request)
-        elif action == "list_documents":
-            return await asyncio.to_thread(self._list_documents, request)
-
-        return {"status": "error", "message": "Unknown action"}
-
-    async def _import_file_async(self, request: Dict) -> Dict:
-        """Import a single file asynchronously with true async file I/O"""
-        return await asyncio.to_thread(self._import_file, request)
 
     def _import_file(self, request: Dict) -> Dict:
         """Import a single file - extract content and store in vector database"""
@@ -162,10 +136,6 @@ class DocumentProcessorAgent(Agent):
             self.logger.error(f"Error importing file {file_path}: {e}", e)
             return {"status": "error", "message": f"Failed to import file: {str(e)}"}
 
-    async def _import_directory_async(self, request: Dict) -> Dict:
-        """Import directory asynchronously with true async file I/O"""
-        return await asyncio.to_thread(self._import_directory, request)
-
     def _import_directory(self, request: Dict) -> Dict:
         """Import all files from a directory"""
         directory_path = request.get("directory_path")
@@ -229,10 +199,6 @@ class DocumentProcessorAgent(Agent):
             "imported": True,
         }
 
-    async def _import_text_async(self, request: Dict) -> Dict:
-        """Import text asynchronously with true async I/O"""
-        return await asyncio.to_thread(self._import_text, request)
-
     def _import_text(self, request: Dict) -> Dict:
         """Import pasted or inline text into the knowledge base"""
         # Support both "content" and "text_content" parameter names for flexibility
@@ -293,10 +259,6 @@ class DocumentProcessorAgent(Agent):
         except Exception as e:
             self.logger.error(f"Error importing pasted text: {e}", e)
             return {"status": "error", "message": f"Failed to import text: {str(e)}"}
-
-    async def _import_url_async(self, request: Dict) -> Dict:
-        """Import URL asynchronously with true async I/O"""
-        return await asyncio.to_thread(self._import_url, request)
 
     def _import_url(self, request: Dict) -> Dict:
         """Import content from a web page URL"""

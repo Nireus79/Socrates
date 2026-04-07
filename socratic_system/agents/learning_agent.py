@@ -21,7 +21,6 @@ from typing import Any, Dict
 
 from socratic_system.agents.base import Agent
 from socratic_system.core.learning_engine import LearningEngine
-from socratic_system.events import EventType
 from socratic_system.models import KnowledgeBaseDocument, QuestionEffectiveness, UserBehaviorPattern
 
 
@@ -200,7 +199,7 @@ class UserLearningAgent(Agent):
 
             # Emit event
             self.emit_event(
-                EventType.LEARNING_METRICS_UPDATED,
+                "LEARNING_METRICS_UPDATED",
                 {
                     "user_id": user_id,
                     "question_id": question_template_id,
@@ -595,3 +594,19 @@ class UserLearningAgent(Agent):
         merged = existing.copy()
         merged.update(new)
         return merged
+
+    def emit_event(self, event_type: str, data: Dict[str, Any]) -> None:
+        """
+        Emit learning event for other agents to listen to.
+
+        Args:
+            event_type: Type of event
+            data: Event data
+        """
+        if not data.get("agent"):
+            data["agent"] = self.name
+
+        try:
+            self.orchestrator.event_emitter.emit(event_type, data)
+        except Exception as e:
+            self.logger.debug(f"Could not emit event {event_type}: {e}")

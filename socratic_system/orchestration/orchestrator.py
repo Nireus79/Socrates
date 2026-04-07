@@ -27,8 +27,6 @@ from socratic_system.agents import (
     SystemMonitorAgent,
     UserManagerAgent,
 )
-from socratic_system.agents.document_context_analyzer import DocumentContextAnalyzer
-from socratic_system.agents.github_sync_handler import GitHubSyncHandler
 from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
 from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
 from socratic_system.agents.learning_agent import UserLearningAgent
@@ -305,20 +303,6 @@ class AgentOrchestrator:
             self._agents_cache["code_validation_agent"] = CodeValidationAgent(self)
         return self._agents_cache["code_validation_agent"]
 
-    @property
-    def github_sync(self) -> GitHubSyncHandler:
-        """Lazy-load GitHub sync handler"""
-        if "github_sync" not in self._agents_cache:
-            self._agents_cache["github_sync"] = GitHubSyncHandler(self.database)
-        return self._agents_cache["github_sync"]
-
-    @property
-    def document_context_analyzer(self) -> DocumentContextAnalyzer:
-        """Lazy-load document context analyzer"""
-        if "document_context_analyzer" not in self._agents_cache:
-            self._agents_cache["document_context_analyzer"] = DocumentContextAnalyzer()
-        return self._agents_cache["document_context_analyzer"]
-
     def _load_knowledge_base(self) -> None:
         """Load default knowledge base from config file if not already loaded"""
         if self.vector_db.knowledge_loaded:
@@ -499,14 +483,11 @@ class AgentOrchestrator:
             "user_manager": self.user_manager,
             "note_manager": self.note_manager,
             "knowledge_manager": self.knowledge_manager,
-            "knowledge_analysis": self.knowledge_analysis,
             "quality_controller": self.quality_controller,
             "learning": self.learning_agent,
             "multi_llm": self.multi_llm_agent,
             "question_queue": self.question_queue,
             "code_validation": self.code_validation_agent,
-            "github_sync": self.github_sync,
-            "document_context": self.document_context_analyzer,
         }
 
         agent = agents.get(agent_name)
@@ -577,14 +558,11 @@ class AgentOrchestrator:
             "user_manager": self.user_manager,
             "note_manager": self.note_manager,
             "knowledge_manager": self.knowledge_manager,
-            "knowledge_analysis": self.knowledge_analysis,
             "quality_controller": self.quality_controller,
             "learning": self.learning_agent,
             "multi_llm": self.multi_llm_agent,
             "question_queue": self.question_queue,
             "code_validation": self.code_validation_agent,
-            "github_sync": self.github_sync,
-            "document_context": self.document_context_analyzer,
         }
 
         agent = agents.get(agent_name)
