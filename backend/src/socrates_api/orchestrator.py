@@ -194,12 +194,54 @@ class LLMClientAdapter:
         return getattr(self.llm_client, name)
 
 
+class EventEmitterAdapter:
+    """Adapter to bridge EventBus (subscribe/publish) to EventEmitter (on/emit) interface"""
+
+    def __init__(self, event_bus):
+        """Wrap an EventBus instance"""
+        self.event_bus = event_bus
+
+    def on(self, event_name, callback):
+        """Register event listener (subscribe pattern)"""
+        self.event_bus.subscribe(event_name, callback)
+        return self
+
+    def emit(self, event_name, data=None):
+        """Emit event (publish pattern)"""
+        self.event_bus.publish(event_name, data)
+        return self
+
+    def off(self, event_name, callback=None):
+        """Unregister event listener"""
+        self.event_bus.unsubscribe(event_name, callback)
+        return self
+
+    def __getattr__(self, name):
+        """Delegate unknown attributes to wrapped event bus"""
+        return getattr(self.event_bus, name)
+
+
 class APIOrchestrator:
     """Orchestrates real agents from socratic-agents for REST API"""
 
-    def __init__(self, api_key_or_config: str = ""):
-        """Initialize orchestrator with real agents and event-driven architecture"""
-        self.api_key = api_key_or_config
+    def __init__(self, api_key_or_config = ""):
+        """Initialize orchestrator with real agents and event-driven architecture
+
+        Args:
+            api_key_or_config: Either a string API key or a SocratesConfig object
+        """
+        # Add logger for backward compatibility
+        self.logger = logger
+
+        # Handle both string API keys and config objects
+        if isinstance(api_key_or_config, str):
+            self.api_key = api_key_or_config
+            self.config = None
+        else:
+            # Assume it's a config object (SocratesConfig)
+            self.config = api_key_or_config
+            self.api_key = getattr(api_key_or_config, 'api_key', '')
+
         self.agents = {}
         self.skill_orchestrator = None
         self.workflow_orchestrator = None
@@ -232,6 +274,8 @@ class APIOrchestrator:
 
         # Initialize event-driven architecture from socratic-core (required)
         self.event_bus = EventBus()
+        # Backward compatibility: alias event_emitter to event_bus with adapter for old API
+        self.event_emitter = EventEmitterAdapter(self.event_bus)
         logger.info("Event-driven architecture initialized: EventBus enabled")
 
         # Initialize library integrations (Phase 4)
@@ -247,6 +291,11 @@ class APIOrchestrator:
 
         # Create LLMClient first (if API key provided)
         self.llm_client = self._create_llm_client()
+        # Backward compatibility: alias claude_client to llm_client
+        self.claude_client = self.llm_client
+
+        # Initialize database (backward compatibility)
+        self.database = self._initialize_database()
 
         self._initialize_agents()
         self._initialize_orchestrators()
@@ -413,6 +462,32 @@ class APIOrchestrator:
 
         except Exception as e:
             logger.warning(f"Failed to create user LLM client: {e}")
+            return None
+
+    def _initialize_database(self):
+        """Initialize database connection (backward compatibility)"""
+        try:
+            # Try to get database from config if available
+            if hasattr(self, 'config') and self.config:
+                db_path = getattr(self.config, 'projects_db_path', None)
+            else:
+                db_path = None
+
+            # Try to import and initialize database
+            try:
+                from socrates_api.database import Database
+                return Database(db_path=db_path)
+            except ImportError:
+                # Fall back to a simple mock if Database not available
+                return type('MockDatabase', (), {
+                    'save_project': lambda *args, **kwargs: None,
+                    'load_project': lambda *args, **kwargs: None,
+                    'delete_project': lambda *args, **kwargs: None,
+                    'save_user': lambda *args, **kwargs: None,
+                    'load_user': lambda *args, **kwargs: None,
+                })()
+        except Exception as e:
+            logger.warning(f"Failed to initialize database: {e}")
             return None
 
     def _initialize_agents(self) -> None:

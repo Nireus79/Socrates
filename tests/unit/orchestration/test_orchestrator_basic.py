@@ -21,7 +21,7 @@ def orchestrator():
     if Orchestrator is None:
         pytest.skip("Orchestrator not available")
 
-    with patch("socratic_system.orchestration.orchestrator.LLMClient"):
+    with patch("socrates_api.orchestrator.LLMClient"):
         return Orchestrator(api_key_or_config="")
 
 
@@ -41,7 +41,7 @@ class TestOrchestratorInitialization:
     @pytest.mark.skipif(Orchestrator is None, reason="Orchestrator not available")
     def test_orchestrator_initialization_graceful(self):
         """Test graceful initialization even with missing dependencies."""
-        with patch("socratic_system.orchestration.orchestrator.LLMClient", None):
+        with patch("socrates_api.orchestrator.LLMClient", None):
             try:
                 orchestrator = Orchestrator(api_key_or_config="")
                 assert orchestrator is not None
