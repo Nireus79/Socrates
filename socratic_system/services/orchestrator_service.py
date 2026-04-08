@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 from socratic_core import SocratesConfig
 
 if TYPE_CHECKING:
-    from socratic_system.orchestration.orchestrator import AgentOrchestrator
+    from socratic_system.orchestration import AgentOrchestrator  # Compatibility layer
 
 
 class OrchestratorService:
@@ -107,7 +107,7 @@ class OrchestratorService:
 
             try:
                 # Import here to avoid circular import
-                from socratic_system.orchestration.orchestrator import AgentOrchestrator
+                from socratic_system.orchestration import AgentOrchestrator  # Compatibility layer
 
                 # Create user-specific data directory
                 user_data_dir = Path.home() / ".socrates" / "users" / user_id

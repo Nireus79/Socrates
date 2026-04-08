@@ -8,7 +8,8 @@ getting recommendations, and viewing progression trends.
 import logging
 from typing import Any, Callable, Dict, List
 
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
+# Import from compatibility layer (removed local orchestrator in Phase 3)
+from socratic_system.orchestration import AgentOrchestrator
 
 try:
     from socratic_learning import AnalyticsCalculator

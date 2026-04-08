@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 
 try:
-    from socratic_system.orchestration.orchestrator import AgentOrchestrator
+    from socratic_system.orchestration import AgentOrchestrator  # Compatibility layer
     Orchestrator = AgentOrchestrator  # Alias for backward compatibility with tests
 except ImportError:
     Orchestrator = None

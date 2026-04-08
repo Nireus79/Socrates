@@ -13,7 +13,7 @@ from pathlib import Path
 
 from socratic_core import EventType, SocratesConfig
 
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
+from socratic_system.orchestration import AgentOrchestrator  # Compatibility layer
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))

@@ -18,7 +18,7 @@ from socratic_core import SocratesConfig
 
 from socratic_system.database.project_db import ProjectDatabase
 from socratic_system.models.project import ProjectContext
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
+from socratic_system.orchestration import AgentOrchestrator  # Compatibility layer
 
 
 @pytest.fixture

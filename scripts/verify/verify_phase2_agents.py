@@ -21,7 +21,7 @@ def verify_agent_properties():
     logger.info("=" * 70)
 
     try:
-        from socratic_system.orchestration.orchestrator import AgentOrchestrator
+        from socratic_system.orchestration import AgentOrchestrator  # Compatibility layer
         from socrates_nexus import LLMClient
 
         # Create orchestrator
@@ -79,7 +79,7 @@ def verify_process_request_routing():
     logger.info("=" * 70)
 
     try:
-        from socratic_system.orchestration.orchestrator import AgentOrchestrator
+        from socratic_system.orchestration import AgentOrchestrator  # Compatibility layer
         from socrates_nexus import LLMClient
 
         llm_client = LLMClient(api_key="test_key", provider="anthropic", model="claude-3-haiku")

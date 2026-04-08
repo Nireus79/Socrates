@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
+from socratic_system.orchestration import AgentOrchestrator  # Compatibility layer
 
 
 @pytest.mark.unit
