@@ -325,8 +325,8 @@ class APIOrchestrator:
 
             # List of models to try (in priority order)
             models_to_try = [
-                "claude-3-5-haiku",  # Generic haiku (preferred)
-                "claude-3-5-haiku-20241022",  # Specific date version
+                "claude-haiku-4-5-20251001",  # Latest haiku (preferred)
+                "claude-3-5-haiku",  # Generic haiku fallback
                 "claude-3-haiku-20240307",  # Older haiku
                 "claude-3-5-sonnet-20241022",  # Fallback to sonnet
                 "claude-opus-4-20250514",  # Fallback to opus
@@ -414,8 +414,8 @@ class APIOrchestrator:
             # Add default haiku models in order of preference
             models_to_try.extend(
                 [
-                    "claude-3-5-haiku",  # Generic version (preferred)
-                    "claude-3-5-haiku-20241022",  # Specific date version
+                    "claude-haiku-4-5-20251001",  # Latest haiku (preferred)
+                    "claude-3-5-haiku",  # Generic version fallback
                     "claude-3-haiku-20240307",  # Older version
                     "claude-3-5-sonnet-20241022",  # Fallback to sonnet
                 ]
@@ -2369,11 +2369,27 @@ class APIOrchestrator:
             try:
                 conflict_detector = self.agents.get("conflict_detector")
                 if conflict_detector:
-                    conflicts_response = conflict_detector.detect_conflicts(
-                        new_specs=specs_response.get("specs", {}),
-                        existing_specs=self._get_existing_specs(project),
-                        context=self._get_extracted_specs(project),
-                    )
+                    # Try the standard agent interface first
+                    try:
+                        conflicts_response = conflict_detector.process({
+                            "action": "detect_conflicts",
+                            "new_specs": specs_response.get("specs", {}),
+                            "existing_specs": self._get_existing_specs(project),
+                            "context": self._get_extracted_specs(project),
+                        })
+                    except (TypeError, AttributeError):
+                        # Fallback to direct method call with different signature
+                        try:
+                            result = conflict_detector.detect_conflicts(
+                                specs_response.get("specs", {}),
+                                self._get_existing_specs(project),
+                            )
+                            conflicts_response = {
+                                "status": "success",
+                                "conflicts_found": result if isinstance(result, list) else [],
+                            }
+                        except Exception as inner_e:
+                            logger.warning(f"Fallback conflict detection also failed: {inner_e}")
             except Exception as e:
                 logger.warning(f"Failed to detect conflicts: {e}")
 
