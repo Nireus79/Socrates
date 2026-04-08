@@ -310,11 +310,14 @@ async def create_project(
                     logger.info(
                         f"Project {project.project_id} created by {current_user} (via orchestrator)"
                     )
+                    # Extract debug_logs from result or orchestrator
+                    debug_logs = result.get("debug_logs", []) or getattr(orchestrator, "debug_logs", [])
                     return APIResponse(
                         success=True,
                         status="created",
                         message="Project created successfully",
                         data=_project_to_response(project).model_dump(mode='json'),
+                        debug_logs=debug_logs,
                     )
                 else:
                     error_message = result.get("message", "Failed to create project")
@@ -535,11 +538,20 @@ async def create_project(
             logger.debug(f"Failed to emit PROJECT_CREATED event (non-critical): {event_err}")
             # Project creation is already successful, event emission is non-critical
 
+        # Get debug_logs if orchestrator is available
+        debug_logs = []
+        try:
+            orch = _get_orchestrator()
+            debug_logs = getattr(orch, "debug_logs", []) or []
+        except Exception:
+            pass
+
         return APIResponse(
             success=True,
             status="created",
             message="Project created successfully",
             data=_project_to_response(project).model_dump(mode='json'),
+            debug_logs=debug_logs,
         )
 
     except HTTPException as e:
@@ -1340,6 +1352,15 @@ async def advance_phase(
             from socrates_api.main import app_state
             orchestrator = app_state.get("orchestrator")
 
+            # Build context for debug_logs
+            debug_logs = []
+            if orchestrator:
+                try:
+                    context = orchestrator._build_agent_context(project)
+                    debug_logs = context.get("debug_logs", [])
+                except Exception:
+                    pass
+
             force_advance = getattr(request, "force_advance", False) if request else False
             target_phase = getattr(request, "phase", None) if request else None
 
@@ -1421,6 +1442,7 @@ async def advance_phase(
             status="updated",
             message=f"Project phase advanced to {new_phase}",
             data=_project_to_response(project).model_dump(mode='json'),
+            debug_logs=debug_logs if 'debug_logs' in locals() else [],
         )
 
     except HTTPException:
