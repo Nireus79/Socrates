@@ -115,3 +115,6 @@ Socrates8.0broken/
 logs/
 data/
 # Old phase tests
+
+# Archived documentation (April 8, 2026 cleanup)
+.archive/
