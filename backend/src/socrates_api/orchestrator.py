@@ -2245,11 +2245,14 @@ class APIOrchestrator:
             try:
                 counselor = self.agents.get("socratic_counselor")
                 if counselor and hasattr(counselor, "extract_specs_from_response"):
+                    # CRITICAL FIX #1: Pass conversation_history to agent calls
                     specs_response = counselor.extract_specs_from_response(
                         user_answer=answer_text,
                         question=question.get("question", ""),
                         project_context=self._get_extracted_specs(project),
                         phase=question.get("phase", "discovery"),
+                        conversation_history=project.conversation_history,  # ← ADDED
+                        conversation_summary=self._get_conversation_summary(project),  # ← ADDED
                     )
             except Exception as e:
                 logger.warning(f"Failed to extract specs: {e}")
