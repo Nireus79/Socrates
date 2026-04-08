@@ -668,6 +668,7 @@ async def import_file(
                     "words_extracted": result.get("words_extracted", 0),
                     "content_preview": content_preview[:500] if content_preview else "",
                 },
+                debug_logs=context.get("debug_logs", []) if context else [],
             )
 
         finally:
@@ -807,6 +808,7 @@ async def import_url(
                 "chunks": result.get("chunks_added", 0),
                 "entries": result.get("entries_added", 0),
             },
+            debug_logs=context.get("debug_logs", []) if context else [],
         )
 
     except HTTPException:
@@ -958,6 +960,7 @@ async def import_text(
                 "chunks": result.get("chunks_added", 0),
                 "entries": result.get("entries_added", 0),
             },
+            debug_logs=context.get("debug_logs", []) if context else [],
         )
 
     except HTTPException:
@@ -1055,11 +1058,15 @@ async def search_knowledge(
 
         logger.info(f"Search completed: found {len(search_results)} results")
 
+        # Get debug_logs from orchestrator if available
+        debug_logs = getattr(orchestrator, "debug_logs", []) or []
+
         return APIResponse(
             success=True,
             status="success",
             message=f"Search completed for '{search_query}'",
             data={"query": search_query, "results": search_results, "total": len(search_results)},
+            debug_logs=debug_logs,
         )
 
     except HTTPException:
@@ -1250,6 +1257,9 @@ async def bulk_import_documents(
             from socrates_api.auth.project_access import check_project_access as rbac_check
             await rbac_check(project_id, current_user, db, min_role="editor")
 
+        # Initialize debug_logs
+        debug_logs = []
+
         results = []
         for file in files:
             try:
@@ -1339,6 +1349,7 @@ async def bulk_import_documents(
                 failed_count=failed_count,
                 details=results,
             ),
+            debug_logs=debug_logs,
         )
 
     except HTTPException:
@@ -1513,6 +1524,7 @@ async def add_knowledge_entry(
                 "category": category,
                 "content_length": len(content),
             },
+            debug_logs=context.get("debug_logs", []) if context else [],
         )
 
     except HTTPException:
