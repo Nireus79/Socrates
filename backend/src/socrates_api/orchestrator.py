@@ -2051,11 +2051,17 @@ class APIOrchestrator:
 
             # 1. Check for pending unanswered questions
             pending_questions = getattr(project, "pending_questions", []) or []
+            logger.debug(f"Total pending questions: {len(pending_questions)}, force_refresh={force_refresh}")
+            for pq in pending_questions:
+                logger.debug(f"  Question {pq.get('id')}: status={pq.get('status')}")
+
             if not force_refresh and pending_questions:
                 unanswered = [q for q in pending_questions if q.get("status") == "unanswered"]
                 if unanswered:
                     logger.info(f"Returning existing unanswered question: {unanswered[0]['id']}")
                     return {"status": "success", "question": unanswered[0], "existing": True}
+                else:
+                    logger.info(f"All {len(pending_questions)} pending questions have been answered - generating new question")
 
             # 2. Gather full context
             context = self._gather_question_context(project, user_id)
