@@ -1225,6 +1225,7 @@ async def get_maturity_analysis(
             status="success",
             message="Detailed maturity analysis retrieved successfully",
             data=analysis_data,
+            debug_logs=[],
         )
 
     except HTTPException:
@@ -1529,6 +1530,7 @@ async def rollback_phase(
             status="updated",
             message=f"Project phase rolled back to {new_phase}",
             data=_project_to_response(project).model_dump(mode='json'),
+            debug_logs=[],
         )
 
     except HTTPException:
@@ -1583,9 +1585,18 @@ async def get_phase_advancement_prompt(
             )
 
         # PHASE 4: Calculate maturity for current phase
+        debug_logs = []
         try:
             from socrates_api.main import app_state
             orchestrator = app_state.get("orchestrator")
+
+            # Build context for debug_logs if orchestrator available
+            if orchestrator:
+                try:
+                    context = orchestrator._build_agent_context(project)
+                    debug_logs = context.get("debug_logs", [])
+                except Exception:
+                    pass
 
             if orchestrator:
                 maturity_data = orchestrator.calculate_phase_maturity(project)
@@ -1655,6 +1666,7 @@ async def get_phase_advancement_prompt(
                 ),
                 "focus_areas": maturity_data.get("focus_areas", []),
             },
+            debug_logs=debug_logs,
         )
 
     except HTTPException:
