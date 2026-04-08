@@ -234,6 +234,17 @@ class APIOrchestrator:
         self.event_bus = EventBus()
         logger.info("Event-driven architecture initialized: EventBus enabled")
 
+        # Initialize library integrations (Phase 4)
+        try:
+            from socrates_api.library_integrations import get_integration_manager
+
+            self.library_integrations = get_integration_manager()
+            available_libs = self.library_integrations.get_available_libraries()
+            logger.info(f"Library integrations initialized: {len(available_libs)} libraries available")
+        except Exception as e:
+            logger.warning(f"Library integrations setup failed: {e}")
+            self.library_integrations = None
+
         # Create LLMClient first (if API key provided)
         self.llm_client = self._create_llm_client()
 
