@@ -396,11 +396,13 @@ async def generate_code(
                     generation_id=generation_id,
                     created_at=datetime.now(timezone.utc).isoformat(),
                 ),
+                debug_logs=context.get("debug_logs"),
             )
 
         except Exception as e:
             logger.debug("Error in code generation", exc_info=True)
             # Return safe fallback
+            debug_logs = context.get("debug_logs") if 'context' in locals() else []
             return APIResponse(
                 success=True,
                 status="success",
@@ -413,6 +415,7 @@ async def generate_code(
                     generation_id=f"gen_{int(__import__('time').time() * 1000)}",
                     created_at=datetime.now(timezone.utc).isoformat(),
                 ),
+                debug_logs=debug_logs,
             )
 
     except HTTPException:
@@ -802,6 +805,9 @@ async def refactor_code(
 
             orchestrator = get_orchestrator()
 
+            # Build context for refactoring
+            context = orchestrator._build_agent_context(project)
+
             # Use code generator agent via orchestrator routing for refactoring
             result = await orchestrator.process_request_async(
                 "code_generator",
@@ -915,6 +921,7 @@ async def refactor_code(
                     refactor_type=refactor_type,
                     changes=changes if changes else ["Code analyzed and refactored"],
                 ),
+                debug_logs=context.get("debug_logs"),
             )
 
         except Exception as e:
@@ -1136,6 +1143,7 @@ async def generate_documentation(
                 length=len(output),
                 generation_id=generation_id,
             ),
+            debug_logs=context.get("debug_logs") if 'context' in locals() else [],
         )
 
     except HTTPException:
