@@ -623,6 +623,14 @@ async def send_chat_message(
 
         orchestrator = get_orchestrator()
         logger.info(f"[send_chat_message] Got orchestrator: {orchestrator is not None}")
+
+        # Build context for debug_logs
+        context = {}
+        try:
+            context = orchestrator._build_agent_context(None)
+        except Exception:
+            context = {"debug_logs": []}
+
         # Extract message and mode from request body
         message = request_body.get("message", "").strip()
         mode = request_body.get("mode", "socratic").lower()
@@ -722,6 +730,7 @@ async def send_chat_message(
                 "initial_question": question_response,
                 "mode": mode,
             },
+            debug_logs=context.get("debug_logs", []),
         )
 
     except HTTPException:
@@ -918,6 +927,15 @@ async def request_hint(
                 detail="Access denied",
             )
 
+        # Build context for debug_logs early
+        from socrates_api.main import get_orchestrator
+        orchestrator = get_orchestrator()
+        context = {}
+        try:
+            context = orchestrator._build_agent_context(project)
+        except Exception:
+            context = {"debug_logs": []}
+
         # Get the latest assistant message or generate a new question
         assistant_messages = [
             msg for msg in (project.conversation_history or []) if msg.get("role") == "assistant"
@@ -993,6 +1011,7 @@ async def request_hint(
                 "hint": hint,
                 "question": question or "Provide more details",
             },
+            debug_logs=context.get("debug_logs", []),
         )
 
     except HTTPException:

@@ -305,6 +305,15 @@ async def interpret_input(
         SuccessResponse with interpreted commands, suggestions, and extracted entities
     """
     try:
+        # Initialize debug_logs
+        debug_logs = []
+        try:
+            from socrates_api.main import get_orchestrator
+            orchestrator = get_orchestrator()
+            debug_logs = getattr(orchestrator, 'debug_logs', []) or []
+        except Exception:
+            debug_logs = []
+
         if not request.input or not request.input.strip():
             return APIResponse(
                 success=False,
@@ -316,6 +325,7 @@ async def interpret_input(
                     "entities": None,
                     "intent": None,
                 },
+                debug_logs=debug_logs,
             )
 
         # Save NLU dialogue as project note if project_id provided
@@ -368,6 +378,7 @@ async def interpret_input(
                     "entities": None,
                     "intent": "direct_command",
                 },
+                debug_logs=debug_logs,
             )
 
         # Try AI-powered interpretation first
@@ -407,6 +418,7 @@ async def interpret_input(
                     status="success",
                     message="I found some relevant commands:",
                     data=response_data,
+                    debug_logs=debug_logs,
                 )
 
         # Fall back to keyword-based matching if AI confidence is low
@@ -490,6 +502,7 @@ async def interpret_input(
                 status="success",
                 message=f"Understood! Executing: {matched_command}",
                 data=response_data,
+                debug_logs=debug_logs,
             )
 
         # If suggestions found, return them
@@ -515,6 +528,7 @@ async def interpret_input(
                 status="success",
                 message="Did you mean one of these?",
                 data=response_data,
+                debug_logs=debug_logs,
             )
 
         # No match found
@@ -536,6 +550,7 @@ async def interpret_input(
             status="error",
             message="I didn't understand that. Try describing what you want or typing a command like /help",
             data=response_data,
+            debug_logs=debug_logs,
         )
 
     except Exception as e:
@@ -551,6 +566,7 @@ async def interpret_input(
                 "entities": None,
                 "intent": None,
             },
+            debug_logs=debug_logs,
         )
 
 
