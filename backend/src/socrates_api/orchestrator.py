@@ -1152,12 +1152,11 @@ class APIOrchestrator:
     def list_llm_models(self) -> List[str]:
         """List available LLM models (in priority order)"""
         return [
-            "claude-3-5-haiku",  # Generic version (preferred if available)
-            "claude-3-5-haiku-20241022",  # Specific date version (fallback)
-            "claude-3-haiku-20240307",  # Older haiku version
-            "claude-3-5-sonnet-20241022",  # Sonnet as additional fallback
-            "claude-opus-4-20250514",  # Opus as final fallback
-            "claude-opus-4-1",  # Generic opus
+            "claude-haiku-4-5-20251001",  # Latest haiku (VALID - 4.5 generation)
+            "claude-3-5-sonnet-20241022",  # Sonnet as backup
+            "claude-opus-4-20250514",  # Opus as fallback
+            "claude-opus-4-1",  # Older opus
+            "claude-3-haiku-20240307",  # Legacy haiku
         ]
 
     def analyze_code_quality(self, code: str, filename: str = "code.py") -> Dict[str, Any]:
@@ -3793,10 +3792,10 @@ Provide only the hint text."""
                 if user_api_key:
                     # Try multiple models in case one isn't available
                     models_to_try = [
-                        "claude-3-5-haiku",
-                        "claude-3-5-haiku-20241022",
-                        "claude-3-haiku-20240307",
+                        "claude-haiku-4-5-20251001",  # Latest valid model
                         "claude-3-5-sonnet-20241022",
+                        "claude-opus-4-20250514",
+                        "claude-3-haiku-20240307",
                     ]
                     for model_name in models_to_try:
                         try:
