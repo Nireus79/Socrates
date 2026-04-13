@@ -129,7 +129,7 @@ dev = [
     "pytest-cov>=5.0.0",
     "black>=24.0",
     "ruff>=0.15.7",                      # Updated for latest linting rules and performance
-    "mypy>=1.8.0",
+    "mypy>=1.19.1",
     "types-requests>=2.31.0",
     "isort>=5.13.0",
     # Note: black>=26.3.1 and isort>=8.0.1 available but have formatting changes - test after update
