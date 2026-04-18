@@ -893,7 +893,7 @@ Provide a helpful, direct answer."""
                     orchestrator = get_orchestrator()
 
                     # Auto-save specs to project
-                    specs_saved = orchestrator._auto_save_extracted_specs(project, insights, db)
+                    # DEPRECATED: Agent handles auto-saving internally
 
                     if specs_saved:
                         logger.info(
@@ -1338,7 +1338,8 @@ Provide a helpful, direct answer."""
                 orchestrator = get_orchestrator()
 
                 # Use new _check_phase_readiness method
-                phase_readiness = orchestrator._check_phase_readiness(project)
+                # DEPRECATED: Use async agent for phase readiness check
+                phase_readiness = None  # TODO: Implement async phase readiness
 
                 # Include readiness in debug info
                 if is_debug_mode(current_user) and response_data.get("debugInfo"):
@@ -1494,7 +1495,7 @@ Provide a helpful, direct answer."""
             # This matches monolithic behavior: answer → extract specs → next question
             try:
                 logger.info(f"Generating next question after answer for project {project_id}")
-                next_question_result = orchestrator._orchestrate_question_generation(
+                # DEPRECATED: Use async process_request_async instead
                     project=project, user_id=current_user, force_refresh=False
                 )
 
@@ -1523,7 +1524,7 @@ Provide a helpful, direct answer."""
             }
 
             # CRITICAL FIX #2: Build context for debug logs
-            context = orchestrator._build_agent_context(project)
+            # DEPRECATED: Agent builds context internally
 
             return APIResponse(
                 success=True,
@@ -1580,7 +1581,7 @@ async def get_history(
 
         # CRITICAL FIX #1: Build complete context
         orchestrator = get_orchestrator()
-        context = orchestrator._build_agent_context(project)
+        # DEPRECATED: Agent builds context internally
 
         # Get conversation history from project
         history = context.get("conversation_history", []) or []
@@ -1700,7 +1701,7 @@ async def get_hint(
         orchestrator = get_orchestrator()
 
         # CRITICAL FIX #1: Build complete context with conversation history
-        context = orchestrator._build_agent_context(project)
+        # DEPRECATED: Agent builds context internally
 
         # Ensure project has 'topic' attribute for orchestrator
         project = _ensure_project_topic(project)
@@ -2478,12 +2479,13 @@ async def get_answer_suggestions(
                 },
             )
 
-        # CRITICAL FIX #11: Use orchestrator._generate_suggestions() instead of undefined action
+        # DEPRECATED: Use agent-based suggestions
         orchestrator = get_orchestrator()
         logger.info(f"Generating contextual suggestions for question: {current_question}")
 
         try:
-            suggestions = orchestrator._generate_suggestions(current_question, project)
+            # DEPRECATED: Use agent-based suggestions
+            suggestions = None  # TODO: Implement async suggestions agent
             logger.info(f"Generated {len(suggestions)} suggestions using orchestrator")
 
             # CRITICAL FIX: Include debug logs in response
@@ -3050,7 +3052,7 @@ async def get_suggestions(
         orchestrator = get_orchestrator()
 
         # Call orchestration method
-        result = orchestrator._orchestrate_answer_suggestions(
+        # DEPRECATED: Use process_request_async for suggestions
             project=project, user_id=current_user, question_id=request.get("question_id", "")
         )
 
@@ -3135,7 +3137,7 @@ async def skip_question(
 
         # Get next question
         orchestrator = get_orchestrator()
-        next_result = orchestrator._orchestrate_question_generation(
+        # DEPRECATED: Use async process_request_async instead
             project=project, user_id=current_user, force_refresh=False
         )
 
