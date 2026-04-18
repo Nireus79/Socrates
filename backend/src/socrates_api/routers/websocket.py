@@ -314,7 +314,7 @@ async def _handle_chat_message(
             if request_hint:
                 try:
                     # CRITICAL FIX #1: Build context for hint generation
-                    context = orchestrator._build_agent_context(project)
+                    # DEPRECATED: Agent builds context internally
 
                     # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
                     hint_result = orchestrator.process_request(
@@ -504,7 +504,7 @@ async def _route_command(
         if command in ["hint", "help", "suggest"]:
             # Generate hint
             # CRITICAL FIX #1: Build context for hint generation
-            context = orchestrator._build_agent_context(project)
+            # DEPRECATED: Agent builds context internally
 
             # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
             hint_result = orchestrator.process_request(
@@ -627,7 +627,7 @@ async def send_chat_message(
         # Build context for debug_logs
         context = {}
         try:
-            context = orchestrator._build_agent_context(None)
+            # DEPRECATED: Agent builds context internally
         except Exception:
             context = {"debug_logs": []}
 
@@ -932,7 +932,7 @@ async def request_hint(
         orchestrator = get_orchestrator()
         context = {}
         try:
-            context = orchestrator._build_agent_context(project)
+            # DEPRECATED: Agent builds context internally
         except Exception:
             context = {"debug_logs": []}
 
@@ -952,7 +952,7 @@ async def request_hint(
             try:
                 orchestrator = get_orchestrator()
                 # CRITICAL FIX #1: Build context for question generation
-                context = orchestrator._build_agent_context(project)
+                # DEPRECATED: Agent builds context internally
 
                 question_result = await orchestrator.process_request_async(
                     "socratic_counselor",
@@ -980,7 +980,7 @@ async def request_hint(
 
                 orchestrator = get_orchestrator()
                 # CRITICAL FIX #1: Build context for hint generation
-                context = orchestrator._build_agent_context(project)
+                # DEPRECATED: Agent builds context internally
 
                 # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
                 hint_result = orchestrator.process_request(
@@ -1141,7 +1141,7 @@ async def get_chat_summary(
             orchestrator = get_orchestrator()
 
             # CRITICAL FIX #1: Build context for summary generation
-            context = orchestrator._build_agent_context(project)
+            # DEPRECATED: Agent builds context internally
 
             # Use context_analyzer to generate summary
             summary_result = orchestrator.process_request(
