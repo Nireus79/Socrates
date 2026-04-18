@@ -1357,7 +1357,7 @@ async def advance_phase(
             debug_logs = []
             if orchestrator:
                 try:
-                    context = orchestrator._build_agent_context(project)
+                    # DEPRECATED: Agent builds context internally
                     debug_logs = context.get("debug_logs", [])
                 except Exception:
                     pass
@@ -1593,7 +1593,7 @@ async def get_phase_advancement_prompt(
             # Build context for debug_logs if orchestrator available
             if orchestrator:
                 try:
-                    context = orchestrator._build_agent_context(project)
+                    # DEPRECATED: Agent builds context internally
                     debug_logs = context.get("debug_logs", [])
                 except Exception:
                     pass
@@ -2399,7 +2399,8 @@ async def get_phase_readiness(
         from socrates_api.main import get_orchestrator
         orchestrator = get_orchestrator()
 
-        readiness = orchestrator._check_phase_readiness(project)
+        # DEPRECATED: Use async agent for phase readiness
+        readiness = None  # TODO: Implement async phase readiness
 
         logger.info(
             f"Phase readiness for {project_id}: "
