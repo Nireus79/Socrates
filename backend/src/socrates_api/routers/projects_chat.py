@@ -579,12 +579,12 @@ async def get_question(
     """
     Get the next Socratic question for a project.
 
-    PHASE 2: Redesigned endpoint using orchestration methods.
+    MONOLITHIC PATTERN: Delegate to orchestrator.process_request which routes to socratic_counselor agent.
 
     Flow:
     1. Load project (validate exists)
-    2. Call orchestrator._orchestrate_question_generation()
-    3. Save project with new pending question
+    2. Call orchestrator.process_request("socratic_counselor", {"action": "generate_question"})
+    3. Agent handles: pending check, context gathering, generation, storage
     4. Return question to frontend
 
     Args:
@@ -596,9 +596,9 @@ async def get_question(
         APIResponse with single question
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.main import get_async_orchestrator
 
-        logger.info(f"PHASE 2: Getting question for project {project_id}, user {current_user}")
+        logger.info(f"Getting question for project {project_id}, user {current_user}")
 
         # Load project
         db = get_database()
@@ -615,26 +615,34 @@ async def get_question(
 
         logger.debug(f"Project loaded: id={project_id}, phase={project.phase}")
 
-        # Initialize orchestrator
+        # Initialize async orchestrator
         try:
-            orchestrator = get_orchestrator()
-            logger.debug("Orchestrator initialized for Phase 2")
+            async_orch = get_async_orchestrator()
+            logger.debug("Async orchestrator initialized")
         except Exception as e:
             logger.error(f"Failed to initialize orchestrator: {e}")
             raise HTTPException(
                 status_code=500, detail=f"Failed to initialize orchestrator: {str(e)}"
             )
 
-        # PHASE 2: Call new orchestration method
-        # This handles:
+        # MONOLITHIC PATTERN: Single request to agent via orchestrator
+        # Agent (socratic_counselor) handles ALL orchestration internally:
         # - Checking for pending unanswered questions
         # - Gathering full context (KB, documents, previous questions, role)
         # - Generating single dynamic question
         # - Storing in pending_questions
-        logger.info(f"Calling _orchestrate_question_generation for project {project_id}")
+        # - Building context and wrapping response
+        logger.info(f"Requesting question generation for project {project_id}")
 
-        result = orchestrator._orchestrate_question_generation(
-            project=project, user_id=current_user, force_refresh=force_refresh
+        result = await async_orch.process_request_async(
+            "socratic_counselor",
+            {
+                "action": "generate_question",
+                "project": project,
+                "current_user": current_user,
+                "force_refresh": force_refresh,
+                "db": db,
+            }
         )
 
         if result.get("status") != "success":
@@ -643,30 +651,23 @@ async def get_question(
                 status_code=500, detail=result.get("message", "Failed to generate question")
             )
 
-        # Extract question from orchestration result
-        question_data = result.get("question", {})
-        question_text = question_data.get("question", "")
-        question_id = question_data.get("id", "")
+        # Extract question from agent response
+        question_data = result.get("data", {}).get("question", {})
+        question_text = question_data.get("question", "") or result.get("data", {}).get("question", "")
+        question_id = question_data.get("id", "") or result.get("data", {}).get("question_id", "")
 
         if not question_text or not question_id:
-            logger.error(f"Orchestration returned invalid question: {question_data}")
+            logger.error(f"Agent returned invalid question: {result}")
             raise HTTPException(status_code=500, detail="Generated question is invalid")
 
         logger.info(f"Generated question {question_id}: '{question_text[:80]}...'")
 
-        # Update project current question tracking (for context in suggestions/hints)
+        # Update project current question tracking (agent should do this, but ensure consistency)
         project.current_question_id = question_id
         project.current_question_text = question_text
-
-        # Save project with updated pending questions
         db.save_project(project)
 
-        # CRITICAL FIX #2: Build context for debug logs
-        context = orchestrator._build_agent_context(project)
-
-        # CRITICAL FIX #2: Wrap response with debug logs
-        wrapped_response = orchestrator._wrap_agent_response(result, context.get("debug_logs"))
-
+        # Agent response already includes context, debug logs, and wrapping
         return APIResponse(
             success=True,
             status="success",
@@ -674,10 +675,10 @@ async def get_question(
                 "question": question_text,
                 "question_id": question_id,
                 "phase": project.phase,
-                "context": result.get("context", {}),
-                **wrapped_response,
+                "context": result.get("data", {}).get("context", {}),
+                **result.get("data", {}),  # Include all agent response data
             },
-            debug_logs=context.get("debug_logs"),
+            debug_logs=result.get("debug_logs", []),
         )
 
     except HTTPException:
