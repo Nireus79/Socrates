@@ -574,7 +574,7 @@ async def import_file(
             if project_id:
                 project = db.load_project(project_id)
                 if project:
-                    context = orchestrator._build_agent_context(project)
+                    # DEPRECATED: Agent builds context internally
 
             # Process via DocumentProcessorAgent
             result = orchestrator.process_request(
@@ -750,7 +750,7 @@ async def import_url(
         if project_id:
             project = db.load_project(project_id)
             if project:
-                context = orchestrator._build_agent_context(project)
+                # DEPRECATED: Agent builds context internally
 
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(
@@ -898,7 +898,7 @@ async def import_text(
         if project_id:
             project = db.load_project(project_id)
             if project:
-                context = orchestrator._build_agent_context(project)
+                # DEPRECATED: Agent builds context internally
 
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(
@@ -1282,7 +1282,7 @@ async def bulk_import_documents(
                     if project_id:
                         project = db.load_project(project_id)
                         if project:
-                            context = orchestrator._build_agent_context(project)
+                            # DEPRECATED: Agent builds context internally
 
                     result = orchestrator.process_request(
                         "document_agent",
@@ -1486,7 +1486,7 @@ async def add_knowledge_entry(
         if project_id:
             project = db.load_project(project_id)
             if project:
-                context = orchestrator._build_agent_context(project)
+                # DEPRECATED: Agent builds context internally
 
         # Process as text import with category metadata
         result = orchestrator.process_request(
