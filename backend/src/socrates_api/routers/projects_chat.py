@@ -1215,36 +1215,13 @@ Provide a helpful, direct answer."""
                     },
                 )
 
-            # In Socratic mode: Specs/insights are automatically extracted and NOW shown to user
-            # They are extracted, stored, and returned in the response for display
+            # In Socratic mode: Specs/insights are automatically extracted but NOT shown to user
+            # They are silently extracted and stored in the project without dialogue interference
             if extracted_specs:
                 logger.debug(f"Specs extracted from Socratic response: {extracted_specs}")
 
             # Prepare response data with debug mode annotations
             response_data = {}
-
-            # CRITICAL FIX #13: Always include extracted specs in response so user can see them
-            # This was the missing piece - specs were extracted but hidden from frontend
-            if extracted_specs:
-                specs_count = sum(
-                    [
-                        len(extracted_specs.get("goals", [])),
-                        len(extracted_specs.get("requirements", [])),
-                        len(extracted_specs.get("tech_stack", [])),
-                        len(extracted_specs.get("constraints", [])),
-                    ]
-                )
-                if specs_count > 0:
-                    response_data["extracted_specs"] = {
-                        "goals": extracted_specs.get("goals", []),
-                        "requirements": extracted_specs.get("requirements", []),
-                        "tech_stack": extracted_specs.get("tech_stack", []),
-                        "constraints": extracted_specs.get("constraints", []),
-                        "count": specs_count,
-                    }
-                    logger.info(
-                        f"Returning {specs_count} extracted specs to user in Socratic response"
-                    )
 
             # CRITICAL FIX: Always include debug_logs in response
             debug_logs = getattr(project, "debug_logs", []) or []
