@@ -25,16 +25,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])
 
 
-def _get_orchestrator():
-    """Get the global orchestrator instance for agent-based processing."""
-    from socrates_api.main import app_state
-
-    if app_state.get("orchestrator") is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Orchestrator not initialized. Please call /initialize first.",
-        )
-    return app_state["orchestrator"]
+def _get_async_orchestrator():
+    """Get the async orchestrator instance for agent-based processing."""
+    from socrates_api.async_orchestrator import get_async_orchestrator
+    return get_async_orchestrator()
 
 
 @router.get(
@@ -119,7 +113,7 @@ async def list_documents(
         doc_list = []
         orchestrator = None
         try:
-            orchestrator = _get_orchestrator()
+            async_orch = _get_async_orchestrator()
         except Exception:
             # Vector DB not available, will default to 0
             pass
@@ -577,7 +571,7 @@ async def import_file(
                     # DEPRECATED: Agent builds context internally
 
             # Process via DocumentProcessorAgent
-            result = orchestrator.process_request(
+            result = await async_orch.process_request_async(
                 "document_agent",
                 {
                     "action": "import_file",
@@ -753,7 +747,7 @@ async def import_url(
                 # DEPRECATED: Agent builds context internally
 
         # Process via DocumentProcessorAgent
-        result = orchestrator.process_request(
+        result = await async_orch.process_request_async(
             "document_agent",
             {
                 "action": "import_url",
@@ -901,7 +895,7 @@ async def import_text(
                 # DEPRECATED: Agent builds context internally
 
         # Process via DocumentProcessorAgent
-        result = orchestrator.process_request(
+        result = await async_orch.process_request_async(
             "document_agent",
             {
                 "action": "import_text",
@@ -1284,7 +1278,7 @@ async def bulk_import_documents(
                         if project:
                             # DEPRECATED: Agent builds context internally
 
-                    result = orchestrator.process_request(
+                    result = await async_orch.process_request_async(
                         "document_agent",
                         {
                             "action": "import_file",
@@ -1489,7 +1483,7 @@ async def add_knowledge_entry(
                 # DEPRECATED: Agent builds context internally
 
         # Process as text import with category metadata
-        result = orchestrator.process_request(
+        result = await async_orch.process_request_async(
             "document_agent",
             {
                 "action": "import_text",
