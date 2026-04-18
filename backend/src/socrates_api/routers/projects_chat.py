@@ -1687,7 +1687,7 @@ async def get_hint(
         SuccessResponse with hint
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Getting hint for project: {project_id}")
 
@@ -1697,25 +1697,15 @@ async def get_hint(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call orchestrator to generate context-aware hint
-        orchestrator = get_orchestrator()
-
-        # CRITICAL FIX #1: Build complete context with conversation history
-        # DEPRECATED: Agent builds context internally
-
-        # Ensure project has 'topic' attribute for orchestrator
-        # project = _ensure_project_topic(project)  # DEPRECATED: Function not defined, not needed
-
-        result = orchestrator.process_request(
+        # Delegate to socratic_counselor agent for hint generation
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "socratic_counselor",
             {
                 "action": "generate_hint",
                 "project": project,
-                "conversation_history": getattr(project, "conversation_history", []),
-                "conversation_summary": getattr(project, "conversation_summary", ""),
                 "current_user": current_user,
-                "question_id": getattr(project, "current_question_id", None),
-                "question_text": getattr(project, "current_question_text", None),
+                "db": db,
             },
         )
 
@@ -1876,7 +1866,7 @@ async def get_summary(
         SuccessResponse with summary
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Generating summary for project: {project_id}")
 
@@ -1886,18 +1876,14 @@ async def get_summary(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call context analyzer to generate summary
-        orchestrator = get_orchestrator()
-
-        # Ensure project has 'topic' attribute for orchestrator
-        # project = _ensure_project_topic(project)  # DEPRECATED: Function not defined, not needed
-
-        result = orchestrator.process_request(
+        # Delegate to context_analyzer agent for summary generation
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "context_analyzer",
             {
                 "action": "generate_summary",
                 "project": project,
-                "user_id": current_user,
+                "current_user": current_user,
             },
         )
 
@@ -1909,11 +1895,9 @@ async def get_summary(
         return APIResponse(
             success=True,
             status="success",
-            data={
-                "summary": result.get("summary", ""),
-                "key_points": result.get("key_points", []),
-                "insights": result.get("insights", []),
-            },
+            message="Conversation summary generated",
+            data=result.get("data", result),
+            debug_logs=result.get("debug_logs", []),
         )
 
     except HTTPException:
@@ -2288,7 +2272,7 @@ async def reopen_question(
     Reopen a skipped question (mark as unanswered so user can answer it).
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Reopening question {question_id} for project {project_id}")
 
@@ -2297,17 +2281,16 @@ async def reopen_question(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        orchestrator = get_orchestrator()
-
-        # Ensure project has 'topic' attribute for orchestrator
-        # project = _ensure_project_topic(project)  # DEPRECATED: Function not defined, not needed
-
-        result = orchestrator.process_request(
+        # Delegate to socratic_counselor agent to reopen question
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "socratic_counselor",
             {
                 "action": "reopen_question",
                 "project": project,
                 "question_id": question_id,
+                "current_user": current_user,
+                "db": db,
             },
         )
 
@@ -2316,15 +2299,12 @@ async def reopen_question(
                 status_code=500, detail=result.get("message", "Failed to reopen question")
             )
 
-        db.save_project(project)
-
         return APIResponse(
             success=True,
             status="success",
-            data={
-                "message": result.get("message", "Question reopened"),
-                "question_id": question_id,
-            },
+            message="Question reopened",
+            data=result.get("data", result),
+            debug_logs=result.get("debug_logs", []),
         )
 
     except HTTPException:
@@ -2669,9 +2649,9 @@ async def save_extracted_specs(
 
         # Update maturity score for the project based on saved specs
         try:
-            from socrates_api.main import get_orchestrator
+            from socrates_api.async_orchestrator import get_async_orchestrator
 
-            orchestrator = get_orchestrator()
+            async_orch = get_async_orchestrator()
 
             # Convert specs_saved to insights format for maturity calculation
             insights = {
@@ -2683,25 +2663,22 @@ async def save_extracted_specs(
 
             # Only update maturity if specs were actually saved
             if any(specs_saved.values()):
-                # Ensure project has 'topic' attribute for orchestrator
-                # project = _ensure_project_topic(project)  # DEPRECATED: Function not defined, not needed
-
-                maturity_result = orchestrator.process_request(
+                # Delegate to quality_controller agent to update maturity
+                maturity_result = await async_orch.process_request_async(
                     "quality_controller",
                     {
                         "action": "update_after_response",
                         "project": project,
                         "insights": insights,
                         "current_user": current_user,
+                        "db": db,
                     },
                 )
 
                 if maturity_result.get("status") == "success":
                     maturity = maturity_result.get("maturity", {})
-                    score = maturity.get("overall_score", 0.0)
+                    score = maturity.get("overall_score", 0.0) if maturity else 0.0
                     logger.info(f"Maturity updated after specs save: {score:.1f}%")
-                    # Re-save project with updated maturity
-                    db.save_project(project)
         except Exception as e:
             logger.debug("Operation failed")
             logger.warning(f"Failed to update maturity after saving specs: {str(e)}")
