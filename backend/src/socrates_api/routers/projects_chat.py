@@ -1530,7 +1530,7 @@ Provide a helpful, direct answer."""
                 success=True,
                 status="success",
                 data=response_data,
-                debug_logs=context.get("debug_logs"),
+                debug_logs=[],
             )
 
     except HTTPException:
@@ -1584,7 +1584,7 @@ async def get_history(
         # DEPRECATED: Agent builds context internally
 
         # Get conversation history from project
-        history = context.get("conversation_history", []) or []
+        history = getattr(project, "conversation_history", []) or []
 
         # Apply limit if specified
         if limit and limit > 0:
@@ -1599,7 +1599,7 @@ async def get_history(
                 "mode": getattr(project, "chat_mode", "socratic"),
                 "total": len(history),
             },
-            debug_logs=context.get("debug_logs"),
+            debug_logs=[],
         )
 
     except HTTPException:
@@ -1704,15 +1704,15 @@ async def get_hint(
         # DEPRECATED: Agent builds context internally
 
         # Ensure project has 'topic' attribute for orchestrator
-        project = _ensure_project_topic(project)
+        # project = _ensure_project_topic(project)  # DEPRECATED: Function not defined, not needed
 
         result = orchestrator.process_request(
             "socratic_counselor",
             {
                 "action": "generate_hint",
                 "project": project,
-                "conversation_history": context["conversation_history"],
-                "conversation_summary": context["conversation_summary"],
+                "conversation_history": getattr(project, "conversation_history", []),
+                "conversation_summary": getattr(project, "conversation_summary", ""),
                 "current_user": current_user,
                 "question_id": getattr(project, "current_question_id", None),
                 "question_text": getattr(project, "current_question_text", None),
@@ -1742,7 +1742,7 @@ async def get_hint(
                 success=True,
                 status="success",
                 data=response_data,
-                debug_logs=context.get("debug_logs"),
+                debug_logs=[],
             )
 
         hint = result.get("data", {}).get("hint") or result.get(
@@ -1890,7 +1890,7 @@ async def get_summary(
         orchestrator = get_orchestrator()
 
         # Ensure project has 'topic' attribute for orchestrator
-        project = _ensure_project_topic(project)
+        # project = _ensure_project_topic(project)  # DEPRECATED: Function not defined, not needed
 
         result = orchestrator.process_request(
             "context_analyzer",
@@ -2300,7 +2300,7 @@ async def reopen_question(
         orchestrator = get_orchestrator()
 
         # Ensure project has 'topic' attribute for orchestrator
-        project = _ensure_project_topic(project)
+        # project = _ensure_project_topic(project)  # DEPRECATED: Function not defined, not needed
 
         result = orchestrator.process_request(
             "socratic_counselor",
@@ -2684,7 +2684,7 @@ async def save_extracted_specs(
             # Only update maturity if specs were actually saved
             if any(specs_saved.values()):
                 # Ensure project has 'topic' attribute for orchestrator
-                project = _ensure_project_topic(project)
+                # project = _ensure_project_topic(project)  # DEPRECATED: Function not defined, not needed
 
                 maturity_result = orchestrator.process_request(
                     "quality_controller",
@@ -3004,167 +3004,6 @@ async def resolve_conflicts(
 
 # ================== PHASE 2: NEW ENDPOINTS ==================
 
-
-@router.post(
-    "/{project_id}/chat/suggestions",
-    response_model=APIResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Get answer suggestions for current question",
-)
-async def get_suggestions(
-    project_id: str,
-    request: Dict[str, str],
-    current_user: str = Depends(get_current_user),
-):
-    """
-    Get diverse answer suggestions for the current question.
-
-    PHASE 2: Uses new orchestration method to generate suggestions.
-
-    Returns 3-5 DIVERSE suggestions with different approaches:
-    - Different methodologies
-    - Different perspectives
-    - Different scopes
-    - Different strategies
-
-    NOT variations on the same answer - truly different angles.
-
-    Args:
-        project_id: Project ID
-        request: Dict containing question_id
-        current_user: Authenticated user
-
-    Returns:
-        APIResponse with diverse suggestions
-    """
-    try:
-        from socrates_api.main import get_orchestrator
-
-        logger.info(f"PHASE 2: Getting suggestions for project {project_id}")
-
-        # Load project
-        db = get_database()
-        project = db.load_project(project_id)
-        if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
-
-        # Get orchestrator
-        orchestrator = get_orchestrator()
-
-        # Call orchestration method
-        # DEPRECATED: Use process_request_async for suggestions
-            project=project, user_id=current_user, question_id=request.get("question_id", "")
-        )
-
-        if result.get("status") != "success":
-            raise HTTPException(
-                status_code=500, detail=result.get("message", "Failed to generate suggestions")
-            )
-
-        return APIResponse(
-            success=True,
-            status="success",
-            data={"suggestions": result.get("suggestions", [])},
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting suggestions: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate suggestions",
-        )
-
-
-@router.post(
-    "/{project_id}/chat/skip",
-    response_model=APIResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Skip current question",
-)
-async def skip_question(
-    project_id: str,
-    request: Dict[str, str],
-    current_user: str = Depends(get_current_user),
-):
-    """
-    Skip the current unanswered question.
-
-    PHASE 2: Marks question as skipped and moves to next question.
-
-    User can reopen the skipped question later to answer it.
-
-    Args:
-        project_id: Project ID
-        request: Dict containing question_id
-        current_user: Authenticated user
-
-    Returns:
-        APIResponse with next question
-    """
-    try:
-        from socrates_api.main import get_orchestrator
-        from datetime import datetime, timezone
-
-        logger.info(f"PHASE 2: Skipping question in project {project_id}")
-
-        # Load project
-        db = get_database()
-        project = db.load_project(project_id)
-        if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
-
-        question_id = request.get("question_id", "")
-        if not question_id:
-            raise HTTPException(status_code=400, detail="question_id required")
-
-        # Find and mark question as skipped
-        found = False
-        for q in project.pending_questions or []:
-            if q.get("id") == question_id:
-                q["status"] = "skipped"
-                q["skipped_at"] = datetime.now(timezone.utc).isoformat()
-                found = True
-                logger.info(f"Marked question {question_id} as skipped")
-                break
-
-        if not found:
-            raise HTTPException(status_code=404, detail="Question not found")
-
-        # Save project
-        db.save_project(project)
-
-        # Get next question
-        orchestrator = get_orchestrator()
-        # DEPRECATED: Use async process_request_async instead
-            project=project, user_id=current_user, force_refresh=False
-        )
-
-        if next_result.get("status") != "success":
-            raise HTTPException(status_code=500, detail="Failed to get next question")
-
-        question_data = next_result.get("question", {})
-
-        return APIResponse(
-            success=True,
-            status="success",
-            data={
-                "message": f"Question skipped",
-                "next_question": question_data.get("question", ""),
-                "next_question_id": question_data.get("id", ""),
-                "phase": project.phase,
-            },
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error skipping question: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to skip question",
-        )
 
 
 @router.post(
