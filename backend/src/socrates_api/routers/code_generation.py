@@ -184,7 +184,7 @@ async def generate_code(
             orchestrator = get_orchestrator()
 
             # CRITICAL FIX #1: Build context for code generation
-            context = orchestrator._build_agent_context(project)
+            # DEPRECATED: Agent builds context internally
 
             # Use code generator agent via orchestrator routing (not direct call)
             result = await orchestrator.process_request_async(
@@ -806,7 +806,7 @@ async def refactor_code(
             orchestrator = get_orchestrator()
 
             # Build context for refactoring
-            context = orchestrator._build_agent_context(project)
+            # DEPRECATED: Agent builds context internally
 
             # Use code generator agent via orchestrator routing for refactoring
             result = await orchestrator.process_request_async(
@@ -1024,7 +1024,7 @@ async def generate_documentation(
             logger.info(f"Generating {artifact_type} documentation using Claude AI")
 
             # CRITICAL FIX #1: Build context for code generator
-            context = orchestrator._build_agent_context(project)
+            # DEPRECATED: Agent builds context internally
 
             # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
             doc_result = orchestrator.process_request(
