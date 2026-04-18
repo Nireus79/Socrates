@@ -508,7 +508,7 @@ async def get_trends(
         orchestrator = get_orchestrator()
 
         # CRITICAL FIX #1: Build context for learning agent
-        context = orchestrator._build_agent_context(project)
+        # DEPRECATED: Agent builds context internally
 
         result = await orchestrator.process_request_async(
             "learning",
@@ -643,7 +643,7 @@ async def get_recommendations(
         orchestrator = get_orchestrator()
 
         # CRITICAL FIX #1: Build context for learning agent
-        context = orchestrator._build_agent_context(project)
+        # DEPRECATED: Agent builds context internally
 
         result = await orchestrator.process_request_async(
             "learning",
