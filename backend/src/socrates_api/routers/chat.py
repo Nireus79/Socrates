@@ -5,10 +5,14 @@ Provides REST endpoints for chat operations including:
 - Getting next Socratic question
 - Fetching conversation history
 - Getting conversation summary
+
+MONOLITHIC PATTERN:
+All endpoints delegate completely to orchestrator.process_request() which routes to agents.
+Agents handle: context building, response wrapping, debug logging, data transformation.
+Routers only handle: auth, DB access, error handling, API response wrapping.
 """
 
 import logging
-from socrates_api.models_local import ProjectContext
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,9 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database, LocalDatabase
 from socrates_api.auth.project_access import check_project_access
-# Database import replaced with local module
 from socrates_api.models import APIResponse, ErrorResponse
-from socrates_api.models_local import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -42,6 +44,13 @@ async def get_next_question(
     """
     Get the next Socratic question for a project.
 
+    MONOLITHIC PATTERN:
+    - Validate access
+    - Load project
+    - Delegate to orchestrator.process_request_async("socratic_counselor", {...})
+    - Agent handles ALL internal logic: context gathering, generation, storage, wrapping
+    - Return wrapped response
+
     Args:
         project_id: Project ID
         current_user: Authenticated user
@@ -54,50 +63,43 @@ async def get_next_question(
         await check_project_access(project_id, current_user, db, min_role="editor")
 
         from socrates_api.async_orchestrator import get_async_orchestrator
-        from socrates_api.orchestrator import get_orchestrator
 
         logger.info(f"Getting next question for project: {project_id}")
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # CRITICAL FIX #1: Build complete context with conversation history
-        orchestrator = get_orchestrator()
-        context = orchestrator._build_agent_context(project)
-
-        # Call socratic_counselor asynchronously to generate question
+        # MONOLITHIC PATTERN: Single orchestrator call
+        # Agent handles: context building, conversation history, generation, wrapping, debug logs
         async_orch = get_async_orchestrator()
         result = await async_orch.process_request_async(
             "socratic_counselor",
             {
                 "action": "generate_question",
                 "project": project,
-                "conversation_history": context["conversation_history"],
-                "conversation_summary": context["conversation_summary"],
                 "current_user": current_user,
+                "db": db,
             },
         )
 
-        if result["status"] != "success":
+        if result.get("status") != "success":
             raise HTTPException(
                 status_code=500, detail=result.get("message", "Failed to generate question")
             )
 
-        # CRITICAL FIX #2: Include debug logs in response
-        wrapped_response = orchestrator._wrap_agent_response(result, context.get("debug_logs"))
-
+        # Agent response already includes all necessary data and wrapping
         return APIResponse(
             success=True,
             status="success",
             message="Next question generated",
-            data=wrapped_response,
-            debug_logs=context.get("debug_logs"),
+            data=result.get("data", result),
+            debug_logs=result.get("debug_logs", []),
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting next question: {str(e)}")
+        logger.error(f"Error getting next question: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Operation failed. Please try again later.",
@@ -123,6 +125,11 @@ async def get_conversation_history(
     """
     Get conversation history for a project.
 
+    MONOLITHIC PATTERN:
+    - Simple retrieval, no agent delegation needed
+    - Load project, extract history from project context, apply limit
+    - Return as-is
+
     Args:
         project_id: Project ID
         limit: Maximum number of messages to return
@@ -135,37 +142,32 @@ async def get_conversation_history(
     try:
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        from socrates_api.orchestrator import get_orchestrator
-
         logger.info(f"Getting conversation history for project: {project_id}")
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # CRITICAL FIX #1: Build complete context to extract debug logs
-        orchestrator = get_orchestrator()
-        context = orchestrator._build_agent_context(project)
-
-        # Get conversation history from project
-        history = context.get("conversation_history", []) or []
+        # Simple retrieval - no agent needed
+        # Extract conversation history from project
+        history = getattr(project, "conversation_history", []) or []
 
         # Apply limit if specified
         if limit and limit > 0:
             history = history[-limit:]
 
-        # CRITICAL FIX #2: Include debug logs in response
+        logger.debug(f"Returning {len(history)} conversation messages")
+
         return APIResponse(
             success=True,
             status="success",
             message="Conversation history retrieved",
             data={"history": history, "count": len(history)},
-            debug_logs=context.get("debug_logs"),
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting conversation history: {str(e)}")
+        logger.error(f"Error getting conversation history: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Operation failed. Please try again later.",
@@ -190,6 +192,13 @@ async def get_conversation_summary(
     """
     Get AI-generated summary of conversation.
 
+    MONOLITHIC PATTERN:
+    - Validate access
+    - Load project
+    - Delegate to orchestrator.process_request_async("context_analyzer", {...})
+    - Agent generates summary and handles all wrapping
+    - Return wrapped response
+
     Args:
         project_id: Project ID
         current_user: Authenticated user
@@ -202,49 +211,42 @@ async def get_conversation_summary(
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         from socrates_api.async_orchestrator import get_async_orchestrator
-        from socrates_api.orchestrator import get_orchestrator
 
         logger.info(f"Generating summary for project: {project_id}")
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # CRITICAL FIX #1: Build complete context with conversation history
-        orchestrator = get_orchestrator()
-        context = orchestrator._build_agent_context(project)
-
-        # Call context analyzer asynchronously to generate summary
+        # MONOLITHIC PATTERN: Single orchestrator call to context_analyzer agent
+        # Agent handles: building full context, generating summary, wrapping response, debug logs
         async_orch = get_async_orchestrator()
         result = await async_orch.process_request_async(
             "context_analyzer",
             {
                 "action": "generate_summary",
                 "project": project,
-                "conversation_history": context["conversation_history"],
-                "conversation_summary": context["conversation_summary"],
+                "current_user": current_user,
             },
         )
 
-        if result["status"] != "success":
+        if result.get("status") != "success":
             raise HTTPException(
                 status_code=500, detail=result.get("message", "Failed to generate summary")
             )
 
-        # CRITICAL FIX #2: Include debug logs in response
-        wrapped_response = orchestrator._wrap_agent_response(result, context.get("debug_logs"))
-
+        # Agent response already includes all necessary data and wrapping
         return APIResponse(
             success=True,
             status="success",
             message="Conversation summary generated",
-            data=wrapped_response,
-            debug_logs=context.get("debug_logs"),
+            data=result.get("data", result),
+            debug_logs=result.get("debug_logs", []),
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error generating summary: {str(e)}")
+        logger.error(f"Error generating summary: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Operation failed. Please try again later.",
