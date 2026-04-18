@@ -30,17 +30,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/free_session", tags=["free_session"])
 
 
-def _get_orchestrator():
-    """Get the global orchestrator instance for agent-based processing."""
+def _get_async_orchestrator():
+    """Get the async orchestrator instance for agent-based processing."""
     # Import here to avoid circular imports
-    from socrates_api.main import app_state
-
-    if app_state.get("orchestrator") is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="System not initialized. Call /initialize first.",
-        )
-    return app_state["orchestrator"]
+    from socrates_api.async_orchestrator import get_async_orchestrator
+    return get_async_orchestrator()
 
 
 def _get_rate_limit_decorator(limit_str: str):
@@ -126,7 +120,7 @@ async def _extract_conversation_topics(conversation_history: List[Dict], user_id
             ]  # Last 10 messages for context
         )
 
-        orchestrator = _get_orchestrator()
+        async_orch = _get_async_orchestrator()
 
         # Extract topics via Claude
         prompt = f"""Analyze this conversation and extract 2-5 main topics or areas of interest.
@@ -275,7 +269,7 @@ async def ask_question(
 
         # Get orchestrator (database is already injected as parameter)
         logger.info("[free-session] Getting orchestrator...")
-        orchestrator = _get_orchestrator()
+        async_orch = _get_async_orchestrator()
         logger.info(
             f"[free-session] Orchestrator status: llm_client={orchestrator.llm_client is not None}"
         )
@@ -306,7 +300,7 @@ async def ask_question(
         # Get answer from Claude
         logger.info("[free-session] Calling Claude API...")
         # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
-        answer_result = orchestrator.process_request(
+        answer_result = await async_orch.process_request_async(
             "direct_chat",
             {
                 "action": "generate_answer",
@@ -360,7 +354,7 @@ async def ask_question(
             combined_text = f"User Question: {question}\n\nAssistant Response: {answer}"
 
             # Use orchestrator to extract specs
-            spec_result = orchestrator.process_request(
+            spec_result = await async_orch.process_request_async(
                 "direct_chat",
                 {
                     "action": "extract_insights",
