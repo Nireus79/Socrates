@@ -288,7 +288,7 @@ class TestProductionValidation:
         try:
             from socratic_agents import SocraticCounselor
             from socratic_core import EventBus
-            from socrates_nexus import LLMClient
+            from socratic_nexus import LLMClient
             from socratic_conflict import ConflictDetector
             from socrates_maturity import MaturityCalculator
 

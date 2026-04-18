@@ -288,7 +288,7 @@ class TestLibraryIntegration:
     def test_socrates_nexus_import(self):
         """Test socrates-nexus library import"""
         try:
-            from socrates_nexus import LLMClient
+            from socratic_nexus import LLMClient
             logger.info("✓ socrates-nexus (0.3.1) imported successfully")
         except ImportError as e:
             pytest.skip(f"socrates-nexus not available: {e}")

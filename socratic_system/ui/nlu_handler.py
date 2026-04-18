@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from colorama import Fore, Style
 
 if TYPE_CHECKING:
-    from socrates_nexus import LLMClient
+    from socratic_nexus import LLMClient
 
     from socratic_system.ui.command_handler import CommandHandler
 
@@ -66,7 +66,7 @@ class NLUHandler:
         Initialize NLU Handler.
 
         Args:
-            claude_client: LLMClient instance for API calls (from socrates_nexus)
+            claude_client: LLMClient instance for API calls (from socratic_nexus)
             command_handler: CommandHandler instance to discover available commands
         """
         self.claude_client = claude_client

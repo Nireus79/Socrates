@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 # Import MaturityCalculator from socratic-maturity library (required)
 from socrates_maturity import MaturityCalculator
 
-# Import LLMClient from socrates-nexus for production-grade LLM handling
-from socrates_nexus import LLMClient
+# Import LLMClient from socratic-nexus for production-grade LLM handling
+from socratic_nexus import LLMClient
 
 # Import SocraticCounselor from socratic-agents library (required)
 from socratic_agents import SocraticCounselor
@@ -310,7 +310,7 @@ class APIOrchestrator:
         )
 
     def _create_llm_client(self) -> Optional[Any]:
-        """Create LLM client with production-grade features from socrates-nexus, with model fallback"""
+        """Create LLM client with production-grade features from socratic-nexus, with model fallback"""
         try:
             # Use provided API key, or fall back to environment variable
             api_key = self.api_key or os.getenv("ANTHROPIC_API_KEY", "")
@@ -321,10 +321,10 @@ class APIOrchestrator:
                 )
                 return None
 
-            # Create LLMClient with full socrates-nexus capabilities:
+            # Create LLMClient with full socratic-nexus capabilities:
             # - Response caching for performance optimization
             # - Retry logic for reliability
-            from socrates_nexus import LLMConfig
+            from socratic_nexus import LLMConfig
 
             # List of models to try (in priority order)
             models_to_try = [
@@ -425,7 +425,7 @@ class APIOrchestrator:
             )
 
             # Try each model in order
-            from socrates_nexus import LLMConfig
+            from socratic_nexus import LLMConfig
 
             last_error = None
 
@@ -1130,7 +1130,7 @@ class APIOrchestrator:
             return {"status": "error", "message": str(e)}
 
     def call_llm(self, prompt: str, model: str = "claude-3-5-haiku", **kwargs) -> Dict[str, Any]:
-        """Call LLM via socrates-nexus"""
+        """Call LLM via socratic-nexus"""
         try:
             # Use existing LLM client if available
             if not self.llm_client:
@@ -3096,7 +3096,7 @@ class APIOrchestrator:
                 llm_client_to_use = None
                 if user_api_key:
                     try:
-                        # Use socrates-nexus with production features for user's API key
+                        # Use socratic-nexus with production features for user's API key
                         raw_client = LLMClient(
                             provider=provider,
                             model=model,
@@ -3781,7 +3781,7 @@ Provide only the hint text."""
                 llm_client_to_use = None
                 if user_api_key:
                     try:
-                        # Use socrates-nexus with production features for user's API key
+                        # Use socratic-nexus with production features for user's API key
                         raw_client = LLMClient(
                             provider=provider,
                             model=model,
@@ -3881,7 +3881,7 @@ Provide only the hint text."""
                     ]
                     for model_name in models_to_try:
                         try:
-                            # Use socrates-nexus with production features for insights extraction
+                            # Use socratic-nexus with production features for insights extraction
                             raw_client = LLMClient(
                                 provider=provider,
                                 model=model_name,
