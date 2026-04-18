@@ -2246,9 +2246,21 @@ class APIOrchestrator:
             }
 
             # Update project with new question
+            # CRITICAL FIX: RESTORE MONOLITHIC SINGLE-QUESTION BEHAVIOR
+            # Only keep unanswered questions. Remove all answered ones before adding new question.
+            # This prevents accumulation and repetition of old questions.
             if not hasattr(project, "pending_questions"):
                 project.pending_questions = []
+
+            # Keep only unanswered questions (remove answered/skipped ones)
+            project.pending_questions = [
+                q for q in project.pending_questions
+                if q.get("status") == "unanswered"
+            ]
+
+            # Add the new question (now there should only be one at a time in pending)
             project.pending_questions.append(question_entry)
+            logger.debug(f"Cleaned pending_questions: {len(project.pending_questions)} question(s) remaining")
 
             logger.info(
                 f"Generated question {question_entry['id']} for phase {phase} "
