@@ -2348,13 +2348,61 @@ class APIOrchestrator:
             except Exception as e:
                 logger.warning(f"Failed to extract specs: {e}")
 
-            # 4. MARK QUESTION AS ANSWERED (BEFORE conflict detection - critical timing)
+            # 4. UPDATE PROJECT SPECS (CRITICAL FIX #2: Store specs directly in project)
+            # Extract specs and update project with discovered specifications
+            extracted_specs = specs_response.get("specs", {})
+            if extracted_specs:
+                # Update project with extracted goals
+                if extracted_specs.get("goals"):
+                    if not hasattr(project, "goals"):
+                        project.goals = []
+                    existing_goals = set(str(g) for g in (project.goals or []))
+                    new_goals = extracted_specs.get("goals")
+                    for goal in (new_goals if isinstance(new_goals, list) else [new_goals]):
+                        if str(goal) not in existing_goals:
+                            project.goals.append(goal)
+                    logger.info(f"Updated project goals: {len(project.goals)} total")
+
+                # Update project with extracted requirements
+                if extracted_specs.get("requirements"):
+                    if not hasattr(project, "requirements"):
+                        project.requirements = []
+                    existing_reqs = set(str(r) for r in (project.requirements or []))
+                    new_reqs = extracted_specs.get("requirements")
+                    for req in (new_reqs if isinstance(new_reqs, list) else [new_reqs]):
+                        if str(req) not in existing_reqs:
+                            project.requirements.append(req)
+                    logger.info(f"Updated project requirements: {len(project.requirements)} total")
+
+                # Update project with extracted tech stack
+                if extracted_specs.get("tech_stack"):
+                    if not hasattr(project, "tech_stack"):
+                        project.tech_stack = []
+                    existing_tech = set(str(t) for t in (project.tech_stack or []))
+                    new_tech = extracted_specs.get("tech_stack")
+                    for tech in (new_tech if isinstance(new_tech, list) else [new_tech]):
+                        if str(tech) not in existing_tech:
+                            project.tech_stack.append(tech)
+                    logger.info(f"Updated project tech stack: {len(project.tech_stack)} total")
+
+                # Update project with extracted constraints
+                if extracted_specs.get("constraints"):
+                    if not hasattr(project, "constraints"):
+                        project.constraints = []
+                    existing_constraints = set(str(c) for c in (project.constraints or []))
+                    new_constraints = extracted_specs.get("constraints")
+                    for constraint in (new_constraints if isinstance(new_constraints, list) else [new_constraints]):
+                        if str(constraint) not in existing_constraints:
+                            project.constraints.append(constraint)
+                    logger.info(f"Updated project constraints: {len(project.constraints)} total")
+
+            # 5. MARK QUESTION AS ANSWERED (AFTER updating specs)
             question["status"] = "answered"
             question["answered_at"] = datetime.now().isoformat()
             question["answer"] = answer_text
             logger.info(f"Question {question_id} marked as answered")
 
-            # 5. Also mark in asked_questions for permanent history
+            # 6. Also mark in asked_questions for permanent history
             if not hasattr(project, "asked_questions"):
                 project.asked_questions = []
 
