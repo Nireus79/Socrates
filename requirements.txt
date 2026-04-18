@@ -4,7 +4,7 @@
 # Core Socratic Libraries - AI System Components (Latest Verified Versions from PyPI)
 socrates-nexus>=0.3.1
 socratic-core>=0.1.2
-socratic-agents>=0.2.6
+socratic-agents>=0.2.7
 socratic-rag>=0.1.2
 socratic-security==0.4.0
 socratic-learning>=0.1.4
