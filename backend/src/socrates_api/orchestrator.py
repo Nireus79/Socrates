@@ -36,6 +36,9 @@ from socratic_security import (
     SafeFilename,
 )
 
+# Import circuit breaker for agent resilience (CRITICAL FIX #12)
+from socrates_api.services.circuit_breaker import CircuitBreakerRegistry
+
 
 def _get_valid_model_for_provider(provider: str, preferred_model: Optional[str] = None) -> str:
     """Get a valid model name for the given provider"""
@@ -3137,8 +3140,27 @@ class APIOrchestrator:
                                 f"Including {len(conversation_history)} conversation history entries for context"
                             )
 
-                        result = counselor.process(counselor_request)
-                        logger.info(f"counselor.process() returned: {result}")
+                        # CRITICAL FIX #12: Protect agent call with circuit breaker
+                        breaker = CircuitBreakerRegistry.get_breaker(
+                            "socratic_counselor",
+                            failure_threshold=5,
+                            timeout_seconds=60,
+                        )
+
+                        try:
+                            result = breaker.call(counselor.process, counselor_request)
+                            logger.info(f"counselor.process() returned: {result}")
+                        except Exception as circuit_error:
+                            logger.error(
+                                f"Circuit breaker {breaker.name} blocked or agent failed: {circuit_error}",
+                                exc_info=True,
+                                extra={"circuit_breaker_status": breaker.get_status()},
+                            )
+                            return {
+                                "status": "error",
+                                "message": str(circuit_error),
+                                "circuit_breaker": breaker.get_status(),
+                            }
 
                         # CACHE THE GENERATED QUESTION
                         if project_id and result.get("question"):
@@ -5424,6 +5446,91 @@ If a category has no items, use an empty array."""
             "metadata": agent_result.get("metadata", {}),
             "message": agent_result.get("message", ""),
         }
+
+    def _auto_save_extracted_specs(
+        self, project: Any, insights: Dict[str, Any], db: Any
+    ) -> bool:
+        """
+        Auto-save extracted specs to project fields (matching Socratic mode pattern).
+
+        CRITICAL FIX #10: Direct mode now automatically saves specs instead of requiring
+        manual user confirmation. This matches Socratic mode behavior and ensures specs
+        are not lost.
+
+        Args:
+            project: ProjectContext object to update
+            insights: Dictionary with extracted specs (goals, requirements, tech_stack, constraints)
+            db: Database instance for persistence
+
+        Returns:
+            bool: True if specs were saved, False otherwise
+        """
+        try:
+            specs_saved = False
+
+            # Update project with extracted goals
+            if insights.get("goals"):
+                if not hasattr(project, "goals") or not project.goals:
+                    project.goals = []
+                existing_goals = set(str(g) for g in (project.goals or []))
+                new_goals = insights.get("goals")
+                for goal in (new_goals if isinstance(new_goals, list) else [new_goals]):
+                    if str(goal) not in existing_goals:
+                        if isinstance(project.goals, str):
+                            project.goals = [project.goals, goal]
+                        else:
+                            project.goals.append(goal)
+                        specs_saved = True
+                logger.info(f"Auto-saved project goals: {len(project.goals)} total")
+
+            # Update project with extracted requirements
+            if insights.get("requirements"):
+                if not hasattr(project, "requirements"):
+                    project.requirements = []
+                existing_reqs = set(str(r) for r in (project.requirements or []))
+                new_reqs = insights.get("requirements")
+                for req in (new_reqs if isinstance(new_reqs, list) else [new_reqs]):
+                    if str(req) not in existing_reqs:
+                        project.requirements.append(req)
+                        specs_saved = True
+                logger.info(f"Auto-saved project requirements: {len(project.requirements)} total")
+
+            # Update project with extracted tech stack
+            if insights.get("tech_stack"):
+                if not hasattr(project, "tech_stack"):
+                    project.tech_stack = []
+                existing_tech = set(str(t) for t in (project.tech_stack or []))
+                new_tech = insights.get("tech_stack")
+                for tech in (new_tech if isinstance(new_tech, list) else [new_tech]):
+                    if str(tech) not in existing_tech:
+                        project.tech_stack.append(tech)
+                        specs_saved = True
+                logger.info(f"Auto-saved project tech stack: {len(project.tech_stack)} total")
+
+            # Update project with extracted constraints
+            if insights.get("constraints"):
+                if not hasattr(project, "constraints"):
+                    project.constraints = []
+                existing_constraints = set(str(c) for c in (project.constraints or []))
+                new_constraints = insights.get("constraints")
+                for constraint in (new_constraints if isinstance(new_constraints, list) else [new_constraints]):
+                    if str(constraint) not in existing_constraints:
+                        project.constraints.append(constraint)
+                        specs_saved = True
+                logger.info(f"Auto-saved project constraints: {len(project.constraints)} total")
+
+            # Persist to database if specs were saved
+            if specs_saved:
+                db.save_project(project)
+                logger.info(f"✓ Auto-saved extracted specs to project {project.project_id}")
+                return True
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Failed to auto-save extracted specs: {e}", exc_info=True)
+            # Don't fail the entire operation if spec save fails
+            return False
 
 
 # Global instance

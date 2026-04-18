@@ -471,6 +471,98 @@ async def get_status(
         )
 
 
+@router.get(
+    "/health/detailed",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get detailed system health check",
+)
+async def detailed_health_check(
+    current_user: str = Depends(get_current_user),
+    db=Depends(get_database),
+):
+    """
+    Detailed system health check including circuit breakers and database.
+
+    CRITICAL FIX #12: Provides comprehensive health status for monitoring and diagnostics.
+
+    Returns:
+    - Database health and connectivity status
+    - Circuit breaker status for all agents
+    - Agent availability and operational status
+    - Timestamp of health check
+
+    Args:
+        current_user: Authenticated user
+        db: Database instance
+
+    Returns:
+        SuccessResponse with detailed health information
+    """
+    try:
+        logger.info(f"Detailed health check requested by user: {current_user}")
+
+        from socrates_api.main import get_orchestrator
+        from socrates_api.services.circuit_breaker import CircuitBreakerRegistry
+
+        orchestrator = get_orchestrator()
+
+        # Database health
+        db_health = db.health_check()
+
+        # Circuit breaker status
+        circuit_breakers = CircuitBreakerRegistry.get_all_status()
+
+        # Agent status
+        agents_status = {
+            "socratic_counselor": orchestrator.agents.get("socratic_counselor") is not None,
+            "conflict_detector": orchestrator.agents.get("conflict_detector") is not None,
+            "quality_controller": orchestrator.agents.get("quality_controller") is not None,
+            "llm_client": orchestrator.llm_client is not None,
+            "maturity_calculator": orchestrator.maturity_calculator is not None,
+        }
+
+        # Overall health determination
+        overall_healthy = (
+            db_health.get("status") == "healthy"
+            and all(agents_status.values())
+            and all(cb.get("state") != "open" for cb in circuit_breakers.values())
+        )
+
+        health_data = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "overall_status": "healthy" if overall_healthy else "degraded",
+            "database": db_health,
+            "circuit_breakers": circuit_breakers,
+            "agents": agents_status,
+            "degradation_info": []
+            if overall_healthy
+            else [
+                f"Database: {db_health.get('error', 'unknown error')}"
+                if db_health.get("status") != "healthy"
+                else None,
+                f"Missing agents: {[k for k, v in agents_status.items() if not v]}",
+                f"Open circuits: {[cb['name'] for cb in circuit_breakers.values() if cb['state'] == 'open']}",
+            ],
+        }
+
+        return APIResponse(
+            success=overall_healthy,
+            status="success",
+            message="Detailed health check completed",
+            data=health_data,
+        )
+
+    except Exception as e:
+        logger.error(f"Error performing detailed health check: {str(e)}", exc_info=True)
+        return APIResponse(
+            success=False,
+            status="error",
+            message=f"Health check failed: {str(e)}",
+            data={"error": str(e)},
+        )
+
+
 @router.post(
     "/logs",
     response_model=APIResponse,

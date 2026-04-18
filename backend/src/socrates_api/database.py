@@ -10,9 +10,11 @@ import json
 import logging
 import sqlite3
 import threading
+import time
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
 
 from socrates_api.exceptions import (
     DatabaseError,
@@ -81,6 +83,78 @@ class LocalDatabase:
                     raise
 
         return _transaction_context()
+
+    @staticmethod
+    def with_retry(
+        max_attempts: int = 3,
+        retry_delay: float = 0.1,
+        backoff_factor: float = 2.0,
+        retriable_errors: tuple = (sqlite3.OperationalError, sqlite3.DatabaseError),
+    ):
+        """
+        Retry decorator for database operations.
+
+        CRITICAL FIX #11: Protects against transient database failures (locks, busy errors).
+        Uses exponential backoff to avoid overwhelming the database.
+
+        Args:
+            max_attempts: Maximum number of retry attempts
+            retry_delay: Initial delay between retries in seconds
+            backoff_factor: Multiplier for exponential backoff
+            retriable_errors: Tuple of exception types to retry on
+
+        Returns:
+            Decorated function with retry logic
+        """
+
+        def decorator(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                last_exception = None
+                delay = retry_delay
+
+                for attempt in range(1, max_attempts + 1):
+                    try:
+                        return func(*args, **kwargs)
+                    except retriable_errors as e:
+                        last_exception = e
+                        if attempt < max_attempts:
+                            # Check if it's a lock/busy error
+                            error_msg = str(e).lower()
+                            is_lock_error = "locked" in error_msg or "busy" in error_msg
+
+                            if is_lock_error:
+                                logger.warning(
+                                    f"Database lock detected on attempt {attempt}/{max_attempts} "
+                                    f"for {func.__name__}, retrying in {delay:.2f}s..."
+                                )
+                            else:
+                                logger.warning(
+                                    f"Database error on attempt {attempt}/{max_attempts} "
+                                    f"for {func.__name__}: {e}, retrying in {delay:.2f}s..."
+                                )
+
+                            time.sleep(delay)
+                            delay *= backoff_factor
+                        else:
+                            logger.error(
+                                f"Database operation {func.__name__} failed after {max_attempts} attempts",
+                                exc_info=True,
+                            )
+                    except Exception as e:
+                        # Non-retriable error - fail immediately
+                        logger.error(f"Non-retriable error in {func.__name__}: {e}", exc_info=True)
+                        raise
+
+                # All retries exhausted
+                raise DatabaseError(
+                    f"Operation {func.__name__} failed after {max_attempts} attempts: {last_exception}",
+                    operation=func.__name__,
+                ) from last_exception
+
+            return wrapper
+
+        return decorator
 
     def _initialize(self) -> None:
         """Create tables if they don't exist"""
@@ -1115,6 +1189,8 @@ class LocalDatabase:
         """
         Save or update a project.
 
+        CRITICAL FIX #11: Now includes automatic retry on database lock/busy errors.
+
         Args:
             project: ProjectContext object to save
 
@@ -1187,7 +1263,55 @@ class LocalDatabase:
                         metadata,
                     ),
                 )
-            self.conn.commit()
+
+            # CRITICAL FIX #11: Commit with error handling and retry logic
+            last_commit_error = None
+            commit_attempts = 0
+            max_commit_attempts = 3
+            commit_delay = 0.1
+
+            while commit_attempts < max_commit_attempts:
+                try:
+                    commit_attempts += 1
+                    self.conn.commit()
+                    logger.debug(f"✓ Successfully committed project save for {project_id}")
+                    break  # Success, exit retry loop
+                except sqlite3.OperationalError as e:
+                    last_commit_error = e
+                    error_msg = str(e).lower()
+                    is_lock_error = "locked" in error_msg or "busy" in error_msg
+
+                    if commit_attempts < max_commit_attempts:
+                        if is_lock_error:
+                            logger.warning(
+                                f"Database lock on commit (attempt {commit_attempts}/{max_commit_attempts}), "
+                                f"retrying in {commit_delay:.2f}s..."
+                            )
+                        else:
+                            logger.warning(
+                                f"Database error on commit (attempt {commit_attempts}/{max_commit_attempts}): {e}, "
+                                f"retrying in {commit_delay:.2f}s..."
+                            )
+                        time.sleep(commit_delay)
+                        commit_delay *= 2.0  # Exponential backoff
+                    else:
+                        logger.error(
+                            f"Commit failed for project {project_id} after {max_commit_attempts} attempts"
+                        )
+                        self.conn.rollback()
+                        raise DatabaseError(
+                            f"Failed to commit project {project_id}: database locked or busy",
+                            operation="save_project",
+                        ) from e
+                except Exception as e:
+                    # Non-retriable error - rollback and raise
+                    logger.error(
+                        f"Unexpected error committing project {project_id}: {e}", exc_info=True
+                    )
+                    self.conn.rollback()
+                    raise DatabaseError(
+                        f"Failed to commit project {project_id}: {e}", operation="save_project"
+                    ) from e
 
             # Invalidate related caches (Priority 5 optimization)
             try:
@@ -1210,6 +1334,68 @@ class LocalDatabase:
             raise DatabaseError(
                 f"Failed to save project {project.project_id}: {e}", operation="save_project"
             ) from e
+
+    def health_check(self) -> Dict[str, Any]:
+        """
+        Perform database health check.
+
+        CRITICAL FIX #11: Verifies database connectivity and write capability.
+
+        Returns:
+            Dict with health status and metrics
+        """
+        try:
+            # Check connection
+            cursor = self.conn.execute("SELECT 1")
+            cursor.fetchone()
+
+            # Check write capability
+            test_id = f"health_check_{datetime.now(timezone.utc).timestamp()}"
+            with self._write_lock:
+                self.conn.execute(
+                    "INSERT INTO projects (id, owner, name, description, phase, is_archived, created_at, updated_at, metadata) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        test_id,
+                        "health_check",
+                        "Health Check",
+                        "",
+                        "discovery",
+                        False,
+                        datetime.now(timezone.utc).isoformat(),
+                        datetime.now(timezone.utc).isoformat(),
+                        "{}",
+                    ),
+                )
+                self.conn.commit()
+                self.conn.execute("DELETE FROM projects WHERE id = ?", (test_id,))
+                self.conn.commit()
+
+            # Get database stats
+            cursor = self.conn.execute("SELECT COUNT(*) FROM projects")
+            project_count = cursor.fetchone()[0]
+
+            cursor = self.conn.execute("SELECT COUNT(*) FROM users")
+            user_count = cursor.fetchone()[0]
+
+            return {
+                "status": "healthy",
+                "connection": "ok",
+                "write_capability": "ok",
+                "stats": {
+                    "projects": project_count,
+                    "users": user_count,
+                    "db_path": str(self.db_path),
+                },
+            }
+
+        except Exception as e:
+            logger.error(f"Database health check failed: {e}", exc_info=True)
+            return {
+                "status": "unhealthy",
+                "error": str(e),
+                "connection": "failed",
+            }
 
     def get_conversation_history(self, project_id: str) -> List[Dict]:
         """

@@ -883,6 +883,48 @@ Provide a helpful, direct answer."""
                 # Continue without insights if extraction fails
                 insights = None
 
+            # CRITICAL FIX #10: AUTO-SAVE EXTRACTED SPECS (Direct Mode)
+            # Now automatically save specs to project instead of requiring manual confirmation
+            specs_saved = False
+            if insights and any(insights.values()):
+                try:
+                    from socrates_api.main import get_orchestrator
+                    orchestrator = get_orchestrator()
+
+                    # Auto-save specs to project
+                    specs_saved = orchestrator._auto_save_extracted_specs(project, insights, db)
+
+                    if specs_saved:
+                        logger.info(
+                            f"✓ Auto-saved {sum(len(v) if isinstance(v, list) else 1 for v in insights.values() if v)} specs to project {project_id}"
+                        )
+
+                        # Update maturity score after saving specs
+                        try:
+                            maturity_result = orchestrator.process_request(
+                                "quality_controller",
+                                {
+                                    "action": "update_after_response",
+                                    "project": project,
+                                    "insights": insights,
+                                    "current_user": current_user,
+                                },
+                            )
+                            if maturity_result.get("status") == "success":
+                                logger.info(
+                                    f"Maturity updated after auto-save: {maturity_result.get('maturity', {}).get('overall_score', 0.0):.1f}%"
+                                )
+                                # Re-save project with updated maturity
+                                db.save_project(project)
+                        except Exception as maturity_err:
+                            logger.warning(
+                                f"Failed to update maturity after auto-save (non-critical): {maturity_err}"
+                            )
+
+                except Exception as save_err:
+                    logger.error(f"Failed to auto-save specs (non-critical): {save_err}", exc_info=True)
+                    # Don't fail the chat response if auto-save fails
+
             # Prepare response data
             specs_count = sum(
                 [
@@ -901,9 +943,10 @@ Provide a helpful, direct answer."""
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 },
                 "mode": "direct",
-                # Include extracted specs for user confirmation (not auto-saved)
+                # Include extracted specs for transparency
                 "extracted_specs": insights,
                 "extracted_specs_count": specs_count,
+                "specs_auto_saved": specs_saved,  # CRITICAL FIX #10: Indicate if specs were auto-saved
             }
 
             # Add debug info if debug mode is enabled
