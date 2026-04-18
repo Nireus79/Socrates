@@ -1011,8 +1011,8 @@ Provide a helpful, direct answer."""
                 data=response_data,
             )
         else:
-            # Socratic mode: PHASE 2 - Use new orchestration method
-            logger.info("PHASE 2: Processing message in SOCRATIC mode")
+            # Socratic mode: MONOLITHIC PATTERN - delegate to agent
+            logger.info("Processing message in SOCRATIC mode")
 
             # Get current question ID from request or project context
             question_id = getattr(request, "question_id", None) or getattr(
@@ -1025,21 +1025,35 @@ Provide a helpful, direct answer."""
                     detail="No active question. Please request a new question first.",
                 )
 
-            # PHASE 2: Call new orchestration method for answer processing
-            # This handles:
+            # MONOLITHIC PATTERN: Single orchestrator call routes to socratic_counselor agent
+            # Agent (socratic_counselor) handles ALL orchestration internally:
             # - Adding to conversation history
             # - Extracting specifications
-            # - Marking question as answered (BEFORE conflict detection)
+            # - Marking question as answered (BEFORE conflict detection - CRITICAL!)
             # - Detecting conflicts (non-blocking)
             # - Updating phase maturity
             # - Tracking question effectiveness
-            logger.info(f"Calling _orchestrate_answer_processing for question {question_id}")
+            # - Checking phase completion
+            # - Generating NEXT question (CRITICAL - this fixes the repetition issue!)
+            # - Saving to database
+            logger.info(f"Processing answer for question {question_id} via agent")
 
-            result = orchestrator._orchestrate_answer_processing(
-                project=project,
-                user_id=current_user,
-                question_id=question_id,
-                answer_text=request.message,
+            try:
+                async_orch = get_async_orchestrator()
+            except Exception as e:
+                logger.error(f"Failed to get orchestrator: {e}")
+                raise HTTPException(status_code=500, detail="Orchestrator initialization failed")
+
+            result = await async_orch.process_request_async(
+                "socratic_counselor",
+                {
+                    "action": "process_response",
+                    "project": project,
+                    "user_id": current_user,
+                    "response": request.message,
+                    "question_id": question_id,
+                    "db": db,
+                }
             )
 
             if result.get("status") != "success":
@@ -1047,16 +1061,17 @@ Provide a helpful, direct answer."""
                     status_code=500, detail=result.get("message", "Failed to process message")
                 )
 
-            # Persist project changes to database
-            db.save_project(project)
+            # Agent already saved project to database
+            # Reload to ensure consistency
+            project = db.load_project(project_id)
 
-            # PHASE 2: Orchestration method already handles all of the following:
+            # Agent handles all orchestration:
             # - Adding to conversation_history
             # - Extracting specs
-            # - Marking question as answered (in both pending_questions and asked_questions)
+            # - Marking question as answered
             # - Detecting conflicts
             # - Updating phase maturity
-            # So we don't need to do these manually anymore
+            # - Generating next question
 
             # Invalidate caches after conversation update
             cache = get_query_cache()
