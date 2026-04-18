@@ -70,14 +70,14 @@ async def _extract_specs_from_input(text: str, context: Optional[dict] = None, u
         Dictionary with extracted specs (goals, requirements, tech_stack, constraints) or None if extraction fails
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
 
         # CRITICAL FIX #3: Use orchestrator handler instead of direct agent access
         # Try to use ContextAnalyzer through orchestrator
         try:
-            result = orchestrator.process_request(
+            result = await async_orch.process_request_async(
                 "context_analyzer",
                 {
                     "action": "analyze",
@@ -103,7 +103,7 @@ async def _extract_specs_from_input(text: str, context: Optional[dict] = None, u
 
         # Fallback: Use orchestrator's direct_chat extract_insights action
         if orchestrator.llm_client:
-            result = orchestrator.process_request(
+            result = await async_orch.process_request_async(
                 "direct_chat",
                 {
                     "action": "extract_insights",
@@ -139,9 +139,9 @@ async def _extract_entities(text: str, context: Optional[dict] = None, user_id: 
         Dictionary of extracted entities (action, object, parameters, etc.)
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
 
         prompt = f"""Analyze this user input and extract structured entities.
 
@@ -159,7 +159,7 @@ Extract the following in JSON format:
 Respond ONLY with valid JSON."""
 
         # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
-        entity_result = orchestrator.process_request(
+        entity_result = await async_orch.process_request_async(
             "context_analyzer",
             {
                 "action": "extract_entities",
@@ -214,9 +214,9 @@ async def _get_ai_command_suggestions(
         List of suggested commands with reasoning
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
 
         # Build context string for better suggestions
         context_str = ""
@@ -308,8 +308,8 @@ async def interpret_input(
         # Initialize debug_logs
         debug_logs = []
         try:
-            from socrates_api.main import get_orchestrator
-            orchestrator = get_orchestrator()
+            from socrates_api.async_orchestrator import get_async_orchestrator
+            async_orch = get_async_orchestrator()
             debug_logs = getattr(orchestrator, 'debug_logs', []) or []
         except Exception:
             debug_logs = []

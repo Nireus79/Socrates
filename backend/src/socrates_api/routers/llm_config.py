@@ -34,12 +34,12 @@ async def list_providers(
         SuccessResponse with list of available providers
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Listing LLM providers for user: {current_user}")
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request("multi_llm", {"action": "list_providers"})
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async("multi_llm", {"action": "list_providers"})
 
         if result["status"] != "success":
             raise HTTPException(
@@ -82,12 +82,12 @@ async def get_config(
         SuccessResponse with current LLM configuration
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Getting LLM config for user: {current_user}")
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm", {"action": "get_config", "user_id": current_user}
         )
 
@@ -134,12 +134,12 @@ async def set_default_provider(
         SuccessResponse with updated configuration
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Setting default provider to {provider} for user: {current_user}")
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm",
             {"action": "set_default_provider", "user_id": current_user, "provider": provider},
         )
@@ -189,7 +189,7 @@ async def set_api_key(
         SuccessResponse with confirmation
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         # SECURITY: Don't log or expose the API key in any way
         logger.info(f"Setting API key for {provider} for user: {current_user}")
@@ -208,8 +208,8 @@ async def set_api_key(
                 detail="API key is required"
             )
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm",
             {
                 "action": "add_api_key",
@@ -266,12 +266,12 @@ async def get_usage_stats(
         SuccessResponse with usage statistics
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Getting usage stats for user: {current_user}")
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm", {"action": "get_usage_stats", "user_id": current_user, "days": days}
         )
 

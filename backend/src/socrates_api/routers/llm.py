@@ -14,10 +14,10 @@ router = APIRouter(prefix="/llm", tags=["llm"])
 @router.get("/providers", response_model=APIResponse)
 async def list_providers(current_user: str = Depends(get_current_user)):
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm", {"action": "list_providers", "user_id": current_user}
         )
         if result.get("status") != "success":
@@ -34,10 +34,10 @@ async def list_providers(current_user: str = Depends(get_current_user)):
 @router.get("/config", response_model=APIResponse)
 async def get_config(current_user: str = Depends(get_current_user)):
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm", {"action": "get_provider_config", "user_id": current_user}
         )
         if result.get("status") != "success":
@@ -54,10 +54,10 @@ async def get_config(current_user: str = Depends(get_current_user)):
 @router.put("/default-provider", response_model=APIResponse)
 async def set_default_provider(provider: str, current_user: str = Depends(get_current_user)):
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm",
             {"action": "set_default_provider", "user_id": current_user, "provider": provider},
         )
@@ -77,10 +77,10 @@ async def set_default_provider(provider: str, current_user: str = Depends(get_cu
 @router.put("/model", response_model=APIResponse)
 async def set_model(provider: str, model: str, current_user: str = Depends(get_current_user)):
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm",
             {
                 "action": "set_provider_model",
@@ -103,10 +103,10 @@ async def set_model(provider: str, model: str, current_user: str = Depends(get_c
 @router.post("/api-key", response_model=APIResponse)
 async def set_api_key(provider: str, api_key: str, current_user: str = Depends(get_current_user)):
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm",
             {
                 "action": "add_api_key",
@@ -133,10 +133,10 @@ async def set_api_key(provider: str, api_key: str, current_user: str = Depends(g
 @router.delete("/api-key/{provider}", response_model=APIResponse)
 async def remove_api_key(provider: str, current_user: str = Depends(get_current_user)):
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm", {"action": "remove_api_key", "user_id": current_user, "provider": provider}
         )
         if result.get("status") != "success":
@@ -158,10 +158,10 @@ async def remove_api_key(provider: str, current_user: str = Depends(get_current_
 async def set_auth_method(provider: str, auth_method: str, current_user: str = Depends(get_current_user)):
     """Set authentication method for a provider (e.g., Claude subscription vs API key)."""
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm",
             {
                 "action": "set_auth_method",
@@ -188,10 +188,10 @@ async def set_auth_method(provider: str, auth_method: str, current_user: str = D
 @router.get("/models/{provider}", response_model=APIResponse)
 async def get_models(provider: str, current_user: str = Depends(get_current_user)):
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
             "multi_llm", {"action": "get_provider_models", "provider": provider}
         )
         if result.get("status") != "success":
