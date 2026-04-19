@@ -830,13 +830,25 @@ class ChatMessageRequest(BaseModel):
     role: str = Field(default="user", description="Message role (user or assistant)")
     mode: str = Field(default="socratic", description="Chat mode (socratic or direct)")
 
-    @field_validator("message", "role", "mode")
+    @field_validator("role", "mode")
     @classmethod
-    def validate_message_fields(cls, v: str) -> str:
-        """Validate message fields for injection attacks (REQUIRED)"""
+    def validate_system_fields(cls, v: str) -> str:
+        """Validate system fields (role, mode) for injection attacks"""
         if v is None:
             return v
-        validate_no_sql_injection(v)  # REQUIRED
+        # These are constrained system values, validate them
+        validate_no_sql_injection(v)
+        return v
+
+    @field_validator("message")
+    @classmethod
+    def validate_message_content(cls, v: str) -> str:
+        """Validate message content - allow legitimate SQL keywords in user messages"""
+        if v is None:
+            return v
+        # User messages can contain SQL keywords (e.g., "EXECUTE", "SELECT")
+        # Only validate for XSS and other injection types that affect code execution
+        validate_no_xss(v)
         return v
 
 
