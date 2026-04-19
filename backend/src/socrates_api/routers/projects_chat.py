@@ -30,6 +30,7 @@ from socrates_api.models import (
 )
 from socrates_api.models_local import User, ProjectContext
 from socrates_api.services.query_cache import get_query_cache
+from socrates_api.utils.id_generator import IDGenerator
 
 # Import debug mode from system router (centralized)
 from socrates_api.routers.system import is_debug_mode
@@ -663,13 +664,30 @@ async def get_question(
             raise HTTPException(status_code=500, detail=error_msg)
 
         # Extract question from agent response
-        question_data = data.get("question", {})
-        question_text = question_data.get("question", "") or data.get("question", "")
-        question_id = question_data.get("id", "") or data.get("question_id", "")
+        # Handle both flat and nested response structures
+        question_text = (
+            result.get("question", "")  # Flat structure: agent returns {"question": "..."}
+            or data.get("question", "")  # Nested structure: agent returns {"data": {"question": "..."}}
+        )
 
-        if not question_text or not question_id:
+        if isinstance(question_text, dict):
+            # If question_text is a dict, extract the actual text
+            question_text = question_text.get("question", "")
+
+        question_id = (
+            result.get("question_id", "")
+            or data.get("question_id", "")
+            or (data.get("question", {}).get("id", "") if isinstance(data.get("question"), dict) else "")
+        )
+
+        if not question_text:
             logger.error(f"Agent returned invalid question: {result}")
             raise HTTPException(status_code=500, detail="Generated question is invalid")
+
+        # Generate question ID if not provided by agent
+        if not question_id:
+            question_id = IDGenerator.question()
+            logger.debug(f"Generated question ID: {question_id}")
 
         logger.info(f"Generated question {question_id}: '{question_text[:80]}...'")
 

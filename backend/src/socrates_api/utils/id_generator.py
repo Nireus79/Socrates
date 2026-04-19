@@ -191,6 +191,18 @@ class IDGenerator:
         """
         return IDGenerator.generate_id(IDGenerator.INVITATION_PREFIX)
 
+    @staticmethod
+    def question() -> str:
+        """
+        Generate a unique question ID.
+
+        Used for tracking generated questions in the Socratic method.
+
+        Returns:
+            Question ID (format: msg_XXXXXXXXXXXX)
+        """
+        return IDGenerator.generate_id(IDGenerator.MESSAGE_PREFIX)
+
     # Backward compatibility wrapper for monolithic system imports
     class ProjectIDGenerator:
         """

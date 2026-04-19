@@ -13,8 +13,6 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Optional
 
-from socrates_api.main import get_orchestrator
-
 logger = logging.getLogger(__name__)
 
 
@@ -74,6 +72,8 @@ class AsyncOrchestrator:
             ```
         """
         try:
+            # Lazy import to avoid circular dependency with main.py
+            from socrates_api.main import get_orchestrator
             orchestrator = get_orchestrator()
 
             # Get current event loop
