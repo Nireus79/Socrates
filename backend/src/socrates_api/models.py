@@ -275,10 +275,13 @@ class ProcessResponseRequest(BaseModel):
     @field_validator("user_response")
     @classmethod
     def validate_response(cls, v: str) -> str:
-        """Validate user response for injection attacks (REQUIRED)"""
+        """Validate user response for injection attacks"""
         if v is None:
             return v
-        validate_no_sql_injection(v)  # REQUIRED
+        # User responses are not used in SQL queries (only parameterized queries are used)
+        # Only validate for XSS - SQL injection validation causes false positives
+        # with legitimate words like "execute", "select", etc.
+        validate_no_xss(v)
         return v
 
 

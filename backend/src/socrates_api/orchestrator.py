@@ -3328,36 +3328,49 @@ class APIOrchestrator:
                     question_text=question_text,
                     question_metadata=question_metadata,
                 )
-                logger.info(f"Extracted specs from response: {extracted_specs}")
+
+                # CRITICAL: Validate extracted specs before using them
+                extracted_specs = self._validate_extracted_specs(extracted_specs)
+                extraction_status = extracted_specs.get("extraction_status", "unknown")
+                confidence_score = extracted_specs.get("confidence_score", 0.0)
+
+                logger.info(
+                    f"Extracted specs from response: status={extraction_status}, "
+                    f"confidence={confidence_score:.2f}"
+                )
 
                 # Get project specs to compare against
                 project_specs = self._get_project_specs(project)
                 logger.info(f"Current project specs: {project_specs}")
 
-                # Compare specs for conflicts
-                conflicts = self._compare_specs(extracted_specs, project_specs)
-                logger.info(f"Detected {len(conflicts)} conflicts")
+                # Compare specs for conflicts (only if extraction was successful)
+                conflicts = []
+                if extraction_status == "success" or extraction_status == "partial":
+                    conflicts = self._compare_specs(extracted_specs, project_specs)
+                    logger.info(f"Detected {len(conflicts)} conflicts")
 
                 # CRITICAL FIX #1: Auto-save extracted specs with metadata
-                # This ensures specs are persisted and not lost after response processing
+                # Only save if extraction was successful (not just if specs exist)
                 project_id = (
                     getattr(project, "project_id", project.get("project_id"))
                     if hasattr(project, "get") or hasattr(project, "project_id")
                     else None
                 )
-                if project_id and extracted_specs:
+                if project_id and extraction_status in ["success", "partial"]:
                     try:
                         from socrates_api.database import get_database
 
                         db = get_database()
+                        # Use actual confidence score from validation, not hardcoded
                         db.save_extracted_specs(
                             project_id=project_id,
                             specs=extracted_specs,
                             extraction_method="contextanalyzer",
-                            confidence_score=0.95,
+                            confidence_score=confidence_score,  # Use actual score
                             source_text=response,
                             metadata={
                                 "user_id": current_user,
+                                "extraction_status": extraction_status,
                                 "conflict_count": len(conflicts),
                                 "has_conflicts": len(conflicts) > 0,
                             },
@@ -3366,6 +3379,11 @@ class APIOrchestrator:
                     except Exception as e:
                         logger.warning(f"Failed to persist extracted specs: {e}")
                         # Don't fail the whole request if persistence fails
+                else:
+                    if extraction_status == "empty_response":
+                        logger.info("No specs to save - user provided empty response")
+                    elif extraction_status == "no_specs_found":
+                        logger.info("No specs found in response - extraction may have failed")
 
                 # CRITICAL FIX #6: RECONNECT PIPELINE #4 - KNOWLEDGE BASE INTEGRATION
                 # Add extracted specs to vector database so they become project knowledge
@@ -4155,12 +4173,20 @@ If a category has no items, use an empty array."""
             f"Extracting insights from: '{response_text}' (question_category: {question_metadata.get('category') if question_metadata else 'none'})"
         )
 
-        # Initialize empty specs structure
-        empty_specs = {"goals": [], "requirements": [], "tech_stack": [], "constraints": []}
+        # Initialize empty specs structure with metadata for validation
+        empty_specs = {
+            "goals": [],
+            "requirements": [],
+            "tech_stack": [],
+            "constraints": [],
+            "extraction_status": "unknown",  # Track success/failure
+            "confidence_score": 0.0,  # Actual confidence, not hardcoded
+        }
 
         # Handle empty response
         if not response_text or not response_text.strip():
             logger.debug("Empty response text, returning empty specs")
+            empty_specs["extraction_status"] = "empty_response"
             return empty_specs
 
         # Determine target field from question metadata
@@ -4491,6 +4517,51 @@ If a category has no items, use an empty array."""
         except Exception as e:
             logger.error(f"Insight extraction failed: {e}")
             return empty_specs
+
+    def _validate_extracted_specs(self, specs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate extracted specs and calculate confidence score.
+
+        Args:
+            specs: Dictionary with goals, requirements, tech_stack, constraints
+
+        Returns:
+            Same specs dict with added extraction_status and confidence_score
+        """
+        if not isinstance(specs, dict):
+            specs = {}
+
+        # Count total extracted items
+        total_items = sum(
+            len(v) if isinstance(v, list) else 0
+            for k, v in specs.items()
+            if k not in ["extraction_status", "confidence_score"]
+        )
+
+        # Calculate confidence based on extraction success
+        if total_items == 0:
+            # No items extracted
+            specs["extraction_status"] = "no_specs_found"
+            specs["confidence_score"] = 0.0
+        elif total_items < 3:
+            # Few items extracted - partial success
+            specs["extraction_status"] = "partial"
+            specs["confidence_score"] = 0.6
+        elif total_items < 8:
+            # Good extraction
+            specs["extraction_status"] = "success"
+            specs["confidence_score"] = 0.85
+        else:
+            # Excellent extraction
+            specs["extraction_status"] = "success"
+            specs["confidence_score"] = 0.95
+
+        logger.info(
+            f"Specs validation: status={specs.get('extraction_status')}, "
+            f"confidence={specs.get('confidence_score'):.2f}, items={total_items}"
+        )
+
+        return specs
 
     def _get_project_specs(self, project: Dict[str, Any]) -> Dict[str, Any]:
         """Get current project specifications"""
