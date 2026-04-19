@@ -439,19 +439,24 @@ async def downgrade_subscription(
 
 
 @router.put(
-    "/Romani%20Ite%20Domum",
+    "/Romani Ite Domum",
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     include_in_schema=False,
 )
 async def toggle_testing_mode(
-    enabled: bool = Query(...),
+    enabled: str = Query(..., description="Enable or disable testing mode: 'true' or 'false'"),
     current_user: str = Depends(get_current_user),
     db: LocalDatabase = Depends(get_database),
 ):
     """Hidden testing mode toggle endpoint."""
     try:
         import os
+
+        # Convert string query parameter to boolean
+        # Handle various string representations: 'true', 'True', 'TRUE', '1', 'yes' -> True
+        # Everything else -> False
+        enabled_bool = enabled.lower() in ('true', '1', 'yes', 'enabled')
 
         # SECURITY: Prevent testing mode in production
         environment = os.getenv("ENVIRONMENT", "development").lower()
@@ -464,7 +469,7 @@ async def toggle_testing_mode(
                 detail="Testing mode is not available in production environment",
             )
 
-        logger.info(f"Toggling testing mode to {enabled} for user: {current_user}")
+        logger.info(f"Toggling testing mode to {enabled_bool} for user: {current_user}")
 
         # Load user and update testing mode flag
         user = db.load_user(current_user)
@@ -474,16 +479,16 @@ async def toggle_testing_mode(
                 detail="User not found",
             )
 
-        user.testing_mode = enabled
+        user.testing_mode = enabled_bool
         db.save_user(user)
-        logger.info(f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user}")
+        logger.info(f"Testing mode {'enabled' if enabled_bool else 'disabled'} for user: {current_user}")
 
         return APIResponse(
             success=True,
             status="success",
-            message=f"Testing mode {'enabled' if enabled else 'disabled'}",
+            message=f"Testing mode {'enabled' if enabled_bool else 'disabled'}",
             data={
-                "testing_mode": enabled,
+                "testing_mode": enabled_bool,
                 "effective_immediately": True,
                 "restrictions_bypassed": (
                     [
@@ -492,7 +497,7 @@ async def toggle_testing_mode(
                         "Feature flags",
                         "Cost tracking",
                     ]
-                    if enabled
+                    if enabled_bool
                     else []
                 ),
             },
@@ -501,7 +506,7 @@ async def toggle_testing_mode(
     except HTTPException:
         raise
     except Exception as e:
-        logger.debug("Toggle testing mode failed")
+        logger.error(f"Toggle testing mode failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to toggle testing mode. Please try again later.",
