@@ -82,8 +82,9 @@ async def add_knowledge_document(
         content_size_bytes = len(request.content.encode("utf-8"))
         user_object = db.load_user(current_user)
         if user_object:
+            testing_mode_enabled = getattr(user_object, "testing_mode", False)
             can_upload, error_msg = StorageQuotaManager.can_upload_document(
-                user_object, db, content_size_bytes, testing_mode=False
+                user_object, db, content_size_bytes, testing_mode=testing_mode_enabled
             )
             if not can_upload:
                 logger.warning(f"Storage quota exceeded for user {current_user}: {error_msg}")
@@ -203,8 +204,9 @@ async def add_knowledge(
         user_object = db.load_user(current_user)
         if user_object:
             # Removed local import: from socratic_system.subscription.storage import StorageQuotaManager
+            testing_mode_enabled = getattr(user_object, "testing_mode", False)
             can_upload, error_msg = StorageQuotaManager.can_upload_document(
-                user_object, db, content_size_bytes, testing_mode=False
+                user_object, db, content_size_bytes, testing_mode=testing_mode_enabled
             )
             if not can_upload:
                 logger.warning(f"Storage quota exceeded for user {current_user}: {error_msg}")
