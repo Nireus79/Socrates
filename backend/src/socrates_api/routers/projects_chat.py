@@ -715,7 +715,7 @@ async def send_message(
         SuccessResponse with assistant's response
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Sending message to project {project_id}: {request.message[:50]}...")
 
@@ -738,7 +738,7 @@ async def send_message(
             if hasattr(request, "mode") and request.mode
             else getattr(project, "chat_mode", "socratic")
         )
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
         logger.info(
             f"Chat mode resolved to: {chat_mode} (request.mode: {getattr(request, 'mode', 'not provided')}, project.chat_mode: {getattr(project, 'chat_mode', 'not set')})"
         )
@@ -769,7 +769,7 @@ User Question: {request.message}
 Provide a helpful, direct answer."""
 
             # Use orchestrator to generate direct answer
-            result = orchestrator.process_request(
+            result = await async_orch.process_request_async(
                 "direct_chat",
                 {
                     "action": "generate_answer",
@@ -823,7 +823,7 @@ Provide a helpful, direct answer."""
                 combined_text = f"User Input:\n{request.message}\n\nAssistant Answer:\n{answer}"
 
                 # Use orchestrator to extract insights
-                insights_result = orchestrator.process_request(
+                insights_result = await async_orch.process_request_async(
                     "direct_chat",
                     {
                         "action": "extract_insights",
@@ -889,8 +889,8 @@ Provide a helpful, direct answer."""
             specs_saved = False
             if insights and any(insights.values()):
                 try:
-                    from socrates_api.main import get_orchestrator
-                    orchestrator = get_orchestrator()
+                    from socrates_api.async_orchestrator import get_async_orchestrator
+                    async_orch = get_async_orchestrator()
 
                     # Auto-save specs to project
                     # DEPRECATED: Agent handles auto-saving internally
@@ -902,7 +902,7 @@ Provide a helpful, direct answer."""
 
                         # Update maturity score after saving specs
                         try:
-                            maturity_result = orchestrator.process_request(
+                            maturity_result = await async_orch.process_request_async(
                                 "quality_controller",
                                 {
                                     "action": "update_after_response",
@@ -1333,9 +1333,9 @@ Provide a helpful, direct answer."""
 
             # PHASE 4: Check phase readiness and add readiness status with advancement prompt
             try:
-                from socrates_api.main import get_orchestrator
+                from socrates_api.async_orchestrator import get_async_orchestrator
 
-                orchestrator = get_orchestrator()
+                async_orch = get_async_orchestrator()
 
                 # Use new _check_phase_readiness method
                 # DEPRECATED: Use async agent for phase readiness check
@@ -1566,7 +1566,7 @@ async def get_history(
         SuccessResponse with conversation history
     """
     try:
-        from socrates_api.orchestrator import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Getting chat history for project: {project_id}")
 
@@ -2402,7 +2402,7 @@ async def get_answer_suggestions(
     Uses CRITICAL FIX #11: Orchestrator _generate_suggestions() method
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Getting answer suggestions for project {project_id}")
 
@@ -3010,7 +3010,7 @@ async def reopen_question(
         APIResponse with reopened question
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"PHASE 2: Reopening question in project {project_id}")
 
