@@ -2,7 +2,7 @@
 # Production dependencies only - development tools removed for faster Docker builds
 
 # Core Socratic Libraries - AI System Components (Latest Verified Versions from PyPI)
-socratic-nexus>=0.3.3
+socratic-nexus>=0.3.4
 socratic-core>=0.1.2
 socratic-agents>=0.2.8
 socratic-rag>=0.1.4
