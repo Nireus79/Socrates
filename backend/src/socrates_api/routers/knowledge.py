@@ -847,6 +847,9 @@ async def import_text(
         SuccessResponse with import details
     """
     try:
+        # Get async orchestrator at start of function
+        async_orch = _get_async_orchestrator()
+
         title = body.get("title")
         content = body.get("content")
         project_id = body.get("projectId")

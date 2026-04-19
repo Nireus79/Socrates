@@ -245,6 +245,10 @@ async def create_project(
                 detail="Project description/topic is required to generate questions",
             )
 
+        # Initialize async orchestrator for processing
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
+
         # CRITICAL: Check subscription limit BEFORE attempting to create project
         # This must happen regardless of whether orchestrator is used
         logger.info("Checking subscription limits...")
