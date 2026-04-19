@@ -1642,6 +1642,8 @@ class APIOrchestrator:
                 return self._handle_document_processor(request_data)
             elif router_name == "document_processor":
                 return self._handle_document_processor(request_data)
+            elif router_name == "knowledge_manager":
+                return self._handle_knowledge_manager(request_data)
             else:
                 # Generic fallback for unknown routers - return sensible defaults
                 logger.warning(f"Unknown router: {router_name}, returning generic response")
@@ -4047,6 +4049,84 @@ If a category has no items, use an empty array."""
                 }
         except Exception as e:
             logger.error(f"Error in document processor handler: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _handle_knowledge_manager(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle knowledge management requests (store, retrieve, search)"""
+        action = request_data.get("action", "")
+        logger.info(f"Knowledge manager request: action={action}")
+
+        # Handle get_suggestions action
+        if action == "get_suggestions":
+            project_id = request_data.get("project_id", "")
+            question = request_data.get("question", "")
+            phase = request_data.get("phase", "discovery")
+
+            logger.info(f"Getting suggestions for question: {question[:50] if question else 'N/A'}")
+
+            # Use phase-aware fallback suggestions
+            phase_suggestions = {
+                "discovery": [
+                    "Review your project goals and requirements",
+                    "Describe your target audience and their needs",
+                    "What problem does this solve?",
+                    "What alternatives have you considered?",
+                    "What would success look like?",
+                ],
+                "analysis": [
+                    "Break down your requirements into components",
+                    "What are the key constraints and limitations?",
+                    "How would you prioritize these requirements?",
+                    "What dependencies exist?",
+                    "What trade-offs are necessary?",
+                ],
+                "design": [
+                    "Sketch the high-level system architecture",
+                    "What design patterns apply here?",
+                    "How would you organize the components?",
+                    "What are the critical design decisions?",
+                    "How would this handle edge cases?",
+                ],
+                "implementation": [
+                    "What's the first feature to implement?",
+                    "Which technologies would you use?",
+                    "How would you test this?",
+                    "What's your deployment strategy?",
+                    "How would you measure success?",
+                ],
+            }
+
+            suggestions = phase_suggestions.get(phase, phase_suggestions["discovery"])
+
+            return {
+                "status": "success",
+                "data": {
+                    "suggestions": suggestions,
+                    "count": len(suggestions),
+                    "phase": phase,
+                    "question": question,
+                },
+                "message": f"Generated {len(suggestions)} suggestions for {phase} phase",
+            }
+
+        # Generic knowledge manager agent delegation
+        agent = self.agents.get("knowledge_manager")
+        if not agent:
+            logger.warning("KnowledgeManager agent not available")
+            return {"status": "error", "message": "KnowledgeManager not available"}
+
+        try:
+            result = agent.process(request_data)
+            if isinstance(result, dict) and result.get("status") == "success":
+                return result
+            else:
+                return {
+                    "status": "success" if isinstance(result, dict) else "error",
+                    "data": result if isinstance(result, dict) else {"result": result},
+                    "message": f"Knowledge action '{action}' completed",
+                }
+        except Exception as e:
+            logger.error(f"Error in knowledge manager handler: {e}")
             return {"status": "error", "message": str(e)}
 
     def _extract_insights_fallback(
