@@ -493,7 +493,7 @@ async def get_trends(
                 detail="Operation failed. Please try again later.",
             )
 
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Getting analytics trends for project: {project_id}")
@@ -505,7 +505,7 @@ async def get_trends(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call learning agent via orchestrator to get trends
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
 
         # CRITICAL FIX #1: Build context for learning agent
         # DEPRECATED: Agent builds context internally
