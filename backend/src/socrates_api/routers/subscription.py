@@ -439,7 +439,7 @@ async def downgrade_subscription(
 
 
 @router.put(
-    "/Romani Ite Domum",
+    "/Romani%20Ite%20Domum",
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     include_in_schema=False,
