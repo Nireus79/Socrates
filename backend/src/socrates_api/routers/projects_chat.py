@@ -634,12 +634,16 @@ async def get_question(
         # - Building context and wrapping response
         logger.info(f"Requesting question generation for project {project_id}")
 
+        # Extract topic from project description
+        topic = project.description if hasattr(project, "description") else project.get("description", "")
+
         result = await async_orch.process_request_async(
             "socratic_counselor",
             {
                 "action": "generate_question",
                 "project": project,
-                "current_user": current_user,
+                "topic": topic,
+                "user_id": current_user,
                 "force_refresh": force_refresh,
                 "db": db,
             }
@@ -651,10 +655,17 @@ async def get_question(
                 status_code=500, detail=result.get("message", "Failed to generate question")
             )
 
+        # Check for nested error status in agent response
+        data = result.get("data", {})
+        if data.get("status") == "error":
+            error_msg = data.get("message", "Unknown error")
+            logger.error(f"Agent returned error: {error_msg}")
+            raise HTTPException(status_code=500, detail=error_msg)
+
         # Extract question from agent response
-        question_data = result.get("data", {}).get("question", {})
-        question_text = question_data.get("question", "") or result.get("data", {}).get("question", "")
-        question_id = question_data.get("id", "") or result.get("data", {}).get("question_id", "")
+        question_data = data.get("question", {})
+        question_text = question_data.get("question", "") or data.get("question", "")
+        question_id = question_data.get("id", "") or data.get("question_id", "")
 
         if not question_text or not question_id:
             logger.error(f"Agent returned invalid question: {result}")
