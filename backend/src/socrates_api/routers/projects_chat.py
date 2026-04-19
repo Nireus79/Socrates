@@ -1496,7 +1496,14 @@ Provide a helpful, direct answer."""
             try:
                 logger.info(f"Generating next question after answer for project {project_id}")
                 # DEPRECATED: Use async process_request_async instead
-                    project=project, user_id=current_user, force_refresh=False
+                next_question_result = await async_orch.process_request_async(
+                    "socratic_counselor",
+                    {
+                        "action": "generate_question",
+                        "project": project,
+                        "current_user": current_user,
+                        "force_refresh": False,
+                    }
                 )
 
                 if next_question_result.get("status") == "success":

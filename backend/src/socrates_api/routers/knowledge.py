@@ -569,6 +569,7 @@ async def import_file(
                 project = db.load_project(project_id)
                 if project:
                     # DEPRECATED: Agent builds context internally
+                    pass
 
             # Process via DocumentProcessorAgent
             result = await async_orch.process_request_async(
@@ -745,6 +746,7 @@ async def import_url(
             project = db.load_project(project_id)
             if project:
                 # DEPRECATED: Agent builds context internally
+                pass
 
         # Process via DocumentProcessorAgent
         result = await async_orch.process_request_async(
@@ -893,6 +895,7 @@ async def import_text(
             project = db.load_project(project_id)
             if project:
                 # DEPRECATED: Agent builds context internally
+                pass
 
         # Process via DocumentProcessorAgent
         result = await async_orch.process_request_async(
@@ -1277,6 +1280,7 @@ async def bulk_import_documents(
                         project = db.load_project(project_id)
                         if project:
                             # DEPRECATED: Agent builds context internally
+                            pass
 
                     result = await async_orch.process_request_async(
                         "document_agent",
@@ -1481,6 +1485,7 @@ async def add_knowledge_entry(
             project = db.load_project(project_id)
             if project:
                 # DEPRECATED: Agent builds context internally
+                pass
 
         # Process as text import with category metadata
         result = await async_orch.process_request_async(

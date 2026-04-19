@@ -187,7 +187,7 @@ async def generate_code(
             # DEPRECATED: Agent builds context internally
 
             # Use code generator agent via orchestrator routing (not direct call)
-            result = await await async_orch.process_request_async(
+            result = await async_orch.process_request_async(
                 "code_generator",
                 {
                     "action": "generate_artifact",
@@ -292,7 +292,7 @@ async def generate_code(
                 from socrates_api.async_orchestrator import get_async_orchestrator
 
                 quality_async_orch = get_async_orchestrator()
-                quality_result = await quality_await async_orch.process_request_async(
+                quality_result = await quality_async_orch.process_request_async(
                     "quality_controller",
                     {
                         "action": "validate_code",
@@ -809,7 +809,7 @@ async def refactor_code(
             # DEPRECATED: Agent builds context internally
 
             # Use code generator agent via orchestrator routing for refactoring
-            result = await await async_orch.process_request_async(
+            result = await async_orch.process_request_async(
                 "code_generator",
                 {
                     "action": "refactor_code",
