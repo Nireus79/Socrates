@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query
 
-from socrates_api.orchestrator import get_orchestrator
+from socrates_api.async_orchestrator import get_async_orchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -70,9 +70,9 @@ async def analyze_code_quality(
 
         # Get orchestrator from app state (would need to be passed as dependency in real implementation)
         # For now, creating a minimal instance
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
 
-        result = orchestrator.analyze_code_quality(code, filename)
+        result = async_orch.analyze_code_quality(code, filename)
         if result:
             return result
         else:
@@ -127,8 +127,8 @@ async def log_learning_interaction(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.log_learning_interaction(
+        async_orch = get_async_orchestrator()
+        result = async_orch.log_learning_interaction(
             session_id=session_id,
             agent_name=agent_name,
             input_data=input_data,
@@ -154,8 +154,8 @@ async def get_learning_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "learning": status.get("learning", False),
             "status": "operational" if status.get("learning") else "unavailable"
@@ -195,8 +195,8 @@ async def detect_agent_conflicts(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.detect_agent_conflicts(field, agent_outputs, agents)
+        async_orch = get_async_orchestrator()
+        result = async_orch.detect_agent_conflicts(field, agent_outputs, agents)
         return result or {"conflict_detected": False}
     except Exception as e:
         logger.debug("Conflict detection failed", exc_info=True)
@@ -213,8 +213,8 @@ async def get_conflict_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "conflict": status.get("conflict", False),
             "status": "operational" if status.get("conflict") else "unavailable"
@@ -256,8 +256,8 @@ async def store_knowledge_item(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.store_knowledge(tenant_id, title, content, tags)
+        async_orch = get_async_orchestrator()
+        result = async_orch.store_knowledge(tenant_id, title, content, tags)
         return result or {"status": "stored"}
     except Exception as e:
         logger.debug("Failed to store knowledge", exc_info=True)
@@ -285,8 +285,8 @@ async def search_knowledge(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        results = orchestrator.search_knowledge(tenant_id, query)
+        async_orch = get_async_orchestrator()
+        results = async_orch.search_knowledge(tenant_id, query)
         return results[:limit] if results else []
     except Exception as e:
         logger.debug("Knowledge search failed", exc_info=True)
@@ -303,8 +303,8 @@ async def get_knowledge_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "knowledge": status.get("knowledge", False),
             "status": "operational" if status.get("knowledge") else "unavailable"
@@ -340,8 +340,8 @@ async def generate_project_documentation(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.generate_documentation(project_info)
+        async_orch = get_async_orchestrator()
+        result = async_orch.generate_documentation(project_info)
         return result or "# Documentation not available"
     except Exception as e:
         logger.debug("Documentation generation failed", exc_info=True)
@@ -358,8 +358,8 @@ async def get_docs_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "docs": status.get("docs", False),
             "status": "operational" if status.get("docs") else "unavailable"
@@ -383,8 +383,8 @@ async def generate_api_documentation(
         Generated API documentation as markdown string
     """
     try:
-        orchestrator = get_orchestrator()
-        result = orchestrator.generate_api_documentation(code_structure)
+        async_orch = get_async_orchestrator()
+        result = async_orch.generate_api_documentation(code_structure)
         return result
     except Exception as e:
         logger.debug("API documentation generation failed", exc_info=True)
@@ -405,8 +405,8 @@ async def generate_architecture_documentation(
         Generated architecture documentation as markdown string
     """
     try:
-        orchestrator = get_orchestrator()
-        result = orchestrator.generate_architecture_docs(modules)
+        async_orch = get_async_orchestrator()
+        result = async_orch.generate_architecture_docs(modules)
         return result
     except Exception as e:
         logger.debug("Architecture documentation generation failed", exc_info=True)
@@ -427,8 +427,8 @@ async def generate_setup_documentation(
         Generated setup guide as markdown string
     """
     try:
-        orchestrator = get_orchestrator()
-        result = orchestrator.generate_setup_guide(project)
+        async_orch = get_async_orchestrator()
+        result = async_orch.generate_setup_guide(project)
         return result
     except Exception as e:
         logger.debug("Setup guide generation failed", exc_info=True)
@@ -451,8 +451,8 @@ async def generate_all_documentation(
         Dictionary with complete documentation set
     """
     try:
-        orchestrator = get_orchestrator()
-        result = orchestrator.generate_all_documentation(project, code_structure)
+        async_orch = get_async_orchestrator()
+        result = async_orch.generate_all_documentation(project, code_structure)
         return result
     except Exception as e:
         logger.debug("Complete documentation generation failed", exc_info=True)
@@ -487,9 +487,9 @@ async def execute_workflow(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.library_manager.workflow.execute_workflow(
-            orchestrator.library_manager.workflow.create_workflow(workflow_name)
+        async_orch = get_async_orchestrator()
+        result = async_orch.library_manager.workflow.execute_workflow(
+            async_orch.library_manager.workflow.create_workflow(workflow_name)
         )
         return result or {"success": False, "message": "Workflow execution failed"}
     except Exception as e:
@@ -507,8 +507,8 @@ async def get_workflow_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "workflow": status.get("workflow", False),
             "status": "operational" if status.get("workflow") else "unavailable"
@@ -539,8 +539,8 @@ async def get_performance_metrics() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        stats = orchestrator.library_manager.performance.get_performance_stats()
+        async_orch = get_async_orchestrator()
+        stats = async_orch.library_manager.performance.get_performance_stats()
         return stats or {"message": "No performance data available"}
     except Exception as e:
         logger.debug("Failed to get performance metrics", exc_info=True)
@@ -566,8 +566,8 @@ async def profile_execution(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        orchestrator.library_manager.performance.profile_execution(
+        async_orch = get_async_orchestrator()
+        async_orch.library_manager.performance.profile_execution(
             task_id, duration_ms, success
         )
         return {"status": "profiled", "task_id": task_id}
@@ -586,8 +586,8 @@ async def get_performance_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "performance": status.get("performance", False),
             "status": "operational" if status.get("performance") else "unavailable"
@@ -606,8 +606,8 @@ async def get_cache_statistics() -> Dict[str, Any]:
         Cache hit/miss ratios and entry counts
     """
     try:
-        orchestrator = get_orchestrator()
-        result = orchestrator.get_cache_stats()
+        async_orch = get_async_orchestrator()
+        result = async_orch.get_cache_stats()
         return result
     except Exception as e:
         logger.debug("Failed to get cache statistics", exc_info=True)
@@ -623,8 +623,8 @@ async def clear_cache() -> Dict[str, Any]:
         Cache clear confirmation
     """
     try:
-        orchestrator = get_orchestrator()
-        result = orchestrator.clear_cache()
+        async_orch = get_async_orchestrator()
+        result = async_orch.clear_cache()
         return result
     except Exception as e:
         logger.debug("Failed to clear cache", exc_info=True)
@@ -640,8 +640,8 @@ async def reset_profiler_stats() -> Dict[str, Any]:
         Profiler reset confirmation
     """
     try:
-        orchestrator = get_orchestrator()
-        result = orchestrator.reset_profiler()
+        async_orch = get_async_orchestrator()
+        result = async_orch.reset_profiler()
         return result
     except Exception as e:
         logger.debug("Failed to reset profiler", exc_info=True)
@@ -657,8 +657,8 @@ async def get_performance_dashboard() -> Dict[str, Any]:
         Complete performance overview with profiler stats, cache metrics, and system status
     """
     try:
-        orchestrator = get_orchestrator()
-        result = orchestrator.get_performance_dashboard()
+        async_orch = get_async_orchestrator()
+        result = async_orch.get_performance_dashboard()
         return result
     except Exception as e:
         logger.debug("Failed to get performance dashboard", exc_info=True)
@@ -695,8 +695,8 @@ async def index_rag_document(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        doc_id = orchestrator.index_rag_document(content, source, metadata)
+        async_orch = get_async_orchestrator()
+        doc_id = async_orch.index_rag_document(content, source, metadata)
         return {
             "status": "indexed",
             "doc_id": doc_id,
@@ -730,8 +730,8 @@ async def search_rag(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        results = orchestrator.search_rag(query, limit)
+        async_orch = get_async_orchestrator()
+        results = async_orch.search_rag(query, limit)
         return results or []
     except Exception as e:
         logger.debug("RAG search failed", exc_info=True)
@@ -748,8 +748,8 @@ async def get_rag_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "rag": status.get("rag", False),
             "vector_stores": ["chromadb", "faiss", "qdrant", "pinecone"],
@@ -788,8 +788,8 @@ async def execute_agent(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.execute_agent(agent_name, request_data)
+        async_orch = get_async_orchestrator()
+        result = async_orch.execute_agent(agent_name, request_data)
         return result or {"status": "failed", "message": f"Agent {agent_name} failed"}
     except Exception as e:
         logger.debug("Agent execution failed", exc_info=True)
@@ -806,8 +806,8 @@ async def list_agents() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        agents = orchestrator.list_agents()
+        async_orch = get_async_orchestrator()
+        agents = async_orch.list_agents()
         return {
             "agents": agents or [
                 "code_generator",
@@ -833,8 +833,8 @@ async def get_agents_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "agents": status.get("agents", False),
             "status": "operational" if status.get("agents") else "unavailable"
@@ -870,8 +870,8 @@ async def validate_input(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.validate_security_input(user_input)
+        async_orch = get_async_orchestrator()
+        result = async_orch.validate_security_input(user_input)
         return result or {"valid": True, "threats": []}
     except Exception as e:
         logger.debug("Input validation failed", exc_info=True)
@@ -888,8 +888,8 @@ async def get_security_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "security": status.get("security", False),
             "features": ["mfa", "encryption", "audit_logging", "input_validation"],
@@ -932,8 +932,8 @@ async def call_llm(
     """
     try:
 
-        orchestrator = get_orchestrator()
-        result = orchestrator.call_llm(
+        async_orch = get_async_orchestrator()
+        result = async_orch.call_llm(
             prompt=prompt,
             model=model,
             provider=provider,
@@ -955,8 +955,8 @@ async def list_llm_models() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        models = orchestrator.list_llm_models()
+        async_orch = get_async_orchestrator()
+        models = async_orch.list_llm_models()
         return models or {
             "providers": {
                 "anthropic": ["claude-opus", "claude-sonnet", "claude-haiku"],
@@ -978,8 +978,8 @@ async def get_llm_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "nexus": status.get("nexus", False),
             "status": "operational" if status.get("nexus") else "unavailable"
@@ -1004,8 +1004,8 @@ async def get_system_info() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        info = orchestrator.get_system_info()
+        async_orch = get_async_orchestrator()
+        info = async_orch.get_system_info()
         return info or {
             "framework": "socratic-core",
             "version": "0.1.1",
@@ -1027,8 +1027,8 @@ async def get_system_config() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        config = orchestrator.get_system_config()
+        async_orch = get_async_orchestrator()
+        config = async_orch.get_system_config()
         return config or {
             "claude_model": "claude-opus",
             "api_key_configured": True,
@@ -1050,8 +1050,8 @@ async def get_core_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
         return {
             "core": status.get("core", False),
             "status": "operational" if status.get("core") else "unavailable"
@@ -1080,10 +1080,10 @@ async def ingest_bulk_documents(
         Ingestion results with document IDs
     """
     try:
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
         results = []
         for doc in documents:
-            doc_id = orchestrator.index_rag_document(
+            doc_id = async_orch.index_rag_document(
                 doc.get("content", ""),
                 doc.get("source", "bulk-ingest"),
                 doc.get("metadata", {})
@@ -1246,8 +1246,8 @@ async def perform_detailed_analysis(
         Comprehensive analysis results
     """
     try:
-        orchestrator = get_orchestrator()
-        base_result = orchestrator.analyze_code_quality(code)
+        async_orch = get_async_orchestrator()
+        base_result = async_orch.analyze_code_quality(code)
         return {
             **base_result,
             "detailed_analysis": {
@@ -1309,8 +1309,8 @@ async def execute_conflict_resolution(
         Resolution result with recommended value
     """
     try:
-        orchestrator = get_orchestrator()
-        result = orchestrator.detect_agent_conflicts(field, agent_outputs, list(agent_outputs.keys()))
+        async_orch = get_async_orchestrator()
+        result = async_orch.detect_agent_conflicts(field, agent_outputs, list(agent_outputs.keys()))
         return {
             **result,
             "strategy_used": strategy,
@@ -1369,8 +1369,8 @@ async def create_workflow(
         Created workflow information
     """
     try:
-        orchestrator = get_orchestrator()
-        workflow = orchestrator.create_workflow(name, description)
+        async_orch = get_async_orchestrator()
+        workflow = async_orch.create_workflow(name, description)
         return {
             "status": "success",
             "workflow_id": str(hash(name))[:8],
@@ -1484,8 +1484,8 @@ async def get_all_library_status() -> Dict[str, Any]:
     """
     try:
 
-        orchestrator = get_orchestrator()
-        status = orchestrator.get_library_status()
+        async_orch = get_async_orchestrator()
+        status = async_orch.get_library_status()
 
         enabled_count = sum(1 for v in status.values() if v)
         total_count = len(status)

@@ -259,7 +259,7 @@ async def _handle_chat_message(
 
         # Get project and orchestrator for AI processing
         try:
-            from socrates_api.main import get_orchestrator
+            from socrates_api.async_orchestrator import get_async_orchestrator
 
             db = get_database()
 
@@ -268,11 +268,11 @@ async def _handle_chat_message(
                 logger.error(f"Project {project_id} not found")
                 return None
 
-            orchestrator = get_orchestrator()
+            async_orch = get_async_orchestrator()
             logger.info("[_handle_chat_message] Got orchestrator, calling process_request")
 
             # Process message through orchestrator using process_request (standard pattern)
-            result = orchestrator.process_request(
+            result = await async_orch.process_request_async(
                 "socratic_counselor",
                 {
                     "action": "process_response",
@@ -317,7 +317,7 @@ async def _handle_chat_message(
                     # DEPRECATED: Agent builds context internally
 
                     # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
-                    hint_result = orchestrator.process_request(
+                    hint_result = await async_orch.process_request_async(
                         "context_analyzer",
                         {
                             "action": "generate_suggestions",
@@ -490,7 +490,7 @@ async def _route_command(
         Result dict with status and message
     """
     try:
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         db = get_database()
 
@@ -498,7 +498,7 @@ async def _route_command(
         if not project:
             return {"status": "error", "message": f"Project {project_id} not found"}
 
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
 
         # Map common commands to handlers
         if command in ["hint", "help", "suggest"]:
@@ -507,7 +507,7 @@ async def _route_command(
             # DEPRECATED: Agent builds context internally
 
             # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
-            hint_result = orchestrator.process_request(
+            hint_result = await async_orch.process_request_async(
                 "context_analyzer",
                 {
                     "action": "generate_suggestions",
@@ -522,7 +522,7 @@ async def _route_command(
 
         elif command == "summary":
             # Generate conversation summary
-            result = orchestrator.process_request(
+            result = await async_orch.process_request_async(
                 "context_analyzer",
                 {
                     "action": "generate_summary",
@@ -561,7 +561,7 @@ async def _route_command(
 
         elif command == "advance":
             # Advance to next phase via orchestrator routing (not direct call)
-            result = await orchestrator.process_request_async(
+            result = await await async_orch.process_request_async(
                 "socratic_counselor",
                 {
                     "action": "advance_phase",
@@ -619,9 +619,9 @@ async def send_chat_message(
     try:
         logger.info(f"[send_chat_message] Starting for project {project_id}")
         # Import here to avoid circular dependency
-        from socrates_api.main import get_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        orchestrator = get_orchestrator()
+        async_orch = get_async_orchestrator()
         logger.info(f"[send_chat_message] Got orchestrator: {orchestrator is not None}")
 
         # Build context for debug_logs
@@ -675,7 +675,7 @@ async def send_chat_message(
         if not assistant_messages:
             # Generate initial question via orchestrator routing (not direct call)
             try:
-                question_result = await orchestrator.process_request_async(
+                question_result = await await async_orch.process_request_async(
                     "socratic_counselor",
                     {
                         "action": "generate_question",
@@ -693,7 +693,7 @@ async def send_chat_message(
         # Process user response with orchestrator via routing (not direct call)
         try:
             logger.info("[send_chat_message] Calling orchestrator.process_request_async")
-            response_result = await orchestrator.process_request_async(
+            response_result = await await async_orch.process_request_async(
                 "socratic_counselor",
                 {
                     "action": "process_response",
@@ -928,8 +928,8 @@ async def request_hint(
             )
 
         # Build context for debug_logs early
-        from socrates_api.main import get_orchestrator
-        orchestrator = get_orchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
         context = {}
         try:
             # DEPRECATED: Agent builds context internally
@@ -947,14 +947,14 @@ async def request_hint(
             question = assistant_messages[-1].get("content", "")
         else:
             # Generate initial question if no conversation yet via orchestrator routing (not direct call)
-            from socrates_api.main import get_orchestrator
+            from socrates_api.async_orchestrator import get_async_orchestrator
 
             try:
-                orchestrator = get_orchestrator()
+                async_orch = get_async_orchestrator()
                 # CRITICAL FIX #1: Build context for question generation
                 # DEPRECATED: Agent builds context internally
 
-                question_result = await orchestrator.process_request_async(
+                question_result = await await async_orch.process_request_async(
                     "socratic_counselor",
                     {
                         "action": "generate_question",
@@ -976,14 +976,14 @@ async def request_hint(
         hint = None
         if question:
             try:
-                from socrates_api.main import get_orchestrator
+                from socrates_api.async_orchestrator import get_async_orchestrator
 
-                orchestrator = get_orchestrator()
+                async_orch = get_async_orchestrator()
                 # CRITICAL FIX #1: Build context for hint generation
                 # DEPRECATED: Agent builds context internally
 
                 # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
-                hint_result = orchestrator.process_request(
+                hint_result = await async_orch.process_request_async(
                     "context_analyzer",
                     {
                         "action": "generate_suggestions",
@@ -1136,15 +1136,15 @@ async def get_chat_summary(
         insights = []
 
         try:
-            from socrates_api.main import get_orchestrator
+            from socrates_api.async_orchestrator import get_async_orchestrator
 
-            orchestrator = get_orchestrator()
+            async_orch = get_async_orchestrator()
 
             # CRITICAL FIX #1: Build context for summary generation
             # DEPRECATED: Agent builds context internally
 
             # Use context_analyzer to generate summary
-            summary_result = orchestrator.process_request(
+            summary_result = await async_orch.process_request_async(
                 "context_analyzer",
                 {
                     "action": "generate_summary",
@@ -1165,9 +1165,9 @@ async def get_chat_summary(
             logger.debug("Operation failed")
             logger.debug("Failed to use orchestrator for summary, using Claude directly:")
             try:
-                from socrates_api.main import get_orchestrator
+                from socrates_api.async_orchestrator import get_async_orchestrator
 
-                orchestrator = get_orchestrator()
+                async_orch = get_async_orchestrator()
 
                 # Fallback: Use orchestrator to generate summary instead of direct llm_client
                 conversation_text = "\n".join(
@@ -1178,7 +1178,7 @@ async def get_chat_summary(
                 )
 
                 # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
-                fallback_result = orchestrator.process_request(
+                fallback_result = await async_orch.process_request_async(
                     "context_analyzer",
                     {
                         "action": "summarize_conversation",

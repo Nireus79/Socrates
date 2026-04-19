@@ -57,8 +57,8 @@ async def get_gap_closure_status(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        from socrates_api.orchestrator import APIOrchestrator
-        orchestrator = APIOrchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         if not orchestrator.advancement_tracker:
             raise HTTPException(status_code=503, detail="Advancement tracker not available")
@@ -119,8 +119,8 @@ async def get_completeness_metrics(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        from socrates_api.orchestrator import APIOrchestrator
-        orchestrator = APIOrchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         if not orchestrator.advancement_tracker:
             raise HTTPException(status_code=503, detail="Advancement tracker not available")
@@ -190,8 +190,8 @@ async def get_advancement_metrics(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        from socrates_api.orchestrator import APIOrchestrator
-        orchestrator = APIOrchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         if not orchestrator.advancement_tracker:
             raise HTTPException(status_code=503, detail="Advancement tracker not available")
@@ -270,8 +270,8 @@ async def get_advancement_dashboard(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        from socrates_api.orchestrator import APIOrchestrator
-        orchestrator = APIOrchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         if not orchestrator.progress_dashboard or not orchestrator.metrics_service:
             raise HTTPException(status_code=503, detail="Dashboard services not available")
@@ -354,8 +354,8 @@ async def get_progress_history(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        from socrates_api.orchestrator import APIOrchestrator
-        orchestrator = APIOrchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         if not orchestrator.progress_dashboard:
             raise HTTPException(status_code=503, detail="Dashboard service not available")
@@ -427,8 +427,8 @@ async def get_learning_effectiveness(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        from socrates_api.orchestrator import APIOrchestrator
-        orchestrator = APIOrchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         if not orchestrator.learning_service:
             raise HTTPException(status_code=503, detail="Learning service not available")
@@ -512,8 +512,8 @@ async def get_optimization_recommendations(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        from socrates_api.orchestrator import APIOrchestrator
-        orchestrator = APIOrchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         if not orchestrator.learning_service:
             raise HTTPException(status_code=503, detail="Learning service not available")

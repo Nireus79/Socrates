@@ -178,16 +178,16 @@ async def generate_code(
         logger.info(f"Code generation requested for {language} in project {project_id}")
 
         try:
-            from socrates_api.main import get_orchestrator
+            from socrates_api.async_orchestrator import get_async_orchestrator
             from socrates_api.routers.events import record_event
 
-            orchestrator = get_orchestrator()
+            async_orch = get_async_orchestrator()
 
             # CRITICAL FIX #1: Build context for code generation
             # DEPRECATED: Agent builds context internally
 
             # Use code generator agent via orchestrator routing (not direct call)
-            result = await orchestrator.process_request_async(
+            result = await await async_orch.process_request_async(
                 "code_generator",
                 {
                     "action": "generate_artifact",
@@ -289,10 +289,10 @@ async def generate_code(
                 logger.info(f"Running quality checks on generated {language} code...")
 
                 # Call quality_controller to validate and analyze code
-                from socrates_api.main import get_orchestrator
+                from socrates_api.async_orchestrator import get_async_orchestrator
 
-                quality_orchestrator = get_orchestrator()
-                quality_result = await quality_orchestrator.process_request_async(
+                quality_async_orch = get_async_orchestrator()
+                quality_result = await quality_await async_orch.process_request_async(
                     "quality_controller",
                     {
                         "action": "validate_code",
@@ -800,16 +800,16 @@ async def refactor_code(
         try:
             from pathlib import Path
 
-            from socrates_api.main import get_orchestrator
+            from socrates_api.async_orchestrator import get_async_orchestrator
             from socrates_api.routers.events import record_event
 
-            orchestrator = get_orchestrator()
+            async_orch = get_async_orchestrator()
 
             # Build context for refactoring
             # DEPRECATED: Agent builds context internally
 
             # Use code generator agent via orchestrator routing for refactoring
-            result = await orchestrator.process_request_async(
+            result = await await async_orch.process_request_async(
                 "code_generator",
                 {
                     "action": "refactor_code",
@@ -993,9 +993,9 @@ async def generate_documentation(
 
         # Generate documentation using Claude AI
         try:
-            from socrates_api.main import get_orchestrator
+            from socrates_api.async_orchestrator import get_async_orchestrator
 
-            orchestrator = get_orchestrator()
+            async_orch = get_async_orchestrator()
 
             # Gather the most recent code artifact for documentation context
             latest_artifact = ""
@@ -1027,7 +1027,7 @@ async def generate_documentation(
             # DEPRECATED: Agent builds context internally
 
             # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
-            doc_result = orchestrator.process_request(
+            doc_result = await async_orch.process_request_async(
                 "code_generator",
                 {
                     "action": "generate_documentation",

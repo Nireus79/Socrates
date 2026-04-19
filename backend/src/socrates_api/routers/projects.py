@@ -292,7 +292,7 @@ async def create_project(
                 logger.info("Orchestrator available, using it...")
                 # Use orchestrator pattern (same as CLI)
                 # Pass description and knowledge_base_content so ProjectManagerAgent can analyze them
-                result = orchestrator.process_request(
+                result = await async_orch.process_request_async(
                     "project_manager",
                     {
                         "action": "create_project",
@@ -391,7 +391,7 @@ async def create_project(
                 if orchestrator:
                     # CRITICAL FIX #3: Use orchestrator handler instead of direct llm_client call
                     try:
-                        insights_result = orchestrator.process_request(
+                        insights_result = await async_orch.process_request_async(
                             "context_analyzer",
                             {
                                 "action": "analyze",
@@ -475,14 +475,14 @@ async def create_project(
                     try:
                         # Try calling as async first
                         import asyncio
-                        maturity_result = asyncio.run(orchestrator.process_request(
+                        maturity_result = asyncio.run(await async_orch.process_request_async(
                             "quality_controller",
                             {
                                 "action": "calculate_maturity",
                                 "project": project,
                                 "current_user": current_user,
                             },
-                        )) if asyncio.iscoroutinefunction(orchestrator.process_request) else orchestrator.process_request(
+                        )) if asyncio.iscoroutinefunction(orchestrator.process_request) else await async_orch.process_request_async(
                             "quality_controller",
                             {
                                 "action": "calculate_maturity",
@@ -1801,8 +1801,8 @@ async def get_phase_maturity(
             )
 
         # Get orchestrator and calculate maturity
-        from socrates_api.main import get_orchestrator
-        orchestrator = get_orchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         result = orchestrator.calculate_phase_maturity(project)
 
@@ -1870,8 +1870,8 @@ async def get_all_phases_maturity(
             )
 
         # Get orchestrator and calculate maturity for all phases
-        from socrates_api.main import get_orchestrator
-        orchestrator = get_orchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         result = orchestrator.get_all_phases_maturity(project)
 
@@ -2396,8 +2396,8 @@ async def get_phase_readiness(
             )
 
         # Get orchestrator and check readiness
-        from socrates_api.main import get_orchestrator
-        orchestrator = get_orchestrator()
+        from socrates_api.async_orchestrator import get_async_orchestrator
+        async_orch = get_async_orchestrator()
 
         # DEPRECATED: Use async agent for phase readiness
         readiness = None  # TODO: Implement async phase readiness
