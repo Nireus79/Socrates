@@ -3139,11 +3139,14 @@ class APIOrchestrator:
                         conversation_summary = self._get_conversation_summary(project)
 
                         # Build request with full project context
+                        # Use description as goals if goals not provided
+                        goals = getattr(project, "goals", "") or topic or ""
+
                         counselor_request = {
                             "topic": topic,
                             "context": conversation_summary,
                             "phase": phase,
-                            "goals": getattr(project, "goals", ""),
+                            "goals": goals,
                             "project_id": project_id,
                         }
 
