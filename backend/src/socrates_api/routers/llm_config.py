@@ -15,72 +15,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/llm-config", tags=["llm-config"])
 
 
-async def _validate_api_key(provider: str, api_key: str) -> dict:
-    """
-    Validate that an API key is valid by making a test API call.
-
-    Args:
-        provider: LLM provider name (e.g., 'claude', 'openai')
-        api_key: API key to validate
-
-    Returns:
-        Dict with is_valid (bool), error (str if invalid), and provider info
-    """
-    try:
-        from socrates_api.services.llm_client import LLMClient
-
-        logger.info(f"Testing API key for {provider}...")
-
-        # Create temporary LLM client with the provided key
-        test_client = LLMClient(
-            provider=provider,
-            api_key=api_key,
-            model=None,  # Use default model for provider
-        )
-
-        # Make a simple test call to validate the key
-        test_response = test_client.generate_response(
-            prompt="Say 'OK' if you can read this.",
-            max_tokens=10,
-            temperature=0.1,
-        )
-
-        if test_response and len(test_response.strip()) > 0:
-            logger.info(f"API key validation successful for {provider}")
-            return {
-                "is_valid": True,
-                "provider": provider,
-                "error": None,
-            }
-        else:
-            logger.warning(f"API key validation returned empty response for {provider}")
-            return {
-                "is_valid": False,
-                "provider": provider,
-                "error": "API returned empty response - key may be invalid",
-            }
-
-    except Exception as e:
-        error_msg = str(e)
-        logger.warning(f"API key validation failed for {provider}: {error_msg}")
-
-        # Provide user-friendly error messages
-        if "unauthorized" in error_msg.lower() or "authentication" in error_msg.lower():
-            error_msg = "Invalid API key or authentication failed"
-        elif "rate limit" in error_msg.lower():
-            error_msg = "API rate limit exceeded - try again later"
-        elif "connection" in error_msg.lower():
-            error_msg = "Could not connect to API provider"
-        else:
-            error_msg = "API key validation failed - please verify the key is correct"
-
-        return {
-            "is_valid": False,
-            "provider": provider,
-            "error": error_msg,
-        }
-
-
 @router.get(
     "/providers",
     response_model=APIResponse,
@@ -274,18 +208,6 @@ async def set_api_key(
                 detail="API key is required"
             )
 
-        # CRITICAL: Validate API key works before saving
-        logger.info(f"Validating API key for {provider}...")
-        validation_result = await _validate_api_key(provider, api_key)
-
-        if not validation_result.get("is_valid"):
-            error_msg = validation_result.get("error", "API key validation failed")
-            logger.warning(f"API key validation failed for {provider}: {error_msg}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid API key for {provider}: {error_msg}"
-            )
-
         async_orch = get_async_orchestrator()
         result = await async_orch.process_request_async(
             "multi_llm",
@@ -298,8 +220,6 @@ async def set_api_key(
         )
 
         if result["status"] != "success":
-            # SECURITY: Don't expose error details that might contain sensitive info
-            logger.warning(f"Failed to set API key for {provider}: {result.get('message')}")
             raise HTTPException(
                 status_code=500, detail="Failed to set API key. Please verify the provider and try again."
             )
@@ -307,13 +227,8 @@ async def set_api_key(
         return APIResponse(
             success=True,
             status="success",
-            message=f"API key validated and set for {provider}",
-            data={
-                "provider": provider,
-                "is_valid": True,
-                "is_tested": True,
-                "ready_for_use": True,
-            },
+            message=f"API key set for {provider}",
+            data={"provider": provider},
         )
 
     except HTTPException:
