@@ -596,7 +596,7 @@ async def get_question(
         APIResponse with single question
     """
     try:
-        from socrates_api.main import get_async_orchestrator
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
         logger.info(f"Getting question for project {project_id}, user {current_user}")
 
@@ -1587,7 +1587,6 @@ async def get_history(
         project = project_dict
 
         # CRITICAL FIX #1: Build complete context
-        orchestrator = get_orchestrator()
         # DEPRECATED: Agent builds context internally
 
         # Get conversation history from project
@@ -1765,7 +1764,6 @@ async def get_hint(
             "hint": hint,
             "question_id": getattr(project, "current_question_id", None),
         }
-        orchestrator.event_emitter.emit(EventType.HINT_GENERATED, event_data)
 
         # Add debug info if debug mode is enabled
         if is_debug_mode(current_user):
@@ -2467,7 +2465,6 @@ async def get_answer_suggestions(
             )
 
         # DEPRECATED: Use agent-based suggestions
-        orchestrator = get_orchestrator()
         logger.info(f"Generating contextual suggestions for question: {current_question}")
 
         try:
