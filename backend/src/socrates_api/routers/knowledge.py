@@ -479,7 +479,7 @@ async def import_file(
     file: UploadFile = File(...),
     project_id: Optional[str] = Form(None),
     current_user: str = Depends(get_current_user),
-    orchestrator=Depends(_get_orchestrator),
+
     db: LocalDatabase = Depends(get_database),
 ):
     """
@@ -698,7 +698,7 @@ async def import_file(
 async def import_url(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
-    orchestrator=Depends(_get_orchestrator),
+
     db: LocalDatabase = Depends(get_database),
 ):
     """
@@ -831,7 +831,7 @@ async def import_url(
 async def import_text(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
-    orchestrator=Depends(_get_orchestrator),
+
     db: LocalDatabase = Depends(get_database),
 ):
     """
@@ -986,7 +986,7 @@ async def search_knowledge(
     project_id: Optional[str] = None,
     top_k: int = 10,
     current_user: str = Depends(get_current_user),
-    orchestrator=Depends(_get_orchestrator),
+
     db: LocalDatabase = Depends(get_database),
 ):
     """
@@ -1225,7 +1225,7 @@ async def bulk_import_documents(
     files: list = File(..., description="Files to import"),
     project_id: Optional[str] = Form(None),
     current_user: str = Depends(get_current_user),
-    orchestrator=Depends(_get_orchestrator),
+
     db: LocalDatabase = Depends(get_database),
 ):
     """
@@ -1439,7 +1439,7 @@ async def get_document_analytics(
 async def add_knowledge_entry(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
-    orchestrator=Depends(_get_orchestrator),
+
     db: LocalDatabase = Depends(get_database),
 ):
     """
@@ -1548,7 +1548,7 @@ async def add_knowledge_entry(
     summary="Debug: List all chunks in vector database",
 )
 async def debug_get_vector_db_chunks(
-    orchestrator=Depends(_get_orchestrator),
+
 ):
     """
     Debug endpoint to inspect what's actually stored in the vector database.
