@@ -3138,10 +3138,13 @@ class APIOrchestrator:
                         )
                         conversation_summary = self._get_conversation_summary(project)
 
-                        # Build request with conversation context
+                        # Build request with full project context
                         counselor_request = {
                             "topic": topic,
                             "context": conversation_summary,
+                            "phase": phase,
+                            "goals": getattr(project, "goals", ""),
+                            "project_id": project_id,
                         }
 
                         # Include conversation history if available
@@ -3151,6 +3154,12 @@ class APIOrchestrator:
                             logger.debug(
                                 f"Including {len(conversation_history)} conversation history entries for context"
                             )
+
+                        # Include other project context
+                        if hasattr(project, "requirements") and project.requirements:
+                            counselor_request["requirements"] = project.requirements
+                        if hasattr(project, "tech_stack") and project.tech_stack:
+                            counselor_request["tech_stack"] = project.tech_stack
 
                         # CRITICAL FIX #12: Protect agent call with circuit breaker
                         breaker = CircuitBreakerRegistry.get_breaker(
