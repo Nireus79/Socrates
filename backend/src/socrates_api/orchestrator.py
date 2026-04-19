@@ -3142,12 +3142,14 @@ class APIOrchestrator:
                         # Use description as goals if goals not provided
                         goals = getattr(project, "goals", "") or topic or ""
 
+                        # Pass entire project object to agent for full context
                         counselor_request = {
                             "topic": topic,
                             "context": conversation_summary,
                             "phase": phase,
                             "goals": goals,
                             "project_id": project_id,
+                            "project": project,  # Include full project object for agent context
                         }
 
                         # Include conversation history if available
@@ -3158,7 +3160,7 @@ class APIOrchestrator:
                                 f"Including {len(conversation_history)} conversation history entries for context"
                             )
 
-                        # Include other project context
+                        # Include other project context (for backward compatibility)
                         if hasattr(project, "requirements") and project.requirements:
                             counselor_request["requirements"] = project.requirements
                         if hasattr(project, "tech_stack") and project.tech_stack:
