@@ -1524,12 +1524,23 @@ Provide a helpful, direct answer."""
             # This matches monolithic behavior: answer → extract specs → next question
             try:
                 logger.info(f"Generating next question after answer for project {project_id}")
+
+                # Build topic from project context for question generation
+                # Use project description/goals or initial topic to maintain context
+                project_topic = getattr(project, "description", "") or getattr(project, "topic", "")
+                if not project_topic and insights and insights.get("goals"):
+                    # Fallback to extracted goals if description is empty
+                    project_topic = " ".join(insights.get("goals", []))
+
+                logger.info(f"Next question topic: {project_topic[:50] if project_topic else 'FALLBACK'}")
+
                 # DEPRECATED: Use async process_request_async instead
                 next_question_result = await async_orch.process_request_async(
                     "socratic_counselor",
                     {
                         "action": "generate_question",
                         "project": project,
+                        "topic": project_topic,  # CRITICAL: Pass topic for context-aware question generation
                         "user_id": current_user,
                         "force_refresh": False,
                     }
