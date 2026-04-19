@@ -2075,7 +2075,7 @@ class LocalDatabase:
             DatabaseError: If save fails
         """
         try:
-            cache_id = IDGenerator.generate("cache")
+            cache_id = IDGenerator.generate_id("cache")
             now = datetime.now(timezone.utc).isoformat()
 
             self.conn.execute(

@@ -1530,7 +1530,7 @@ Provide a helpful, direct answer."""
                     {
                         "action": "generate_question",
                         "project": project,
-                        "current_user": current_user,
+                        "user_id": current_user,
                         "force_refresh": False,
                     }
                 )
@@ -2499,7 +2499,10 @@ async def get_answer_suggestions(
         try:
             # DEPRECATED: Use agent-based suggestions
             suggestions = None  # TODO: Implement async suggestions agent
-            logger.info(f"Generated {len(suggestions)} suggestions using orchestrator")
+            if suggestions:
+                logger.info(f"Generated {len(suggestions)} suggestions using orchestrator")
+            else:
+                logger.info("No suggestions generated, using fallback suggestions")
 
             # CRITICAL FIX: Include debug logs in response
             debug_logs = getattr(project, "debug_logs", []) or []

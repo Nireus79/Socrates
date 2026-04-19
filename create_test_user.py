@@ -42,7 +42,7 @@ def create_test_user():
     print(f"  Hash created: {password_hash[:20]}...")
 
     # Generate user ID using the actual IDGenerator
-    user_id = IDGenerator.generate("user")
+    user_id = IDGenerator.generate_id("user")
     print(f"Generated user ID: {user_id}")
 
     # Create user using the actual create_user method
