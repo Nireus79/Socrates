@@ -30,7 +30,7 @@ _debug_mode_users = {}  # Per-user debug mode: {user_id: bool}
 
 def set_debug_mode(enabled: bool, user_id: Optional[str] = None):
     """
-    Set debug mode locally.
+    Set debug mode locally and configure Python logging handlers.
 
     Args:
         enabled: Whether to enable debug mode
@@ -46,6 +46,35 @@ def set_debug_mode(enabled: bool, user_id: Optional[str] = None):
         # Set global debug mode
         _debug_mode_global = enabled
         logger.debug(f"Set global debug mode to {enabled}")
+
+        # Configure all logging handlers when setting global mode
+        # This changes console output verbosity
+        _configure_logging_handlers(enabled)
+
+def _configure_logging_handlers(enabled: bool):
+    """
+    Configure all logging handlers to change console output verbosity.
+
+    Args:
+        enabled: If True, set all handlers to DEBUG level. If False, set to INFO level.
+    """
+    level = logging.DEBUG if enabled else logging.INFO
+
+    # Update the root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+
+    # Update all existing handlers
+    for handler in root_logger.handlers:
+        handler.setLevel(level)
+
+    # Also update commonly-used loggers
+    for logger_name in ["socrates_api", "socratic_system", "socratic_agents", "socratic_core"]:
+        module_logger = logging.getLogger(logger_name)
+        module_logger.setLevel(level)
+        for handler in module_logger.handlers:
+            handler.setLevel(level)
+
 
 def is_debug_mode(user_id: Optional[str] = None) -> bool:
     """
