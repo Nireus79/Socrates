@@ -3281,6 +3281,34 @@ Provide only the hint text, no additional commentary."""
                     "message": f"Failed to explain conflicts: {str(e)}",
                 }
 
+        elif action == "generate_answer_suggestions":
+            # Generate answer suggestions for the current question
+            project = request_data.get("project", {})
+            current_question = request_data.get("current_question", "")
+            current_user = request_data.get("current_user", "")
+
+            logger.info(
+                f"_handle_socratic_counselor generate_answer_suggestions for question: {current_question[:50]}"
+            )
+
+            try:
+                # Get project ID for context
+                project_id = getattr(project, "project_id", None) or project.get("project_id", "")
+                user_id = getattr(project, "user_id", None) or project.get("user_id", "") or current_user
+
+                # Call the answer suggestions orchestration method
+                return self._orchestrate_answer_suggestions(
+                    project=project,
+                    user_id=user_id,
+                    question_id=""  # Not needed for suggestions, but keeping signature compatible
+                )
+            except Exception as e:
+                logger.error(f"Error generating answer suggestions: {e}", exc_info=True)
+                return {
+                    "status": "error",
+                    "message": f"Failed to generate answer suggestions: {str(e)}",
+                }
+
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
 
