@@ -528,7 +528,11 @@ class APIOrchestrator:
             "code_generator": CodeGenerator(llm_client=self.llm_client),
             "code_validator": CodeValidator(llm_client=self.llm_client),
             # Project and learning coordination
-            "socratic_counselor": SocraticCounselor(llm_client=self.llm_client, batch_size=1),
+            "socratic_counselor": SocraticCounselor(
+                llm_client=self.llm_client,
+                database=self.database,  # CRITICAL: Pass database so agent can save pending_questions
+                batch_size=1
+            ),
             "project_manager": ProjectManager(llm_client=self.llm_client),
             # Quality and skill management
             "quality_controller": QualityController(llm_client=self.llm_client),
@@ -3116,6 +3120,8 @@ class APIOrchestrator:
                             "goals": goals,
                             "project_id": project_id,
                             "project": project,  # Include full project object for agent context
+                            "user_id": user_id,  # CRITICAL: Pass user_id so agent doesn't default to "default_user"
+                            "force_refresh": force_refresh,  # Also pass force_refresh for consistency
                         }
 
                         # Include conversation history if available
