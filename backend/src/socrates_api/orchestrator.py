@@ -2927,32 +2927,30 @@ class APIOrchestrator:
                                 f"Including {len(conversation_history)} conversation history entries for context"
                             )
 
-                        # BUG #9 FIX: Track recently asked questions to prevent duplicates
-                        # Pass the list of recent questions so agent knows what not to ask
-                        pending_questions = getattr(project, "pending_questions", [])
-                        if pending_questions:
-                            # Extract recently asked questions (both answered and unanswered)
-                            recently_asked = [
-                                q.get("question") for q in pending_questions
-                                if q.get("question") and q.get("status") in ["answered", "unanswered"]
-                            ]
-                            if recently_asked:
-                                counselor_request["recently_asked"] = recently_asked
-                                logger.debug(
-                                    f"Passing {len(recently_asked)} recently asked questions to agent for deduplication"
-                                )
+                        # MONOLITHIC PATTERN: Extract previously asked questions from conversation history
+                        # This follows the proven working approach from monolithic Socrates
+                        # Key: Filter by type="assistant" (questions, not responses) and phase (current phase only)
+                        previously_asked_questions = []
+                        conversation_history = getattr(project, "conversation_history", [])
+                        if conversation_history:
+                            for msg in conversation_history:
+                                # Only include messages that are:
+                                # 1. Questions (type="assistant")
+                                # 2. From the current phase
+                                # 3. Have actual question content
+                                if (
+                                    msg.get("type") == "assistant"
+                                    and msg.get("phase") == phase
+                                    and msg.get("content")
+                                ):
+                                    previously_asked_questions.append(msg.get("content"))
 
-                        # OPTION A FIX: Pass knowledge_base parameter to trigger KB-aware question generation
-                        # Even if minimal, this enables the agent's deduplication logic in _generate_kb_aware_question()
-                        # The library uses KB-aware generation for deduplication, but falls back to generic questions
-                        # if KB is not provided. By passing a minimal KB context, we ensure deduplication logic is used.
-                        counselor_request["knowledge_base"] = {
-                            "chunks": [],  # Empty chunks - we're not using KB for content, just to trigger mode
-                            "metadata": {
-                                "context": "conversation_context",
-                                "phase": phase,
-                            }
-                        }
+                            if previously_asked_questions:
+                                counselor_request["recently_asked"] = previously_asked_questions
+                                logger.debug(
+                                    f"Passing {len(previously_asked_questions)} previously asked questions "
+                                    f"in {phase} phase for deduplication"
+                                )
 
                         # Include other project context (for backward compatibility)
                         if hasattr(project, "requirements") and project.requirements:
