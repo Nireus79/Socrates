@@ -88,7 +88,7 @@ dependencies = [
     "anthropic>=0.72.0",                 # Required by: socratic-agents, socrates-nexus
     "socratic-rag>=0.1.4",               # Retrieval-Augmented Generation (core functionality)
     "socratic-security==0.4.0",          # Security utilities (prompt injection, path validation, sandboxing)
-    "socratic-learning>=0.1.4",          # Learning system (interaction tracking, recommendations)
+    "socratic-learning>=0.1.5",          # Learning system (interaction tracking, recommendations)
     "socratic-analyzer>=0.1.5",          # Code analysis capabilities (Pydantic v2 compatible)
     "socratic-conflict>=0.1.3",          # Conflict detection and resolution
     "socratic-knowledge>=0.1.5",         # Knowledge management with RBAC and versioning
