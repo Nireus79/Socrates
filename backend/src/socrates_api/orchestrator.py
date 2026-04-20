@@ -468,30 +468,30 @@ class APIOrchestrator:
             return None
 
     def _initialize_database(self):
-        """Initialize database connection (backward compatibility)"""
-        try:
-            # Try to get database from config if available
-            if hasattr(self, 'config') and self.config:
-                db_path = getattr(self.config, 'projects_db_path', None)
-            else:
-                db_path = None
+        """
+        Initialize database connection using singleton pattern.
 
-            # Try to import and initialize database
-            try:
-                from socrates_api.database import Database
-                return Database(db_path=db_path)
-            except ImportError:
-                # Fall back to a simple mock if Database not available
-                return type('MockDatabase', (), {
-                    'save_project': lambda *args, **kwargs: None,
-                    'load_project': lambda *args, **kwargs: None,
-                    'delete_project': lambda *args, **kwargs: None,
-                    'save_user': lambda *args, **kwargs: None,
-                    'load_user': lambda *args, **kwargs: None,
-                })()
+        CRITICAL FIX #3: Use database singleton to prevent:
+        - Multiple database connections (SQLite lock contention)
+        - Data inconsistency between CLI and API
+        - Memory leaks from unclosed connections
+
+        Returns:
+            LocalDatabase: The shared database instance (same across all components)
+        """
+        try:
+            # Import and use database singleton from database module
+            # This returns the SAME instance for all callers across API, CLI, orchestrator
+            from socrates_api.database import get_database
+
+            db = get_database()
+            logger.info(f"Using shared database singleton at: {db.db_path}")
+            return db
+
         except Exception as e:
-            logger.warning(f"Failed to initialize database: {e}")
-            return None
+            logger.error(f"Failed to initialize database singleton: {e}")
+            # Don't fall back to mock - database is critical
+            raise
 
     def _initialize_agents(self) -> None:
         """Initialize all agents from socratic-agents and socratic-analyzer with LLM client (required)"""
