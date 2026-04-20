@@ -3026,45 +3026,9 @@ class APIOrchestrator:
                 else project.get("phase", "discovery")
             )
 
-            # TRY CACHE FIRST (unless force_refresh)
-            if not force_refresh and project_id:
-                try:
-                    from socrates_api.database import get_database
-
-                    db = get_database()
-                    cached_questions = db.get_cached_questions(
-                        project_id=project_id, phase=phase, exclude_recent=3
-                    )
-
-                    if cached_questions:
-                        # Use a random cached question
-                        import random
-
-                        question_data = random.choice(cached_questions)
-                        question_text = question_data.get("question_text")
-                        cache_id = question_data.get("cache_id")
-
-                        # Increment usage counter
-                        try:
-                            db.increment_question_usage(cache_id)
-                        except Exception as e:
-                            logger.warning(f"Failed to increment question usage: {e}")
-
-                        logger.info(f"Returning cached question (cache_id: {cache_id})")
-                        return {
-                            "status": "success",
-                            "data": {
-                                "question": question_text,
-                                "project_id": project_id,
-                                "phase": phase,
-                                "from_cache": True,
-                                "cache_id": cache_id,
-                            },
-                            "message": "Question retrieved from cache",
-                        }
-                except Exception as e:
-                    logger.warning(f"Failed to retrieve from cache: {e}")
-                    # Continue to generate new question
+            # NOTE: Question cache disabled to match monolithic behavior
+            # Monolithic version stores pending questions in project.pending_questions
+            # and generates new questions on each request, not from cache
 
             # Try to use the actual agent if available
             counselor = self.agents.get("socratic_counselor")
