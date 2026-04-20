@@ -671,10 +671,21 @@ async def send_message(
         logger.info(f"Chat mode resolved to: {chat_mode} (request.mode: {getattr(request, 'mode', 'not provided')}, project.chat_mode: {getattr(project, 'chat_mode', 'not set')})")
 
         if chat_mode == "direct":
-            # Direct mode: Generate a direct answer without Socratic questioning
+            # MONOLITHIC PATTERN: Direct mode uses orchestrator, not direct LLM calls
             logger.info("Processing message in DIRECT mode")
 
-            # Build context from project
+            # Add user message to conversation_history before processing
+            if not hasattr(project, "conversation_history"):
+                project.conversation_history = []
+
+            project.conversation_history.append({
+                "type": "user",
+                "content": request.message,
+                "phase": getattr(project, "phase", "discovery"),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+
+            # Build context from project for the LLM
             context_parts = []
             if project.goals:
                 context_parts.append(f"Project Goal: {project.goals}")
@@ -685,7 +696,7 @@ async def send_message(
 
             context = "\n".join(context_parts) if context_parts else "No project context"
 
-            # Generate direct answer
+            # Use orchestrator to generate direct answer
             prompt = f"""You are a helpful coding assistant. Answer the user's question directly and concisely.
 
 Project Context:
@@ -695,37 +706,55 @@ User Question: {request.message}
 
 Provide a helpful, direct answer."""
 
-            answer = orchestrator.claude_client.generate_response(
-                prompt, user_auth_method=user_auth_method, user_id=current_user
+            # Call orchestrator for direct answer generation
+            direct_result = orchestrator.process_request(
+                "direct_chat",
+                {
+                    "action": "generate_answer",
+                    "prompt": prompt,
+                    "user_id": current_user,
+                    "project": project,
+                }
             )
 
-            # Save to conversation history
-            project.conversation_history.append({
-                "role": "user",
-                "content": request.message,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-            project.conversation_history.append({
-                "role": "assistant",
-                "content": answer,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-            db.save_project(project)
-            # db.save_conversation_history removed - modular version uses db.save_project
+            if direct_result.get("status") != "success":
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to generate direct answer: {direct_result.get('message')}"
+                )
 
-            # Extract specs from both user message and assistant answer
+            answer = direct_result.get("data", {}).get("answer", "")
+
+            # Store assistant response in conversation_history
+            project.conversation_history.append({
+                "type": "assistant",
+                "content": answer,
+                "phase": getattr(project, "phase", "discovery"),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "response_turn": len([
+                    m for m in project.conversation_history
+                    if m.get("type") == "assistant"
+                ]),
+            })
+
+            # Extract specs from combined message
             insights = None
             insights_message = None
             try:
-                # Extract potential specs from both the user's question and the assistant's answer
-                # Combine both for more comprehensive spec extraction
+                # Use orchestrator to extract insights
                 combined_text = f"User Input:\n{request.message}\n\nAssistant Answer:\n{answer}"
-                insights = orchestrator.claude_client.extract_insights(
-                    combined_text,
-                    project,  # Required parameter: ProjectContext
-                    user_auth_method=user_auth_method,
-                    user_id=current_user
+                insights_result = orchestrator.process_request(
+                    "direct_chat",
+                    {
+                        "action": "extract_insights",
+                        "text": combined_text,
+                        "user_id": current_user,
+                        "project": project,
+                    }
                 )
+
+                if insights_result.get("status") == "success":
+                    insights = insights_result.get("data", {})
                 logger.debug(f"Extracted insights from user input and assistant answer: {insights}")
 
                 # If there are any extracted specs, format debug message and prepare for modal
@@ -790,6 +819,10 @@ Provide a helpful, direct answer."""
                 logger.warning(f"Failed to extract insights in direct mode: {str(e)}")
                 # Continue without insights if extraction fails
                 insights = None
+
+            # MONOLITHIC PATTERN: Save project with updated conversation_history
+            db.save_project(project)
+            logger.info(f"✓ Saved direct mode response to conversation_history for project {project_id}")
 
             return APIResponse(
                 success=True,
