@@ -2573,6 +2573,44 @@ class APIOrchestrator:
             logger.warning(f"Failed to persist conversation history: {e}")
             return False
 
+    def persist_extracted_specs(
+        self,
+        project_id: str,
+        specs: Dict[str, Any],
+        extraction_method: str = "automatic",
+        confidence_score: float = 0.8,
+        source_text: str = "",
+        response_turn: Optional[int] = None,
+        metadata: Optional[Dict] = None,
+    ) -> bool:
+        """
+        Persist extracted specs to database.
+        MONOLITHIC PATTERN: Orchestrator manages all spec persistence, not endpoints.
+        """
+        try:
+            from socrates_api.database import get_database
+            db = get_database()
+            db.save_extracted_specs(
+                project_id=project_id,
+                specs=specs,
+                extraction_method=extraction_method,
+                confidence_score=confidence_score,
+                source_text=source_text,
+                response_turn=response_turn,
+                metadata=metadata or {},
+            )
+            specs_count = sum([
+                len(specs.get("goals", [])),
+                len(specs.get("requirements", [])),
+                len(specs.get("tech_stack", [])),
+                len(specs.get("constraints", [])),
+            ])
+            logger.debug(f"✓ Persisted {specs_count} extracted specs to database")
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to persist extracted specs: {e}")
+            return False
+
     def _process_answer_monolithic(self, project: Any, user_response: str, current_user: str) -> Dict[str, Any]:
         """
         Process user answer using the monolithic pattern from socratic-agents v0.3.0.

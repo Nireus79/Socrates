@@ -750,40 +750,33 @@ Provide a helpful, direct answer."""
                     ])
 
                     if specs_count > 0:
-                        # CRITICAL FIX #8.1: Immediately persist specs to database
-                        # Don't wait for user confirmation - specs should never be lost
+                        # MONOLITHIC PATTERN: Use orchestrator to persist specs
+                        # Don't manipulate database directly - orchestrator owns spec persistence
+                        response_turn = None
                         try:
-                            # CRITICAL FIX #8.7: Calculate response turn for auditability
-                            response_turn = None
-                            try:
-                                conversation_history = getattr(project, "conversation_history", []) or []
-                                user_messages = [
-                                    msg for msg in conversation_history
-                                    if msg.get("type") == "user" or (isinstance(msg, dict) and msg.get("role") == "user")
-                                ]
-                                response_turn = len(user_messages) + 1  # Next response number
-                            except Exception:
-                                pass  # response_turn defaults to None if calculation fails
+                            conversation_history = getattr(project, "conversation_history", []) or []
+                            user_messages = [
+                                msg for msg in conversation_history
+                                if msg.get("type") == "user"
+                            ]
+                            response_turn = len(user_messages)
+                        except Exception:
+                            pass
 
-                            db.save_extracted_specs(
-                                project_id=project_id,
-                                specs=insights,
-                                extraction_method="direct_mode_extraction",
-                                confidence_score=0.8,  # Slightly lower for unconfirmed specs
-                                source_text=combined_text,
-                                response_turn=response_turn,  # ← NEW: Track conversation turn
-                                metadata={
-                                    "user_id": current_user,
-                                    "mode": "direct",
-                                    "requires_approval": True,  # Mark for potential later review
-                                    "specs_count": specs_count,
-                                    "response_turn": response_turn,  # ← Include in metadata too
-                                }
-                            )
-                            logger.info(f"✓ Automatically persisted {specs_count} extracted specs from direct mode (turn {response_turn})")
-                        except Exception as persist_err:
-                            logger.warning(f"Failed to persist direct mode specs: {persist_err}")
-                            # Continue - specs still shown to user even if persistence fails
+                        orchestrator.persist_extracted_specs(
+                            project_id=project_id,
+                            specs=insights,
+                            extraction_method="direct_mode_extraction",
+                            confidence_score=0.8,
+                            source_text=combined_text,
+                            response_turn=response_turn,
+                            metadata={
+                                "user_id": current_user,
+                                "mode": "direct",
+                                "requires_approval": True,
+                                "specs_count": specs_count,
+                            }
+                        )
 
                         # Always show debug message if specs found (not just in debug mode)
                         insights_message = f"\n\n📊 **Detected Specs**:\n"
