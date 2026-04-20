@@ -73,6 +73,45 @@ router = APIRouter(prefix="/projects", tags=["chat"])
 
 
 # ============================================================================
+# MONOLITHIC PATTERN HELPERS (conversation_history as single source of truth)
+# ============================================================================
+
+def get_last_unanswered_question_from_history(project) -> Optional[dict]:
+    """
+    Extract the last unanswered question from conversation_history.
+    Monolithic pattern: conversation_history is the single source of truth.
+    A question is "unanswered" if:
+    1. It's type="assistant" (a question from the system)
+    2. It's NOT followed by a type="user" response
+    """
+    conversation_history = getattr(project, "conversation_history", []) or []
+
+    # Work backwards through history to find last question without answer
+    for i in range(len(conversation_history) - 1, -1, -1):
+        msg = conversation_history[i]
+
+        if msg.get("type") == "assistant":
+            # Check if this question is followed by a user response
+            has_answer = False
+            for j in range(i + 1, len(conversation_history)):
+                if conversation_history[j].get("type") == "user":
+                    has_answer = True
+                    break
+
+            # If no user response after this question, it's unanswered
+            if not has_answer:
+                return {
+                    "content": msg.get("content", ""),
+                    "phase": msg.get("phase"),
+                    "timestamp": msg.get("timestamp"),
+                    "response_turn": msg.get("response_turn"),
+                    "index": i,  # Position in conversation history
+                }
+
+    return None
+
+
+# ============================================================================
 # Chat Sessions Endpoints (Phase 2)
 # ============================================================================
 
