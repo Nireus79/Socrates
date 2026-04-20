@@ -128,6 +128,107 @@ class User:
         """Dict-like 'in' operator support"""
         return hasattr(self, key)
 
+    def increment_question_usage(self) -> None:
+        """
+        Increment question usage counter and reset if needed.
+
+        CRITICAL FIX #2: Track usage for subscription enforcement.
+        Monthly reset ensures fair limits.
+        """
+        from datetime import datetime
+        from pathlib import Path
+
+        # Initialize if not present
+        if not hasattr(self, "questions_used_this_month"):
+            self.questions_used_this_month = 0
+        if not hasattr(self, "usage_reset_date"):
+            self.usage_reset_date = None
+
+        # Reset monthly usage if needed
+        self.reset_monthly_usage_if_needed()
+
+        # Increment counter
+        self.questions_used_this_month += 1
+
+    def reset_monthly_usage_if_needed(self) -> None:
+        """
+        Reset monthly usage if we've passed the reset date.
+
+        Ensures users get fresh monthly question limits.
+        """
+        from datetime import datetime
+
+        # Initialize if not present
+        if not hasattr(self, "usage_reset_date") or self.usage_reset_date is None:
+            now = datetime.now()
+            if now.month == 12:
+                self.usage_reset_date = datetime(now.year + 1, 1, 1)
+            else:
+                self.usage_reset_date = datetime(now.year, now.month + 1, 1)
+
+        # Check if reset date has passed
+        if isinstance(self.usage_reset_date, str):
+            reset_date = datetime.fromisoformat(self.usage_reset_date)
+        else:
+            reset_date = self.usage_reset_date
+
+        if datetime.now() >= reset_date:
+            # Reset usage counter
+            if not hasattr(self, "questions_used_this_month"):
+                self.questions_used_this_month = 0
+            else:
+                self.questions_used_this_month = 0
+
+            # Calculate next reset date
+            now = datetime.now()
+            if now.month == 12:
+                self.usage_reset_date = datetime(now.year + 1, 1, 1)
+            else:
+                self.usage_reset_date = datetime(now.year, now.month + 1, 1)
+
+    def check_question_limit(self, tier_limits: dict | None = None) -> tuple[bool, str]:
+        """
+        Check if user has exceeded their question limit for this month.
+
+        CRITICAL FIX #2: Enforce subscription limits.
+
+        Args:
+            tier_limits: Optional dict of limits by subscription tier.
+                Default: {"free": 5, "pro": 100, "enterprise": 1000}
+
+        Returns:
+            Tuple of (can_ask, error_message)
+        """
+        from datetime import datetime
+
+        # Default tier limits
+        if tier_limits is None:
+            tier_limits = {"free": 5, "pro": 100, "enterprise": 1000}
+
+        # Get subscription tier (default to free)
+        tier = getattr(self, "subscription_tier", "free").lower()
+
+        # Get current usage
+        if not hasattr(self, "questions_used_this_month"):
+            self.questions_used_this_month = 0
+
+        # Check if testing mode is enabled (bypass all limits)
+        if getattr(self, "testing_mode", False):
+            return True, "Testing mode: unlimited questions"
+
+        # Get limit for this tier
+        limit = tier_limits.get(tier, 5)  # Default to free tier limit
+
+        # Check if limit exceeded
+        if self.questions_used_this_month >= limit:
+            return False, f"Monthly question limit ({limit}) exceeded for {tier} tier"
+
+        # Check if subscription is active
+        if getattr(self, "subscription_status", "active") != "active":
+            return False, f"Subscription inactive ({getattr(self, 'subscription_status')})"
+
+        return True, "Question allowed"
+
 
 class ProjectContext:
     """Minimal ProjectContext model stub for API routers"""

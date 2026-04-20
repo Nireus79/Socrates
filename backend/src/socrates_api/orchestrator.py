@@ -3007,6 +3007,56 @@ class APIOrchestrator:
 
         return None
 
+    def _ensure_user_exists_and_check_limits(self, user_id: str) -> tuple[bool, str]:
+        """
+        CRITICAL FIX #2: Auto-create users and enforce subscription limits.
+
+        Args:
+            user_id: The user identifier to check/create
+
+        Returns:
+            Tuple of (can_proceed, error_message)
+        """
+        try:
+            # Load or create user
+            user = self.database.load_user(user_id)
+
+            if user is None:
+                # Auto-create new users (default to free tier)
+                from socrates_api.models_local import User
+
+                user = User(
+                    user_id=user_id,
+                    username=user_id,
+                    email=f"{user_id}@socrates.local",
+                    subscription_tier="free",  # New users start with free tier
+                    subscription_status="active",
+                    testing_mode=False,
+                )
+                self.database.save_user(user)
+                logger.info(f"Auto-created new user: {user_id} (free tier)")
+
+            # Check subscription limits (unless testing mode is enabled)
+            if not getattr(user, "testing_mode", False):
+                can_ask, error_msg = user.check_question_limit()
+                if not can_ask:
+                    logger.warning(f"User {user_id} hit limit: {error_msg}")
+                    return False, error_msg
+
+            # Increment usage counter (if not testing mode)
+            if not getattr(user, "testing_mode", False):
+                user.increment_question_usage()
+                self.database.save_user(user)
+                logger.debug(f"Incremented usage for {user_id}: {user.questions_used_this_month} questions")
+
+            return True, "User verified"
+
+        except Exception as e:
+            logger.warning(f"Error checking user limits: {e}")
+            # Don't fail the request if user checking fails
+            # Just log and continue
+            return True, f"User check failed (continuing): {e}"
+
     def _handle_socratic_counselor(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle Socratic counselor requests for generating questions"""
         action = request_data.get("action", "")
@@ -3017,6 +3067,16 @@ class APIOrchestrator:
             topic = request_data.get("topic", "")
             user_id = request_data.get("user_id", "")
             force_refresh = request_data.get("force_refresh", False)
+
+            # CRITICAL FIX #2: Check user subscription limits before generating question
+            if user_id:
+                can_proceed, limit_msg = self._ensure_user_exists_and_check_limits(user_id)
+                if not can_proceed:
+                    return {
+                        "status": "error",
+                        "message": f"Cannot generate question: {limit_msg}",
+                        "error_code": "SUBSCRIPTION_LIMIT_EXCEEDED",
+                    }
 
             logger.info(
                 f"_handle_socratic_counselor generate_question: topic={topic[:50] if topic else 'EMPTY'}"
