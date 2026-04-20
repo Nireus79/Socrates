@@ -1722,6 +1722,8 @@ class APIOrchestrator:
                 return self._handle_knowledge_manager(request_data)
             elif router_name == "nlu_analyzer":
                 return self._handle_nlu_analyzer(request_data)
+            elif router_name == "chat_manager":
+                return self._handle_chat_manager(request_data)
             else:
                 # Generic fallback for unknown routers - return sensible defaults
                 logger.warning(f"Unknown router: {router_name}, returning generic response")
@@ -2613,6 +2615,94 @@ class APIOrchestrator:
         except Exception as e:
             logger.warning(f"Failed to persist extracted specs: {e}")
             return False
+
+    def create_chat_session(self, project: Any, title: str = "") -> Dict[str, Any]:
+        """
+        Create a new chat session for a project.
+        MONOLITHIC PATTERN: Orchestrator manages all chat session creation.
+        """
+        try:
+            import uuid
+
+            # Initialize sessions storage if needed
+            if not hasattr(project, "chat_sessions"):
+                project.chat_sessions = {}
+
+            # Create new session
+            session_id = f"sess_{uuid.uuid4().hex[:12]}"
+            now = datetime.now(timezone.utc)
+
+            session = {
+                "session_id": session_id,
+                "title": title or f"Session {now.strftime('%Y-%m-%d %H:%M')}",
+                "created_at": now.isoformat(),
+                "updated_at": now.isoformat(),
+                "archived": False,
+                "messages": [],
+            }
+
+            # Add to project
+            project.chat_sessions[session_id] = session
+
+            # Persist
+            try:
+                from socrates_api.database import get_database
+                db = get_database()
+                db.save_project(project)
+                logger.debug(f"✓ Chat session created: {session_id}")
+            except Exception as e:
+                logger.warning(f"Failed to persist chat session: {e}")
+
+            return {
+                "status": "success",
+                "data": session,
+                "message": "Chat session created",
+            }
+        except Exception as e:
+            logger.error(f"Error creating chat session: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def get_chat_sessions(self, project: Any) -> Dict[str, Any]:
+        """
+        Get all chat sessions for a project.
+        MONOLITHIC PATTERN: Orchestrator manages session retrieval.
+        """
+        try:
+            sessions_dict = getattr(project, "chat_sessions", {})
+            sessions_list = list(sessions_dict.values())
+
+            return {
+                "status": "success",
+                "data": {
+                    "sessions": sessions_list,
+                    "count": len(sessions_list),
+                },
+                "message": f"Retrieved {len(sessions_list)} chat sessions",
+            }
+        except Exception as e:
+            logger.error(f"Error retrieving chat sessions: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def get_chat_session(self, project: Any, session_id: str) -> Dict[str, Any]:
+        """
+        Get a specific chat session.
+        MONOLITHIC PATTERN: Orchestrator manages session retrieval.
+        """
+        try:
+            sessions_dict = getattr(project, "chat_sessions", {})
+            session = sessions_dict.get(session_id)
+
+            if not session:
+                return {"status": "error", "message": "Chat session not found"}
+
+            return {
+                "status": "success",
+                "data": session,
+                "message": "Chat session retrieved",
+            }
+        except Exception as e:
+            logger.error(f"Error retrieving chat session: {e}")
+            return {"status": "error", "message": str(e)}
 
     def _process_answer_monolithic(self, project: Any, user_response: str, current_user: str) -> Dict[str, Any]:
         """
@@ -3654,6 +3744,42 @@ If a category has no items, use an empty array."""
                 }
         except Exception as e:
             logger.error(f"Error in NLU analyzer handler: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _handle_chat_manager(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle chat session management requests.
+
+        Actions:
+        - create_session: Create a new chat session
+        - get_sessions: Get all sessions for a project
+        - get_session: Get a specific session
+
+        MONOLITHIC PATTERN: Orchestrator manages all chat session operations.
+        """
+        action = request_data.get("action", "")
+        project = request_data.get("project")
+
+        if not project:
+            return {"status": "error", "message": "No project provided"}
+
+        try:
+            if action == "create_session":
+                title = request_data.get("title", "")
+                return self.create_chat_session(project, title)
+
+            elif action == "get_sessions":
+                return self.get_chat_sessions(project)
+
+            elif action == "get_session":
+                session_id = request_data.get("session_id", "")
+                return self.get_chat_session(project, session_id)
+
+            else:
+                return {"status": "error", "message": f"Unknown chat manager action: {action}"}
+
+        except Exception as e:
+            logger.error(f"Error in chat manager handler: {e}")
             return {"status": "error", "message": str(e)}
 
     def _extract_insights_fallback(

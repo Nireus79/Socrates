@@ -147,38 +147,38 @@ async def create_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Initialize sessions storage if needed
-        if not hasattr(project, "chat_sessions"):
-            project.chat_sessions = {}
+        # MONOLITHIC PATTERN: Use orchestrator to create session
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        # Create new session
-        session_id = f"sess_{uuid.uuid4().hex[:12]}"
-        now = datetime.now(timezone.utc)
-
-        session = {
-            "session_id": session_id,
-            "project_id": project_id,
-            "user_id": current_user,
-            "title": request.title or f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-            "created_at": now.isoformat(),
-            "updated_at": now.isoformat(),
-            "archived": False,
-            "messages": [],
-        }
-
-        project.chat_sessions[session_id] = session
-        db.save_project(project)
-
-        return ChatSessionResponse(
-            session_id=session_id,
-            project_id=project_id,
-            user_id=current_user,
-            title=session["title"],
-            created_at=now,
-            updated_at=now,
-            archived=False,
-            message_count=0,
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
+            "chat_manager",
+            {
+                "action": "create_session",
+                "project": project,
+                "title": request.title,
+                "user_id": current_user,
+            }
         )
+
+        if result.get("status") == "success":
+            session = result.get("data", {})
+            now = datetime.fromisoformat(session.get("created_at", datetime.now(timezone.utc).isoformat()))
+            return ChatSessionResponse(
+                session_id=session.get("session_id"),
+                project_id=project_id,
+                user_id=current_user,
+                title=session.get("title"),
+                created_at=now,
+                updated_at=now,
+                archived=session.get("archived", False),
+                message_count=0,
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=result.get("message", "Failed to create chat session"),
+            )
 
     except HTTPException:
         raise
@@ -219,32 +219,49 @@ async def list_chat_sessions(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Get sessions
-        sessions_dict = getattr(project, "chat_sessions", {})
-        sessions_list = []
+        # MONOLITHIC PATTERN: Use orchestrator to get sessions
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        for _session_id, session in sessions_dict.items():
-            created_at = datetime.fromisoformat(
-                session.get("created_at", datetime.now(timezone.utc).isoformat())
-            )
-            updated_at = datetime.fromisoformat(
-                session.get("updated_at", datetime.now(timezone.utc).isoformat())
-            )
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
+            "chat_manager",
+            {
+                "action": "get_sessions",
+                "project": project,
+            }
+        )
 
-            sessions_list.append(
-                ChatSessionResponse(
-                    session_id=session.get("session_id"),
-                    project_id=session.get("project_id"),
-                    user_id=session.get("user_id"),
-                    title=session.get("title"),
-                    created_at=created_at,
-                    updated_at=updated_at,
-                    archived=session.get("archived", False),
-                    message_count=len(session.get("messages", [])),
+        if result.get("status") == "success":
+            sessions_list = []
+            sessions_data = result.get("data", {}).get("sessions", [])
+
+            for session in sessions_data:
+                created_at = datetime.fromisoformat(
+                    session.get("created_at", datetime.now(timezone.utc).isoformat())
                 )
-            )
+                updated_at = datetime.fromisoformat(
+                    session.get("updated_at", datetime.now(timezone.utc).isoformat())
+                )
 
-        return ListChatSessionsResponse(sessions=sessions_list, total=len(sessions_list))
+                sessions_list.append(
+                    ChatSessionResponse(
+                        session_id=session.get("session_id"),
+                        project_id=project_id,
+                        user_id=current_user,
+                        title=session.get("title"),
+                        created_at=created_at,
+                        updated_at=updated_at,
+                        archived=session.get("archived", False),
+                        message_count=len(session.get("messages", [])),
+                    )
+                )
+
+            return ListChatSessionsResponse(sessions=sessions_list, total=len(sessions_list))
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=result.get("message", "Failed to retrieve chat sessions"),
+            )
 
     except HTTPException:
         raise
@@ -287,29 +304,43 @@ async def get_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Get session
-        sessions_dict = getattr(project, "chat_sessions", {})
-        session = sessions_dict.get(session_id)
-        if not session:
-            raise HTTPException(status_code=404, detail="Chat session not found")
+        # MONOLITHIC PATTERN: Use orchestrator to get session
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        created_at = datetime.fromisoformat(
-            session.get("created_at", datetime.now(timezone.utc).isoformat())
-        )
-        updated_at = datetime.fromisoformat(
-            session.get("updated_at", datetime.now(timezone.utc).isoformat())
+        async_orch = get_async_orchestrator()
+        result = await async_orch.process_request_async(
+            "chat_manager",
+            {
+                "action": "get_session",
+                "project": project,
+                "session_id": session_id,
+            }
         )
 
-        return ChatSessionResponse(
-            session_id=session.get("session_id"),
-            project_id=session.get("project_id"),
-            user_id=session.get("user_id"),
-            title=session.get("title"),
-            created_at=created_at,
-            updated_at=updated_at,
-            archived=session.get("archived", False),
-            message_count=len(session.get("messages", [])),
-        )
+        if result.get("status") == "success":
+            session = result.get("data", {})
+            created_at = datetime.fromisoformat(
+                session.get("created_at", datetime.now(timezone.utc).isoformat())
+            )
+            updated_at = datetime.fromisoformat(
+                session.get("updated_at", datetime.now(timezone.utc).isoformat())
+            )
+
+            return ChatSessionResponse(
+                session_id=session.get("session_id"),
+                project_id=project_id,
+                user_id=current_user,
+                title=session.get("title"),
+                created_at=created_at,
+                updated_at=updated_at,
+                archived=session.get("archived", False),
+                message_count=len(session.get("messages", [])),
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=result.get("message", "Chat session not found"),
+            )
 
     except HTTPException:
         raise
