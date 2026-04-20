@@ -3002,6 +3002,22 @@ class APIOrchestrator:
                                 "circuit_breaker": breaker.get_status(),
                             }
 
+                        # MONOLITHIC PATTERN: Store question in conversation_history
+                        # This is essential for next question generation to find "previously_asked_questions"
+                        if result.get("question"):
+                            if not hasattr(project, "conversation_history"):
+                                project.conversation_history = []
+                            project.conversation_history.append({
+                                "type": "assistant",
+                                "content": result.get("question"),
+                                "phase": phase,
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                "question_number": len([
+                                    m for m in project.conversation_history
+                                    if m.get("type") == "assistant"
+                                ]) + 1,
+                            })
+
                         # CACHE THE GENERATED QUESTION
                         if project_id and result.get("question"):
                             try:
@@ -3446,9 +3462,29 @@ class APIOrchestrator:
                             }
                         )
                         if next_question_result.get("status") == "success":
+                            next_question_text = next_question_result.get('data', {}).get('question', '')
                             logger.info(
                                 f"✓ Auto-generated follow-up question after answer: "
-                                f"{next_question_result.get('data', {}).get('question', '')[:50]}..."
+                                f"{next_question_text[:50]}..."
+                            )
+
+                            # CRITICAL: Add generated question to conversation_history (MONOLITHIC PATTERN)
+                            # This is essential so that next question generation can extract it as "previously_asked"
+                            if not hasattr(project, "conversation_history"):
+                                project.conversation_history = []
+                            project.conversation_history.append({
+                                "type": "assistant",
+                                "content": next_question_text,
+                                "phase": getattr(project, "phase", "discovery"),
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                "question_number": len([
+                                    m for m in project.conversation_history
+                                    if m.get("type") == "assistant"
+                                ]) + 1,
+                            })
+                            logger.debug(
+                                f"Added auto-generated question to conversation_history "
+                                f"(now {len(project.conversation_history)} total messages)"
                             )
                     except Exception as auto_gen_err:
                         logger.debug(f"Auto-generation of follow-up question failed (non-fatal): {auto_gen_err}")
