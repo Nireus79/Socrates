@@ -3526,6 +3526,42 @@ class APIOrchestrator:
                     elif extraction_status == "no_specs_found":
                         logger.info("No specs found in response - extraction may have failed")
 
+                # CRITICAL FIX #8.2: Merge extracted specs into project fields
+                # This ensures specs are available in project object, not just in metadata table
+                if extraction_status in ["success", "partial"] and any(extracted_specs.values()):
+                    try:
+                        # Merge specs into project fields
+                        if not hasattr(project, "goals"):
+                            project.goals = []
+                        if not hasattr(project, "requirements"):
+                            project.requirements = []
+                        if not hasattr(project, "tech_stack"):
+                            project.tech_stack = []
+                        if not hasattr(project, "constraints"):
+                            project.constraints = []
+
+                        # Add new specs without duplicates
+                        for goal in extracted_specs.get("goals", []):
+                            if goal and goal not in project.goals:
+                                project.goals.append(goal)
+                        for req in extracted_specs.get("requirements", []):
+                            if req and req not in project.requirements:
+                                project.requirements.append(req)
+                        for tech in extracted_specs.get("tech_stack", []):
+                            if tech and tech not in project.tech_stack:
+                                project.tech_stack.append(tech)
+                        for constraint in extracted_specs.get("constraints", []):
+                            if constraint and constraint not in project.constraints:
+                                project.constraints.append(constraint)
+
+                        logger.info(
+                            f"✓ Merged {sum(len(extracted_specs.get(k, [])) for k in ['goals', 'requirements', 'tech_stack', 'constraints'])} "
+                            f"specs into project fields"
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to merge specs into project fields: {e}")
+                        # Don't fail - specs still persisted in metadata table
+
                 # CRITICAL FIX #6: RECONNECT PIPELINE #4 - KNOWLEDGE BASE INTEGRATION
                 # Add extracted specs to vector database so they become project knowledge
                 # This enables project-specific question generation instead of generic questions

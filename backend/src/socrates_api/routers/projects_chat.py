@@ -689,6 +689,27 @@ Provide a helpful, direct answer."""
                     ])
 
                     if specs_count > 0:
+                        # CRITICAL FIX #8.1: Immediately persist specs to database
+                        # Don't wait for user confirmation - specs should never be lost
+                        try:
+                            db.save_extracted_specs(
+                                project_id=project_id,
+                                specs=insights,
+                                extraction_method="direct_mode_extraction",
+                                confidence_score=0.8,  # Slightly lower for unconfirmed specs
+                                source_text=combined_text,
+                                metadata={
+                                    "user_id": current_user,
+                                    "mode": "direct",
+                                    "requires_approval": True,  # Mark for potential later review
+                                    "specs_count": specs_count,
+                                }
+                            )
+                            logger.info(f"✓ Automatically persisted {specs_count} extracted specs from direct mode")
+                        except Exception as persist_err:
+                            logger.warning(f"Failed to persist direct mode specs: {persist_err}")
+                            # Continue - specs still shown to user even if persistence fails
+
                         # Always show debug message if specs found (not just in debug mode)
                         insights_message = f"\n\n📊 **Detected Specs**:\n"
                         if insights.get("goals"):
