@@ -3227,6 +3227,7 @@ class APIOrchestrator:
 
                         # Pass entire project object to agent for full context
                         counselor_request = {
+                            "action": "generate_question",  # CRITICAL: Must specify action for agent dispatch
                             "topic": topic,
                             "context": conversation_summary,
                             "phase": phase,
@@ -5162,7 +5163,11 @@ If a category has no items, use an empty array."""
                     logger.warning("socratic_counselor agent not available, using fallback")
                     return []
 
-                counselor_result = counselor.process({"topic": topic, "level": level})
+                counselor_result = counselor.process({
+                    "action": "generate_question",  # CRITICAL: Must specify action
+                    "topic": topic,
+                    "level": level
+                })
             except Exception as e:
                 logger.warning(f"Deduplication failed: {e}, falling back to main LLM generation")
                 return []
