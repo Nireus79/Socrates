@@ -3225,6 +3225,16 @@ class APIOrchestrator:
 
             logger.info(f"Processing response in Socratic mode: {response[:50]}...")
 
+            # Mark the last unanswered question as answered (CRITICAL - matches monolithic behavior)
+            # This ensures the question is marked answered even if conflicts are found
+            if hasattr(project, "pending_questions") and project.pending_questions:
+                for q in reversed(project.pending_questions):
+                    if q.get("status") == "unanswered":
+                        q["status"] = "answered"
+                        q["answered_at"] = datetime.now(timezone.utc).isoformat()
+                        logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
+                        break
+
             # CRITICAL FIX #4: Detect and auto-execute actionable intents from user input
             # This handles cases like "skip", "hint", "explain conflict", etc.
             detected_intent = self._detect_actionable_intent(response)
