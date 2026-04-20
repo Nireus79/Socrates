@@ -1724,6 +1724,8 @@ class APIOrchestrator:
                 return self._handle_nlu_analyzer(request_data)
             elif router_name == "chat_manager":
                 return self._handle_chat_manager(request_data)
+            elif router_name == "llm":
+                return self._handle_llm_call(request_data)
             else:
                 # Generic fallback for unknown routers - return sensible defaults
                 logger.warning(f"Unknown router: {router_name}, returning generic response")
@@ -3119,41 +3121,8 @@ Provide only the hint text, no additional commentary."""
                     except Exception as e:
                         logger.warning(f"SkillGeneratorAgent hint failed: {e}, using fallback")
 
-                # Fallback: Generate hint using LLM client
-                if self.llm_client:
-                    phase = (
-                        getattr(project, "phase", project.get("phase", "discovery"))
-                        if hasattr(project, "get")
-                        else project.get("phase", "discovery")
-                    )
-                    goals = (
-                        getattr(project, "goals", project.get("goals", ""))
-                        if hasattr(project, "get")
-                        else project.get("goals", "")
-                    )
-
-                    hint_prompt = f"""You are a Socratic tutor. A student is working on a project in the '{phase}' phase.
-
-Project Goals: {goals if goals else "Not yet defined"}
-
-Generate a brief, encouraging hint that guides the student to think about the next logical step. The hint should:
-1. Be specific to the current phase
-2. Encourage deeper thinking
-3. Be concise (2-3 sentences max)
-
-Provide only the hint text."""
-
-                    hint = self.llm_client.generate_response(hint_prompt)
-
-                    if hint:
-                        logger.info(f"Generated hint using LLM client: {hint[:50]}...")
-                        return {
-                            "status": "success",
-                            "data": {"hint": hint},
-                            "message": "Hint generated",
-                        }
-
-                # Final fallback: Generic phase-aware hint
+                # MONOLITHIC PATTERN: Skip direct LLM call, go straight to phase-aware fallback
+                # Use phase-aware hint instead of direct LLM client
                 phase = (
                     getattr(project, "phase", project.get("phase", "discovery"))
                     if hasattr(project, "get")
@@ -3782,6 +3751,40 @@ If a category has no items, use an empty array."""
             logger.error(f"Error in chat manager handler: {e}")
             return {"status": "error", "message": str(e)}
 
+    def _handle_llm_call(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle raw LLM calls for library integration and testing.
+
+        MONOLITHIC PATTERN: All LLM calls go through orchestrator handlers, not direct access.
+        """
+        prompt = request_data.get("prompt", "")
+        model = request_data.get("model", "claude-haiku-4-5-20251001")
+        provider = request_data.get("provider", "anthropic")
+        temperature = request_data.get("temperature", 0.7)
+
+        if not prompt:
+            return {"status": "error", "message": "Prompt is required"}
+
+        try:
+            if not self.llm_client:
+                return {"status": "error", "message": "LLM client not initialized"}
+
+            # Call LLM through orchestrator's client
+            response = self.llm_client.chat(prompt=prompt, temperature=temperature)
+
+            return {
+                "status": "success",
+                "data": {
+                    "response": str(response) if response else "",
+                    "model": getattr(self.llm_client, "model", model),
+                    "provider": provider,
+                },
+                "message": "LLM call completed",
+            }
+        except Exception as e:
+            logger.error(f"Error in LLM call handler: {e}")
+            return {"status": "error", "message": str(e)}
+
     def _extract_insights_fallback(
         self,
         response_text: str,
@@ -4127,25 +4130,9 @@ Respond in JSON format:
 
 If a category has no items, use an empty array."""
 
-                response = self.llm_client.generate_response(extraction_prompt)
-
-                # Parse JSON response
-                try:
-                    import json
-
-                    start_idx = response.find("{")
-                    end_idx = response.rfind("}") + 1
-                    if start_idx >= 0 and end_idx > start_idx:
-                        json_str = response[start_idx:end_idx]
-                        insights = json.loads(json_str)
-                        return {
-                            "goals": insights.get("goals", []),
-                            "requirements": insights.get("requirements", []),
-                            "tech_stack": insights.get("tech_stack", []),
-                            "constraints": insights.get("constraints", []),
-                        }
-                except (json.JSONDecodeError, ValueError) as e:
-                    logger.warning(f"Failed to parse extraction JSON: {e}")
+                # MONOLITHIC PATTERN: Skip direct LLM call fallback
+                # If extraction through agents fails, return empty specs rather than making direct LLM calls
+                logger.debug("LLM extraction fallback disabled - returning empty specs per monolithic pattern")
 
             return empty_specs
 

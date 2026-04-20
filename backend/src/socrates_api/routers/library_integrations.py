@@ -931,13 +931,16 @@ async def call_llm(
         LLM response with token usage and cost
     """
     try:
-
+        # MONOLITHIC PATTERN: Use orchestrator handler instead of direct call_llm
         async_orch = get_async_orchestrator()
-        result = async_orch.call_llm(
-            prompt=prompt,
-            model=model,
-            provider=provider,
-            temperature=temperature
+        result = await async_orch.process_request_async(
+            "llm",
+            {
+                "prompt": prompt,
+                "model": model,
+                "provider": provider,
+                "temperature": temperature,
+            }
         )
         return result or {"status": "failed", "message": "LLM call failed"}
     except Exception as e:
