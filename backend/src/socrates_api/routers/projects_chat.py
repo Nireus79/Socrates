@@ -674,16 +674,8 @@ async def send_message(
             # MONOLITHIC PATTERN: Direct mode uses orchestrator, not direct LLM calls
             logger.info("Processing message in DIRECT mode")
 
-            # Add user message to conversation_history before processing
-            if not hasattr(project, "conversation_history"):
-                project.conversation_history = []
-
-            project.conversation_history.append({
-                "type": "user",
-                "content": request.message,
-                "phase": getattr(project, "phase", "discovery"),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            # MONOLITHIC PATTERN: Use orchestrator to add user message to conversation_history
+            orchestrator.add_user_message_to_history(project, request.message)
 
             # Build context from project for the LLM
             context_parts = []
@@ -725,17 +717,8 @@ Provide a helpful, direct answer."""
 
             answer = direct_result.get("data", {}).get("answer", "")
 
-            # Store assistant response in conversation_history
-            project.conversation_history.append({
-                "type": "assistant",
-                "content": answer,
-                "phase": getattr(project, "phase", "discovery"),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "response_turn": len([
-                    m for m in project.conversation_history
-                    if m.get("type") == "assistant"
-                ]),
-            })
+            # MONOLITHIC PATTERN: Use orchestrator to add assistant response to conversation_history
+            orchestrator.add_assistant_message_to_history(project, answer)
 
             # Extract specs from combined message
             insights = None
@@ -820,9 +803,8 @@ Provide a helpful, direct answer."""
                 # Continue without insights if extraction fails
                 insights = None
 
-            # MONOLITHIC PATTERN: Save project with updated conversation_history
-            db.save_project(project)
-            logger.info(f"✓ Saved direct mode response to conversation_history for project {project_id}")
+            # MONOLITHIC PATTERN: Use orchestrator to persist conversation_history
+            orchestrator.persist_conversation_history(project)
 
             return APIResponse(
                 success=True,
@@ -849,17 +831,9 @@ Provide a helpful, direct answer."""
             # Socratic mode: Use the existing Socratic questioning approach
             logger.info("Processing message in SOCRATIC mode")
 
-            # MONOLITHIC PATTERN: Add user message to conversation_history before processing
+            # MONOLITHIC PATTERN: Use orchestrator to add user message to conversation_history
             # This ensures conversation context is preserved for answer processing workflow
-            if not hasattr(project, "conversation_history"):
-                project.conversation_history = []
-
-            project.conversation_history.append({
-                "type": "user",
-                "content": request.message,
-                "phase": getattr(project, "phase", "discovery"),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            orchestrator.add_user_message_to_history(project, request.message)
 
             # Call socratic_counselor to process response
             # Pre-extracted insights caching and async processing happen internally
@@ -879,9 +853,8 @@ Provide a helpful, direct answer."""
                     status_code=500, detail=result.get("message", "Failed to process message")
                 )
 
-            # Persist project changes to database (conversation history, maturity, etc.)
-            db.save_project(project)
-            # db.save_conversation_history removed - modular version uses db.save_project
+            # MONOLITHIC PATTERN: Use orchestrator to persist conversation history and project changes
+            orchestrator.persist_conversation_history(project)
 
             # Check if conflicts detected - if so, return them for frontend resolution
             if result.get("conflicts_pending") and result.get("conflicts"):

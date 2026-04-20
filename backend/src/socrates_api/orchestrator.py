@@ -2518,6 +2518,61 @@ class APIOrchestrator:
             # Just log and continue
             return True, f"User check failed (continuing): {e}"
 
+    # ================== CONVERSATION HISTORY MANAGEMENT (Monolithic Pattern) ==================
+
+    def add_user_message_to_history(self, project: Any, content: str) -> None:
+        """
+        Add user message to conversation_history.
+        MONOLITHIC PATTERN: Orchestrator manages conversation history, not endpoints.
+        """
+        if not hasattr(project, "conversation_history"):
+            project.conversation_history = []
+
+        project.conversation_history.append({
+            "type": "user",
+            "content": content,
+            "phase": getattr(project, "phase", "discovery"),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+        logger.debug(f"✓ Added user message to conversation history")
+
+    def add_assistant_message_to_history(self, project: Any, content: str) -> None:
+        """
+        Add assistant message to conversation_history with response_turn tracking.
+        MONOLITHIC PATTERN: Orchestrator manages conversation history, not endpoints.
+        """
+        if not hasattr(project, "conversation_history"):
+            project.conversation_history = []
+
+        response_turn = len([
+            m for m in project.conversation_history
+            if m.get("type") == "assistant"
+        ]) + 1
+
+        project.conversation_history.append({
+            "type": "assistant",
+            "content": content,
+            "phase": getattr(project, "phase", "discovery"),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "response_turn": response_turn,
+        })
+        logger.debug(f"✓ Added assistant message (turn {response_turn}) to conversation history")
+
+    def persist_conversation_history(self, project: Any) -> bool:
+        """
+        Persist conversation history to database.
+        MONOLITHIC PATTERN: Orchestrator manages all persistence, not endpoints.
+        """
+        try:
+            from socrates_api.database import get_database
+            db = get_database()
+            db.save_project(project)
+            logger.debug(f"✓ Conversation history persisted to database")
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to persist conversation history: {e}")
+            return False
+
     def _process_answer_monolithic(self, project: Any, user_response: str, current_user: str) -> Dict[str, Any]:
         """
         Process user answer using the monolithic pattern from socratic-agents v0.3.0.
