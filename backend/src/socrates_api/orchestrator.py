@@ -2717,55 +2717,127 @@ class APIOrchestrator:
 
         This ensures the system properly follows the monolithic Socrates pattern.
         """
+        project_id = getattr(project, "project_id", None) or project.get("project_id", "unknown")
+        phase = getattr(project, "phase", "discovery")
+
+        logger.info(f"[ANSWER_PROCESSING] START: Processing user response for project {project_id}, phase={phase}")
+        logger.info(f"[ANSWER_PROCESSING] User response: {user_response[:100]}...")
+
         try:
             # Get counselor and detector agents
             counselor = self._get_agent("socratic_counselor")
             detector = self._get_agent("conflict_detector")
 
+            if not counselor:
+                logger.error("[ANSWER_PROCESSING] MISSING: socratic_counselor agent not available")
+            if not detector:
+                logger.error("[ANSWER_PROCESSING] MISSING: conflict_detector agent not available")
+
             if not counselor or not detector:
-                logger.error("Cannot process answer: required agents not available")
+                logger.error("[ANSWER_PROCESSING] FAIL: Required agents (counselor, detector) not available")
                 return {
                     "status": "error",
                     "message": "Required agents (counselor, detector) not available"
                 }
 
             # Step 1: Extract specs from user response with confidence scores
+            logger.info(f"[ANSWER_PROCESSING] Step 1: Extracting specs from user response...")
             extraction_result = counselor.process({
                 "action": "extract_learning_objectives",
                 "text": user_response,
                 "context": project,
-                "phase": getattr(project, "phase", "discovery")
+                "phase": phase
             })
 
+            logger.debug(f"[ANSWER_PROCESSING] Extraction result keys: {extraction_result.keys()}")
             extracted_specs = extraction_result.get("learning_objectives", [])
             if not extracted_specs:
                 extracted_specs = []
 
+            logger.info(f"[ANSWER_PROCESSING] Step 1 Result: Extracted {len(extracted_specs)} total specs")
+            for i, spec in enumerate(extracted_specs[:3]):  # Log first 3 for debugging
+                if isinstance(spec, dict):
+                    logger.debug(f"[ANSWER_PROCESSING]   Spec {i+1}: {spec}")
+
             # Step 2: Filter by confidence >= 0.7
+            logger.info(f"[ANSWER_PROCESSING] Step 2: Filtering specs by confidence >= 0.7...")
             high_confidence_specs = [
                 spec for spec in extracted_specs
                 if isinstance(spec, dict) and spec.get("confidence", 0) >= 0.7
             ]
+            logger.info(f"[ANSWER_PROCESSING] Step 2 Result: {len(high_confidence_specs)} high-confidence specs (filtered from {len(extracted_specs)})")
+
+            # Get existing specs for comparison
+            existing_goals = getattr(project, "goals", []) or []
+            existing_requirements = getattr(project, "requirements", []) or []
+            existing_tech_stack = getattr(project, "tech_stack", []) or []
+            existing_constraints = getattr(project, "constraints", []) or []
+
+            logger.info(f"[ANSWER_PROCESSING] Existing specs in project:")
+            logger.info(f"[ANSWER_PROCESSING]   Goals: {len(existing_goals)} items - {existing_goals[:2]}")
+            logger.info(f"[ANSWER_PROCESSING]   Requirements: {len(existing_requirements)} items")
+            logger.info(f"[ANSWER_PROCESSING]   Tech Stack: {len(existing_tech_stack)} items")
+            logger.info(f"[ANSWER_PROCESSING]   Constraints: {len(existing_constraints)} items")
 
             # Step 3-4: Merge specs and detect conflicts
+            logger.info(f"[ANSWER_PROCESSING] Step 3-4: Merging specs and detecting conflicts...")
             conflicts = []
+            merged_count = 0
+
             if high_confidence_specs:
                 # Merge specs into project
                 for spec in high_confidence_specs:
-                    if "goal" in spec:
-                        if not hasattr(project, "goals"):
-                            project.goals = []
-                        project.goals.append(spec["goal"])
+                    if isinstance(spec, dict):
+                        if "goal" in spec:
+                            if not hasattr(project, "goals"):
+                                project.goals = []
+                            project.goals.append(spec["goal"])
+                            merged_count += 1
+                            logger.debug(f"[ANSWER_PROCESSING] Merged goal: {spec['goal']}")
+
+                        if "requirement" in spec:
+                            if not hasattr(project, "requirements"):
+                                project.requirements = []
+                            project.requirements.append(spec["requirement"])
+                            merged_count += 1
+                            logger.debug(f"[ANSWER_PROCESSING] Merged requirement: {spec['requirement']}")
+
+                        if "technology" in spec or "tech" in spec:
+                            if not hasattr(project, "tech_stack"):
+                                project.tech_stack = []
+                            tech = spec.get("technology") or spec.get("tech")
+                            project.tech_stack.append(tech)
+                            merged_count += 1
+                            logger.debug(f"[ANSWER_PROCESSING] Merged tech: {tech}")
+
+                        if "constraint" in spec:
+                            if not hasattr(project, "constraints"):
+                                project.constraints = []
+                            project.constraints.append(spec["constraint"])
+                            merged_count += 1
+                            logger.debug(f"[ANSWER_PROCESSING] Merged constraint: {spec['constraint']}")
+
+                logger.info(f"[ANSWER_PROCESSING] Step 3 Result: Merged {merged_count} new specs into project")
 
                 # Detect conflicts
+                logger.info(f"[ANSWER_PROCESSING] Step 4: Calling conflict detector...")
                 detector_result = detector.detect({
                     "specs": high_confidence_specs,
                     "existing_goals": getattr(project, "goals", []),
+                    "existing_requirements": getattr(project, "requirements", []),
+                    "existing_tech_stack": getattr(project, "tech_stack", []),
                     "context": project
                 })
-                conflicts = detector_result.get("conflicts", [])
+
+                conflicts = detector_result.get("conflicts", []) if detector_result else []
+                logger.info(f"[ANSWER_PROCESSING] Step 4 Result: Detected {len(conflicts)} conflict(s)")
+                for i, conflict in enumerate(conflicts[:3]):  # Log first 3 conflicts
+                    logger.debug(f"[ANSWER_PROCESSING]   Conflict {i+1}: {conflict}")
+            else:
+                logger.info(f"[ANSWER_PROCESSING] No high-confidence specs to merge or detect conflicts")
 
             # Step 5: Update maturity
+            logger.info(f"[ANSWER_PROCESSING] Step 5: Calculating maturity...")
             maturity_result = {}
             try:
                 from socratic_maturity import MaturityCalculator
@@ -2773,23 +2845,41 @@ class APIOrchestrator:
                 maturity_result = calc.calculate({
                     "specs": high_confidence_specs,
                     "project": project,
-                    "phase": getattr(project, "phase", "discovery")
+                    "phase": phase
                 })
+                logger.info(f"[ANSWER_PROCESSING] Step 5 Result: Maturity calculation successful")
             except Exception as e:
-                logger.warning(f"Maturity calculation failed: {e}")
+                logger.warning(f"[ANSWER_PROCESSING] Step 5 WARNING: Maturity calculation failed: {e}")
 
             # Step 6: Add to conversation history
+            logger.info(f"[ANSWER_PROCESSING] Step 6: Saving to conversation history...")
             self.add_user_message_to_history(project, user_response)
+            logger.debug(f"[ANSWER_PROCESSING] User message added to history")
+
             self.persist_conversation_history(project)
+            logger.debug(f"[ANSWER_PROCESSING] Conversation history persisted")
 
             # Save project
             try:
                 from socrates_api.database import get_database
                 db = get_database()
                 db.save_project(project)
-                logger.debug(f"✓ Project saved after answer processing")
+                logger.info(f"[ANSWER_PROCESSING] ✓ Project saved after answer processing")
             except Exception as e:
-                logger.warning(f"Failed to save project after answer: {e}")
+                logger.warning(f"[ANSWER_PROCESSING] WARNING: Failed to save project after answer: {e}")
+
+            # Prepare response with insights
+            insights = {}
+            if high_confidence_specs:
+                # Extract specs by category for insights
+                insights = {
+                    "goals": [s.get("goal") for s in high_confidence_specs if "goal" in s],
+                    "requirements": [s.get("requirement") for s in high_confidence_specs if "requirement" in s],
+                    "tech_stack": [s.get("technology") or s.get("tech") for s in high_confidence_specs if "technology" in s or "tech" in s],
+                    "constraints": [s.get("constraint") for s in high_confidence_specs if "constraint" in s],
+                }
+
+            logger.info(f"[ANSWER_PROCESSING] SUCCESS: Answer processing complete. Specs merged: {merged_count}, Conflicts: {len(conflicts)}")
 
             return {
                 "status": "success",
@@ -2798,11 +2888,13 @@ class APIOrchestrator:
                     "conflicts": conflicts,
                     "maturity": maturity_result,
                     "message": "Answer processed successfully"
-                }
+                },
+                "insights": insights,
+                "conflicts_pending": len(conflicts) > 0,
             }
 
         except Exception as e:
-            logger.error(f"Error in monolithic answer processing: {e}", exc_info=True)
+            logger.error(f"[ANSWER_PROCESSING] FAIL: Error in monolithic answer processing: {e}", exc_info=True)
             return {
                 "status": "error",
                 "message": f"Answer processing failed: {str(e)}"
@@ -2948,8 +3040,16 @@ class APIOrchestrator:
                         # Key: Filter by type="assistant" (questions, not responses) and phase (current phase only)
                         previously_asked_questions = []
                         conversation_history = getattr(project, "conversation_history", [])
+
+                        logger.info(f"[QUESTION_DEDUP] Analyzing conversation history for deduplication...")
+                        logger.info(f"[QUESTION_DEDUP] Total messages in history: {len(conversation_history)}")
+
                         if conversation_history:
-                            for msg in conversation_history:
+                            for i, msg in enumerate(conversation_history):
+                                msg_type = msg.get("type", "unknown")
+                                msg_phase = msg.get("phase", "unknown")
+                                msg_content = msg.get("content", "")[:50]
+
                                 # Only include messages that are:
                                 # 1. Questions (type="assistant")
                                 # 2. From the current phase
@@ -2960,13 +3060,27 @@ class APIOrchestrator:
                                     and msg.get("content")
                                 ):
                                     previously_asked_questions.append(msg.get("content"))
+                                    logger.debug(f"[QUESTION_DEDUP] Message {i}: Included (type={msg_type}, phase={msg_phase}, content={msg_content}...)")
+                                else:
+                                    reason = []
+                                    if msg.get("type") != "assistant":
+                                        reason.append(f"type={msg_type}!=assistant")
+                                    if msg.get("phase") != phase:
+                                        reason.append(f"phase={msg_phase}!={phase}")
+                                    if not msg.get("content"):
+                                        reason.append("no_content")
+                                    logger.debug(f"[QUESTION_DEDUP] Message {i}: Skipped ({', '.join(reason)})")
 
                             if previously_asked_questions:
                                 counselor_request["recently_asked"] = previously_asked_questions
-                                logger.debug(
-                                    f"Passing {len(previously_asked_questions)} previously asked questions "
+                                logger.info(
+                                    f"[QUESTION_DEDUP] ✓ Passing {len(previously_asked_questions)} previously asked questions "
                                     f"in {phase} phase for deduplication"
                                 )
+                                for i, q in enumerate(previously_asked_questions[:3]):
+                                    logger.debug(f"[QUESTION_DEDUP]   Q{i+1}: {q[:60]}...")
+                            else:
+                                logger.info(f"[QUESTION_DEDUP] No previously asked questions found for phase {phase}")
 
                         # Include other project context (for backward compatibility)
                         if hasattr(project, "requirements") and project.requirements:
@@ -2990,8 +3104,18 @@ class APIOrchestrator:
                         logger.debug(f"Conversation state BEFORE generation: {previous_conversation_count} total messages, {questions_asked_count} questions")
 
                         try:
+                            logger.info(f"[QUESTION_GEN] Calling counselor.process() with {len(previously_asked_questions)} previously asked questions...")
                             result = breaker.call(counselor.process, counselor_request)
-                            logger.info(f"counselor.process() returned question: {result.get('question', '')[:50] if result.get('question') else 'NO_QUESTION'}")
+
+                            generated_question = result.get('question', '')
+                            logger.info(f"[QUESTION_GEN] Counselor returned: {generated_question[:70] if generated_question else 'NO_QUESTION'}")
+
+                            # Check if question is a duplicate
+                            if generated_question and previously_asked_questions:
+                                if generated_question in previously_asked_questions:
+                                    logger.warning(f"[QUESTION_GEN] ⚠️ WARNING: Generated question is IDENTICAL to a previously asked question!")
+                                else:
+                                    logger.info(f"[QUESTION_GEN] ✓ Generated question is new (not in previously asked list)")
 
                             # MONOLITHIC PATTERN: Verify question was stored in conversation_history
                             updated_conversation_count = len(getattr(project, "conversation_history", []))
@@ -2999,7 +3123,13 @@ class APIOrchestrator:
                                 m for m in getattr(project, "conversation_history", [])
                                 if m.get("type") == "assistant"
                             ])
-                            logger.debug(f"Conversation state AFTER generation: {updated_conversation_count} total messages, {updated_questions_count} questions (added {updated_conversation_count - previous_conversation_count})")
+                            messages_added = updated_conversation_count - previous_conversation_count
+                            questions_added = updated_questions_count - questions_asked_count
+
+                            logger.info(f"[QUESTION_GEN] Conversation state AFTER generation: {updated_conversation_count} total, {updated_questions_count} questions (added {messages_added} msgs, {questions_added} questions)")
+
+                            if messages_added == 0 and questions_added == 0:
+                                logger.warning(f"[QUESTION_GEN] ⚠️ WARNING: Question NOT stored in conversation_history!")
                         except Exception as circuit_error:
                             logger.error(
                                 f"Circuit breaker {breaker.name} blocked or agent failed: {circuit_error}",
