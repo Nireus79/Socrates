@@ -81,7 +81,7 @@ dependencies = [
 
     # PyPI packages (reusable developer tools) - Latest verified versions
     "socratic-nexus>=0.3.4",             # Universal LLM client (multi-provider: Claude, GPT-4, Gemini, Ollama)
-    "socratic-core>=0.1.2",              # Core framework (config, events, exceptions)
+    "socratic-core>=0.1.4",              # Core framework (config, events, exceptions)
     "socratic-agents>=0.2.9",            # Multi-agent orchestration (core functionality)
 
     # External dependencies (kept for orchestrator functionality)
