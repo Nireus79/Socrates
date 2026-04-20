@@ -2942,6 +2942,18 @@ class APIOrchestrator:
                                     f"Passing {len(recently_asked)} recently asked questions to agent for deduplication"
                                 )
 
+                        # OPTION A FIX: Pass knowledge_base parameter to trigger KB-aware question generation
+                        # Even if minimal, this enables the agent's deduplication logic in _generate_kb_aware_question()
+                        # The library uses KB-aware generation for deduplication, but falls back to generic questions
+                        # if KB is not provided. By passing a minimal KB context, we ensure deduplication logic is used.
+                        counselor_request["knowledge_base"] = {
+                            "chunks": [],  # Empty chunks - we're not using KB for content, just to trigger mode
+                            "metadata": {
+                                "context": "conversation_context",
+                                "phase": phase,
+                            }
+                        }
+
                         # Include other project context (for backward compatibility)
                         if hasattr(project, "requirements") and project.requirements:
                             counselor_request["requirements"] = project.requirements
