@@ -2079,11 +2079,31 @@ class APIOrchestrator:
         }
 
     def _find_question(self, project: Any, question_id: str) -> Optional[Dict]:
-        """Find a question by ID in pending_questions."""
+        """Find a question by ID in both conversation_history and pending_questions.
+
+        Searches in:
+        1. conversation_history (monolithic pattern - primary)
+        2. pending_questions (hybrid pattern - fallback)
+        """
+        # First, try to find in conversation_history (primary source of truth for dialogue)
+        conversation_history = getattr(project, "conversation_history", []) or []
+        for msg in conversation_history:
+            if msg.get("type") == "assistant":
+                # Match by question_id if available, or by content if question_id is actually question text
+                if msg.get("question_id") == question_id or msg.get("content") == question_id:
+                    return {
+                        "question": msg.get("content", ""),
+                        "question_id": msg.get("question_id", question_id),
+                        "phase": msg.get("phase"),
+                        "timestamp": msg.get("timestamp"),
+                    }
+
+        # Fallback: search in pending_questions (for backward compatibility)
         pending_questions = getattr(project, "pending_questions", []) or []
         for q in pending_questions:
-            if q.get("id") == question_id:
+            if q.get("id") == question_id or q.get("question") == question_id:
                 return q
+
         return None
 
     def _get_existing_specs(self, project: Any) -> Dict[str, Any]:
@@ -2703,6 +2723,100 @@ class APIOrchestrator:
             logger.error(f"Error retrieving chat session: {e}")
             return {"status": "error", "message": str(e)}
 
+    def skip_question(self, project: Any, question_id: str) -> Dict[str, Any]:
+        """Skip a question for now (mark as skipped in pending_questions).
+
+        User can recover this question later with reopen_question.
+        """
+        logger.info(f"[QUESTION_LIFECYCLE] Skipping question: {question_id}")
+
+        if not hasattr(project, "pending_questions") or not project.pending_questions:
+            return {"status": "error", "message": "No pending questions"}
+
+        # Find and mark the question as skipped
+        for q in project.pending_questions:
+            if q.get("id") == question_id:
+                q["status"] = "skipped"
+                q["skipped_at"] = datetime.now(timezone.utc).isoformat()
+                logger.info(f"[QUESTION_LIFECYCLE] ✓ Marked question as skipped: {q.get('question', '')[:60]}...")
+
+                # Save project
+                try:
+                    from socrates_api.database import get_database
+                    db = get_database()
+                    db.save_project(project)
+                    logger.info(f"[QUESTION_LIFECYCLE] Project saved after skipping question")
+                except Exception as e:
+                    logger.warning(f"[QUESTION_LIFECYCLE] Failed to save project after skip: {e}")
+
+                return {
+                    "status": "success",
+                    "message": "Question marked as skipped"
+                }
+
+        return {"status": "error", "message": "Question not found"}
+
+    def reopen_question(self, project: Any, question_id: str) -> Dict[str, Any]:
+        """Reopen a skipped question (mark as unanswered again).
+
+        This allows user to answer a question they previously skipped.
+        """
+        logger.info(f"[QUESTION_LIFECYCLE] Reopening question: {question_id}")
+
+        if not hasattr(project, "pending_questions") or not project.pending_questions:
+            return {"status": "error", "message": "No pending questions"}
+
+        # Find and mark the question as unanswered
+        for q in project.pending_questions:
+            if q.get("id") == question_id:
+                q["status"] = "unanswered"
+                q["skipped_at"] = None  # Clear skip timestamp
+                logger.info(f"[QUESTION_LIFECYCLE] ✓ Reopened question: {q.get('question', '')[:60]}...")
+
+                # Save project
+                try:
+                    from socrates_api.database import get_database
+                    db = get_database()
+                    db.save_project(project)
+                    logger.info(f"[QUESTION_LIFECYCLE] Project saved after reopening question")
+                except Exception as e:
+                    logger.warning(f"[QUESTION_LIFECYCLE] Failed to save project after reopen: {e}")
+
+                return {
+                    "status": "success",
+                    "message": "Question reopened and ready to answer"
+                }
+
+        return {"status": "error", "message": "Question not found"}
+
+    def list_pending_questions(self, project: Any) -> Dict[str, Any]:
+        """List all unanswered and skipped questions that user can answer or recover."""
+        logger.info(f"[QUESTION_LIFECYCLE] Listing pending questions")
+
+        pending = []
+
+        if hasattr(project, "pending_questions") and project.pending_questions:
+            # Include both unanswered (to answer) and skipped (to recover)
+            for q in project.pending_questions:
+                if q.get("status") in ["unanswered", "skipped"]:
+                    pending.append({
+                        "id": q.get("id"),
+                        "question": q.get("question"),
+                        "phase": q.get("phase"),
+                        "status": q.get("status"),
+                        "created_at": q.get("created_at"),
+                        "skipped_at": q.get("skipped_at"),
+                    })
+
+        logger.info(f"[QUESTION_LIFECYCLE] Found {len(pending)} pending/skipped questions")
+        return {
+            "status": "success",
+            "pending_questions": pending,
+            "total": len(pending),
+            "unanswered": len([q for q in pending if q["status"] == "unanswered"]),
+            "skipped": len([q for q in pending if q["status"] == "skipped"]),
+        }
+
     def _process_answer_monolithic(self, project: Any, user_response: str, current_user: str) -> Dict[str, Any]:
         """
         Process user answer using the monolithic pattern from socratic-agents v0.3.0.
@@ -2743,29 +2857,48 @@ class APIOrchestrator:
             # Step 1: Extract specs from user response with confidence scores
             logger.info(f"[ANSWER_PROCESSING] Step 1: Extracting specs from user response...")
             extraction_result = counselor.process({
-                "action": "extract_learning_objectives",
+                "action": "extract_insights_only",
                 "text": user_response,
                 "context": project,
                 "phase": phase
             })
 
             logger.debug(f"[ANSWER_PROCESSING] Extraction result keys: {extraction_result.keys()}")
-            extracted_specs = extraction_result.get("learning_objectives", [])
-            if not extracted_specs:
-                extracted_specs = []
 
-            logger.info(f"[ANSWER_PROCESSING] Step 1 Result: Extracted {len(extracted_specs)} total specs")
-            for i, spec in enumerate(extracted_specs[:3]):  # Log first 3 for debugging
-                if isinstance(spec, dict):
-                    logger.debug(f"[ANSWER_PROCESSING]   Spec {i+1}: {spec}")
+            # Extract insights from result (follows monolithic pattern)
+            # Structure: {"status": "success", "insights": {"goals": [...], "requirements": [...], ...}}
+            insights_dict = extraction_result.get("insights", {})
+            if not insights_dict:
+                # Fallback for different response format
+                insights_dict = extraction_result.get("data", {}).get("insights", {})
+            if not insights_dict:
+                insights_dict = {}
 
-            # Step 2: Filter by confidence >= 0.7
+            # Count total specs extracted
+            total_specs = sum(len(v) if isinstance(v, list) else 0 for v in insights_dict.values())
+            logger.info(f"[ANSWER_PROCESSING] Step 1 Result: Extracted {total_specs} total specs")
+            logger.debug(f"[ANSWER_PROCESSING]   Spec categories: {list(insights_dict.keys())}")
+            for category in list(insights_dict.keys())[:3]:
+                if isinstance(insights_dict.get(category), list):
+                    logger.debug(f"[ANSWER_PROCESSING]     {category}: {len(insights_dict[category])} items")
+
+            # Step 2: Filter by confidence >= 0.7 (for specs that have confidence scores)
             logger.info(f"[ANSWER_PROCESSING] Step 2: Filtering specs by confidence >= 0.7...")
-            high_confidence_specs = [
-                spec for spec in extracted_specs
-                if isinstance(spec, dict) and spec.get("confidence", 0) >= 0.7
-            ]
-            logger.info(f"[ANSWER_PROCESSING] Step 2 Result: {len(high_confidence_specs)} high-confidence specs (filtered from {len(extracted_specs)})")
+            high_confidence_specs = {}
+            for category, spec_list in insights_dict.items():
+                if isinstance(spec_list, list):
+                    filtered = [
+                        s for s in spec_list
+                        if (isinstance(s, dict) and s.get("confidence_score", 1.0) >= 0.7)
+                        or isinstance(s, str)
+                    ]
+                    if filtered:
+                        high_confidence_specs[category] = filtered
+                else:
+                    high_confidence_specs[category] = spec_list
+
+            high_confidence_count = sum(len(v) if isinstance(v, list) else 0 for v in high_confidence_specs.values())
+            logger.info(f"[ANSWER_PROCESSING] Step 2 Result: {high_confidence_count} high-confidence specs (filtered from {total_specs})")
 
             # Get existing specs for comparison
             existing_goals = getattr(project, "goals", []) or []
@@ -2785,37 +2918,68 @@ class APIOrchestrator:
             merged_count = 0
 
             if high_confidence_specs:
-                # Merge specs into project
-                for spec in high_confidence_specs:
-                    if isinstance(spec, dict):
-                        if "goal" in spec:
-                            if not hasattr(project, "goals"):
-                                project.goals = []
-                            project.goals.append(spec["goal"])
-                            merged_count += 1
-                            logger.debug(f"[ANSWER_PROCESSING] Merged goal: {spec['goal']}")
+                # Merge specs into project using the insights dict structure
+                # Structure: {"goals": [...], "requirements": [...], "tech_stack": [...], "constraints": [...]}
 
-                        if "requirement" in spec:
-                            if not hasattr(project, "requirements"):
-                                project.requirements = []
-                            project.requirements.append(spec["requirement"])
+                # Merge goals
+                if "goals" in high_confidence_specs:
+                    if not hasattr(project, "goals"):
+                        project.goals = []
+                    goals_list = high_confidence_specs["goals"]
+                    if isinstance(goals_list, list):
+                        for goal in goals_list:
+                            if isinstance(goal, dict):
+                                goal_text = goal.get("goal") or goal.get("text") or str(goal)
+                            else:
+                                goal_text = str(goal)
+                            project.goals.append(goal_text)
                             merged_count += 1
-                            logger.debug(f"[ANSWER_PROCESSING] Merged requirement: {spec['requirement']}")
+                            logger.debug(f"[ANSWER_PROCESSING] Merged goal: {goal_text}")
 
-                        if "technology" in spec or "tech" in spec:
-                            if not hasattr(project, "tech_stack"):
-                                project.tech_stack = []
-                            tech = spec.get("technology") or spec.get("tech")
-                            project.tech_stack.append(tech)
+                # Merge requirements
+                if "requirements" in high_confidence_specs:
+                    if not hasattr(project, "requirements"):
+                        project.requirements = []
+                    reqs_list = high_confidence_specs["requirements"]
+                    if isinstance(reqs_list, list):
+                        for req in reqs_list:
+                            if isinstance(req, dict):
+                                req_text = req.get("requirement") or req.get("text") or str(req)
+                            else:
+                                req_text = str(req)
+                            project.requirements.append(req_text)
                             merged_count += 1
-                            logger.debug(f"[ANSWER_PROCESSING] Merged tech: {tech}")
+                            logger.debug(f"[ANSWER_PROCESSING] Merged requirement: {req_text}")
 
-                        if "constraint" in spec:
-                            if not hasattr(project, "constraints"):
-                                project.constraints = []
-                            project.constraints.append(spec["constraint"])
+                # Merge tech stack
+                if "tech_stack" in high_confidence_specs:
+                    if not hasattr(project, "tech_stack"):
+                        project.tech_stack = []
+                    tech_list = high_confidence_specs["tech_stack"]
+                    if isinstance(tech_list, list):
+                        for tech in tech_list:
+                            if isinstance(tech, dict):
+                                tech_text = tech.get("technology") or tech.get("tech") or tech.get("text") or str(tech)
+                            else:
+                                tech_text = str(tech)
+                            project.tech_stack.append(tech_text)
                             merged_count += 1
-                            logger.debug(f"[ANSWER_PROCESSING] Merged constraint: {spec['constraint']}")
+                            logger.debug(f"[ANSWER_PROCESSING] Merged tech: {tech_text}")
+
+                # Merge constraints
+                if "constraints" in high_confidence_specs:
+                    if not hasattr(project, "constraints"):
+                        project.constraints = []
+                    constr_list = high_confidence_specs["constraints"]
+                    if isinstance(constr_list, list):
+                        for constr in constr_list:
+                            if isinstance(constr, dict):
+                                constr_text = constr.get("constraint") or constr.get("text") or str(constr)
+                            else:
+                                constr_text = str(constr)
+                            project.constraints.append(constr_text)
+                            merged_count += 1
+                            logger.debug(f"[ANSWER_PROCESSING] Merged constraint: {constr_text}")
 
                 logger.info(f"[ANSWER_PROCESSING] Step 3 Result: Merged {merged_count} new specs into project")
 
@@ -2859,6 +3023,19 @@ class APIOrchestrator:
             self.persist_conversation_history(project)
             logger.debug(f"[ANSWER_PROCESSING] Conversation history persisted")
 
+            # Step 6b: Mark current question as answered in pending_questions (HYBRID APPROACH)
+            logger.info(f"[ANSWER_PROCESSING] Step 6b: Marking question as answered in pending_questions...")
+            if hasattr(project, "pending_questions") and project.pending_questions:
+                # Find the most recent unanswered question in current phase and mark it answered
+                for q in reversed(project.pending_questions):
+                    if q.get("phase") == phase and q.get("status") == "unanswered":
+                        q["status"] = "answered"
+                        q["answered_at"] = datetime.now(timezone.utc).isoformat()
+                        logger.info(f"[ANSWER_PROCESSING] Marked question as answered: {q.get('question', '')[:60]}...")
+                        break
+            else:
+                logger.debug(f"[ANSWER_PROCESSING] No pending_questions to update")
+
             # Save project
             try:
                 from socrates_api.database import get_database
@@ -2871,13 +3048,20 @@ class APIOrchestrator:
             # Prepare response with insights
             insights = {}
             if high_confidence_specs:
-                # Extract specs by category for insights
-                insights = {
-                    "goals": [s.get("goal") for s in high_confidence_specs if "goal" in s],
-                    "requirements": [s.get("requirement") for s in high_confidence_specs if "requirement" in s],
-                    "tech_stack": [s.get("technology") or s.get("tech") for s in high_confidence_specs if "technology" in s or "tech" in s],
-                    "constraints": [s.get("constraint") for s in high_confidence_specs if "constraint" in s],
-                }
+                # Insights dict already has the correct structure: {"goals": [...], "requirements": [...], ...}
+                # Just extract the text/values from each category
+                insights = {}
+                for category in ["goals", "requirements", "tech_stack", "constraints"]:
+                    if category in high_confidence_specs:
+                        spec_list = high_confidence_specs[category]
+                        if isinstance(spec_list, list):
+                            # Extract text from each spec (could be dict or string)
+                            insights[category] = [
+                                s.get("text") or s.get(category[:-1]) or str(s) if isinstance(s, dict) else str(s)
+                                for s in spec_list
+                            ]
+                        else:
+                            insights[category] = [spec_list] if spec_list else []
 
             logger.info(f"[ANSWER_PROCESSING] SUCCESS: Answer processing complete. Specs merged: {merged_count}, Conflicts: {len(conflicts)}")
 
@@ -2936,6 +3120,32 @@ class APIOrchestrator:
             # NOTE: Question cache disabled to match monolithic behavior
             # Monolithic version stores pending questions in project.pending_questions
             # and generates new questions on each request, not from cache
+
+            # HYBRID APPROACH: Check for existing unanswered questions before generating new one
+            # This prevents double question generation (unless force_refresh is set)
+            logger.info(f"[QUESTION_GEN] Checking for existing unanswered questions in {phase} phase...")
+            if not force_refresh and hasattr(project, "pending_questions") and project.pending_questions:
+                unanswered = [
+                    q for q in project.pending_questions
+                    if q.get("status") == "unanswered" and q.get("phase") == phase
+                ]
+                if unanswered:
+                    existing_question = unanswered[0]  # Return first unanswered
+                    logger.info(f"[QUESTION_GEN] ✓ Returning existing unanswered question (force_refresh={force_refresh})")
+                    logger.info(f"[QUESTION_GEN] Question: {existing_question.get('question', '')[:70]}...")
+                    return {
+                        "status": "success",
+                        "data": {
+                            "question": existing_question.get("question", ""),
+                            "question_id": existing_question.get("id", ""),
+                            "existing": True  # Signal: this is an existing question, not newly generated
+                        },
+                        "message": "Returning existing unanswered question"
+                    }
+                else:
+                    logger.info(f"[QUESTION_GEN] No unanswered questions in {phase} phase, will generate new one")
+            else:
+                logger.info(f"[QUESTION_GEN] Force refresh enabled or no pending_questions, will generate new question")
 
             # Try to use the actual agent if available
             counselor = self._get_agent("socratic_counselor")
@@ -3144,9 +3354,15 @@ class APIOrchestrator:
 
                         # MONOLITHIC PATTERN: Store question in conversation_history
                         # This is essential for next question generation to find "previously_asked_questions"
+                        question_id = None
                         if result.get("question"):
                             if not hasattr(project, "conversation_history"):
                                 project.conversation_history = []
+
+                            # Generate unique question ID for pending_questions
+                            import uuid
+                            question_id = f"q_{uuid.uuid4().hex[:8]}"
+
                             project.conversation_history.append({
                                 "type": "assistant",
                                 "content": result.get("question"),
@@ -3156,14 +3372,39 @@ class APIOrchestrator:
                                     m for m in project.conversation_history
                                     if m.get("type") == "assistant"
                                 ]) + 1,
+                                "question_id": question_id,  # Link to pending_questions
                             })
+
+                            # HYBRID APPROACH: Also store in pending_questions for unified tracking
+                            # This enables skip/reopen functionality and clear status tracking
+                            if not hasattr(project, "pending_questions"):
+                                project.pending_questions = []
+
+                            project.pending_questions.append({
+                                "id": question_id,
+                                "question": result.get("question"),
+                                "phase": phase,
+                                "status": "unanswered",  # CRITICAL: Explicit status
+                                "created_at": datetime.now(timezone.utc).isoformat(),
+                                "answered_at": None,
+                                "skipped_at": None,
+                            })
+
+                            logger.info(f"[QUESTION_GEN] ✓ Stored question in both conversation_history and pending_questions with status=unanswered")
+
+                        # SAVE PROJECT with updated conversation_history and pending_questions
+                        try:
+                            from socrates_api.database import get_database
+
+                            db = get_database()
+                            db.save_project(project)
+                            logger.info(f"[QUESTION_GEN] ✓ Project saved with updated question in both structures")
+                        except Exception as e:
+                            logger.warning(f"[QUESTION_GEN] WARNING: Failed to save project after question generation: {e}")
 
                         # CACHE THE GENERATED QUESTION
                         if project_id and result.get("question"):
                             try:
-                                from socrates_api.database import get_database
-
-                                db = get_database()
                                 db.save_cached_question(
                                     project_id=project_id,
                                     phase=phase,
