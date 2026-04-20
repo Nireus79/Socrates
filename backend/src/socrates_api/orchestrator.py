@@ -3074,7 +3074,7 @@ class APIOrchestrator:
                                 "content": result.get("question"),
                                 "phase": phase,
                                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "question_number": len([
+                                "response_turn": len([
                                     m for m in project.conversation_history
                                     if m.get("type") == "assistant"
                                 ]) + 1,

@@ -777,6 +777,18 @@ Provide a helpful, direct answer."""
             # Socratic mode: Use the existing Socratic questioning approach
             logger.info("Processing message in SOCRATIC mode")
 
+            # MONOLITHIC PATTERN: Add user message to conversation_history before processing
+            # This ensures conversation context is preserved for answer processing workflow
+            if not hasattr(project, "conversation_history"):
+                project.conversation_history = []
+
+            project.conversation_history.append({
+                "type": "user",
+                "content": request.message,
+                "phase": getattr(project, "phase", "discovery"),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+
             # Call socratic_counselor to process response
             # Pre-extracted insights caching and async processing happen internally
             result = orchestrator.process_request(
