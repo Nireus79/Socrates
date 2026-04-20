@@ -11,7 +11,7 @@ Provides REST endpoints for chat operations on projects including:
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -28,11 +28,6 @@ from socrates_api.models import (
     GetChatMessagesResponse,
     ListChatSessionsResponse,
 )
-from socrates_api.models_local import User, ProjectContext
-from socrates_api.services.query_cache import get_query_cache
-from socrates_api.utils.id_generator import IDGenerator
-
-# Import debug mode from system router (centralized)
 from socrates_api.routers.system import is_debug_mode
 
 
@@ -49,14 +44,13 @@ class SearchRequest(BaseModel):
 
 
 class ConflictResolution(BaseModel):
-    """Individual conflict resolution from orchestrator conflicts"""
+    """Individual conflict resolution"""
 
-    conflict_type: str  # "goals", "tech_stack", "requirements", "constraints"
-    old_value: Optional[str | list] = None  # Can be None, string, or list for compatibility
-    new_value: Optional[str | list] = None  # Can be None, string, or list for compatibility
+    conflict_type: str
+    old_value: str
+    new_value: str
     resolution: str  # "keep", "replace", "skip", or "manual"
-    manual_value: Optional[str | list] = None  # Optional resolved value for manual resolution
-    conflict_id: Optional[str] = None  # Unique ID from orchestrator for tracking
+    manual_value: Optional[str] = None
 
 
 class SaveExtractedSpecsRequest(BaseModel):
@@ -76,68 +70,6 @@ class ConflictResolutionRequest(BaseModel):
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
-
-
-# ============================================================================
-# PHASE 2.1: Helper Functions for UX Improvements
-# ============================================================================
-
-
-def _generate_conflict_explanation(conflicts: list) -> str:
-    """
-    Generate a user-friendly explanation of detected conflicts.
-
-    Converts technical conflict data into clear, actionable messages for users.
-
-    Args:
-        conflicts: List of conflict dicts from ConflictDetector
-
-    Returns:
-        User-friendly conflict explanation message
-    """
-    if not conflicts:
-        return "No conflicts detected."
-
-    # Build explanation with details about each conflict
-    lines = [
-        f"I detected {len(conflicts)} conflict(s) in your specifications that need resolution:\n"
-    ]
-
-    for i, conflict in enumerate(conflicts, 1):
-        conflict_type = conflict.get("conflict_type", "unknown").replace("_", " ").title()
-        severity = conflict.get("severity", "medium").upper()
-        description = conflict.get("description", "No details available")
-
-        lines.append(f"**{i}. {conflict_type}** [{severity}]")
-        lines.append(f"   {description}")
-
-        # Show old vs new values if available
-        old_value = conflict.get("old_value")
-        new_value = conflict.get("new_value")
-
-        if old_value and new_value:
-            old_str = (
-                str(old_value)
-                if not isinstance(old_value, list)
-                else ", ".join(str(v) for v in old_value)
-            )
-            new_str = (
-                str(new_value)
-                if not isinstance(new_value, list)
-                else ", ".join(str(v) for v in new_value)
-            )
-            lines.append(f"   Previous: {old_str}")
-            lines.append(f"   New: {new_str}")
-
-        lines.append("")
-
-    lines.append("Please review these conflicts and decide how to resolve them:")
-    lines.append("- **Keep** the original value")
-    lines.append("- **Replace** with the new value")
-    lines.append("- **Merge** both values")
-    lines.append("- **Custom** - manually edit the value")
-
-    return "\n".join(lines)
 
 
 # ============================================================================
@@ -215,7 +147,7 @@ async def create_chat_session(
         logger.error(f"Error creating chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to create chat session: {str(e)}",
         )
 
 
@@ -281,7 +213,7 @@ async def list_chat_sessions(
         logger.error(f"Error listing chat sessions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to list chat sessions: {str(e)}",
         )
 
 
@@ -346,7 +278,7 @@ async def get_chat_session(
         logger.error(f"Error getting chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to get chat session: {str(e)}",
         )
 
 
@@ -401,7 +333,7 @@ async def delete_chat_session(
         logger.error(f"Error deleting chat session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to delete chat session: {str(e)}",
         )
 
 
@@ -480,7 +412,7 @@ async def send_chat_message(
         logger.error(f"Error sending chat message: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to send chat message: {str(e)}",
         )
 
 
@@ -562,7 +494,7 @@ async def get_chat_messages(
         logger.error(f"Error getting chat messages: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to get chat messages: {str(e)}",
         )
 
 
@@ -575,31 +507,21 @@ async def get_chat_messages(
 async def get_question(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    force_refresh: bool = False,
 ):
     """
     Get the next Socratic question for a project.
 
-    MONOLITHIC PATTERN: Delegate to orchestrator.process_request which routes to socratic_counselor agent.
-
-    Flow:
-    1. Load project (validate exists)
-    2. Call orchestrator.process_request("socratic_counselor", {"action": "generate_question"})
-    3. Agent handles: pending check, context gathering, generation, storage
-    4. Return question to frontend
-
     Args:
         project_id: Project ID
         current_user: Authenticated user
-        force_refresh: Force new generation (skip pending)
 
     Returns:
-        APIResponse with single question
+        SuccessResponse with question
     """
     try:
-        from socrates_api.async_orchestrator import get_async_orchestrator
+        from socrates_api.main import get_orchestrator
 
-        logger.info(f"Getting question for project {project_id}, user {current_user}")
+        logger.info(f"Getting question for project {project_id}")
 
         # Load project
         db = get_database()
@@ -607,107 +529,36 @@ async def get_question(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Validate project has context
-        if not project.description and not getattr(project, "context", None):
-            raise HTTPException(
-                status_code=400,
-                detail="Project must have a description or context. Please edit your project.",
-            )
-
-        logger.debug(f"Project loaded: id={project_id}, phase={project.phase}")
-
-        # Initialize async orchestrator
-        try:
-            async_orch = get_async_orchestrator()
-            logger.debug("Async orchestrator initialized")
-        except Exception as e:
-            logger.error(f"Failed to initialize orchestrator: {e}")
-            raise HTTPException(
-                status_code=500, detail=f"Failed to initialize orchestrator: {str(e)}"
-            )
-
-        # MONOLITHIC PATTERN: Single request to agent via orchestrator
-        # Agent (socratic_counselor) handles ALL orchestration internally:
-        # - Checking for pending unanswered questions
-        # - Gathering full context (KB, documents, previous questions, role)
-        # - Generating single dynamic question
-        # - Storing in pending_questions
-        # - Building context and wrapping response
-        logger.info(f"Requesting question generation for project {project_id}")
-
-        # Extract topic from project description
-        topic = project.description if hasattr(project, "description") else project.get("description", "")
-
-        result = await async_orch.process_request_async(
+        # Call socratic_counselor to generate question
+        # Question caching happens internally to avoid redundant Claude calls
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
             "socratic_counselor",
             {
                 "action": "generate_question",
                 "project": project,
-                "topic": topic,
+                "current_user": current_user,
                 "user_id": current_user,
-                "force_refresh": force_refresh,
-                "db": db,
-            }
+                "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
+            },
         )
 
         if result.get("status") != "success":
-            logger.error(f"Question generation failed: {result.get('message', 'Unknown error')}")
             raise HTTPException(
                 status_code=500, detail=result.get("message", "Failed to generate question")
             )
 
-        # Check for nested error status in agent response
-        data = result.get("data", {})
-        if data.get("status") == "error":
-            error_msg = data.get("message", "Unknown error")
-            logger.error(f"Agent returned error: {error_msg}")
-            raise HTTPException(status_code=500, detail=error_msg)
-
-        # Extract question from agent response
-        # Handle both flat and nested response structures
-        question_text = (
-            result.get("question", "")  # Flat structure: agent returns {"question": "..."}
-            or data.get("question", "")  # Nested structure: agent returns {"data": {"question": "..."}}
-        )
-
-        if isinstance(question_text, dict):
-            # If question_text is a dict, extract the actual text
-            question_text = question_text.get("question", "")
-
-        question_id = (
-            result.get("question_id", "")
-            or data.get("question_id", "")
-            or (data.get("question", {}).get("id", "") if isinstance(data.get("question"), dict) else "")
-        )
-
-        if not question_text:
-            logger.error(f"Agent returned invalid question: {result}")
-            raise HTTPException(status_code=500, detail="Generated question is invalid")
-
-        # Generate question ID if not provided by agent
-        if not question_id:
-            question_id = IDGenerator.question()
-            logger.debug(f"Generated question ID: {question_id}")
-
-        logger.info(f"Generated question {question_id}: '{question_text[:80]}...'")
-
-        # Update project current question tracking (agent should do this, but ensure consistency)
-        project.current_question_id = question_id
-        project.current_question_text = question_text
+        # Persist any project state changes (including conversation history)
         db.save_project(project)
+        # db.save_conversation_history removed - modular version uses db.save_project
 
-        # Agent response already includes context, debug logs, and wrapping
         return APIResponse(
             success=True,
             status="success",
             data={
-                "question": question_text,
-                "question_id": question_id,
+                "question": result.get("question", ""),
                 "phase": project.phase,
-                "context": result.get("data", {}).get("context", {}),
-                **result.get("data", {}),  # Include all agent response data
             },
-            debug_logs=result.get("debug_logs", []),
         )
 
     except HTTPException:
@@ -716,7 +567,7 @@ async def get_question(
         logger.error(f"Error getting question: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to get question: {str(e)}",
         )
 
 
@@ -744,7 +595,7 @@ async def send_message(
         SuccessResponse with assistant's response
     """
     try:
-        from socrates_api.async_orchestrator import get_async_orchestrator
+        from socrates_api.main import get_orchestrator
 
         logger.info(f"Sending message to project {project_id}: {request.message[:50]}...")
 
@@ -757,20 +608,14 @@ async def send_message(
         # Get user's auth method
         user_auth_method = "api_key"
         user_obj = db.load_user(current_user)
-        if user_obj and hasattr(user_obj, "claude_auth_method"):
+        if user_obj and hasattr(user_obj, 'claude_auth_method'):
             user_auth_method = user_obj.claude_auth_method or "api_key"
 
         # Determine chat mode: prioritize request.mode if provided, else use project setting
         # This allows dynamic mode switching without updating the project
-        chat_mode = (
-            request.mode
-            if hasattr(request, "mode") and request.mode
-            else getattr(project, "chat_mode", "socratic")
-        )
-        async_orch = get_async_orchestrator()
-        logger.info(
-            f"Chat mode resolved to: {chat_mode} (request.mode: {getattr(request, 'mode', 'not provided')}, project.chat_mode: {getattr(project, 'chat_mode', 'not set')})"
-        )
+        chat_mode = request.mode if hasattr(request, 'mode') and request.mode else getattr(project, "chat_mode", "socratic")
+        orchestrator = get_orchestrator()
+        logger.info(f"Chat mode resolved to: {chat_mode} (request.mode: {getattr(request, 'mode', 'not provided')}, project.chat_mode: {getattr(project, 'chat_mode', 'not set')})")
 
         if chat_mode == "direct":
             # Direct mode: Generate a direct answer without Socratic questioning
@@ -797,51 +642,23 @@ User Question: {request.message}
 
 Provide a helpful, direct answer."""
 
-            # Use orchestrator to generate direct answer
-            result = await async_orch.process_request_async(
-                "direct_chat",
-                {
-                    "action": "generate_answer",
-                    "prompt": prompt,
-                    "user_id": current_user,
-                    "project": project,
-                },
+            answer = orchestrator.claude_client.generate_response(
+                prompt, user_auth_method=user_auth_method, user_id=current_user
             )
-
-            if result.get("status") != "success":
-                raise HTTPException(
-                    status_code=500, detail=result.get("message", "Failed to generate answer")
-                )
-
-            answer = result.get("data", {}).get("answer", "")
-
-            if not answer:
-                raise HTTPException(status_code=500, detail="Generated empty answer")
 
             # Save to conversation history
-            project.conversation_history.append(
-                {
-                    "role": "user",
-                    "content": request.message,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                }
-            )
-            project.conversation_history.append(
-                {
-                    "role": "assistant",
-                    "content": answer,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                }
-            )
+            project.conversation_history.append({
+                "role": "user",
+                "content": request.message,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            project.conversation_history.append({
+                "role": "assistant",
+                "content": answer,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
             db.save_project(project)
-
-            # CRITICAL FIX #2: Invalidate relevant caches after conversation update
-            cache = get_query_cache()
-            cache.invalidate(f"metrics:{project_id}")
-            cache.invalidate(f"readiness:{project_id}")
-            cache.invalidate(f"conversation_history:{project_id}")
-            cache.invalidate(f"project_detail:{project_id}")
-            logger.debug(f"Invalidated caches for project {project_id} after conversation update")
+            # db.save_conversation_history removed - modular version uses db.save_project
 
             # Extract specs from both user message and assistant answer
             insights = None
@@ -850,38 +667,22 @@ Provide a helpful, direct answer."""
                 # Extract potential specs from both the user's question and the assistant's answer
                 # Combine both for more comprehensive spec extraction
                 combined_text = f"User Input:\n{request.message}\n\nAssistant Answer:\n{answer}"
-
-                # Use orchestrator to extract insights
-                insights_result = await async_orch.process_request_async(
-                    "direct_chat",
-                    {
-                        "action": "extract_insights",
-                        "text": combined_text,
-                        "project": project,
-                        "user_id": current_user,
-                    },
+                insights = orchestrator.claude_client.extract_insights(
+                    combined_text,
+                    project,  # Required parameter: ProjectContext
+                    user_auth_method=user_auth_method,
+                    user_id=current_user
                 )
-
-                if insights_result.get("status") == "success":
-                    insights = insights_result.get("data", {})
-                    logger.debug(
-                        f"Extracted insights from user input and assistant answer: {insights}"
-                    )
-                else:
-                    logger.debug(
-                        f"Insight extraction returned non-success status: {insights_result.get('message')}"
-                    )
+                logger.debug(f"Extracted insights from user input and assistant answer: {insights}")
 
                 # If there are any extracted specs, format debug message and prepare for modal
                 if insights:
-                    specs_count = sum(
-                        [
-                            len(insights.get("goals", [])),
-                            len(insights.get("requirements", [])),
-                            len(insights.get("tech_stack", [])),
-                            len(insights.get("constraints", [])),
-                        ]
-                    )
+                    specs_count = sum([
+                        len(insights.get("goals", [])),
+                        len(insights.get("requirements", [])),
+                        len(insights.get("tech_stack", [])),
+                        len(insights.get("constraints", [])),
+                    ])
 
                     if specs_count > 0:
                         # Always show debug message if specs found (not just in debug mode)
@@ -889,200 +690,55 @@ Provide a helpful, direct answer."""
                         if insights.get("goals"):
                             insights_message += f"- Goals: {', '.join(insights['goals'])}\n"
                         if insights.get("requirements"):
-                            insights_message += (
-                                f"- Requirements: {', '.join(insights['requirements'])}\n"
-                            )
+                            insights_message += f"- Requirements: {', '.join(insights['requirements'])}\n"
                         if insights.get("tech_stack"):
-                            insights_message += (
-                                f"- Tech Stack: {', '.join(insights['tech_stack'])}\n"
-                            )
+                            insights_message += f"- Tech Stack: {', '.join(insights['tech_stack'])}\n"
                         if insights.get("constraints"):
-                            insights_message += (
-                                f"- Constraints: {', '.join(insights['constraints'])}\n"
-                            )
-                        insights_message += (
-                            "\n*Would you like to save these specs to your project?*"
-                        )
-                        logger.info(
-                            f"Detected {specs_count} specs in direct mode dialogue - modal will be shown to user"
-                        )
+                            insights_message += f"- Constraints: {', '.join(insights['constraints'])}\n"
+                        insights_message += "\n*Would you like to save these specs to your project?*"
+                        logger.info(f"Detected {specs_count} specs in direct mode dialogue - modal will be shown to user")
 
             except Exception as e:
-                logger.debug("Operation failed")
                 logger.warning(f"Failed to extract insights in direct mode: {str(e)}")
                 # Continue without insights if extraction fails
                 insights = None
 
-            # CRITICAL FIX #10: AUTO-SAVE EXTRACTED SPECS (Direct Mode)
-            # Now automatically save specs to project instead of requiring manual confirmation
-            specs_saved = False
-            if insights and any(insights.values()):
-                try:
-                    from socrates_api.async_orchestrator import get_async_orchestrator
-                    async_orch = get_async_orchestrator()
-
-                    # Auto-save specs to project
-                    # DEPRECATED: Agent handles auto-saving internally
-
-                    if specs_saved:
-                        logger.info(
-                            f"✓ Auto-saved {sum(len(v) if isinstance(v, list) else 1 for v in insights.values() if v)} specs to project {project_id}"
-                        )
-
-                        # Update maturity score after saving specs
-                        try:
-                            maturity_result = await async_orch.process_request_async(
-                                "quality_controller",
-                                {
-                                    "action": "update_after_response",
-                                    "project": project,
-                                    "insights": insights,
-                                    "current_user": current_user,
-                                },
-                            )
-                            if maturity_result.get("status") == "success":
-                                logger.info(
-                                    f"Maturity updated after auto-save: {maturity_result.get('maturity', {}).get('overall_score', 0.0):.1f}%"
-                                )
-                                # Re-save project with updated maturity
-                                db.save_project(project)
-                        except Exception as maturity_err:
-                            logger.warning(
-                                f"Failed to update maturity after auto-save (non-critical): {maturity_err}"
-                            )
-
-                except Exception as save_err:
-                    logger.error(f"Failed to auto-save specs (non-critical): {save_err}", exc_info=True)
-                    # Don't fail the chat response if auto-save fails
-
-            # Prepare response data
-            specs_count = sum(
-                [
-                    len(insights.get("goals", [])) if insights else 0,
-                    len(insights.get("requirements", [])) if insights else 0,
-                    len(insights.get("tech_stack", [])) if insights else 0,
-                    len(insights.get("constraints", [])) if insights else 0,
-                ]
-            )
-
-            response_data = {
-                "message": {
-                    "id": f"msg_{id(answer)}",
-                    "role": "assistant",
-                    "content": answer + (insights_message if insights_message else ""),
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                },
-                "mode": "direct",
-                # Include extracted specs for transparency
-                "extracted_specs": insights,
-                "extracted_specs_count": specs_count,
-                "specs_auto_saved": specs_saved,  # CRITICAL FIX #10: Indicate if specs were auto-saved
-            }
-
-            # Add debug info if debug mode is enabled
-            if is_debug_mode(current_user):
-                logger.debug("Debug mode enabled - returning debug annotations to frontend")
-                response_data["debugInfo"] = {
-                    "specs_extracted": specs_count > 0,
-                    "extracted_specs": insights,
-                    "extracted_specs_count": specs_count,
-                    "inline_annotations": (
-                        {
-                            "goals": insights.get("goals", []) if insights else [],
-                            "requirements": insights.get("requirements", []) if insights else [],
-                            "tech_stack": insights.get("tech_stack", []) if insights else [],
-                            "constraints": insights.get("constraints", []) if insights else [],
-                        }
-                        if specs_count > 0
-                        else {}
-                    ),
-                }
-                logger.debug(f"Direct mode debug info: {specs_count} specs extracted")
-
-            # CRITICAL FIX #8: RECONNECT PIPELINE #5 - LEARNING ANALYTICS (Direct Mode)
-            # Emit learning events for direct mode interactions
-            try:
-                from socrates_api.routers.events import record_event
-
-                record_event(
-                    "question_answered",
-                    {
-                        "project_id": project_id,
-                        "phase": project.phase,
-                        "response_length": len(request.message),
-                        "specs_extracted": specs_count,
-                        "mode": "direct",
-                    },
-                    user_id=current_user,
-                )
-
-                if specs_count > 0:
-                    record_event(
-                        "response_quality_assessed",
-                        {
-                            "project_id": project_id,
-                            "specs_extracted": specs_count,
-                            "quality_indicator": "specs_extraction_success",
-                            "phase": project.phase,
-                            "mode": "direct",
-                        },
-                        user_id=current_user,
-                    )
-
-                logger.debug(f"✓ Learning events emitted for direct mode ({specs_count} specs)")
-
-            except Exception as learning_err:
-                logger.debug(f"Failed to emit learning events (non-critical): {learning_err}")
-
             return APIResponse(
                 success=True,
                 status="success",
-                data=response_data,
+                data={
+                    "message": {
+                        "id": f"msg_{id(answer)}",
+                        "role": "assistant",
+                        "content": answer + (insights_message if insights_message else ""),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                    "mode": "direct",
+                    # Include extracted specs for user confirmation (not auto-saved)
+                    "extracted_specs": insights,
+                    "extracted_specs_count": sum([
+                        len(insights.get("goals", [])) if insights else 0,
+                        len(insights.get("requirements", [])) if insights else 0,
+                        len(insights.get("tech_stack", [])) if insights else 0,
+                        len(insights.get("constraints", [])) if insights else 0,
+                    ]),
+                },
             )
         else:
-            # Socratic mode: MONOLITHIC PATTERN - delegate to agent
+            # Socratic mode: Use the existing Socratic questioning approach
             logger.info("Processing message in SOCRATIC mode")
 
-            # Get current question ID from request or project context
-            question_id = getattr(request, "question_id", None) or getattr(
-                project, "current_question_id", None
-            )
-
-            if not question_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail="No active question. Please request a new question first.",
-                )
-
-            # MONOLITHIC PATTERN: Single orchestrator call routes to socratic_counselor agent
-            # Agent (socratic_counselor) handles ALL orchestration internally:
-            # - Adding to conversation history
-            # - Extracting specifications
-            # - Marking question as answered (BEFORE conflict detection - CRITICAL!)
-            # - Detecting conflicts (non-blocking)
-            # - Updating phase maturity
-            # - Tracking question effectiveness
-            # - Checking phase completion
-            # - Generating NEXT question (CRITICAL - this fixes the repetition issue!)
-            # - Saving to database
-            logger.info(f"Processing answer for question {question_id} via agent")
-
-            try:
-                async_orch = get_async_orchestrator()
-            except Exception as e:
-                logger.error(f"Failed to get orchestrator: {e}")
-                raise HTTPException(status_code=500, detail="Orchestrator initialization failed")
-
-            result = await async_orch.process_request_async(
+            # Call socratic_counselor to process response
+            # Pre-extracted insights caching and async processing happen internally
+            result = orchestrator.process_request(
                 "socratic_counselor",
                 {
                     "action": "process_response",
                     "project": project,
-                    "user_id": current_user,
                     "response": request.message,
-                    "question_id": question_id,
-                    "db": db,
-                }
+                    "current_user": current_user,
+                    "is_api_mode": True,  # Indicate API mode to handle conflicts differently
+                },
             )
 
             if result.get("status") != "success":
@@ -1090,157 +746,13 @@ Provide a helpful, direct answer."""
                     status_code=500, detail=result.get("message", "Failed to process message")
                 )
 
-            # Agent already saved project to database
-            # Reload to ensure consistency
-            project = db.load_project(project_id)
-
-            # Agent handles all orchestration:
-            # - Adding to conversation_history
-            # - Extracting specs
-            # - Marking question as answered
-            # - Detecting conflicts
-            # - Updating phase maturity
-            # - Generating next question
-
-            # Invalidate caches after conversation update
-            cache = get_query_cache()
-            cache.invalidate(f"metrics:{project_id}")
-            cache.invalidate(f"readiness:{project_id}")
-            cache.invalidate(f"conversation_history:{project_id}")
-            cache.invalidate(f"project_detail:{project_id}")
-            logger.debug(f"Invalidated caches for project {project_id} after socratic response")
-
-            # Extract data from new orchestration method response
-            extracted_specs = result.get("specs_extracted", {})
-            conflicts = result.get("conflicts", [])
-            phase_maturity = result.get("phase_maturity", 0)
-            phase_complete = result.get("phase_complete", False)
-            feedback = result.get("feedback", "")
-
-            # CRITICAL FIX #4: Emit debug logs in real-time when debug mode enabled
-            if is_debug_mode(current_user):
-                try:
-                    from socrates_api.websocket.connection_manager import get_connection_manager
-                    from socrates_api.models_local import EventType
-                    import json
-
-                    conn_manager = get_connection_manager()
-
-                    # Emit background processing logs
-                    debug_logs = [
-                        {
-                            "level": "info",
-                            "message": f"[Background] Extracting specifications from response...",
-                        },
-                        {
-                            "level": "debug",
-                            "message": f"[Background] Found {len(extracted_specs.get('goals', []))} goal(s)",
-                        },
-                        {
-                            "level": "debug",
-                            "message": f"[Background] Found {len(extracted_specs.get('requirements', []))} requirement(s)",
-                        },
-                        {
-                            "level": "debug",
-                            "message": f"[Background] Found {len(extracted_specs.get('tech_stack', []))} tech stack item(s)",
-                        },
-                        {
-                            "level": "debug",
-                            "message": f"[Background] Found {len(extracted_specs.get('constraints', []))} constraint(s)",
-                        },
-                        {
-                            "level": "info",
-                            "message": f"[Background] Checking for conflicts with existing specs...",
-                        },
-                    ]
-
-                    # If specs extracted, add success message
-                    specs_count = sum(
-                        [
-                            len(extracted_specs.get("goals", [])),
-                            len(extracted_specs.get("requirements", [])),
-                            len(extracted_specs.get("tech_stack", [])),
-                            len(extracted_specs.get("constraints", [])),
-                        ]
-                    )
-
-                    if specs_count > 0:
-                        debug_logs.append(
-                            {
-                                "level": "success",
-                                "message": f"[Background] ✓ {specs_count} specs extracted and saved",
-                            }
-                        )
-
-                    if len(conflicts) > 0:
-                        debug_logs.append(
-                            {
-                                "level": "warning",
-                                "message": f"[Background] ⚠ {len(conflicts)} conflict(s) detected - user review needed",
-                            }
-                        )
-                    else:
-                        debug_logs.append(
-                            {"level": "success", "message": "[Background] ✓ No conflicts detected"}
-                        )
-
-                    # Emit each log as a DEBUG_LOG event
-                    for log_entry in debug_logs:
-                        await conn_manager.broadcast_to_project(
-                            user_id=current_user,
-                            project_id=project_id,
-                            message={
-                                "type": "event",
-                                "eventType": "DEBUG_LOG",
-                                "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "data": {
-                                    "level": log_entry["level"],
-                                    "message": log_entry["message"],
-                                },
-                            },
-                        )
-
-                    logger.debug(
-                        f"Emitted {len(debug_logs)} debug log events for project {project_id}"
-                    )
-                except Exception as e:
-                    logger.warning(f"Failed to emit debug logs: {e}")
+            # Persist project changes to database (conversation history, maturity, etc.)
+            db.save_project(project)
+            # db.save_conversation_history removed - modular version uses db.save_project
 
             # Check if conflicts detected - if so, return them for frontend resolution
-            if conflicts:
-                logger.info(f"Conflicts detected in Socratic mode: {len(conflicts)} conflict(s)")
-
-                # CRITICAL FIX #4: Emit CONFLICT_DETECTED event for real-time UI notification
-                if (
-                    is_debug_mode(current_user) or True
-                ):  # Always emit conflict event, even if debug off
-                    try:
-                        from socrates_api.websocket.connection_manager import get_connection_manager
-
-                        conn_manager = get_connection_manager()
-                        await conn_manager.broadcast_to_project(
-                            user_id=current_user,
-                            project_id=project_id,
-                            message={
-                                "type": "event",
-                                "eventType": "CONFLICT_DETECTED",
-                                "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "data": {
-                                    "conflict_count": len(conflicts),
-                                    "conflicts": conflicts,
-                                    "project_id": project_id,
-                                },
-                            },
-                        )
-                        logger.debug(
-                            f"Emitted CONFLICT_DETECTED event with {len(conflicts)} conflict(s)"
-                        )
-                    except Exception as e:
-                        logger.warning(f"Failed to emit conflict detected event: {e}")
-
-                # PHASE 2.1: Generate user-friendly conflict explanation
-                conflict_explanation = _generate_conflict_explanation(conflicts)
-
+            if result.get("conflicts_pending") and result.get("conflicts"):
+                logger.info(f"Conflicts detected: {len(result['conflicts'])} conflict(s)")
                 return APIResponse(
                     success=True,
                     status="success",
@@ -1248,336 +760,53 @@ Provide a helpful, direct answer."""
                         "message": {
                             "id": f"msg_{id(result)}",
                             "role": "assistant",
-                            "content": conflict_explanation,
+                            "content": "Conflict detected. Please resolve the conflict to proceed.",
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         },
                         "conflicts_pending": True,
-                        "conflicts": conflicts,
-                        "conflict_summary": {
-                            "count": len(conflicts),
-                            "explanation": conflict_explanation,
-                        },
+                        "conflicts": result.get("conflicts", []),
                     },
                 )
 
-            # In Socratic mode: Specs/insights are automatically extracted but NOT shown to user
+            # In Socratic mode: Specs/insights are automatically saved but NOT shown to user
             # They are silently extracted and stored in the project without dialogue interference
-            if extracted_specs:
-                logger.debug(f"Specs extracted from Socratic response: {extracted_specs}")
+            insights = result.get("insights", {})
+            if insights:
+                logger.debug("Insights extracted and saved to project (hidden from Socratic dialogue)")
 
-            # Prepare response data with debug mode annotations
+            # Check if debug mode is enabled - if so, return insights for debugging
+            from socratic_system.utils.logger import is_debug_mode
             response_data = {}
 
-            # CRITICAL FIX: Always include debug_logs in response
-            debug_logs = getattr(project, "debug_logs", []) or []
-            if debug_logs:
-                response_data["debug_logs"] = debug_logs
-                logger.debug(f"Included {len(debug_logs)} debug logs in response")
+            if is_debug_mode() and insights:
+                logger.debug(f"Debug mode enabled - returning insights to frontend: {insights}")
+                response_data["extracted_insights"] = insights
+                response_data["extracted_specs"] = insights
+                response_data["extracted_specs_count"] = len([v for v in insights.values() if v])
+                response_data["debug_message"] = f"Extracted {response_data['extracted_specs_count']} insight categories"
+                logger.debug(f"Returning {response_data['extracted_specs_count']} insight categories to frontend")
 
-            # Include conflicts in response if any were detected
-            # Transform backend conflict format to frontend format
-            if conflicts:
-                formatted_conflicts = []
-                for i, conflict in enumerate(conflicts):
-                    # Map backend field names to frontend field names
-                    conflict_type = conflict.get("field") or conflict.get("type", "unknown")
-                    conflict_type = conflict_type.replace("_change", "").lower()
-
-                    # Determine old_value and new_value based on what changed
-                    added_items = conflict.get("added", [])
-                    removed_items = conflict.get("removed", [])
-
-                    # If items were added, the new_value is what was added
-                    # If items were removed, the old_value is what was removed
-                    if added_items:
-                        new_value = ", ".join(str(item) for item in added_items)
-                        old_value = (
-                            "None"
-                            if not removed_items
-                            else ", ".join(str(item) for item in removed_items)
-                        )
-                    elif removed_items:
-                        old_value = ", ".join(str(item) for item in removed_items)
-                        new_value = "None"
-                    else:
-                        old_value = conflict.get("old_value", "Unknown")
-                        new_value = conflict.get("new_value", "Unknown")
-
-                    # Format conflict for frontend
-                    formatted_conflict = {
-                        "conflict_id": f"conflict_{i}",
-                        "conflict_type": conflict_type,
-                        "old_value": old_value,
-                        "new_value": new_value,
-                        "old_author": "existing specs",
-                        "new_author": "your response",
-                        "severity": conflict.get("severity", "medium"),
-                        "suggestions": conflict.get("suggestions", [])
-                        or [f"Review the proposed change in {conflict_type}"],
-                    }
-                    formatted_conflicts.append(formatted_conflict)
-
-                response_data["conflicts"] = formatted_conflicts
-                response_data["conflicts_pending"] = True
-                logger.debug(f"Included {len(formatted_conflicts)} formatted conflicts in response")
-
-            # Check if debug mode is enabled - if so, return debug info with inline annotations
-            if is_debug_mode(current_user):
-                logger.debug("Debug mode enabled - returning debug annotations to frontend")
-
-                # Extract and format extracted specs for debugging
-                specs_count = sum(
-                    [
-                        len(extracted_specs.get("goals", [])),
-                        len(extracted_specs.get("requirements", [])),
-                        len(extracted_specs.get("tech_stack", [])),
-                        len(extracted_specs.get("constraints", [])),
-                    ]
-                )
-
-                response_data["debugInfo"] = {
-                    "specs_extracted": specs_count > 0,
-                    "extracted_specs": extracted_specs,
-                    "extracted_specs_count": specs_count,
-                    "feedback": feedback,
-                    "debug_logs_count": len(debug_logs),
-                }
-
-                if specs_count > 0:
-                    response_data["debugInfo"]["inline_annotations"] = {
-                        "goals": extracted_specs.get("goals", []),
-                        "requirements": extracted_specs.get("requirements", []),
-                        "tech_stack": extracted_specs.get("tech_stack", []),
-                        "constraints": extracted_specs.get("constraints", []),
-                    }
-
-                logger.debug(
-                    f"Debug info with {specs_count} spec categories and {len(debug_logs)} logs: {response_data['debugInfo']}"
-                )
-
-            # In Socratic mode, don't return extracted specs as a message to the frontend
+            # In Socratic mode, don't return insights as a message to the frontend (unless debug mode)
             # The frontend will proceed directly to generate the next question
             # This keeps the Socratic dialogue clean and uninterrupted
-            # (Unless debug mode is enabled, specs are returned in debugInfo field)
 
-            # PHASE 4: Check phase readiness and add readiness status with advancement prompt
+            # Check if phase is complete and add recommendation
             try:
-                from socrates_api.async_orchestrator import get_async_orchestrator
-
-                async_orch = get_async_orchestrator()
-
-                # Use new _check_phase_readiness method
-                # DEPRECATED: Use async agent for phase readiness check
-                phase_readiness = None  # TODO: Implement async phase readiness
-
-                # Include readiness in debug info
-                if is_debug_mode(current_user) and response_data.get("debugInfo"):
-                    response_data["debugInfo"]["phase_readiness"] = phase_readiness
-
-                # If phase becomes ready or complete, notify user
-                if phase_readiness and (
-                    phase_readiness.get("is_complete") or phase_readiness.get("is_ready")
-                ):
-                    response_data["phase_readiness"] = phase_readiness
-
-                    # PHASE 4: Generate advancement prompt when phase is complete or ready
-                    if phase_readiness.get("is_complete"):
-                        # Phase is 100% complete - ready to advance
-                        maturity_pct = phase_readiness.get("maturity_percentage", 100)
-                        current_phase = project.phase or "discovery"
-
-                        # Get next phase in sequence (phase order is fixed)
-                        phases = ["discovery", "analysis", "design", "implementation"]
-                        try:
-                            current_idx = phases.index(current_phase)
-                            next_phase = (
-                                phases[current_idx + 1]
-                                if current_idx < len(phases) - 1
-                                else phases[-1]
-                            )
-                        except (ValueError, IndexError):
-                            next_phase = phases[-1]  # Default to last phase
-
-                        response_data["phase_complete"] = True
-                        response_data["current_phase"] = current_phase
-                        response_data["next_phase"] = next_phase
-                        response_data["maturity"] = {
-                            "percentage": maturity_pct,
-                            "formatted": f"{int(maturity_pct)}%",
-                        }
-                        response_data["advancement_prompt"] = (
-                            f"Congratulations! Your {current_phase.title()} phase is now 100% complete "
-                            f"with all specifications defined. Ready to advance to the {next_phase.title()} phase?"
-                        )
-                        response_data["can_advance"] = True
-
-                        logger.info(
-                            f"Phase {project.phase} is COMPLETE for project {project_id} "
-                            f"({maturity_pct}% maturity) - advancement available"
-                        )
-                    elif phase_readiness.get("is_ready"):
-                        # Phase is near complete (80%+) - encourage completion
-                        maturity_pct = phase_readiness.get("maturity_percentage", 0)
-                        current_phase = project.phase or "discovery"
-
-                        response_data["phase_ready"] = True
-                        response_data["current_phase"] = current_phase
-                        response_data["maturity"] = {
-                            "percentage": maturity_pct,
-                            "formatted": f"{int(maturity_pct)}%",
-                        }
-                        response_data["advancement_prompt"] = (
-                            f"Great progress! Your {current_phase.title()} phase is {int(maturity_pct)}% complete. "
-                            f"Keep answering questions to reach 100% and unlock phase advancement."
-                        )
-                        response_data["can_advance"] = False
-
-                        logger.info(
-                            f"Phase {project.phase} is READY for project {project_id} "
-                            f"({maturity_pct}% maturity) - approaching completion"
-                        )
-
-                # Optional: Auto-advance if enabled and phase is complete
-                if phase_readiness and phase_readiness.get("is_complete"):
-                    auto_advance = getattr(project, "auto_advance_phases", False)
-                    if auto_advance and phase_readiness.get("next_phase"):
-                        try:
-                            old_phase = project.phase
-                            project.phase = phase_readiness.get("next_phase")
-                            project.updated_at = datetime.now(timezone.utc)
-                            db.save_project(project)
-
-                            # Clear question cache for old phase
-                            try:
-                                db.clear_question_cache(project_id, phase=old_phase)
-                            except Exception as cache_err:
-                                logger.debug(
-                                    f"Failed to clear question cache during auto-advance: {cache_err}"
-                                )
-
-                            logger.info(
-                                f"Auto-advanced project {project_id} from "
-                                f"{old_phase} to {project.phase}"
-                            )
-                            response_data["auto_advanced"] = True
-                            response_data["new_phase"] = project.phase
-                        except Exception as e:
-                            logger.error(f"Failed to auto-advance phase: {e}")
-
-            except Exception as readiness_error:
-                logger.warning(f"Failed to check phase readiness: {readiness_error}")
-                # Don't fail the entire response if readiness check fails
-
-            # CRITICAL FIX #8: RECONNECT PIPELINE #5 - LEARNING ANALYTICS
-            # Emit learning events so UserLearningAgent can track user interactions
-            try:
-                logger.info("Emitting learning analytics events...")
-
-                # Emit QUESTION_ANSWERED event
-                from socrates_api.routers.events import record_event
-
-                specs_count = sum(
-                    [
-                        len(extracted_specs.get("goals", [])) if extracted_specs else 0,
-                        len(extracted_specs.get("requirements", [])) if extracted_specs else 0,
-                        len(extracted_specs.get("tech_stack", [])) if extracted_specs else 0,
-                        len(extracted_specs.get("constraints", [])) if extracted_specs else 0,
-                    ]
-                )
-
-                # Record learning interaction
-                record_event(
-                    "question_answered",
-                    {
-                        "project_id": project_id,
-                        "phase": project.phase,
-                        "response_length": len(request.message),
-                        "specs_extracted": specs_count,
-                        "has_conflicts": len(conflicts) > 0,
-                        "mode": "socratic",
-                    },
-                    user_id=current_user,
-                )
-
-                # If specs were extracted, emit RESPONSE_QUALITY_ASSESSED event
-                if extracted_specs:
-                    record_event(
-                        "response_quality_assessed",
-                        {
-                            "project_id": project_id,
-                            "specs_extracted": specs_count,
-                            "quality_indicator": (
-                                "specs_extraction_success" if specs_count > 0 else "no_specs"
-                            ),
-                            "phase": project.phase,
-                        },
-                        user_id=current_user,
-                    )
-
-                logger.info(f"✓ Learning events emitted for project {project_id}")
-
-            except Exception as learning_err:
-                logger.debug(f"Failed to emit learning events (non-critical): {learning_err}")
-                # Learning event emission is non-critical, don't fail the request
-
-            # CRITICAL: After processing answer, generate and return NEXT question
-            # This matches monolithic behavior: answer → extract specs → next question
-            try:
-                logger.info(f"Generating next question after answer for project {project_id}")
-
-                # Build topic from project context for question generation
-                # Use project description/goals or initial topic to maintain context
-                project_topic = getattr(project, "description", "") or getattr(project, "topic", "")
-                if not project_topic and insights and insights.get("goals"):
-                    # Fallback to extracted goals if description is empty
-                    project_topic = " ".join(insights.get("goals", []))
-
-                logger.info(f"Next question topic: {project_topic[:50] if project_topic else 'FALLBACK'}")
-
-                # DEPRECATED: Use async process_request_async instead
-                next_question_result = await async_orch.process_request_async(
-                    "socratic_counselor",
-                    {
-                        "action": "generate_question",
-                        "project": project,
-                        "topic": project_topic,  # CRITICAL: Pass topic for context-aware question generation
-                        "user_id": current_user,
-                        "force_refresh": False,
-                    }
-                )
-
-                if next_question_result.get("status") == "success":
-                    next_question = next_question_result.get("question", {})
-                    response_data["next_question"] = next_question
-                    response_data["next_question_id"] = next_question.get("id")
-                    response_data["next_question_text"] = next_question.get("question")
-                    logger.info(f"Next question generated: {next_question.get('id')}")
-                else:
-                    logger.warning(
-                        f"Failed to generate next question: {next_question_result.get('message')}"
-                    )
-
-            except Exception as next_q_err:
-                logger.warning(f"Error generating next question (non-blocking): {next_q_err}")
-                # Don't fail the response if next question generation fails
-                # User can request question separately
-
-            # Include debug logs showing what was extracted/processed
-            response_data["debug_summary"] = {
-                "specs_extracted": specs_count,
-                "conflicts_detected": len(conflicts) if conflicts else 0,
-                "phase_maturity": phase_maturity,
-                "phase_complete": phase_complete,
-            }
-
-            # CRITICAL FIX #2: Build context for debug logs
-            # DEPRECATED: Agent builds context internally
+                if result.get("phase_complete"):
+                    logger.info(f"Phase {project.phase} is complete for project {project_id}")
+                    response_data["phase_complete"] = True
+                    response_data["phase_completion_message"] = result.get("phase_completion_message")
+                    response_data["next_phase"] = result.get("next_phase")
+                    logger.debug(f"Phase completion data: {response_data.get('phase_completion_message', '')[:100]}...")
+            except Exception as phase_error:
+                logger.error(f"Error handling phase completion: {str(phase_error)}", exc_info=True)
+                # Don't fail the entire response if phase completion handling fails
+                # User's message was already processed successfully
 
             return APIResponse(
                 success=True,
                 status="success",
                 data=response_data,
-                debug_logs=[],
             )
 
     except HTTPException:
@@ -1586,7 +815,7 @@ Provide a helpful, direct answer."""
         logger.error(f"Error sending message: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to send message: {str(e)}",
         )
 
 
@@ -1613,24 +842,16 @@ async def get_history(
         SuccessResponse with conversation history
     """
     try:
-        from socrates_api.async_orchestrator import get_async_orchestrator
-
         logger.info(f"Getting chat history for project: {project_id}")
 
         # Load project
         db = get_database()
-        project_dict = db.load_project(project_id)
-        if not project_dict:
+        project = db.load_project(project_id)
+        if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Convert dict to ProjectContext if needed
-        project = project_dict
-
-        # CRITICAL FIX #1: Build complete context
-        # DEPRECATED: Agent builds context internally
-
         # Get conversation history from project
-        history = getattr(project, "conversation_history", []) or []
+        history = project.conversation_history or []
 
         # Apply limit if specified
         if limit and limit > 0:
@@ -1645,7 +866,6 @@ async def get_history(
                 "mode": getattr(project, "chat_mode", "socratic"),
                 "total": len(history),
             },
-            debug_logs=[],
         )
 
     except HTTPException:
@@ -1654,7 +874,7 @@ async def get_history(
         logger.error(f"Error getting history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to get history: {str(e)}",
         )
 
 
@@ -1708,7 +928,7 @@ async def switch_mode(
         logger.error(f"Error switching mode: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to switch mode: {str(e)}",
         )
 
 
@@ -1733,7 +953,7 @@ async def get_hint(
         SuccessResponse with hint
     """
     try:
-        from socrates_api.async_orchestrator import get_async_orchestrator
+        from socrates_api.main import get_orchestrator
 
         logger.info(f"Getting hint for project: {project_id}")
 
@@ -1743,84 +963,30 @@ async def get_hint(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Delegate to socratic_counselor agent for hint generation
-        async_orch = get_async_orchestrator()
-        result = await async_orch.process_request_async(
+        # Call orchestrator to generate context-aware hint
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
             "socratic_counselor",
             {
                 "action": "generate_hint",
                 "project": project,
                 "current_user": current_user,
-                "db": db,
             },
         )
 
         if result.get("status") != "success":
             # Fallback to a generic hint if hint generation fails
             logger.warning(f"Failed to generate hint: {result.get('message', 'Unknown error')}")
-
-            # Check if there's an active question
-            if not getattr(project, "current_question_id", None):
-                fallback_hint = "No active question. Please get a question first to receive hints."
-            else:
-                fallback_hint = "Review the project requirements and consider what step comes next in your learning journey."
-
-            response_data = {"hint": fallback_hint}
-
-            if is_debug_mode(current_user):
-                response_data["debugInfo"] = {
-                    "hint_source": "fallback",
-                    "phase": project.phase if project else "unknown",
-                }
-
-            # CRITICAL FIX #2: Include debug logs
             return APIResponse(
                 success=True,
                 status="success",
-                data=response_data,
-                debug_logs=[],
+                data={"hint": "Review the project requirements and consider what step comes next in your learning journey."},
             )
 
-        hint = result.get("data", {}).get("hint") or result.get(
-            "hint", "Continue working on your project."
-        )
-        response_data = {"hint": hint}
-
-        # Emit HINT_GENERATED event
-        from socrates_api.models_local import EventType
-        from socrates_api.websocket.event_bridge import get_event_bridge
-
-        event_bridge = get_event_bridge()
-        await event_bridge.broadcast_message(
-            current_user,
-            project_id,
-            f"Hint: {hint}",
-        )
-
-        # Log event for analytics
-        event_data = {
-            "user_id": current_user,
-            "project_id": project_id,
-            "hint": hint,
-            "question_id": getattr(project, "current_question_id", None),
-        }
-
-        # Add debug info if debug mode is enabled
-        if is_debug_mode(current_user):
-            logger.debug("Debug mode enabled - returning hint debug info")
-            response_data["debugInfo"] = {
-                "hint_source": result.get("message", "SkillGeneratorAgent"),
-                "phase": project.phase if project else "unknown",
-                "has_goals": bool(project.goals if project else False),
-            }
-            logger.debug(f"Hint generated from {response_data['debugInfo']['hint_source']}")
-
-        # CRITICAL FIX #2: Include debug logs
         return APIResponse(
             success=True,
             status="success",
-            data=response_data,
-            debug_logs=context.get("debug_logs"),
+            data={"hint": result.get("hint", "Continue working on your project.")},
         )
 
     except HTTPException:
@@ -1829,7 +995,7 @@ async def get_hint(
         logger.error(f"Error getting hint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to get hint: {str(e)}",
         )
 
 
@@ -1865,14 +1031,7 @@ async def clear_history(
         # Clear history
         project.conversation_history = []
         db.save_project(project)
-
-        # CRITICAL FIX #2: Invalidate caches after clearing conversation history
-        cache = get_query_cache()
-        cache.invalidate(f"metrics:{project_id}")
-        cache.invalidate(f"readiness:{project_id}")
-        cache.invalidate(f"conversation_history:{project_id}")
-        cache.invalidate(f"project_detail:{project_id}")
-        logger.debug(f"Invalidated caches for project {project_id} after clearing history")
+        # db.save_conversation_history removed - modular version uses db.save_project
 
         return APIResponse(
             success=True,
@@ -1886,7 +1045,7 @@ async def clear_history(
         logger.error(f"Error clearing history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to clear history: {str(e)}",
         )
 
 
@@ -1911,7 +1070,7 @@ async def get_summary(
         SuccessResponse with summary
     """
     try:
-        from socrates_api.async_orchestrator import get_async_orchestrator
+        from socrates_api.main import get_orchestrator
 
         logger.info(f"Generating summary for project: {project_id}")
 
@@ -1921,14 +1080,14 @@ async def get_summary(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Delegate to context_analyzer agent for summary generation
-        async_orch = get_async_orchestrator()
-        result = await async_orch.process_request_async(
+        # Call context analyzer to generate summary
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
             "context_analyzer",
             {
                 "action": "generate_summary",
                 "project": project,
-                "current_user": current_user,
+                "user_id": current_user,
             },
         )
 
@@ -1940,9 +1099,11 @@ async def get_summary(
         return APIResponse(
             success=True,
             status="success",
-            message="Conversation summary generated",
-            data=result.get("data", result),
-            debug_logs=result.get("debug_logs", []),
+            data={
+                "summary": result.get("summary", ""),
+                "key_points": result.get("key_points", []),
+                "insights": result.get("insights", []),
+            },
         )
 
     except HTTPException:
@@ -1951,7 +1112,7 @@ async def get_summary(
         logger.error(f"Error generating summary: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to generate summary: {str(e)}",
         )
 
 
@@ -2002,7 +1163,7 @@ async def search_conversations(
         logger.error(f"Error searching conversations: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to search conversations: {str(e)}",
         )
 
 
@@ -2046,6 +1207,7 @@ async def finish_session(
 
         # Save final project state (including conversation history)
         db.save_project(project)
+        # db.save_conversation_history removed - modular version uses db.save_project
 
         return APIResponse(
             success=True,
@@ -2070,7 +1232,7 @@ async def finish_session(
         logger.error(f"Error finishing session: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to finish session: {str(e)}",
         )
 
 
@@ -2128,9 +1290,7 @@ async def get_maturity_history(
                 "total_events": len(project.maturity_history or []),
                 "current_overall_maturity": round(project.overall_maturity, 2),
                 "current_overall_maturity_formatted": f"{round(project.overall_maturity, 2)}%",
-                "current_phase_maturity": round(
-                    (project.phase_maturity_scores or {}).get(project.phase, 0.0), 2
-                ),
+                "current_phase_maturity": round((project.phase_maturity_scores or {}).get(project.phase, 0.0), 2),
                 "current_phase_maturity_formatted": f"{round((project.phase_maturity_scores or {}).get(project.phase, 0.0), 2)}%",
             },
         )
@@ -2141,7 +1301,7 @@ async def get_maturity_history(
         logger.error(f"Error getting maturity history: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to get maturity history: {str(e)}",
         )
 
 
@@ -2232,7 +1392,7 @@ async def get_maturity_status(
         logger.error(f"Error getting maturity status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to get maturity status: {str(e)}",
         )
 
 
@@ -2259,14 +1419,11 @@ async def get_questions(
         logger.info(f"Getting questions for project {project_id}, filter={status_filter}")
 
         db = get_database()
-        project_dict = db.load_project(project_id)
-        if not project_dict:
+        project = db.load_project(project_id)
+        if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Convert dict to ProjectContext if needed
-        project = project_dict
-
-        questions = getattr(project, "pending_questions", []) or []
+        questions = project.pending_questions or []
 
         # Ensure all questions have a status field (for backward compatibility)
         for q in questions:
@@ -2276,9 +1433,7 @@ async def get_questions(
         # Filter by status if specified
         if status_filter:
             questions = [q for q in questions if q.get("status") == status_filter]
-            logger.info(
-                f"Filtered {len(questions)} questions with status '{status_filter}' out of {len(project.pending_questions or [])} total"
-            )
+            logger.info(f"Filtered {len(questions)} questions with status '{status_filter}' out of {len(project.pending_questions or [])} total")
         else:
             logger.info(f"Returning all {len(questions)} questions")
 
@@ -2298,7 +1453,7 @@ async def get_questions(
         logger.error(f"Error getting questions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to get questions: {str(e)}",
         )
 
 
@@ -2317,7 +1472,7 @@ async def reopen_question(
     Reopen a skipped question (mark as unanswered so user can answer it).
     """
     try:
-        from socrates_api.async_orchestrator import get_async_orchestrator
+        from socrates_api.main import get_orchestrator
 
         logger.info(f"Reopening question {question_id} for project {project_id}")
 
@@ -2326,30 +1481,28 @@ async def reopen_question(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Delegate to socratic_counselor agent to reopen question
-        async_orch = get_async_orchestrator()
-        result = await async_orch.process_request_async(
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
             "socratic_counselor",
             {
                 "action": "reopen_question",
                 "project": project,
                 "question_id": question_id,
-                "current_user": current_user,
-                "db": db,
             },
         )
 
         if result.get("status") != "success":
-            raise HTTPException(
-                status_code=500, detail=result.get("message", "Failed to reopen question")
-            )
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to reopen question"))
+
+        db.save_project(project)
 
         return APIResponse(
             success=True,
             status="success",
-            message="Question reopened",
-            data=result.get("data", result),
-            debug_logs=result.get("debug_logs", []),
+            data={
+                "message": result.get("message", "Question reopened"),
+                "question_id": question_id,
+            },
         )
 
     except HTTPException:
@@ -2358,7 +1511,7 @@ async def reopen_question(
         logger.error(f"Error reopening question: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to reopen question: {str(e)}",
         )
 
 
@@ -2374,7 +1527,7 @@ async def skip_question(
     db: LocalDatabase = Depends(get_database),
 ):
     """
-    Mark the current unanswered question as skipped and generate next question.
+    Mark the current unanswered question as skipped.
     """
     try:
         # Check project access - requires editor or better
@@ -2386,40 +1539,32 @@ async def skip_question(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Find the LAST (most recent) unanswered question
-        skipped_question_id = None
+        # Find the LAST (most recent) unanswered question and mark it as skipped
+        skipped_count = 0
         if project.pending_questions:
             logger.info(f"Total questions in project: {len(project.pending_questions)}")
             # Iterate in reverse to find the LAST unanswered question
             for question in reversed(project.pending_questions):
+                # Check if question is unanswered (default to unanswered if status missing)
                 current_status = question.get("status", "unanswered")
                 logger.info(f"Question {question.get('id')} status: {current_status}")
                 if current_status == "unanswered":
-                    question_id = question.get("id")
                     question["status"] = "skipped"
                     question["skipped_at"] = datetime.now(timezone.utc).isoformat()
-                    logger.info(f"Marked question as skipped: {question_id}")
-                    skipped_question_id = question_id
-
-                    # CRITICAL FIX #11: Track skipped question in new asked_questions list
-                    if project.skipped_questions is None:
-                        project.skipped_questions = []
-                    if question_id and question_id not in project.skipped_questions:
-                        project.skipped_questions.append(question_id)
-                        logger.info(f"Added {question_id} to skipped_questions list")
+                    logger.info(f"Marked question as skipped: {question.get('id')}")
+                    skipped_count += 1
                     break
         else:
             logger.warning(f"No pending questions found for project {project_id}")
 
         # Save the project
         db.save_project(project)
-        logger.info(f"Saved project. Skipped question {skipped_question_id}")
+        logger.info(f"Saved project. Skipped {skipped_count} question(s)")
 
         return APIResponse(
             success=True,
             status="success",
             message="Question marked as skipped",
-            data={"skipped_question_id": skipped_question_id},
         )
 
     except HTTPException:
@@ -2428,7 +1573,7 @@ async def skip_question(
         logger.error(f"Error skipping question: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to skip question: {str(e)}",
         )
 
 
@@ -2444,10 +1589,9 @@ async def get_answer_suggestions(
 ):
     """
     Get answer suggestions for the current question in the chat.
-    Uses CRITICAL FIX #11: Orchestrator _generate_suggestions() method
     """
     try:
-        from socrates_api.async_orchestrator import get_async_orchestrator
+        from socrates_api.main import get_orchestrator
 
         logger.info(f"Getting answer suggestions for project {project_id}")
 
@@ -2456,9 +1600,12 @@ async def get_answer_suggestions(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Find current question from persisted question metadata
-        # This is set when a question is generated (in GET /question endpoint)
-        current_question = getattr(project, "current_question_text", None)
+        # Find current question from pending_questions (use LAST unanswered, not first)
+        current_question = None
+        if project.pending_questions:
+            unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
+            if unanswered:
+                current_question = unanswered[-1].get("question")
 
         if not current_question:
             # Generate phase-aware fallback suggestions
@@ -2468,28 +1615,28 @@ async def get_answer_suggestions(
                     "Describe your target audience and their needs",
                     "What problem does this solve?",
                     "What alternatives have you considered?",
-                    "What would success look like?",
+                    "What would success look like?"
                 ],
                 "analysis": [
                     "Break down your requirements into components",
                     "What are the key constraints and limitations?",
                     "How would you prioritize these requirements?",
                     "What dependencies exist?",
-                    "What trade-offs are necessary?",
+                    "What trade-offs are necessary?"
                 ],
                 "design": [
                     "Sketch the high-level system architecture",
                     "What design patterns apply here?",
                     "How would you organize the components?",
                     "What are the critical design decisions?",
-                    "How would this handle edge cases?",
+                    "How would this handle edge cases?"
                 ],
                 "implementation": [
                     "What's the first feature to implement?",
                     "Which technologies would you use?",
                     "How would you test this?",
                     "What's your deployment strategy?",
-                    "How would you measure success?",
+                    "How would you measure success?"
                 ],
             }
             suggestions = phase_suggestions.get(project.phase, phase_suggestions["discovery"])
@@ -2504,34 +1651,20 @@ async def get_answer_suggestions(
                 },
             )
 
-        # DEPRECATED: Use agent-based suggestions
-        logger.info(f"Generating contextual suggestions for question: {current_question}")
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
+            "socratic_counselor",
+            {
+                "action": "generate_answer_suggestions",
+                "project": project,
+                "current_question": current_question,
+                "current_user": current_user,
+            },
+        )
 
-        try:
-            # DEPRECATED: Use agent-based suggestions
-            suggestions = None  # TODO: Implement async suggestions agent
-            if suggestions:
-                logger.info(f"Generated {len(suggestions)} suggestions using orchestrator")
-            else:
-                logger.info("No suggestions generated, using fallback suggestions")
-
-            # CRITICAL FIX: Include debug logs in response
-            debug_logs = getattr(project, "debug_logs", []) or []
-
-            return APIResponse(
-                success=True,
-                status="success",
-                data={
-                    "suggestions": suggestions,
-                    "question": current_question,
-                    "phase": project.phase,
-                    "generated": True,
-                    "debug_logs": debug_logs,
-                },
-            )
-        except Exception as orch_error:
+        if result.get("status") != "success":
             # Log the error for debugging
-            error_message = f"Orchestrator error: {str(orch_error)}"
+            error_message = result.get("message", "Unknown error")
             logger.warning(f"Suggestion generation failed: {error_message}")
 
             # Return phase-aware fallback suggestions
@@ -2541,34 +1674,31 @@ async def get_answer_suggestions(
                     "Who are your target users?",
                     "What are the key challenges?",
                     "What existing solutions exist?",
-                    "What would success look like?",
+                    "What would success look like?"
                 ],
                 "analysis": [
                     "Break down the requirements into components",
                     "What are the technical constraints?",
                     "How would you prioritize requirements?",
                     "What dependencies exist?",
-                    "What trade-offs are needed?",
+                    "What trade-offs are needed?"
                 ],
                 "design": [
                     "Sketch the high-level architecture",
                     "What design patterns apply?",
                     "How would you organize components?",
                     "What are the key decisions?",
-                    "How would this handle edge cases?",
+                    "How would this handle edge cases?"
                 ],
                 "implementation": [
                     "What feature would you implement first?",
                     "Which technologies would you use?",
                     "How would you test this?",
                     "What's the deployment strategy?",
-                    "How would you measure success?",
+                    "How would you measure success?"
                 ],
             }
             suggestions = phase_suggestions.get(project.phase, phase_suggestions["discovery"])
-
-            # CRITICAL FIX: Include debug logs in fallback response too
-            debug_logs = getattr(project, "debug_logs", []) or []
 
             return APIResponse(
                 success=True,
@@ -2579,9 +1709,19 @@ async def get_answer_suggestions(
                     "phase": project.phase,
                     "generated": False,
                     "error": error_message,
-                    "debug_logs": debug_logs,
                 },
             )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "suggestions": result.get("suggestions", []),
+                "question": current_question,
+                "phase": project.phase,
+                "generated": True,
+            },
+        )
 
     except HTTPException:
         raise
@@ -2589,7 +1729,7 @@ async def get_answer_suggestions(
         logger.error(f"Error getting suggestions: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to get suggestions: {str(e)}",
         )
 
 
@@ -2630,8 +1770,8 @@ async def save_extracted_specs(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Check access
-        # SECURITY FIX: Allow team members with viewer+ role
-        await check_project_access(project_id, current_user, db, min_role="viewer")
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
 
         logger.info(f"User {current_user} is saving extracted specs to project {project_id}")
 
@@ -2647,11 +1787,7 @@ async def save_extracted_specs(
         if request.goals:
             # If goals is a list, take first item or join
             if isinstance(request.goals, list):
-                project.goals = (
-                    request.goals[0]
-                    if len(request.goals) == 1
-                    else ", ".join(str(g) for g in request.goals)
-                )
+                project.goals = request.goals[0] if len(request.goals) == 1 else ", ".join(str(g) for g in request.goals)
             else:
                 project.goals = str(request.goals)
             specs_saved["goals"] = [project.goals]
@@ -2696,9 +1832,8 @@ async def save_extracted_specs(
 
         # Update maturity score for the project based on saved specs
         try:
-            from socrates_api.async_orchestrator import get_async_orchestrator
-
-            async_orch = get_async_orchestrator()
+            from socrates_api.main import get_orchestrator
+            orchestrator = get_orchestrator()
 
             # Convert specs_saved to insights format for maturity calculation
             insights = {
@@ -2710,24 +1845,23 @@ async def save_extracted_specs(
 
             # Only update maturity if specs were actually saved
             if any(specs_saved.values()):
-                # Delegate to quality_controller agent to update maturity
-                maturity_result = await async_orch.process_request_async(
+                maturity_result = orchestrator.process_request(
                     "quality_controller",
                     {
                         "action": "update_after_response",
                         "project": project,
                         "insights": insights,
                         "current_user": current_user,
-                        "db": db,
                     },
                 )
 
                 if maturity_result.get("status") == "success":
                     maturity = maturity_result.get("maturity", {})
-                    score = maturity.get("overall_score", 0.0) if maturity else 0.0
+                    score = maturity.get("overall_score", 0.0)
                     logger.info(f"Maturity updated after specs save: {score:.1f}%")
+                    # Re-save project with updated maturity
+                    db.save_project(project)
         except Exception as e:
-            logger.debug("Operation failed")
             logger.warning(f"Failed to update maturity after saving specs: {str(e)}")
             # Don't fail the spec save if maturity update fails
 
@@ -2754,7 +1888,7 @@ async def save_extracted_specs(
         logger.error(f"Error saving extracted specs: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
+            detail=f"Failed to save specs: {str(e)}",
         )
 
 
@@ -2776,54 +1910,27 @@ async def resolve_conflicts(
     db: LocalDatabase = Depends(get_database),
 ):
     """
-    Resolve specification conflicts detected during Socratic dialogue.
-
-    When a user's response during Socratic questioning introduces specs that conflict
-    with the project's existing specifications, this endpoint resolves those conflicts
-    and updates the project accordingly.
-
-    **Conflict Resolution Strategies:**
-    - "keep": Keep existing spec, discard new value
-    - "replace": Replace existing with new value
-    - "skip": Discard new value, keep existing
-    - "manual": Use a custom value provided in manual_value field
+    Resolve conflicts detected in project specifications.
 
     Args:
         project_id: The project ID
-        request: ConflictResolutionRequest body with list of conflict resolutions
+        body: JSON body with conflict resolutions
             {
                 "conflicts": [
                     {
-                        "conflict_type": "goals|tech_stack|requirements|constraints",
-                        "old_value": "existing_value",           # Can be string, list, or null
-                        "new_value": "proposed_value",           # Can be string, list, or null
+                        "conflict_type": "tech_stack",
+                        "old_value": "Python",
+                        "new_value": "JavaScript",
                         "resolution": "keep|replace|skip|manual",
-                        "manual_value": "custom_value",          # Optional, for "manual" resolution
-                        "conflict_id": "unique_id"               # Optional tracking ID
+                        "manual_value": "optional resolved value"
                     }
                 ]
             }
-        current_user: Current authenticated user (must have editor role)
+        current_user: Current authenticated user
         db: Database connection
 
     Returns:
-        APIResponse with:
-        - success: true on success
-        - data: Updated project specs (goals, requirements, tech_stack, constraints)
-        - message: Confirmation message
-
-    Example:
-        POST /projects/{project_id}/chat/resolve-conflicts
-        {
-            "conflicts": [
-                {
-                    "conflict_type": "tech_stack",
-                    "old_value": "Python",
-                    "new_value": "JavaScript",
-                    "resolution": "replace"
-                }
-            ]
-        }
+        Updated project and next question
     """
     try:
         # Check project access - requires editor or better
@@ -2843,9 +1950,7 @@ async def resolve_conflicts(
         # IMPORTANT: Preserve categorized_specs (which includes confidence info)
         # The conflict resolution only modifies the simple fields (tech_stack, requirements, etc.)
         # Confidence metadata from the original specs is preserved in categorized_specs
-        logger.debug(
-            f"Current categorized_specs before conflict resolution: {len(project.categorized_specs)} categories"
-        )
+        logger.debug(f"Current categorized_specs before conflict resolution: {len(project.categorized_specs)} categories")
 
         # Apply each conflict resolution
         for conflict in conflicts:
@@ -2860,80 +1965,64 @@ async def resolve_conflicts(
                 f"({old_value} vs {new_value})"
             )
 
-            # Helper to safely check and remove from list
-            def safe_remove(lst: list, value):
-                if value and isinstance(value, str) and value in lst:
-                    lst.remove(value)
-                elif isinstance(value, list):
-                    for v in value:
-                        if v in lst:
-                            lst.remove(v)
-
-            # Helper to safely add to list
-            def safe_append(lst: list, value):
-                if isinstance(value, str) and value and value not in lst:
-                    lst.append(value)
-                elif isinstance(value, list):
-                    for v in value:
-                        if v and v not in lst:
-                            lst.append(v)
-
             # Apply resolution based on choice
             if resolution == "keep":
                 # Keep existing - remove new from project if it exists
-                if conflict_type == "tech_stack":
-                    safe_remove(project.tech_stack, new_value)
-                elif conflict_type == "requirements":
-                    safe_remove(project.requirements, new_value)
-                elif conflict_type == "constraints":
-                    safe_remove(project.constraints, new_value)
+                if conflict_type == "tech_stack" and new_value in project.tech_stack:
+                    project.tech_stack.remove(new_value)
+                elif conflict_type == "requirements" and new_value in project.requirements:
+                    project.requirements.remove(new_value)
+                elif conflict_type == "constraints" and new_value in project.constraints:
+                    project.constraints.remove(new_value)
 
             elif resolution == "replace":
                 # Replace existing with new
                 if conflict_type == "tech_stack":
-                    safe_remove(project.tech_stack, old_value)
-                    safe_append(project.tech_stack, new_value)
+                    if old_value in project.tech_stack:
+                        project.tech_stack.remove(old_value)
+                    if new_value not in project.tech_stack:
+                        project.tech_stack.append(new_value)
                 elif conflict_type == "requirements":
-                    safe_remove(project.requirements, old_value)
-                    safe_append(project.requirements, new_value)
+                    if old_value in project.requirements:
+                        project.requirements.remove(old_value)
+                    if new_value not in project.requirements:
+                        project.requirements.append(new_value)
                 elif conflict_type == "constraints":
-                    safe_remove(project.constraints, old_value)
-                    safe_append(project.constraints, new_value)
+                    if old_value in project.constraints:
+                        project.constraints.remove(old_value)
+                    if new_value not in project.constraints:
+                        project.constraints.append(new_value)
                 elif conflict_type == "goals":
-                    # For goals, set directly (string value)
-                    if isinstance(new_value, str):
-                        project.goals = new_value
-                    elif isinstance(new_value, list) and new_value:
-                        project.goals = new_value[0]
+                    project.goals = new_value
 
             elif resolution == "skip":
                 # Skip - remove new value
-                if conflict_type == "tech_stack":
-                    safe_remove(project.tech_stack, new_value)
-                elif conflict_type == "requirements":
-                    safe_remove(project.requirements, new_value)
-                elif conflict_type == "constraints":
-                    safe_remove(project.constraints, new_value)
+                if conflict_type == "tech_stack" and new_value in project.tech_stack:
+                    project.tech_stack.remove(new_value)
+                elif conflict_type == "requirements" and new_value in project.requirements:
+                    project.requirements.remove(new_value)
+                elif conflict_type == "constraints" and new_value in project.constraints:
+                    project.constraints.remove(new_value)
 
             elif resolution == "manual" and manual_value:
                 # Manual resolution - use the provided value
                 if conflict_type == "tech_stack":
-                    safe_remove(project.tech_stack, old_value)
-                    safe_append(project.tech_stack, manual_value)
+                    if old_value in project.tech_stack:
+                        project.tech_stack.remove(old_value)
+                    if manual_value not in project.tech_stack:
+                        project.tech_stack.append(manual_value)
                 elif conflict_type == "requirements":
-                    safe_remove(project.requirements, old_value)
-                    safe_append(project.requirements, manual_value)
+                    if old_value in project.requirements:
+                        project.requirements.remove(old_value)
+                    if manual_value not in project.requirements:
+                        project.requirements.append(manual_value)
                 elif conflict_type == "constraints":
-                    safe_remove(project.constraints, old_value)
-                    safe_append(project.constraints, manual_value)
+                    if old_value in project.constraints:
+                        project.constraints.remove(old_value)
+                    if manual_value not in project.constraints:
+                        project.constraints.append(manual_value)
                 elif conflict_type == "goals":
-                    # For goals, set directly
-                    if isinstance(manual_value, str):
-                        project.goals = manual_value
-                    elif isinstance(manual_value, list) and manual_value:
-                        project.goals = manual_value[0]
-
-            logger.debug(f"Applied {resolution} resolution for {conflict_type}")
+                    project.goals = manual_value
 
         # Save updated project to database
         db.save_project(project)
@@ -2944,76 +2033,17 @@ async def resolve_conflicts(
             f"Categorized specs with confidence metadata preserved: {len(project.categorized_specs)} categories"
         )
 
-        # FIX #11: Broadcast conflict resolution to all connected users in real-time
-        try:
-            from socrates_api.websocket import get_connection_manager
-
-            conn_manager = get_connection_manager()
-            await conn_manager.broadcast_to_project(
-                user_id=current_user,
-                project_id=project_id,
-                message={
-                    "type": "event",
-                    "eventType": "CONFLICTS_RESOLVED",
-                    "data": {
-                        "project_id": project_id,
-                        "resolved_count": len(conflicts),
-                        "updated_specs": {
-                            "goals": project.goals,
-                            "requirements": project.requirements,
-                            "tech_stack": project.tech_stack,
-                            "constraints": project.constraints,
-                        },
-                        "resolutions": [
-                            {
-                                "conflict_type": c.conflict_type,
-                                "resolution": c.resolution,
-                            }
-                            for c in conflicts
-                        ],
-                    },
-                },
-            )
-            logger.debug(f"Broadcasted CONFLICTS_RESOLVED event to project {project_id}")
-        except Exception as e:
-            logger.warning(f"Failed to broadcast conflict resolution: {e}")
-
-        # Prepare response data
-        response_data = {
-            "project_id": project_id,
-            "goals": project.goals,
-            "requirements": project.requirements,
-            "tech_stack": project.tech_stack,
-            "constraints": project.constraints,
-            "next_action": "generate_question",  # Frontend should generate next Socratic question
-        }
-
-        # Add debug info if debug mode is enabled
-        if is_debug_mode():
-            logger.debug("Debug mode enabled - returning conflict resolution debug info")
-            response_data["debugInfo"] = {
-                "conflicts_resolved": len(conflicts),
-                "resolved_specs": {
-                    "goals": project.goals,
-                    "requirements": project.requirements,
-                    "tech_stack": project.tech_stack,
-                    "constraints": project.constraints,
-                },
-                "resolutions_applied": [
-                    {
-                        "conflict_type": c.conflict_type,
-                        "resolution": c.resolution,
-                    }
-                    for c in conflicts
-                ],
-            }
-            logger.debug(f"Resolved {len(conflicts)} conflicts in debug mode")
-
         return APIResponse(
             success=True,
             status="success",
             message="Conflicts resolved and project updated",
-            data=response_data,
+            data={
+                "project_id": project_id,
+                "goals": project.goals,
+                "requirements": project.requirements,
+                "tech_stack": project.tech_stack,
+                "constraints": project.constraints,
+            },
         )
 
     except HTTPException:
@@ -3022,92 +2052,5 @@ async def resolve_conflicts(
         logger.error(f"Error resolving conflicts: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Operation failed. Please try again later.",
-        )
-
-
-# ================== PHASE 2: NEW ENDPOINTS ==================
-
-
-
-@router.post(
-    "/{project_id}/chat/reopen",
-    response_model=APIResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Reopen previously skipped question",
-)
-async def reopen_question(
-    project_id: str,
-    request: Dict[str, str],
-    current_user: str = Depends(get_current_user),
-):
-    """
-    Reopen a previously skipped question for answering.
-
-    PHASE 2: Reverts question from skipped to unanswered state.
-
-    User can now answer the reopened question.
-
-    Args:
-        project_id: Project ID
-        request: Dict containing question_id
-        current_user: Authenticated user
-
-    Returns:
-        APIResponse with reopened question
-    """
-    try:
-        from socrates_api.async_orchestrator import get_async_orchestrator
-
-        logger.info(f"PHASE 2: Reopening question in project {project_id}")
-
-        # Load project
-        db = get_database()
-        project = db.load_project(project_id)
-        if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
-
-        question_id = request.get("question_id", "")
-        if not question_id:
-            raise HTTPException(status_code=400, detail="question_id required")
-
-        # Find and reopen question
-        found = False
-        reopened_question = None
-        for q in project.pending_questions or []:
-            if q.get("id") == question_id:
-                if q.get("status") != "skipped":
-                    raise HTTPException(status_code=400, detail="Question is not skipped")
-
-                q["status"] = "unanswered"
-                q["skipped_at"] = None
-                reopened_question = q
-                found = True
-                logger.info(f"Marked question {question_id} as unanswered (reopened)")
-                break
-
-        if not found:
-            raise HTTPException(status_code=404, detail="Question not found")
-
-        # Save project
-        db.save_project(project)
-
-        return APIResponse(
-            success=True,
-            status="success",
-            data={
-                "message": f"Question reopened",
-                "question": reopened_question.get("question", ""),
-                "question_id": reopened_question.get("id", ""),
-                "phase": project.phase,
-            },
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error reopening question: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to reopen question",
+            detail=f"Failed to resolve conflicts: {str(e)}",
         )
