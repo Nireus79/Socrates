@@ -532,6 +532,15 @@ async def get_question(
         # Call socratic_counselor to generate question
         # Question caching happens internally to avoid redundant Claude calls
         orchestrator = get_orchestrator()
+
+        # Extract topic from project goals for context-aware question generation
+        topic = ""
+        if hasattr(project, "goals"):
+            if isinstance(project.goals, list) and project.goals:
+                topic = project.goals[0]
+            elif isinstance(project.goals, str) and project.goals:
+                topic = project.goals
+
         result = orchestrator.process_request(
             "socratic_counselor",
             {
@@ -539,6 +548,7 @@ async def get_question(
                 "project": project,
                 "current_user": current_user,
                 "user_id": current_user,
+                "topic": topic,  # Pass topic from goals for context-aware generation
                 "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
             },
         )
