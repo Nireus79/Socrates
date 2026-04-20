@@ -2946,9 +2946,14 @@ class APIOrchestrator:
                                     previously_asked_questions.append(msg.get("content"))
 
                             if previously_asked_questions:
-                                counselor_request["recently_asked"] = previously_asked_questions
+                                # CRITICAL FIX: Deduplicate questions before passing to counselor
+                                # Prevents same question appearing multiple times in recently_asked list
+                                # which would confuse the counselor into thinking no new questions are available
+                                unique_previously_asked = list(dict.fromkeys(previously_asked_questions))
+                                counselor_request["recently_asked"] = unique_previously_asked
                                 logger.debug(
-                                    f"Passing {len(previously_asked_questions)} previously asked questions "
+                                    f"Passing {len(unique_previously_asked)} unique previously asked questions "
+                                    f"(deduplicated from {len(previously_asked_questions)}) "
                                     f"in {phase} phase for deduplication"
                                 )
 
