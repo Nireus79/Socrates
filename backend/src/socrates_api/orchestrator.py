@@ -3079,12 +3079,20 @@ class APIOrchestrator:
             # This matches monolithic behavior: after marking answered, generate next question
             # This prevents asking the same question twice
             try:
+                # Extract topic from project goals for follow-up question generation
+                topic_for_generation = ""
+                if hasattr(project, "goals") and isinstance(project.goals, list) and project.goals:
+                    topic_for_generation = project.goals[0]
+                elif hasattr(project, "goals") and isinstance(project.goals, str) and project.goals:
+                    topic_for_generation = project.goals
+
                 next_question_result = self.process_request(
                     "socratic_counselor",
                     {
                         "action": "generate_question",
                         "project": project,
                         "user_id": current_user,
+                        "topic": topic_for_generation,  # Pass topic from goals for context
                         "force_refresh": True,  # Critical: force new question after answer
                     }
                 )
