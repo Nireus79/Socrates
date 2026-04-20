@@ -722,6 +722,9 @@ class LocalDatabase:
 
         # CRITICAL FIX #16: Load conversation history from metadata
         # Restore pending_questions, asked_questions, skipped_questions, question_cache, debug_logs
+        # CRITICAL BUG #8 FIX: Load conversation_history (was missing!)
+        if "conversation_history" in project.metadata:
+            project.conversation_history = project.metadata.get("conversation_history", [])
         if "pending_questions" in project.metadata:
             project.pending_questions = project.metadata.get("pending_questions", [])
         if "asked_questions" in project.metadata:
@@ -1214,6 +1217,9 @@ class LocalDatabase:
             metadata_dict = getattr(project, "metadata", {}).copy() if hasattr(project, "metadata") else {}
 
             # Store conversation tracking fields in metadata
+            # CRITICAL BUG #8 FIX: Persist conversation_history (was missing!)
+            if hasattr(project, "conversation_history") and project.conversation_history:
+                metadata_dict["conversation_history"] = project.conversation_history
             if hasattr(project, "pending_questions") and project.pending_questions:
                 metadata_dict["pending_questions"] = project.pending_questions
             if hasattr(project, "asked_questions") and project.asked_questions:
