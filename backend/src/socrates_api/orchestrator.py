@@ -3075,36 +3075,6 @@ class APIOrchestrator:
                         logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
                         break
 
-            # BUG #9 FIX: Auto-generate next follow-up question after answer is processed
-            # This matches monolithic behavior: after marking answered, generate next question
-            # This prevents asking the same question twice
-            try:
-                # Extract topic from project goals for follow-up question generation
-                topic_for_generation = ""
-                if hasattr(project, "goals") and isinstance(project.goals, list) and project.goals:
-                    topic_for_generation = project.goals[0]
-                elif hasattr(project, "goals") and isinstance(project.goals, str) and project.goals:
-                    topic_for_generation = project.goals
-
-                next_question_result = self.process_request(
-                    "socratic_counselor",
-                    {
-                        "action": "generate_question",
-                        "project": project,
-                        "user_id": current_user,
-                        "topic": topic_for_generation,  # Pass topic from goals for context
-                        "force_refresh": True,  # Critical: force new question after answer
-                    }
-                )
-                if next_question_result.get("status") == "success":
-                    logger.info(
-                        f"✓ Auto-generated follow-up question after answer: "
-                        f"{next_question_result.get('data', {}).get('question', '')[:50]}..."
-                    )
-            except Exception as auto_gen_err:
-                logger.debug(f"Auto-generation of follow-up question failed (non-fatal): {auto_gen_err}")
-                # Continue - this is non-critical, next question will be generated on next request
-
             # CRITICAL FIX #4: Detect and auto-execute actionable intents from user input
             # This handles cases like "skip", "hint", "explain conflict", etc.
             detected_intent = self._detect_actionable_intent(response)
@@ -3443,6 +3413,36 @@ class APIOrchestrator:
                         logger.info("✓ Project saved with updated maturity scores")
                     except Exception as save_err:
                         logger.warning(f"Failed to save project with maturity: {save_err}")
+
+                    # BUG #9 FIX: Auto-generate next follow-up question AFTER specs are merged
+                    # NOW specs are in project.goals, so topic extraction will work
+                    # This must happen AFTER specs extraction and project save
+                    try:
+                        # Extract topic from project goals for follow-up question generation
+                        topic_for_generation = ""
+                        if hasattr(project, "goals") and isinstance(project.goals, list) and project.goals:
+                            topic_for_generation = project.goals[0]
+                        elif hasattr(project, "goals") and isinstance(project.goals, str) and project.goals:
+                            topic_for_generation = project.goals
+
+                        next_question_result = self.process_request(
+                            "socratic_counselor",
+                            {
+                                "action": "generate_question",
+                                "project": project,
+                                "user_id": current_user,
+                                "topic": topic_for_generation,  # Pass topic from goals for context
+                                "force_refresh": True,  # Critical: force new question after answer
+                            }
+                        )
+                        if next_question_result.get("status") == "success":
+                            logger.info(
+                                f"✓ Auto-generated follow-up question after answer: "
+                                f"{next_question_result.get('data', {}).get('question', '')[:50]}..."
+                            )
+                    except Exception as auto_gen_err:
+                        logger.debug(f"Auto-generation of follow-up question failed (non-fatal): {auto_gen_err}")
+                        # Continue - this is non-critical, next question will be generated on next request
 
                 return {
                     "status": "success",
