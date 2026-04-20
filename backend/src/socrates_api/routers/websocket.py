@@ -561,7 +561,7 @@ async def _route_command(
 
         elif command == "advance":
             # Advance to next phase via orchestrator routing (not direct call)
-            result = await await async_orch.process_request_async(
+            result = await async_orch.process_request_async(
                 "socratic_counselor",
                 {
                     "action": "advance_phase",
@@ -628,6 +628,7 @@ async def send_chat_message(
         context = {}
         try:
             # DEPRECATED: Agent builds context internally
+            pass
         except Exception:
             context = {"debug_logs": []}
 
@@ -675,7 +676,7 @@ async def send_chat_message(
         if not assistant_messages:
             # Generate initial question via orchestrator routing (not direct call)
             try:
-                question_result = await await async_orch.process_request_async(
+                question_result = await async_orch.process_request_async(
                     "socratic_counselor",
                     {
                         "action": "generate_question",
@@ -693,7 +694,7 @@ async def send_chat_message(
         # Process user response with orchestrator via routing (not direct call)
         try:
             logger.info("[send_chat_message] Calling orchestrator.process_request_async")
-            response_result = await await async_orch.process_request_async(
+            response_result = await async_orch.process_request_async(
                 "socratic_counselor",
                 {
                     "action": "process_response",
@@ -933,6 +934,7 @@ async def request_hint(
         context = {}
         try:
             # DEPRECATED: Agent builds context internally
+            pass
         except Exception:
             context = {"debug_logs": []}
 
@@ -954,7 +956,7 @@ async def request_hint(
                 # CRITICAL FIX #1: Build context for question generation
                 # DEPRECATED: Agent builds context internally
 
-                question_result = await await async_orch.process_request_async(
+                question_result = await async_orch.process_request_async(
                     "socratic_counselor",
                     {
                         "action": "generate_question",
