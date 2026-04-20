@@ -3147,28 +3147,46 @@ class APIOrchestrator:
                     f"confidence={confidence_score:.2f}"
                 )
 
-                # Get project specs to compare against
-                project_specs = self._get_project_specs(project)
-                logger.info(f"Current project specs: {project_specs}")
-
-                # Compare specs for conflicts (only if extraction was successful)
-                conflicts = []
-                if extraction_status == "success" or extraction_status == "partial":
-                    conflicts = self._compare_specs(extracted_specs, project_specs)
-                    logger.info(f"Detected {len(conflicts)} conflicts")
-
-                # CRITICAL FIX #1: Auto-save extracted specs with metadata
-                # Only save if extraction was successful (not just if specs exist)
+                # Get project ID for confidence filtering and saving
                 project_id = (
                     getattr(project, "project_id", project.get("project_id"))
                     if hasattr(project, "get") or hasattr(project, "project_id")
                     else None
                 )
+
+                # Get project specs to compare against
+                project_specs = self._get_project_specs(project)
+                logger.info(f"Current project specs: {project_specs}")
+
+                # Compare specs for conflicts (only if extraction was successful)
+                # CRITICAL FIX #8.6: Pass project_id for confidence score filtering
+                conflicts = []
+                if extraction_status == "success" or extraction_status == "partial":
+                    conflicts = self._compare_specs(extracted_specs, project_specs, project_id)
+                    logger.info(f"Detected {len(conflicts)} conflicts")
+
+                # CRITICAL FIX #1: Auto-save extracted specs with metadata
+                # Only save if extraction was successful (not just if specs exist)
                 if project_id and extraction_status in ["success", "partial"]:
                     try:
                         from socrates_api.database import get_database
 
                         db = get_database()
+
+                        # CRITICAL FIX #8.7: Calculate response turn for auditability
+                        # Track which conversation turn led to these specs
+                        response_turn = None
+                        try:
+                            conversation_history = getattr(project, "conversation_history", []) or []
+                            # Count user messages (every other message in conversation)
+                            user_messages = [
+                                msg for msg in conversation_history
+                                if msg.get("type") == "user" or (isinstance(msg, dict) and msg.get("role") == "user")
+                            ]
+                            response_turn = len(user_messages)  # Current response number
+                        except Exception:
+                            pass  # response_turn defaults to None if calculation fails
+
                         # Use actual confidence score from validation, not hardcoded
                         db.save_extracted_specs(
                             project_id=project_id,
@@ -3176,14 +3194,16 @@ class APIOrchestrator:
                             extraction_method="contextanalyzer",
                             confidence_score=confidence_score,  # Use actual score
                             source_text=response,
+                            response_turn=response_turn,  # ← NEW: Track conversation turn
                             metadata={
                                 "user_id": current_user,
                                 "extraction_status": extraction_status,
                                 "conflict_count": len(conflicts),
                                 "has_conflicts": len(conflicts) > 0,
+                                "response_turn": response_turn,  # ← Include in metadata too
                             },
                         )
-                        logger.info(f"✓ Extracted specs persisted for project {project_id}")
+                        logger.info(f"✓ Extracted specs persisted for project {project_id} (turn {response_turn})")
                     except Exception as e:
                         logger.warning(f"Failed to persist extracted specs: {e}")
                         # Don't fail the whole request if persistence fails
@@ -4408,7 +4428,12 @@ If a category has no items, use an empty array."""
         return specs
 
     def _get_project_specs(self, project: Dict[str, Any]) -> Dict[str, Any]:
-        """Get current project specifications"""
+        """
+        Get current project specifications with fallback to metadata table.
+
+        CRITICAL FIX #8.5: Query extracted_specs table as fallback when project fields empty.
+        Ensures specs stored in metadata table are not lost even if not merged to project fields.
+        """
         try:
             # Handle both dict and object access patterns
             goals = (
@@ -4438,27 +4463,97 @@ If a category has no items, use an empty array."""
             elif not isinstance(goals, list):
                 goals = []
 
-            return {
+            specs = {
                 "goals": goals if isinstance(goals, list) else [str(goals)] if goals else [],
                 "requirements": requirements if isinstance(requirements, list) else [],
                 "tech_stack": tech_stack if isinstance(tech_stack, list) else [],
                 "constraints": constraints if isinstance(constraints, list) else [],
             }
 
+            # CRITICAL FIX #8.5: Fallback to metadata table if project fields are empty
+            # This handles cases where specs are in metadata table but not merged to project fields
+            if not any(specs.values()):  # If all fields are empty
+                try:
+                    project_id = getattr(project, "project_id", project.get("project_id")) if isinstance(project, dict) or hasattr(project, "get") else None
+                    if project_id:
+                        from socrates_api.database import get_database
+                        db = get_database()
+                        extracted = db.get_extracted_specs(project_id)
+
+                        if extracted:
+                            # Merge specs from metadata table
+                            for spec_record in extracted:
+                                spec_type = spec_record.get("spec_type", "")
+                                spec_value = spec_record.get("spec_value", "")
+
+                                if spec_type in specs and spec_value and spec_value not in specs[spec_type]:
+                                    specs[spec_type].append(spec_value)
+
+                            logger.info(f"✓ Restored {sum(len(specs.get(k, [])) for k in specs.keys())} specs from metadata table fallback for project {project_id}")
+                except Exception as fallback_err:
+                    logger.debug(f"Failed to use metadata table fallback: {fallback_err}")
+                    # Continue with empty project fields
+
+            return specs
+
         except Exception as e:
             logger.error(f"Failed to get project specs: {e}")
             return {"goals": [], "requirements": [], "tech_stack": [], "constraints": []}
 
     def _compare_specs(
-        self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any]
+        self, new_specs: Dict[str, Any], existing_specs: Dict[str, Any], project_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Compare new specs against existing specs and detect conflicts using socratic-conflict"""
+        """
+        Compare new specs against existing specs and detect conflicts using socratic-conflict.
+
+        CRITICAL FIX #8.6: Use confidence scores to filter low-confidence specs from conflict detection.
+        """
         try:
+            # CRITICAL FIX #8.6: Filter specs by confidence score
+            # Only include specs with confidence >= 0.7 (70%) in conflict detection
+            filtered_existing_specs = existing_specs.copy()
+
+            if project_id:
+                try:
+                    from socrates_api.database import get_database
+                    db = get_database()
+                    extracted_specs = db.get_extracted_specs(project_id)
+
+                    # Build confidence score map
+                    confidence_map = {}
+                    for spec_record in extracted_specs:
+                        spec_type = spec_record.get("spec_type", "")
+                        spec_value = spec_record.get("spec_value", "")
+                        confidence = spec_record.get("confidence_score", 0.5)
+                        key = f"{spec_type}:{spec_value}"
+                        confidence_map[key] = confidence
+
+                    # Filter out low-confidence specs (< 0.7)
+                    for spec_type in ["goals", "requirements", "tech_stack", "constraints"]:
+                        if spec_type in filtered_existing_specs:
+                            existing_list = filtered_existing_specs[spec_type]
+                            if isinstance(existing_list, list):
+                                filtered_existing_specs[spec_type] = [
+                                    item for item in existing_list
+                                    if confidence_map.get(f"{spec_type}:{item}", 0.95) >= 0.7
+                                ]
+
+                    logger.debug(
+                        f"Filtered {sum(len(existing_specs.get(k, [])) - len(filtered_existing_specs.get(k, [])) "
+                        f"for k in ['goals', 'requirements', 'tech_stack', 'constraints'])} "
+                        f"low-confidence specs from conflict detection"
+                    )
+                except Exception as confidence_err:
+                    logger.debug(f"Failed to apply confidence filtering: {confidence_err}")
+                    # Continue with unfiltered specs
+            else:
+                logger.debug("No project_id provided for confidence filtering")
+
             # Use ConflictDetector from socratic-conflict library for sophisticated comparison
             detector = ConflictDetector()
             # Note: ConflictDetector may use detected_conflicts or requires different parameters
             # Fall back to manual comparison if library method not available
-            conflicts = self._detect_conflicts_fallback(new_specs, existing_specs)
+            conflicts = self._detect_conflicts_fallback(new_specs, filtered_existing_specs)
 
             if conflicts:
                 logger.info(f"ConflictDetector found {len(conflicts)} conflicts in specs")
@@ -5586,6 +5681,29 @@ If a category has no items, use an empty array."""
             if specs_saved:
                 db.save_project(project)
                 logger.info(f"✓ Auto-saved extracted specs to project {project.project_id}")
+
+                # CRITICAL FIX #8.4: Also persist metadata (confidence scores, source tracking)
+                # This completes the dual-path persistence: specs in project fields + metadata table
+                try:
+                    db.save_extracted_specs(
+                        project_id=project.project_id,
+                        specs=insights,
+                        extraction_method="auto_save_extracted_specs",
+                        confidence_score=insights.get("confidence_score", 0.85),
+                        source_text="",  # No source text available in auto-save context
+                        metadata={
+                            "auto_merged": True,
+                            "specs_saved_count": sum(
+                                len(insights.get(k, []))
+                                for k in ["goals", "requirements", "tech_stack", "constraints"]
+                            ),
+                        }
+                    )
+                    logger.debug(f"✓ Persisted metadata for auto-saved specs to project {project.project_id}")
+                except Exception as metadata_err:
+                    logger.warning(f"Failed to persist metadata for auto-saved specs: {metadata_err}")
+                    # Don't fail the whole operation if metadata persistence fails
+
                 return True
 
             return False
