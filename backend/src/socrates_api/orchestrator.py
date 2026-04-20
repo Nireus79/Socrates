@@ -23,9 +23,6 @@ from socratic_nexus import LLMClient
 # Import SocraticCounselor from socratic-agents library (required)
 from socratic_agents import SocraticCounselor
 
-# Import AnswerProcessingWorkflow from socratic-agents library v0.3.0 (MONOLITHIC PATTERN)
-from socratic_agents.orchestration.answer_workflow import AnswerProcessingWorkflow
-
 # Import conflict resolution from socratic-conflict library (required)
 from socratic_conflict import ConflictDetector
 
@@ -2710,21 +2707,17 @@ class APIOrchestrator:
         """
         Process user answer using the monolithic pattern from socratic-agents v0.3.0.
 
-        This method respects the AnswerProcessingWorkflow from the library, which implements:
-        1. Extract specs with confidence scores
+        Implementation:
+        1. Extract specs with confidence scores via counselor
         2. Filter by confidence >= 0.7
         3. Merge into project fields
-        4. Detect conflicts
-        5. Update maturity
-        6. Auto-generate follow-up question
-        7. Store follow-up in conversation history
+        4. Detect conflicts via detector
+        5. Update maturity via maturity calculator
+        6. Save all changes through orchestrator
 
         This ensures the system properly follows the monolithic Socrates pattern.
         """
         try:
-            # Initialize the workflow with logger
-            workflow = AnswerProcessingWorkflow(logger)
-
             # Get counselor and detector agents
             counselor = self._get_agent("socratic_counselor")
             detector = self._get_agent("conflict_detector")
@@ -2736,27 +2729,77 @@ class APIOrchestrator:
                     "message": "Required agents (counselor, detector) not available"
                 }
 
-            # Use the monolithic workflow to process the answer
-            result = workflow.process_answer(
-                project=project,
-                user_response=user_response,
-                current_user=current_user,
-                counselor=counselor,
-                detector=detector,
-            )
+            # Step 1: Extract specs from user response with confidence scores
+            extraction_result = counselor.process({
+                "action": "extract_learning_objectives",
+                "text": user_response,
+                "context": project,
+                "phase": getattr(project, "phase", "discovery")
+            })
 
-            # Ensure project is saved with all updates
-            if result.get("status") == "success":
-                try:
-                    from socrates_api.database import get_database
-                    db = get_database()
-                    db.save_project(project)
-                    logger.debug(f"✓ Project saved after answer processing")
-                except Exception as e:
-                    logger.warning(f"Failed to save project after answer: {e}")
-                    # Don't fail the request if save fails
+            extracted_specs = extraction_result.get("learning_objectives", [])
+            if not extracted_specs:
+                extracted_specs = []
 
-            return result
+            # Step 2: Filter by confidence >= 0.7
+            high_confidence_specs = [
+                spec for spec in extracted_specs
+                if isinstance(spec, dict) and spec.get("confidence", 0) >= 0.7
+            ]
+
+            # Step 3-4: Merge specs and detect conflicts
+            conflicts = []
+            if high_confidence_specs:
+                # Merge specs into project
+                for spec in high_confidence_specs:
+                    if "goal" in spec:
+                        if not hasattr(project, "goals"):
+                            project.goals = []
+                        project.goals.append(spec["goal"])
+
+                # Detect conflicts
+                detector_result = detector.detect({
+                    "specs": high_confidence_specs,
+                    "existing_goals": getattr(project, "goals", []),
+                    "context": project
+                })
+                conflicts = detector_result.get("conflicts", [])
+
+            # Step 5: Update maturity
+            maturity_result = {}
+            try:
+                from socratic_maturity import MaturityCalculator
+                calc = MaturityCalculator()
+                maturity_result = calc.calculate({
+                    "specs": high_confidence_specs,
+                    "project": project,
+                    "phase": getattr(project, "phase", "discovery")
+                })
+            except Exception as e:
+                logger.warning(f"Maturity calculation failed: {e}")
+
+            # Step 6: Add to conversation history
+            self.add_user_message_to_history(project, user_response)
+            self.persist_conversation_history(project)
+
+            # Save project
+            try:
+                from socrates_api.database import get_database
+                db = get_database()
+                db.save_project(project)
+                logger.debug(f"✓ Project saved after answer processing")
+            except Exception as e:
+                logger.warning(f"Failed to save project after answer: {e}")
+
+            return {
+                "status": "success",
+                "data": {
+                    "specs": high_confidence_specs,
+                    "conflicts": conflicts,
+                    "maturity": maturity_result,
+                    "message": "Answer processed successfully"
+                }
+            }
 
         except Exception as e:
             logger.error(f"Error in monolithic answer processing: {e}", exc_info=True)
