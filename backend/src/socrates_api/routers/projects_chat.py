@@ -552,11 +552,15 @@ async def get_question(
         db.save_project(project)
         # db.save_conversation_history removed - modular version uses db.save_project
 
+        # Extract question - orchestrator nests it under "data"
+        question_data = result.get("data", result)  # Try "data" first, then fall back to top level
+        question_text = question_data.get("question", "") if isinstance(question_data, dict) else ""
+
         return APIResponse(
             success=True,
             status="success",
             data={
-                "question": result.get("question", ""),
+                "question": question_text,
                 "phase": project.phase,
             },
         )
