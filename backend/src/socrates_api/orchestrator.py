@@ -4538,10 +4538,12 @@ If a category has no items, use an empty array."""
                                     if confidence_map.get(f"{spec_type}:{item}", 0.95) >= 0.7
                                 ]
 
+                    filtered_count = sum(
+                        len(existing_specs.get(k, [])) - len(filtered_existing_specs.get(k, []))
+                        for k in ['goals', 'requirements', 'tech_stack', 'constraints']
+                    )
                     logger.debug(
-                        f"Filtered {sum(len(existing_specs.get(k, [])) - len(filtered_existing_specs.get(k, [])) "
-                        f"for k in ['goals', 'requirements', 'tech_stack', 'constraints'])} "
-                        f"low-confidence specs from conflict detection"
+                        f"Filtered {filtered_count} low-confidence specs from conflict detection"
                     )
                 except Exception as confidence_err:
                     logger.debug(f"Failed to apply confidence filtering: {confidence_err}")
