@@ -2184,15 +2184,15 @@ class APIOrchestrator:
 
             try:
                 counselor = self._get_agent("socratic_counselor")
-                if counselor and hasattr(counselor, "generate_answer_suggestions"):
-                    suggestions_response = counselor.generate_answer_suggestions(
-                        question=question.get("question", ""),
-                        project_context=self._get_extracted_specs(project),
-                        phase=context["phase"],
-                        user_role=context["user_role"],
-                        recent_messages=context.get("recent_messages", []),
-                        diversity_emphasis=True,
-                    )
+                if counselor:
+                    # CRITICAL FIX: Use process() dispatch pattern, not direct method call
+                    # generate_answer_suggestions is an action, not a public method
+                    suggestions_response = counselor.process({
+                        "action": "generate_answer_suggestions",
+                        "current_question": question.get("question", ""),
+                        "project": project,
+                        "current_user": user_id or "default_user",
+                    })
             except Exception as e:
                 logger.warning(f"Failed to generate suggestions: {e}")
 
@@ -2985,12 +2985,13 @@ class APIOrchestrator:
 
                 # Detect conflicts
                 logger.info(f"[ANSWER_PROCESSING] Step 4: Calling conflict detector...")
-                detector_result = detector.detect({
-                    "specs": high_confidence_specs,
-                    "existing_goals": getattr(project, "goals", []),
-                    "existing_requirements": getattr(project, "requirements", []),
-                    "existing_tech_stack": getattr(project, "tech_stack", []),
-                    "context": project
+                # CRITICAL FIX: Use process() dispatch pattern, not direct method call
+                # detect_conflicts is an action, not a public method
+                detector_result = detector.process({
+                    "action": "detect_conflicts",
+                    "new_insights": high_confidence_specs,
+                    "project": project,
+                    "current_user": user_id or "default_user",
                 })
 
                 conflicts = detector_result.get("conflicts", []) if detector_result else []
