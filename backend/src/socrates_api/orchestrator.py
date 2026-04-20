@@ -3235,7 +3235,7 @@ class APIOrchestrator:
                             "goals": goals,
                             "project_id": project_id,
                             "project": project,  # Include full project object for agent context
-                            "user_id": user_id,  # CRITICAL: Pass user_id so agent doesn't default to "default_user"
+                            "current_user": user_id,  # CRITICAL: Must use "current_user" not "user_id" to match monolithic agent
                             "force_refresh": force_refresh,  # Also pass force_refresh for consistency
                         }
 
@@ -5167,7 +5167,9 @@ If a category has no items, use an empty array."""
                 counselor_result = counselor.process({
                     "action": "generate_question",  # CRITICAL: Must specify action
                     "topic": topic,
-                    "level": level
+                    "level": level,
+                    "project": project,  # CRITICAL: Required by monolithic agent
+                    "current_user": current_user,  # CRITICAL: Required by monolithic agent
                 })
             except Exception as e:
                 logger.warning(f"Deduplication failed: {e}, falling back to main LLM generation")
