@@ -2927,6 +2927,21 @@ class APIOrchestrator:
                                 f"Including {len(conversation_history)} conversation history entries for context"
                             )
 
+                        # BUG #9 FIX: Track recently asked questions to prevent duplicates
+                        # Pass the list of recent questions so agent knows what not to ask
+                        pending_questions = getattr(project, "pending_questions", [])
+                        if pending_questions:
+                            # Extract recently asked questions (both answered and unanswered)
+                            recently_asked = [
+                                q.get("question") for q in pending_questions
+                                if q.get("question") and q.get("status") in ["answered", "unanswered"]
+                            ]
+                            if recently_asked:
+                                counselor_request["recently_asked"] = recently_asked
+                                logger.debug(
+                                    f"Passing {len(recently_asked)} recently asked questions to agent for deduplication"
+                                )
+
                         # Include other project context (for backward compatibility)
                         if hasattr(project, "requirements") and project.requirements:
                             counselor_request["requirements"] = project.requirements
@@ -3059,6 +3074,28 @@ class APIOrchestrator:
                         q["answered_at"] = datetime.now(timezone.utc).isoformat()
                         logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
                         break
+
+            # BUG #9 FIX: Auto-generate next follow-up question after answer is processed
+            # This matches monolithic behavior: after marking answered, generate next question
+            # This prevents asking the same question twice
+            try:
+                next_question_result = self.process_request(
+                    "socratic_counselor",
+                    {
+                        "action": "generate_question",
+                        "project": project,
+                        "user_id": current_user,
+                        "force_refresh": True,  # Critical: force new question after answer
+                    }
+                )
+                if next_question_result.get("status") == "success":
+                    logger.info(
+                        f"✓ Auto-generated follow-up question after answer: "
+                        f"{next_question_result.get('data', {}).get('question', '')[:50]}..."
+                    )
+            except Exception as auto_gen_err:
+                logger.debug(f"Auto-generation of follow-up question failed (non-fatal): {auto_gen_err}")
+                # Continue - this is non-critical, next question will be generated on next request
 
             # CRITICAL FIX #4: Detect and auto-execute actionable intents from user input
             # This handles cases like "skip", "hint", "explain conflict", etc.
