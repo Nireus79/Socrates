@@ -3217,14 +3217,15 @@ class APIOrchestrator:
                 # This ensures specs are available in project object, not just in metadata table
                 if extraction_status in ["success", "partial"] and any(extracted_specs.values()):
                     try:
-                        # Merge specs into project fields
-                        if not hasattr(project, "goals"):
-                            project.goals = []
-                        if not hasattr(project, "requirements"):
+                        # Ensure all spec fields are lists (not strings)
+                        # In modular version, these might be initialized as strings or None
+                        if not isinstance(project.goals, list):
+                            project.goals = [] if not project.goals else [project.goals]
+                        if not isinstance(project.requirements, list):
                             project.requirements = []
-                        if not hasattr(project, "tech_stack"):
+                        if not isinstance(project.tech_stack, list):
                             project.tech_stack = []
-                        if not hasattr(project, "constraints"):
+                        if not isinstance(project.constraints, list):
                             project.constraints = []
 
                         # Add new specs without duplicates
