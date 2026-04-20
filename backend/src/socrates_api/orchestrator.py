@@ -22,6 +22,9 @@ from socratic_nexus import LLMClient
 # Import SocraticCounselor from socratic-agents library (required)
 from socratic_agents import SocraticCounselor
 
+# Import AnswerProcessingWorkflow from socratic-agents library v0.3.0 (MONOLITHIC PATTERN)
+from socratic_agents.orchestration.answer_workflow import AnswerProcessingWorkflow
+
 # Import conflict resolution from socratic-conflict library (required)
 from socratic_conflict import ConflictDetector
 
@@ -2792,6 +2795,65 @@ class APIOrchestrator:
             # Just log and continue
             return True, f"User check failed (continuing): {e}"
 
+    def _process_answer_monolithic(self, project: Any, user_response: str, current_user: str) -> Dict[str, Any]:
+        """
+        Process user answer using the monolithic pattern from socratic-agents v0.3.0.
+
+        This method respects the AnswerProcessingWorkflow from the library, which implements:
+        1. Extract specs with confidence scores
+        2. Filter by confidence >= 0.7
+        3. Merge into project fields
+        4. Detect conflicts
+        5. Update maturity
+        6. Auto-generate follow-up question
+        7. Store follow-up in conversation history
+
+        This ensures the system properly follows the monolithic Socrates pattern.
+        """
+        try:
+            # Initialize the workflow with logger
+            workflow = AnswerProcessingWorkflow(logger)
+
+            # Get counselor and detector agents
+            counselor = self._get_agent("socratic_counselor")
+            detector = self._get_agent("conflict_detector")
+
+            if not counselor or not detector:
+                logger.error("Cannot process answer: required agents not available")
+                return {
+                    "status": "error",
+                    "message": "Required agents (counselor, detector) not available"
+                }
+
+            # Use the monolithic workflow to process the answer
+            result = workflow.process_answer(
+                project=project,
+                user_response=user_response,
+                current_user=current_user,
+                counselor=counselor,
+                detector=detector,
+            )
+
+            # Ensure project is saved with all updates
+            if result.get("status") == "success":
+                try:
+                    from socrates_api.database import get_database
+                    db = get_database()
+                    db.save_project(project)
+                    logger.debug(f"✓ Project saved after answer processing")
+                except Exception as e:
+                    logger.warning(f"Failed to save project after answer: {e}")
+                    # Don't fail the request if save fails
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error in monolithic answer processing: {e}", exc_info=True)
+            return {
+                "status": "error",
+                "message": f"Answer processing failed: {str(e)}"
+            }
+
     def _handle_socratic_counselor(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle Socratic counselor requests for generating questions"""
         action = request_data.get("action", "")
@@ -3082,439 +3144,16 @@ class APIOrchestrator:
             }
 
         elif action == "process_response":
-            # Process user's response to a Socratic question
+            # Use the monolithic pattern from socratic-agents v0.3.0
             response = request_data.get("response", "")
             project = request_data.get("project", {})
             current_user = request_data.get("current_user", "")
-            # CRITICAL FIX #5: Support pre-extracted insights for batch optimization
-            pre_extracted_insights = request_data.get("pre_extracted_insights", None)
 
-            logger.info(f"Processing response in Socratic mode: {response[:50]}...")
+            logger.info(f"Processing response using monolithic pattern: {response[:50]}...")
 
-            # Mark the last unanswered question as answered (CRITICAL - matches monolithic behavior)
-            # This ensures the question is marked answered even if conflicts are found
-            if hasattr(project, "pending_questions") and project.pending_questions:
-                for q in reversed(project.pending_questions):
-                    if q.get("status") == "unanswered":
-                        q["status"] = "answered"
-                        q["answered_at"] = datetime.now(timezone.utc).isoformat()
-                        logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
-                        break
-
-            # CRITICAL FIX #4: Detect and auto-execute actionable intents from user input
-            # This handles cases like "skip", "hint", "explain conflict", etc.
-            detected_intent = self._detect_actionable_intent(response)
-            if detected_intent and detected_intent.get("should_auto_execute"):
-                logger.info(
-                    f"Auto-executing intent: {detected_intent['action']} (confidence: {detected_intent['confidence']})"
-                )
-
-                # Emit NLU_SUGGESTION_EXECUTED event for real-time UI updates
-                from socrates_api.models_local import EventType
-
-                event_data = {
-                    "user_id": current_user,
-                    "project_id": (
-                        getattr(project, "project_id", project.get("project_id"))
-                        if hasattr(project, "get")
-                        else project.get("project_id")
-                    ),
-                    "intent": detected_intent["intent"],
-                    "action": detected_intent["action"],
-                    "confidence": detected_intent["confidence"],
-                }
-                self.event_emitter.emit(EventType.NLU_SUGGESTION_EXECUTED, event_data)
-
-                # Auto-execute the action
-                action_result = self.process_request(
-                    "socratic_counselor",
-                    {
-                        "action": detected_intent["action"],
-                        "project": project,
-                        "current_user": current_user,
-                    },
-                )
-
-                # Return auto-executed action with NLU metadata
-                if action_result.get("status") == "success":
-                    return {
-                        "status": "success",
-                        "data": {
-                            **action_result.get("data", {}),
-                            "nlu_auto_executed": True,
-                            "detected_intent": detected_intent["intent"],
-                            "confidence": detected_intent["confidence"],
-                        },
-                        "message": f"Auto-executed: {detected_intent['action']}",
-                    }
-
-            try:
-                # CRITICAL FIX #5: Support pre-extracted insights for batch optimization
-                # If pre_extracted_insights provided, skip extraction step and use those instead
-                # This allows batch extraction outside the main processing loop (up to 2x faster)
-                if pre_extracted_insights:
-                    logger.info("Using pre-extracted insights (skipping extraction step)")
-                    extracted_specs = pre_extracted_insights
-                    extraction_status = extracted_specs.get("extraction_status", "success")
-                    confidence_score = extracted_specs.get("confidence_score", 0.95)
-                else:
-                    # Extract specs from user's response using ContextAnalyzer agent
-                    # CRITICAL FIX: Pass question context for context-aware specs extraction
-                    question_text = getattr(project, "current_question_text", None)
-                    question_metadata = getattr(project, "current_question_metadata", {})
-
-                    logger.debug("Processing response with question context:")
-                    logger.debug(f"  Question: {question_text}")
-                    logger.debug(
-                        f"  Category: {question_metadata.get('category', 'unknown') if question_metadata else 'unknown'}"
-                    )
-                    logger.debug(
-                        f"  Target field: {question_metadata.get('target_field', 'unknown') if question_metadata else 'unknown'}"
-                    )
-
-                    extracted_specs = self._extract_insights_fallback(
-                        response_text=response,
-                        question_text=question_text,
-                        question_metadata=question_metadata,
-                    )
-
-                    # CRITICAL: Validate extracted specs before using them
-                    extracted_specs = self._validate_extracted_specs(extracted_specs)
-                    extraction_status = extracted_specs.get("extraction_status", "unknown")
-                    confidence_score = extracted_specs.get("confidence_score", 0.0)
-
-                logger.info(
-                    f"Extracted specs from response: status={extraction_status}, "
-                    f"confidence={confidence_score:.2f}"
-                )
-
-                # Get project ID for confidence filtering and saving
-                project_id = (
-                    getattr(project, "project_id", project.get("project_id"))
-                    if hasattr(project, "get") or hasattr(project, "project_id")
-                    else None
-                )
-
-                # Get project specs to compare against
-                project_specs = self._get_project_specs(project)
-                logger.info(f"Current project specs: {project_specs}")
-
-                # Compare specs for conflicts (only if extraction was successful)
-                # CRITICAL FIX #8.6: Pass project_id for confidence score filtering
-                conflicts = []
-                if extraction_status == "success" or extraction_status == "partial":
-                    conflicts = self._compare_specs(extracted_specs, project_specs, project_id)
-                    logger.info(f"Detected {len(conflicts)} conflicts")
-
-                # CRITICAL FIX #1: Auto-save extracted specs with metadata
-                # Only save if extraction was successful (not just if specs exist)
-                if project_id and extraction_status in ["success", "partial"]:
-                    try:
-                        from socrates_api.database import get_database
-
-                        db = get_database()
-
-                        # CRITICAL FIX #8.7: Calculate response turn for auditability
-                        # Track which conversation turn led to these specs
-                        response_turn = None
-                        try:
-                            conversation_history = getattr(project, "conversation_history", []) or []
-                            # Count user messages (every other message in conversation)
-                            user_messages = [
-                                msg for msg in conversation_history
-                                if msg.get("type") == "user" or (isinstance(msg, dict) and msg.get("role") == "user")
-                            ]
-                            response_turn = len(user_messages)  # Current response number
-                        except Exception:
-                            pass  # response_turn defaults to None if calculation fails
-
-                        # Use actual confidence score from validation, not hardcoded
-                        db.save_extracted_specs(
-                            project_id=project_id,
-                            specs=extracted_specs,
-                            extraction_method="contextanalyzer",
-                            confidence_score=confidence_score,  # Use actual score
-                            source_text=response,
-                            response_turn=response_turn,  # ← NEW: Track conversation turn
-                            metadata={
-                                "user_id": current_user,
-                                "extraction_status": extraction_status,
-                                "conflict_count": len(conflicts),
-                                "has_conflicts": len(conflicts) > 0,
-                                "response_turn": response_turn,  # ← Include in metadata too
-                            },
-                        )
-                        logger.info(f"✓ Extracted specs persisted for project {project_id} (turn {response_turn})")
-                    except Exception as e:
-                        logger.warning(f"Failed to persist extracted specs: {e}")
-                        # Don't fail the whole request if persistence fails
-                else:
-                    if extraction_status == "empty_response":
-                        logger.info("No specs to save - user provided empty response")
-                    elif extraction_status == "no_specs_found":
-                        logger.info("No specs found in response - extraction may have failed")
-
-                # CRITICAL FIX #8.2: Merge extracted specs into project fields
-                # This ensures specs are available in project object, not just in metadata table
-                if extraction_status in ["success", "partial"] and any(extracted_specs.values()):
-                    try:
-                        # Ensure all spec fields are lists (not strings)
-                        # In modular version, these might be initialized as strings or None
-                        if not isinstance(project.goals, list):
-                            project.goals = [] if not project.goals else [project.goals]
-                        if not isinstance(project.requirements, list):
-                            project.requirements = []
-                        if not isinstance(project.tech_stack, list):
-                            project.tech_stack = []
-                        if not isinstance(project.constraints, list):
-                            project.constraints = []
-
-                        # Add new specs without duplicates
-                        for goal in extracted_specs.get("goals", []):
-                            if goal and goal not in project.goals:
-                                project.goals.append(goal)
-                        for req in extracted_specs.get("requirements", []):
-                            if req and req not in project.requirements:
-                                project.requirements.append(req)
-                        for tech in extracted_specs.get("tech_stack", []):
-                            if tech and tech not in project.tech_stack:
-                                project.tech_stack.append(tech)
-                        for constraint in extracted_specs.get("constraints", []):
-                            if constraint and constraint not in project.constraints:
-                                project.constraints.append(constraint)
-
-                        logger.info(
-                            f"✓ Merged {sum(len(extracted_specs.get(k, [])) for k in ['goals', 'requirements', 'tech_stack', 'constraints'])} "
-                            f"specs into project fields"
-                        )
-                    except Exception as e:
-                        logger.warning(f"Failed to merge specs into project fields: {e}")
-                        # Don't fail - specs still persisted in metadata table
-
-                # CRITICAL FIX #6: RECONNECT PIPELINE #4 - KNOWLEDGE BASE INTEGRATION
-                # Add extracted specs to vector database so they become project knowledge
-                # This enables project-specific question generation instead of generic questions
-                if project_id and extracted_specs and hasattr(self, "vector_db") and self.vector_db:
-                    try:
-                        logger.info("Adding extracted specs to knowledge base...")
-
-                        # Format specs for knowledge base
-                        for spec_field, spec_items in extracted_specs.items():
-                            if spec_items:  # Only if there are items in this field
-                                for item in spec_items:
-                                    # Create knowledge entry for each spec
-                                    knowledge_text = f"{spec_field}: {item}"
-
-                                    # Add to vector database with project context
-                                    try:
-                                        self.vector_db.add_text(
-                                            text=knowledge_text,
-                                            metadata={
-                                                "project_id": project_id,
-                                                "user_id": current_user,
-                                                "spec_type": spec_field,
-                                                "spec_value": item,
-                                                "source": "dialogue_response",
-                                                "timestamp": datetime.now(timezone.utc).isoformat(),
-                                            },
-                                        )
-                                    except Exception as vec_err:
-                                        logger.debug(
-                                            f"Failed to add spec '{item}' to vector DB: {vec_err}"
-                                        )
-
-                        logger.info(
-                            f"✓ Added {sum(len(items) for items in extracted_specs.values() if items)} specs to knowledge base"
-                        )
-
-                    except Exception as kb_err:
-                        logger.warning(f"Failed to integrate with knowledge base: {kb_err}")
-                        # Knowledge base is non-critical, don't fail the request
-
-                # Generate feedback based on insights and conflicts
-                feedback = self._generate_feedback(extracted_specs, conflicts)
-                logger.info(f"Generated feedback: {feedback[:100]}...")
-
-                # CRITICAL FIX #5: RECONNECT PIPELINE #2 - MATURITY RECALCULATION
-                # This was completely missing and is why user progress never updates
-                # After specs are extracted, we MUST recalculate project maturity
-                maturity_update_data = None
-                if any(extracted_specs.values()):  # Only if specs were actually extracted
-                    try:
-                        logger.info("Recalculating project maturity after specs extraction...")
-
-                        # Call quality_controller to recalculate maturity based on new specs
-                        maturity_result = self.process_request(
-                            "quality_controller",
-                            {
-                                "action": "update_after_response",
-                                "project": project,
-                                "insights": extracted_specs,
-                                "current_user": current_user,
-                            },
-                        )
-
-                        if maturity_result.get("status") == "success":
-                            maturity_data = maturity_result.get("data", {})
-                            maturity_info = maturity_data.get("maturity", {})
-
-                            # Update project with new maturity scores
-                            if maturity_info:
-                                # Update phase maturity scores
-                                if "phase_scores" in maturity_info:
-                                    project.phase_maturity_scores = maturity_info["phase_scores"]
-
-                                # Update overall maturity
-                                if "overall_score" in maturity_info:
-                                    project.overall_maturity = maturity_info["overall_score"]
-
-                                # Update category scores if available
-                                if "category_scores" in maturity_info:
-                                    project.category_scores = maturity_info["category_scores"]
-
-                                maturity_update_data = {
-                                    "overall_score": maturity_info.get("overall_score", 0.0),
-                                    "phase_scores": maturity_info.get("phase_scores", {}),
-                                    "updated": True,
-                                }
-
-                                old_score = getattr(project, "_old_maturity_score", 0.0)
-                                new_score = maturity_info.get("overall_score", 0.0)
-                                logger.info(
-                                    f"✓ Project maturity recalculated: {old_score:.1f}% → {new_score:.1f}%"
-                                )
-
-                                # Emit event for maturity update (RECONNECT PIPELINE)
-                                try:
-                                    from socrates_api.models_local import EventType
-                                    from socrates_api.websocket.connection_manager import (
-                                        get_connection_manager,
-                                    )
-
-                                    event_data = {
-                                        "project_id": getattr(project, "project_id", ""),
-                                        "user_id": current_user,
-                                        "old_maturity": old_score,
-                                        "new_maturity": new_score,
-                                        "maturity_data": maturity_update_data,
-                                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                                    }
-
-                                    # Try to emit event (non-critical)
-                                    try:
-                                        conn_manager = get_connection_manager()
-                                        conn_manager.broadcast_to_project(
-                                            user_id=current_user,
-                                            project_id=getattr(project, "project_id", ""),
-                                            message={
-                                                "type": "event",
-                                                "eventType": "MATURITY_UPDATED",
-                                                "data": event_data,
-                                            },
-                                        )
-                                        logger.debug("Emitted MATURITY_UPDATED event")
-                                    except Exception as event_err:
-                                        logger.debug(f"Could not emit maturity event: {event_err}")
-                                except Exception as event_init_err:
-                                    logger.debug(
-                                        f"Could not initialize event system: {event_init_err}"
-                                    )
-                        else:
-                            logger.warning(
-                                f"Maturity recalculation returned non-success: {maturity_result.get('message')}"
-                            )
-
-                    except Exception as maturity_err:
-                        # Maturity recalculation is important but not critical
-                        # Don't fail the whole response if it fails
-                        logger.warning(f"Failed to recalculate maturity: {maturity_err}")
-                        maturity_update_data = None
-
-                    # CRITICAL: Save project with updated maturity
-                    try:
-                        from socrates_api.database import get_database
-
-                        db = get_database()
-                        db.save_project(project)
-                        logger.info("✓ Project saved with updated maturity scores")
-                    except Exception as save_err:
-                        logger.warning(f"Failed to save project with maturity: {save_err}")
-
-                    # BUG #9 FIX: Auto-generate next follow-up question AFTER specs are merged
-                    # NOW specs are in project.goals, so topic extraction will work
-                    # This must happen AFTER specs extraction and project save
-                    try:
-                        # Extract topic from project goals for follow-up question generation
-                        topic_for_generation = ""
-                        if hasattr(project, "goals") and isinstance(project.goals, list) and project.goals:
-                            topic_for_generation = project.goals[0]
-                        elif hasattr(project, "goals") and isinstance(project.goals, str) and project.goals:
-                            topic_for_generation = project.goals
-
-                        next_question_result = self.process_request(
-                            "socratic_counselor",
-                            {
-                                "action": "generate_question",
-                                "project": project,
-                                "user_id": current_user,
-                                "topic": topic_for_generation,  # Pass topic from goals for context
-                                "force_refresh": True,  # Critical: force new question after answer
-                            }
-                        )
-                        if next_question_result.get("status") == "success":
-                            next_question_text = next_question_result.get('data', {}).get('question', '')
-                            logger.info(
-                                f"✓ Auto-generated follow-up question after answer: "
-                                f"{next_question_text[:50]}..."
-                            )
-
-                            # CRITICAL: Add generated question to conversation_history (MONOLITHIC PATTERN)
-                            # This is essential so that next question generation can extract it as "previously_asked"
-                            if not hasattr(project, "conversation_history"):
-                                project.conversation_history = []
-                            project.conversation_history.append({
-                                "type": "assistant",
-                                "content": next_question_text,
-                                "phase": getattr(project, "phase", "discovery"),
-                                "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "question_number": len([
-                                    m for m in project.conversation_history
-                                    if m.get("type") == "assistant"
-                                ]) + 1,
-                            })
-                            logger.debug(
-                                f"Added auto-generated question to conversation_history "
-                                f"(now {len(project.conversation_history)} total messages)"
-                            )
-                    except Exception as auto_gen_err:
-                        logger.debug(f"Auto-generation of follow-up question failed (non-fatal): {auto_gen_err}")
-                        # Continue - this is non-critical, next question will be generated on next request
-
-                return {
-                    "status": "success",
-                    "data": {
-                        "feedback": feedback,
-                        "extracted_specs": extracted_specs,
-                        "conflicts": conflicts,
-                        "maturity_update": maturity_update_data,  # Include maturity in response
-                        "next_action": (
-                            "generate_question" if not conflicts else "resolve_conflicts"
-                        ),
-                    },
-                    "message": "Response processed successfully",
-                }
-
-            except Exception as e:
-                logger.error(f"Failed to process response: {e}", exc_info=True)
-                # Return graceful fallback on error
-                return {
-                    "status": "success",
-                    "data": {
-                        "feedback": "Thank you for your response. Let me guide you further...",
-                        "next_action": "generate_question",
-                    },
-                    "message": "Response processed",
-                }
+            # Call the monolithic answer processing workflow from the library
+            result = self._process_answer_monolithic(project, response, current_user)
+            return result
 
         elif action == "generate_hint":
             # Generate a contextual hint for the current question
