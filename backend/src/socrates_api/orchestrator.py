@@ -2858,9 +2858,9 @@ class APIOrchestrator:
             logger.info(f"[ANSWER_PROCESSING] Step 1: Extracting specs from user response...")
             extraction_result = counselor.process({
                 "action": "extract_insights_only",
-                "text": user_response,
-                "context": project,
-                "phase": phase
+                "response": user_response,  # CRITICAL: Must use "response" not "text" to match monolithic-socrates agent
+                "project": project,  # CRITICAL: Pass full project object for agent context
+                "current_user": user_id or "default_user",  # CRITICAL: Pass current user for auth context
             })
 
             logger.debug(f"[ANSWER_PROCESSING] Extraction result keys: {extraction_result.keys()}")
@@ -3284,7 +3284,7 @@ class APIOrchestrator:
                                     logger.debug(f"[QUESTION_DEDUP] Message {i}: Skipped ({', '.join(reason)})")
 
                             if previously_asked_questions:
-                                counselor_request["recently_asked"] = previously_asked_questions
+                                counselor_request["previously_asked_questions"] = previously_asked_questions  # CRITICAL: Must use exact param name for monolithic agent
                                 logger.info(
                                     f"[QUESTION_DEDUP] ✓ Passing {len(previously_asked_questions)} previously asked questions "
                                     f"in {phase} phase for deduplication"
