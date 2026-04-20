@@ -2096,287 +2096,10 @@ class APIOrchestrator:
         except Exception:
             return {}
 
-    # ================== ORCHESTRATION METHODS ==================
-
-    def _orchestrate_question_generation(
-        self, project: Any, user_id: str, force_refresh: bool = False
-    ) -> Dict[str, Any]:
-        """
-        Orchestrate complete question generation flow with all agents.
-        PHASE 5: Enhanced with KB-aware capabilities.
-
-        Single point of coordination for question generation with:
-        - Knowledge gap identification
-        - Gap-driven question prioritization
-        - KB coverage tracking
-        - Document-informed context
-
-        Args:
-            project: Project object with current state
-            user_id: Current user ID
-            force_refresh: Force new generation even if pending question exists
-
-        Returns:
-            Dict with generated question or existing pending question
-        """
-        try:
-            import uuid
-            from datetime import datetime
-
-            project_id = getattr(project, "project_id", None)
-            logger.info(
-                f"Orchestrating question generation for project {project_id}, user {user_id}"
-            )
-
-            # 1. Check for pending unanswered questions
-            pending_questions = getattr(project, "pending_questions", []) or []
-            logger.debug(f"Total pending questions: {len(pending_questions)}, force_refresh={force_refresh}")
-            for pq in pending_questions:
-                logger.debug(f"  Question {pq.get('id')}: status={pq.get('status')}")
-
-            if not force_refresh and pending_questions:
-                unanswered = [q for q in pending_questions if q.get("status") == "unanswered"]
-                if unanswered:
-                    logger.info(f"Returning existing unanswered question: {unanswered[0]['id']}")
-                    return {"status": "success", "question": unanswered[0], "existing": True}
-                else:
-                    logger.info(f"All {len(pending_questions)} pending questions have been answered - generating new question")
-
-            # 2. Gather full context
-            context = self._gather_question_context(project, user_id)
-
-            # PHASE 5: Identify KB gaps and optimize chunks
-            phase = context.get("phase", "discovery")
-            question_number = context.get("question_number", 1)
-
-            # 2a. PHASE 5: Identify specification gaps from KB documents
-            kb_gaps = self._identify_knowledge_gaps(project)
-            context["kb_gaps"] = kb_gaps
-            context["gaps_count"] = len(kb_gaps)
-
-            # 2b. PHASE 5: Get KB chunks optimized for gap closure
-            if kb_gaps:
-                optimal_chunks = self._get_optimal_kb_chunks(
-                    project, phase, question_number, kb_gaps
-                )
-                context["optimal_kb_chunks"] = optimal_chunks
-                logger.debug(f"Added {len(optimal_chunks)} optimal KB chunks addressing gaps")
-
-            # 2c. PHASE 5: Calculate KB coverage
-            kb_coverage = self._calculate_kb_coverage(project)
-            context["kb_coverage"] = kb_coverage
-            logger.debug(f"KB coverage: {kb_coverage.get('coverage_percentage', 0)}%")
-
-            # 3. Call SocraticCounselor for question generation
-            debug_logs = []
-            try:
-                # Try to get user-specific LLM client with their API key
-                user_llm_client = self._create_user_llm_client(user_id, provider="claude")
-                if user_llm_client:
-                    debug_logs.append(
-                        {
-                            "level": "info",
-                            "message": f"Using user-specific LLM client for {user_id}",
-                        }
-                    )
-                    logger.debug(f"Using user-specific LLM client for {user_id}")
-                    # Create counselor with user's API key
-                    from socratic_agents import SocraticCounselor as BaseSocraticCounselor
-
-                    counselor = BaseSocraticCounselor(llm_client=user_llm_client, batch_size=1)
-                else:
-                    # Fall back to default counselor if user hasn't set API key
-                    debug_logs.append(
-                        {
-                            "level": "info",
-                            "message": f"No user API key for {user_id}, using default LLM client",
-                        }
-                    )
-                    logger.debug(f"No user API key for {user_id}, using default LLM client")
-                    counselor = self._get_agent("socratic_counselor")
-
-                if not counselor:
-                    debug_logs.append(
-                        {
-                            "level": "warning",
-                            "message": "SocraticCounselor agent not available, using static fallback",
-                        }
-                    )
-                    logger.warning("SocraticCounselor agent not available")
-                    question_response = self._get_fallback_question(phase)
-                else:
-                    # Call counselor with full KB-aware context
-                    debug_logs.append(
-                        {
-                            "level": "info",
-                            "message": f"Calling SocraticCounselor for phase {phase} (KB gaps: {len(kb_gaps)}, KB coverage: {kb_coverage.get('coverage_percentage', 0)}%)",
-                        }
-                    )
-                    logger.info(
-                        f"Calling SocraticCounselor for phase {phase} "
-                        f"(KB gaps: {len(kb_gaps)}, KB coverage: {kb_coverage.get('coverage_percentage', 0)}%)"
-                    )
-
-                    # Build topic from project goals and requirements
-                    project_context = context.get("project_context", {})
-                    goals = project_context.get("goals", [])
-                    requirements = project_context.get("requirements", [])
-                    project_name = getattr(project, "name", "")
-
-                    # Build topic: prefer goals, then requirements, then project name
-                    if goals:
-                        topic_parts = [
-                            str(g)[:50] for g in (goals if isinstance(goals, list) else [goals])
-                        ][:2]
-                        topic = " - ".join(topic_parts) if topic_parts else project_name
-                    elif requirements:
-                        topic_parts = [
-                            str(r)[:50]
-                            for r in (
-                                requirements if isinstance(requirements, list) else [requirements]
-                            )
-                        ][:2]
-                        topic = " - ".join(topic_parts) if topic_parts else project_name
-                    else:
-                        topic = project_name if project_name else f"{phase.title()} phase"
-
-                    # Build request with all context (KB chunks, document understanding, conversation history)
-                    counselor_request = {
-                        "topic": topic,
-                        "phase": phase,
-                        "context": self._get_conversation_summary(project),
-                        "knowledge_base": {
-                            "chunks": context.get("knowledge_base_chunks", []),
-                            "gaps": context.get("kb_gaps", []),
-                            "coverage": kb_coverage.get("coverage_percentage", 0),
-                        },
-                        "document_understanding": context.get("document_understanding", {}),
-                        "recently_asked": context.get("previously_asked_questions", []),
-                    }
-
-                    # Include conversation history if available
-                    conversation_history = context.get("conversation_history", [])
-                    if conversation_history:
-                        counselor_request["conversation_history"] = conversation_history
-
-                    debug_logs.append(
-                        {
-                            "level": "debug",
-                            "message": f"Calling counselor with topic '{topic}' and {len(context.get('knowledge_base_chunks', []))} KB chunks",
-                        }
-                    )
-                    logger.debug(
-                        f"Calling counselor with topic '{topic}' and {len(context.get('knowledge_base_chunks', []))} KB chunks"
-                    )
-                    question_response = counselor.process(counselor_request)
-
-                    # Ensure response has the expected structure
-                    if not isinstance(question_response, dict):
-                        question_response = {"question": str(question_response)}
-                    if "question" not in question_response:
-                        debug_logs.append(
-                            {
-                                "level": "warning",
-                                "message": "Counselor response missing 'question' field, using fallback",
-                            }
-                        )
-                        logger.warning(
-                            "Counselor response missing 'question' field, using fallback"
-                        )
-                        question_response = self._get_fallback_question(phase)
-                    else:
-                        debug_logs.append(
-                            {
-                                "level": "success",
-                                "message": f"✓ Generated KB-aware question (KB coverage: {kb_coverage.get('coverage_percentage', 0)}%)",
-                            }
-                        )
-
-            except Exception as e:
-                error_msg = f"Failed to generate question via SocraticCounselor: {str(e)}"
-                debug_logs.append({"level": "error", "message": error_msg})
-                logger.error(error_msg, exc_info=True)
-                question_response = self._get_fallback_question(phase)
-                debug_logs.append(
-                    {"level": "info", "message": "Using static fallback question due to LLM error"}
-                )
-
-            # 4. Store generated question
-            # Extract gaps before creating the question_entry (needed for PHASE 5)
-            question_text = question_response.get("question", "")
-            kb_gaps_addressed = []
-            if "question" in question_response and question_text:
-                kb_gaps_addressed = self._extract_gaps_from_question({"question": question_text})
-
-            question_entry = {
-                "id": f"q_{uuid.uuid4().hex[:8]}",
-                "question": question_text,
-                "phase": phase,
-                "status": "unanswered",
-                "created_at": datetime.now().isoformat(),
-                "answer": None,
-                "answered_at": None,
-                "skipped_at": None,
-                "metadata": question_response.get("metadata", {}),
-                # PHASE 5: Track KB gaps addressed by this question
-                "kb_gaps_addressed": kb_gaps_addressed,
-            }
-
-            # Update project with new question
-            # CRITICAL FIX: RESTORE MONOLITHIC SINGLE-QUESTION BEHAVIOR
-            # Only keep unanswered questions. Remove all answered ones before adding new question.
-            # This prevents accumulation and repetition of old questions.
-            if not hasattr(project, "pending_questions"):
-                project.pending_questions = []
-
-            # Keep only unanswered questions (remove answered/skipped ones)
-            project.pending_questions = [
-                q for q in project.pending_questions
-                if q.get("status") == "unanswered"
-            ]
-
-            # Add the new question (now there should only be one at a time in pending)
-            project.pending_questions.append(question_entry)
-            logger.debug(f"Cleaned pending_questions: {len(project.pending_questions)} question(s) remaining")
-
-            logger.info(
-                f"Generated question {question_entry['id']} for phase {phase} "
-                f"(addresses {len(question_entry.get('kb_gaps_addressed', []))} KB gaps)"
-            )
-
-            # Store debug logs in project for later retrieval
-            if not hasattr(project, "debug_logs"):
-                project.debug_logs = []
-            project.debug_logs.extend(debug_logs)
-
-            return {
-                "status": "success",
-                "question": question_entry,
-                "context": {
-                    "kb_strategy": context.get("kb_strategy"),
-                    "document_chunks_count": len(context.get("knowledge_base_chunks", [])),
-                    "phase": phase,
-                    # PHASE 5: Add KB-aware context
-                    "kb_gaps_identified": len(kb_gaps),
-                    "kb_coverage_percentage": kb_coverage.get("coverage_percentage", 0),
-                    "gaps_addressed_by_question": len(question_entry.get("kb_gaps_addressed", [])),
-                },
-                "debug_logs": debug_logs,
-            }
-
-        except Exception as e:
-            error_msg = str(e)
-            logger.error(f"Error in _orchestrate_question_generation: {error_msg}", exc_info=True)
-            return {
-                "status": "error",
-                "message": error_msg,
-                "debug_logs": [
-                    {"level": "error", "message": f"Question generation failed: {error_msg}"}
-                ],
-            }
-
     # CRITICAL FIX #8.3: Removed dead code - _orchestrate_answer_processing was 339 lines of unused method
     # The functionality is properly implemented inline in the process_response action handler
+    # CRITICAL FIX #8.4: Removed dead code - _orchestrate_question_generation was 276 lines of unused method
+    # The functionality is properly implemented in _handle_socratic_counselor using monolithic pattern
     # (see lines 3376-3680 in _handle_socratic_counselor)
     # This eliminates code duplication and confusion about which implementation is active
     # Removed 339 lines of dead/duplicate code (lines 2375-2712 in original)
@@ -3027,31 +2750,25 @@ class APIOrchestrator:
                             timeout_seconds=60,
                         )
 
-                        # CRITICAL FIX #4: Debug question deduplication
-                        pending_before = len(getattr(project, "pending_questions", []))
-                        unanswered_before = len([
-                            q for q in getattr(project, "pending_questions", [])
-                            if q.get("status") == "unanswered"
+                        # MONOLITHIC PATTERN: Track question generation with conversation_history (single source of truth)
+                        previous_conversation_count = len(getattr(project, "conversation_history", []))
+                        questions_asked_count = len([
+                            m for m in getattr(project, "conversation_history", [])
+                            if m.get("type") == "assistant"
                         ])
-                        logger.debug(f"Question state BEFORE agent call: {pending_before} total, {unanswered_before} unanswered")
+                        logger.debug(f"Conversation state BEFORE generation: {previous_conversation_count} total messages, {questions_asked_count} questions")
 
                         try:
                             result = breaker.call(counselor.process, counselor_request)
-                            logger.info(f"counselor.process() returned: {result}")
+                            logger.info(f"counselor.process() returned question: {result.get('question', '')[:50] if result.get('question') else 'NO_QUESTION'}")
 
-                            # CRITICAL FIX #4: Verify deduplication worked
-                            pending_after = len(getattr(project, "pending_questions", []))
-                            unanswered_after = len([
-                                q for q in getattr(project, "pending_questions", [])
-                                if q.get("status") == "unanswered"
+                            # MONOLITHIC PATTERN: Verify question was stored in conversation_history
+                            updated_conversation_count = len(getattr(project, "conversation_history", []))
+                            updated_questions_count = len([
+                                m for m in getattr(project, "conversation_history", [])
+                                if m.get("type") == "assistant"
                             ])
-                            is_existing = result.get("existing", False)
-                            logger.debug(f"Question state AFTER agent: {pending_after} total, {unanswered_after} unanswered, existing={is_existing}")
-
-                            if is_existing and unanswered_before == 0:
-                                logger.warning("BUG #4: Agent returned 'existing' question but no unanswered questions found!")
-                            if not is_existing and unanswered_before > 0:
-                                logger.debug("Agent generated new question even though unanswered questions exist")
+                            logger.debug(f"Conversation state AFTER generation: {updated_conversation_count} total messages, {updated_questions_count} questions (added {updated_conversation_count - previous_conversation_count})")
                         except Exception as circuit_error:
                             logger.error(
                                 f"Circuit breaker {breaker.name} blocked or agent failed: {circuit_error}",
