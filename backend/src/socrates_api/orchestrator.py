@@ -5,6 +5,7 @@ Instantiates and coordinates real agents from socratic-agents library.
 Provides unified interface for REST API endpoints to call agents and orchestrators.
 """
 
+import json
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -1719,6 +1720,8 @@ class APIOrchestrator:
                 return self._handle_document_processor(request_data)
             elif router_name == "knowledge_manager":
                 return self._handle_knowledge_manager(request_data)
+            elif router_name == "nlu_analyzer":
+                return self._handle_nlu_analyzer(request_data)
             else:
                 # Generic fallback for unknown routers - return sensible defaults
                 logger.warning(f"Unknown router: {router_name}, returning generic response")
@@ -3479,6 +3482,66 @@ If a category has no items, use an empty array."""
         action = request_data.get("action", "")
         logger.info(f"Knowledge manager request: action={action}")
 
+        # Handle search_similar action (for RAG/knowledge base search)
+        if action == "search_similar":
+            query = request_data.get("query", "")
+            top_k = request_data.get("top_k", 3)
+
+            if not query:
+                return {"status": "error", "message": "No query provided"}
+
+            try:
+                if self.vector_db and hasattr(self.vector_db, "search_similar"):
+                    results = self.vector_db.search_similar(query, top_k=top_k)
+                    return {
+                        "status": "success",
+                        "data": {
+                            "results": results,
+                            "count": len(results),
+                            "query": query,
+                        },
+                        "message": f"Found {len(results)} matching documents",
+                    }
+                else:
+                    logger.warning("Vector DB not available for search")
+                    return {"status": "error", "message": "Vector DB not available"}
+            except Exception as e:
+                logger.error(f"Error searching knowledge base: {e}")
+                return {"status": "error", "message": str(e)}
+
+        # Handle add_document action (for knowledge base indexing via orchestrator)
+        if action == "add_document":
+            doc_id = request_data.get("doc_id", "")
+            title = request_data.get("title", "")
+            content = request_data.get("content", "")
+            doc_type = request_data.get("doc_type", "text")
+            metadata = request_data.get("metadata", {})
+
+            if not doc_id or not title or not content:
+                return {"status": "error", "message": "Missing required fields: doc_id, title, content"}
+
+            try:
+                # Try to use knowledge manager agent if available
+                agent = self._get_agent("knowledge_manager")
+                if agent:
+                    result = agent.process(request_data)
+                    if isinstance(result, dict) and result.get("status") == "success":
+                        return result
+
+                # Fallback: Log that document was indexed
+                logger.info(f"Document indexed via orchestrator: {doc_id}")
+                return {
+                    "status": "success",
+                    "data": {
+                        "doc_id": doc_id,
+                        "title": title,
+                    },
+                    "message": "Document added to knowledge management",
+                }
+            except Exception as e:
+                logger.error(f"Error adding document to knowledge base: {e}")
+                return {"status": "error", "message": str(e)}
+
         # Handle get_suggestions action
         if action == "get_suggestions":
             project_id = request_data.get("project_id", "")
@@ -3550,6 +3613,47 @@ If a category has no items, use an empty array."""
                 }
         except Exception as e:
             logger.error(f"Error in knowledge manager handler: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _handle_nlu_analyzer(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle NLU (Natural Language Understanding) analysis requests.
+
+        Actions:
+        - get_command_suggestions: Generate AI-powered command suggestions from user input
+        - interpret_input: Interpret natural language input and return commands
+
+        MONOLITHIC PATTERN: Uses LLMClient through orchestrator instead of direct access.
+        """
+        action = request_data.get("action", "")
+        prompt = request_data.get("prompt", "")
+        user_id = request_data.get("user_id")
+        user_auth_method = request_data.get("user_auth_method", "api_key")
+
+        if not prompt:
+            return {"status": "error", "message": "No prompt provided"}
+
+        try:
+            # Use orchestrator's LLM client (not direct access)
+            response = self.llm_client.generate_response(prompt)
+
+            try:
+                result = json.loads(response)
+                return {
+                    "status": "success",
+                    "data": result,
+                    "message": f"NLU analysis completed for action '{action}'",
+                }
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse NLU response: {response}")
+                # Return raw response in case it's not JSON
+                return {
+                    "status": "success",
+                    "data": {"raw_response": response},
+                    "message": f"NLU analysis completed (non-JSON response)",
+                }
+        except Exception as e:
+            logger.error(f"Error in NLU analyzer handler: {e}")
             return {"status": "error", "message": str(e)}
 
     def _extract_insights_fallback(

@@ -131,17 +131,22 @@ Conversation:
 
 Return ONLY a JSON array of topics (strings), like: ["web development", "python", "database design"]"""
 
-        response = orchestrator.llm_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
+        # MONOLITHIC PATTERN: Use orchestrator.process_request instead of direct LLM access
+        result = orchestrator.process_request(
+            "nlu_analyzer",
+            {
+                "action": "extract_topics",
+                "prompt": prompt,
+                "user_id": user_id,
+                "user_auth_method": user_auth_method,
+            }
+        )
 
-        # Parse JSON response
-        import json
-
-        try:
-            topics = json.loads(response)
+        if result.get("status") == "success":
+            topics = result.get("data", {}).get("suggestions", [])
             return topics if isinstance(topics, list) else []
-        except json.JSONDecodeError:
-            # If Claude's response isn't valid JSON, return empty list
-            logger.warning(f"Failed to parse topics from Claude response: {response}")
+        else:
+            logger.warning(f"Failed to extract topics: {result.get('message', 'Unknown error')}")
             return []
 
     except Exception as e:
@@ -279,11 +284,20 @@ async def ask_question(
         conversation_history = db.get_free_session_conversation(current_user, session_id, limit=50)
         logger.info(f"[free-session] Loaded {len(conversation_history)} previous messages")
 
+        # MONOLITHIC PATTERN: Use orchestrator.process_request instead of direct vector_db access
         # Search knowledge base for relevant context
         relevant_context = ""
         try:
-            if orchestrator.vector_db:
-                knowledge_results = orchestrator.vector_db.search_similar(question, top_k=3)
+            knowledge_result = await async_orch.process_request_async(
+                "knowledge_manager",
+                {
+                    "action": "search_similar",
+                    "query": question,
+                    "top_k": 3,
+                }
+            )
+            if knowledge_result.get("status") == "success":
+                knowledge_results = knowledge_result.get("data", {}).get("results", [])
                 if knowledge_results:
                     relevant_context = "\n".join(
                         [f"- {result.get('content', '')[:200]}..." for result in knowledge_results]

@@ -262,17 +262,25 @@ Respond with JSON:
 
 Respond ONLY with valid JSON."""
 
-        response = orchestrator.llm_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
+        # MONOLITHIC PATTERN: Use orchestrator.process_request instead of direct LLM access
+        result = orchestrator.process_request(
+            "nlu_analyzer",
+            {
+                "action": "get_command_suggestions",
+                "prompt": prompt,
+                "user_id": user_id,
+                "user_auth_method": user_auth_method,
+            }
+        )
 
-        try:
-            result = json.loads(response)
-            suggestions = result.get("suggestions", [])
+        if result.get("status") == "success":
+            suggestions = result.get("data", {}).get("suggestions", [])
             # Sort by confidence and limit to top 5
             suggestions.sort(key=lambda x: x.get("confidence", 0), reverse=True)
             logger.debug(f"AI suggestions: {suggestions[:5]}")
             return suggestions[:5]
-        except json.JSONDecodeError:
-            logger.warning(f"Failed to parse AI suggestions: {response}")
+        else:
+            logger.warning(f"Failed to get AI suggestions: {result.get('message', 'Unknown error')}")
             return []
     except Exception as e:
         logger.debug("Operation failed")

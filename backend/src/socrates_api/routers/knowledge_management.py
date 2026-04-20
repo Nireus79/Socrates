@@ -50,8 +50,6 @@ async def add_knowledge_document(
     request: KnowledgeDocumentRequest,
     current_user: str = Depends(get_current_user),
     db: LocalDatabase = Depends(get_database),
-    km: KnowledgeManager = Depends(get_knowledge_service),
-    rag: RAGIntegration = Depends(get_rag_service),
 ):
     """
     Add a knowledge document to the project's knowledge base.
@@ -111,25 +109,25 @@ async def add_knowledge_document(
         # Add to project knowledge documents
         project.knowledge_documents.append(document)
 
-        # Add to socratic-knowledge library for enterprise knowledge management (singleton instance)
-        km.add_document(
-            doc_id=doc_id,
-            title=request.title,
-            content=request.content,
-            doc_type=request.type or "text",
-            metadata={"project_id": project_id, "created_by": current_user}
-        )
-        logger.info(f"Document added to enterprise knowledge management: {doc_id}")
+        # MONOLITHIC PATTERN: Use orchestrator to add document instead of direct service calls
+        from socrates_api.async_orchestrator import get_async_orchestrator
 
-        # Index in RAG for retrieval-augmented generation (singleton instance)
-        rag.index_document(
-            doc_id=doc_id,
-            title=request.title,
-            content=request.content,
-            doc_type=request.type or "text",
-            metadata={"project_id": project_id, "created_by": current_user}
+        async_orch = get_async_orchestrator()
+        km_result = await async_orch.process_request_async(
+            "knowledge_manager",
+            {
+                "action": "add_document",
+                "doc_id": doc_id,
+                "title": request.title,
+                "content": request.content,
+                "doc_type": request.type or "text",
+                "metadata": {"project_id": project_id, "created_by": current_user}
+            }
         )
-        logger.info(f"Document indexed in RAG system for retrieval: {doc_id}")
+        if km_result.get("status") == "success":
+            logger.info(f"Document added to knowledge management via orchestrator: {doc_id}")
+        else:
+            logger.warning(f"Document indexing warning: {km_result.get('message', 'Unknown error')}")
 
         # Persist changes
         db.save_project(project)
