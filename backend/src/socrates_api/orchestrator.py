@@ -738,7 +738,7 @@ class APIOrchestrator:
             if not agent:
                 return {"status": "error", "message": "CodeGenerator not available"}
 
-            result = agent.process({"prompt": prompt, "language": language})
+            result = agent.process({"action": "generate_artifact", "prompt": prompt, "language": language})
             return result
         except Exception as e:
             logger.error(f"Code generation failed: {e}")
@@ -751,7 +751,7 @@ class APIOrchestrator:
             if not agent:
                 return {"status": "error", "message": "CodeValidator not available"}
 
-            result = agent.process({"code": code})
+            result = agent.process({"action": "check_syntax", "code": code})
             return result
         except Exception as e:
             logger.error(f"Code validation failed: {e}")
@@ -1099,7 +1099,15 @@ class APIOrchestrator:
             if not agent:
                 return {"status": "error", "message": "SocraticCounselor not available"}
 
-            result = agent.process({"topic": topic, "level": level})
+            # CRITICAL: generate_question action requires project and current_user
+            # This method is legacy - should not be called without project context
+            result = agent.process({
+                "action": "generate_question",  # REQUIRED: Action dispatch
+                "topic": topic,
+                "level": level,
+                "project": None,  # WARNING: Legacy method - project required for real generation
+                "current_user": "api_default"  # WARNING: Using default user for legacy method
+            })
             return result
         except Exception as e:
             logger.error(f"Learning guidance failed: {e}")
