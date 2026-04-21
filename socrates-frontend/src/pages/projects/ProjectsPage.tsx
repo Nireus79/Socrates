@@ -120,11 +120,9 @@ export const ProjectsPage: React.FC = () => {
 
         showSuccess('Project Deleted', `${deletedProject?.name} has been permanently deleted`);
 
-        // If user was viewing the deleted project, redirect to projects list
-        if (currentProject?.project_id === projectId) {
-          // Redirect away from the deleted project
-          window.location.href = '/projects';
-        }
+        // CRITICAL: Always refresh projects list after deletion so deleted project disappears from UI
+        // This ensures the deletion is immediately reflected without needing a page restart
+        await listProjects();
       } catch (error) {
         console.error('Failed to delete project:', error);
         showError('Failed to Delete Project', 'Unable to delete the project. Please try again.');
