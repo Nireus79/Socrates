@@ -3440,11 +3440,15 @@ class APIOrchestrator:
                             except Exception as e:
                                 logger.warning(f"Failed to cache generated question: {e}")
 
-                        return {
-                            "status": "success",
-                            "data": result,
-                            "message": "Question generated",
-                        }
+                        # CRITICAL: Check if agent returned a valid question
+                        if not result.get("question"):
+                            logger.warning(f"[QUESTION_GEN] Agent returned empty question, using fallback")
+                        else:
+                            return {
+                                "status": "success",
+                                "data": result,
+                                "message": "Question generated",
+                            }
                     finally:
                         # Restore original client
                         counselor.llm_client = original_llm_client
