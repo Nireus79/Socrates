@@ -2204,9 +2204,8 @@ class APIOrchestrator:
                     # generate_answer_suggestions is an action, not a public method
                     suggestions_response = counselor.process({
                         "action": "generate_answer_suggestions",
-                        "current_question": question.get("question", ""),
+                        "question": question.get("question", ""),  # Agent expects "question" not "current_question"
                         "project": project,
-                        "current_user": user_id,  # CRITICAL: Must be real user, never "default_user" (doesn't exist)
                     })
             except Exception as e:
                 logger.warning(f"Failed to generate suggestions: {e}")
@@ -2873,9 +2872,8 @@ class APIOrchestrator:
             logger.info(f"[ANSWER_PROCESSING] Step 1: Extracting specs from user response...")
             extraction_result = counselor.process({
                 "action": "extract_insights_only",
-                "response": user_response,  # CRITICAL: Must use "response" not "text" to match monolithic-socrates agent
+                "response": user_response,  # CRITICAL: Must use "response" not "text" to match agent interface
                 "project": project,  # CRITICAL: Pass full project object for agent context
-                "current_user": current_user,  # CRITICAL: Must be real user, never "default_user" (doesn't exist)
             })
 
             logger.debug(f"[ANSWER_PROCESSING] Extraction result keys: {extraction_result.keys()}")
@@ -3004,9 +3002,8 @@ class APIOrchestrator:
                 # detect_conflicts is an action, not a public method
                 detector_result = detector.process({
                     "action": "detect_conflicts",
-                    "new_insights": high_confidence_specs,
+                    "insights": high_confidence_specs,  # CRITICAL: Agent expects "insights" not "new_insights"
                     "project": project,
-                    "current_user": current_user,  # CRITICAL: Must be real user, never "default_user" (doesn't exist)
                 })
 
                 conflicts = detector_result.get("conflicts", []) if detector_result else []
@@ -3255,7 +3252,7 @@ class APIOrchestrator:
                             "goals": goals,
                             "project_id": project_id,
                             "project": project,  # Include full project object for agent context
-                            "current_user": user_id,  # CRITICAL: Must use "current_user" not "user_id" to match monolithic agent
+                            "user_id": user_id,  # CRITICAL: Agent expects "user_id" not "current_user"
                             "force_refresh": force_refresh,  # Also pass force_refresh for consistency
                         }
 
@@ -5193,7 +5190,7 @@ If a category has no items, use an empty array."""
                     "topic": topic,
                     "level": level,
                     "project": project,  # CRITICAL: Required by monolithic agent
-                    "current_user": current_user,  # CRITICAL: Required by monolithic agent
+                    "user_id": current_user,  # CRITICAL: Agent expects "user_id" not "current_user"
                 })
             except Exception as e:
                 logger.warning(f"Deduplication failed: {e}, falling back to main LLM generation")
