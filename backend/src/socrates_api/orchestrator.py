@@ -3489,7 +3489,8 @@ class APIOrchestrator:
             # Use the monolithic pattern from socratic-agents v0.3.0
             response = request_data.get("response", "")
             project = request_data.get("project", {})
-            current_user = request_data.get("current_user", "")
+            # FIXED: Check for "user_id" first (what router passes), then fall back to "current_user"
+            current_user = request_data.get("user_id") or request_data.get("current_user", "")
 
             logger.info(f"Processing response using monolithic pattern: {response[:50]}...")
 
