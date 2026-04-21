@@ -2093,6 +2093,54 @@ class APIOrchestrator:
             "is_fallback": True,
         }
 
+    def _generate_fallback_question(self, project: Any, phase: str, previously_asked: List[str]) -> str:
+        """Generate an alternative question when agent generates a duplicate.
+
+        Returns a contextual fallback question that is NOT in the previously_asked list.
+        """
+        # Phase-specific question patterns
+        fallback_patterns = {
+            "discovery": [
+                "What specific problem does your project solve?",
+                "Who are the primary users for this project?",
+                "What features are most important?",
+                "How would you describe this in one sentence?",
+                "What makes this unique compared to alternatives?",
+            ],
+            "analysis": [
+                "What are the critical success factors?",
+                "What are the main risks or challenges?",
+                "What data will you need to handle?",
+                "What performance requirements exist?",
+                "What integrations are needed?",
+            ],
+            "design": [
+                "How would you organize the main components?",
+                "What technology stack would you use?",
+                "How should data flow through the system?",
+                "What are the key interfaces needed?",
+                "How would you handle scalability?",
+            ],
+            "implementation": [
+                "What's the first core feature to build?",
+                "Which component should you tackle first?",
+                "What testing strategy would you use?",
+                "How would you approach the data model?",
+                "What deployment strategy would you use?",
+            ],
+        }
+
+        patterns = fallback_patterns.get(phase, fallback_patterns.get("discovery", []))
+
+        # Find first non-duplicate candidate
+        for pattern in patterns:
+            if pattern not in previously_asked:
+                logger.info(f"[QUESTION_GEN] Generated fallback question: {pattern[:60]}...")
+                return pattern
+
+        # Ultimate fallback
+        return f"Tell me more about the {phase} phase of your project."
+
     def _find_question(self, project: Any, question_id: str) -> Optional[Dict]:
         """Find a question by ID in both conversation_history and pending_questions.
 
@@ -3339,10 +3387,36 @@ class APIOrchestrator:
                             generated_question = result.get('question', '')
                             logger.info(f"[QUESTION_GEN] Counselor returned: {generated_question[:70] if generated_question else 'NO_QUESTION'}")
 
-                            # Check if question is a duplicate
+                            # Check if question is a duplicate and handle it
                             if generated_question and previously_asked_questions:
                                 if generated_question in previously_asked_questions:
-                                    logger.warning(f"[QUESTION_GEN] ⚠️ WARNING: Generated question is IDENTICAL to a previously asked question!")
+                                    logger.warning(f"[QUESTION_GEN] ⚠️ DUPLICATE DETECTED: Generated question is IDENTICAL to a previously asked question!")
+                                    logger.info(f"[QUESTION_GEN] Attempting to generate alternative question...")
+
+                                    # Try regenerating with force_refresh to get a different question
+                                    try:
+                                        # Retry with force_refresh=True to get a new question
+                                        counselor_request["force_refresh"] = True
+                                        retry_result = breaker.call(counselor.process, counselor_request)
+                                        retry_question = retry_result.get('question', '')
+
+                                        if retry_question and retry_question not in previously_asked_questions:
+                                            logger.info(f"[QUESTION_GEN] ✓ Force refresh succeeded - got new question")
+                                            generated_question = retry_question
+                                            result = retry_result
+                                        elif retry_question:
+                                            logger.warning(f"[QUESTION_GEN] Force refresh still returned duplicate, using fallback")
+                                            # Use fallback question generator
+                                            generated_question = self._generate_fallback_question(project, phase, previously_asked_questions)
+                                            result['question'] = generated_question
+                                        else:
+                                            logger.warning(f"[QUESTION_GEN] Force refresh returned empty, using fallback")
+                                            generated_question = self._generate_fallback_question(project, phase, previously_asked_questions)
+                                            result['question'] = generated_question
+                                    except Exception as retry_error:
+                                        logger.warning(f"[QUESTION_GEN] Force refresh failed ({retry_error}), using fallback")
+                                        generated_question = self._generate_fallback_question(project, phase, previously_asked_questions)
+                                        result['question'] = generated_question
                                 else:
                                     logger.info(f"[QUESTION_GEN] ✓ Generated question is new (not in previously asked list)")
 
