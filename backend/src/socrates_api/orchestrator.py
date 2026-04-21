@@ -2875,7 +2875,7 @@ class APIOrchestrator:
                 "action": "extract_insights_only",
                 "response": user_response,  # CRITICAL: Must use "response" not "text" to match monolithic-socrates agent
                 "project": project,  # CRITICAL: Pass full project object for agent context
-                "current_user": user_id,  # CRITICAL: Must be real user, never "default_user" (doesn't exist)
+                "current_user": current_user,  # CRITICAL: Must be real user, never "default_user" (doesn't exist)
             })
 
             logger.debug(f"[ANSWER_PROCESSING] Extraction result keys: {extraction_result.keys()}")
@@ -3006,7 +3006,7 @@ class APIOrchestrator:
                     "action": "detect_conflicts",
                     "new_insights": high_confidence_specs,
                     "project": project,
-                    "current_user": user_id,  # CRITICAL: Must be real user, never "default_user" (doesn't exist)
+                    "current_user": current_user,  # CRITICAL: Must be real user, never "default_user" (doesn't exist)
                 })
 
                 conflicts = detector_result.get("conflicts", []) if detector_result else []
