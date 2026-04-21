@@ -99,7 +99,7 @@ dev = [
     "black>=24.0",
     "ruff>=0.4.0",
     "mypy>=1.8.0",
-    "isort>=5.13.0",
+    "isort>=6.1.0",
 ]
 async = [
     "asyncio>=3.4.3",
