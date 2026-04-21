@@ -3304,60 +3304,14 @@ class APIOrchestrator:
                             "force_refresh": force_refresh,  # Also pass force_refresh for consistency
                         }
 
-                        # Include conversation history if available
+                        # Include full conversation history - the LLM will see all previous questions
+                        # and naturally avoid repeating them
                         conversation_history = getattr(project, "conversation_history", [])
                         if conversation_history:
                             counselor_request["conversation_history"] = conversation_history
-                            logger.debug(
-                                f"Including {len(conversation_history)} conversation history entries for context"
+                            logger.info(
+                                f"[QUESTION_GEN] Passing full conversation history ({len(conversation_history)} messages) to agent for context-aware generation"
                             )
-
-                        # MONOLITHIC PATTERN: Extract previously asked questions from conversation history
-                        # This follows the proven working approach from monolithic Socrates
-                        # Key: Filter by type="assistant" (questions, not responses) and phase (current phase only)
-                        previously_asked_questions = []
-                        conversation_history = getattr(project, "conversation_history", [])
-
-                        logger.info(f"[QUESTION_DEDUP] Analyzing conversation history for deduplication...")
-                        logger.info(f"[QUESTION_DEDUP] Total messages in history: {len(conversation_history)}")
-
-                        if conversation_history:
-                            for i, msg in enumerate(conversation_history):
-                                msg_type = msg.get("type", "unknown")
-                                msg_phase = msg.get("phase", "unknown")
-                                msg_content = msg.get("content", "")[:50]
-
-                                # Only include messages that are:
-                                # 1. Questions (type="assistant")
-                                # 2. From the current phase
-                                # 3. Have actual question content
-                                if (
-                                    msg.get("type") == "assistant"
-                                    and msg.get("phase") == phase
-                                    and msg.get("content")
-                                ):
-                                    previously_asked_questions.append(msg.get("content"))
-                                    logger.debug(f"[QUESTION_DEDUP] Message {i}: Included (type={msg_type}, phase={msg_phase}, content={msg_content}...)")
-                                else:
-                                    reason = []
-                                    if msg.get("type") != "assistant":
-                                        reason.append(f"type={msg_type}!=assistant")
-                                    if msg.get("phase") != phase:
-                                        reason.append(f"phase={msg_phase}!={phase}")
-                                    if not msg.get("content"):
-                                        reason.append("no_content")
-                                    logger.debug(f"[QUESTION_DEDUP] Message {i}: Skipped ({', '.join(reason)})")
-
-                            if previously_asked_questions:
-                                counselor_request["recently_asked"] = previously_asked_questions  # FIXED: Agent expects "recently_asked" not "previously_asked_questions"
-                                logger.info(
-                                    f"[QUESTION_DEDUP] ✓ Passing {len(previously_asked_questions)} previously asked questions "
-                                    f"in {phase} phase for deduplication"
-                                )
-                                for i, q in enumerate(previously_asked_questions[:3]):
-                                    logger.debug(f"[QUESTION_DEDUP]   Q{i+1}: {q[:60]}...")
-                            else:
-                                logger.info(f"[QUESTION_DEDUP] No previously asked questions found for phase {phase}")
 
                         # Include other project context (for backward compatibility)
                         if hasattr(project, "requirements") and project.requirements:
@@ -3381,44 +3335,11 @@ class APIOrchestrator:
                         logger.debug(f"Conversation state BEFORE generation: {previous_conversation_count} total messages, {questions_asked_count} questions")
 
                         try:
-                            logger.info(f"[QUESTION_GEN] Calling counselor.process() with {len(previously_asked_questions)} previously asked questions...")
+                            logger.info(f"[QUESTION_GEN] Calling counselor.process() with full conversation history...")
                             result = breaker.call(counselor.process, counselor_request)
 
                             generated_question = result.get('question', '')
                             logger.info(f"[QUESTION_GEN] Counselor returned: {generated_question[:70] if generated_question else 'NO_QUESTION'}")
-
-                            # Check if question is a duplicate and handle it
-                            if generated_question and previously_asked_questions:
-                                if generated_question in previously_asked_questions:
-                                    logger.warning(f"[QUESTION_GEN] ⚠️ DUPLICATE DETECTED: Generated question is IDENTICAL to a previously asked question!")
-                                    logger.info(f"[QUESTION_GEN] Attempting to generate alternative question...")
-
-                                    # Try regenerating with force_refresh to get a different question
-                                    try:
-                                        # Retry with force_refresh=True to get a new question
-                                        counselor_request["force_refresh"] = True
-                                        retry_result = breaker.call(counselor.process, counselor_request)
-                                        retry_question = retry_result.get('question', '')
-
-                                        if retry_question and retry_question not in previously_asked_questions:
-                                            logger.info(f"[QUESTION_GEN] ✓ Force refresh succeeded - got new question")
-                                            generated_question = retry_question
-                                            result = retry_result
-                                        elif retry_question:
-                                            logger.warning(f"[QUESTION_GEN] Force refresh still returned duplicate, using fallback")
-                                            # Use fallback question generator
-                                            generated_question = self._generate_fallback_question(project, phase, previously_asked_questions)
-                                            result['question'] = generated_question
-                                        else:
-                                            logger.warning(f"[QUESTION_GEN] Force refresh returned empty, using fallback")
-                                            generated_question = self._generate_fallback_question(project, phase, previously_asked_questions)
-                                            result['question'] = generated_question
-                                    except Exception as retry_error:
-                                        logger.warning(f"[QUESTION_GEN] Force refresh failed ({retry_error}), using fallback")
-                                        generated_question = self._generate_fallback_question(project, phase, previously_asked_questions)
-                                        result['question'] = generated_question
-                                else:
-                                    logger.info(f"[QUESTION_GEN] ✓ Generated question is new (not in previously asked list)")
 
                             # MONOLITHIC PATTERN: Verify question was stored in conversation_history
                             updated_conversation_count = len(getattr(project, "conversation_history", []))
