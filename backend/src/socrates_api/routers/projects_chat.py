@@ -867,7 +867,7 @@ Provide a helpful, direct answer."""
                     "action": "process_response",
                     "project": project,
                     "response": request.message,
-                    "current_user": current_user,
+                    "user_id": current_user,  # Agent expects "user_id" not "current_user"
                     "is_api_mode": True,  # Indicate API mode to handle conflicts differently
                 },
             )
