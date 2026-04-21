@@ -1204,6 +1204,10 @@ class APIOrchestrator:
             if not agent:
                 return {"status": "error", "message": f"Agent '{agent_name}' not found"}
 
+            # CRITICAL: request_data MUST contain "action" key for agent dispatch
+            if "action" not in request_data:
+                return {"status": "error", "message": f"Request missing required 'action' key. Agent '{agent_name}' uses action-based dispatch."}
+
             result = agent.process(request_data)
             return result
         except Exception as e:
@@ -1261,9 +1265,12 @@ class APIOrchestrator:
             if not agent:
                 return {"status": "error", "message": "ConflictDetector not available"}
 
-            result = agent.process(
-                {"field": field, "agent_outputs": agent_outputs, "agents": agents}
-            )
+            result = agent.process({
+                "action": "detect_conflicts",  # CRITICAL: Required by ConflictDetector
+                "field": field,
+                "agent_outputs": agent_outputs,
+                "agents": agents
+            })
             return result
         except Exception as e:
             logger.error(f"Conflict detection failed: {e}")
