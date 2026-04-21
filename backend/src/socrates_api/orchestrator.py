@@ -3108,7 +3108,12 @@ class APIOrchestrator:
             # Generate a Socratic question for a project
             project = request_data.get("project", {})
             topic = request_data.get("topic", "")
-            user_id = request_data.get("user_id", "")
+            # CRITICAL: user_id MUST be a real user, never empty or None
+            # Agent will default to "default_user" (which doesn't exist) if empty
+            user_id = request_data.get("user_id") or request_data.get("current_user", "")
+            if not user_id:
+                logger.warning("No user_id or current_user provided for question generation")
+                return {"status": "error", "message": "User context required for question generation"}
             force_refresh = request_data.get("force_refresh", False)
 
             # CRITICAL FIX #2: Check user subscription limits before generating question
