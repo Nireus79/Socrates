@@ -3304,14 +3304,22 @@ class APIOrchestrator:
                             "force_refresh": force_refresh,  # Also pass force_refresh for consistency
                         }
 
-                        # Include full conversation history - the LLM will see all previous questions
-                        # and naturally avoid repeating them
+                        # Include full conversation history for context
                         conversation_history = getattr(project, "conversation_history", [])
                         if conversation_history:
                             counselor_request["conversation_history"] = conversation_history
-                            logger.info(
-                                f"[QUESTION_GEN] Passing full conversation history ({len(conversation_history)} messages) to agent for context-aware generation"
-                            )
+                            logger.debug(f"[QUESTION_GEN] Including {len(conversation_history)} messages from conversation history")
+
+                            # MONOLITHIC PATTERN: Extract previously asked questions in this phase
+                            # The agent needs this to avoid repeating questions
+                            recently_asked = [
+                                msg.get("content", "")
+                                for msg in conversation_history
+                                if msg.get("type") == "assistant" and msg.get("phase") == phase and msg.get("content")
+                            ]
+                            if recently_asked:
+                                counselor_request["recently_asked"] = recently_asked
+                                logger.debug(f"[QUESTION_GEN] Agent will avoid {len(recently_asked)} previously asked questions in {phase} phase")
 
                         # Include other project context (for backward compatibility)
                         if hasattr(project, "requirements") and project.requirements:
