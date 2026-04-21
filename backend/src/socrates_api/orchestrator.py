@@ -3301,7 +3301,7 @@ class APIOrchestrator:
                                     logger.debug(f"[QUESTION_DEDUP] Message {i}: Skipped ({', '.join(reason)})")
 
                             if previously_asked_questions:
-                                counselor_request["previously_asked_questions"] = previously_asked_questions  # CRITICAL: Must use exact param name for monolithic agent
+                                counselor_request["recently_asked"] = previously_asked_questions  # FIXED: Agent expects "recently_asked" not "previously_asked_questions"
                                 logger.info(
                                     f"[QUESTION_DEDUP] ✓ Passing {len(previously_asked_questions)} previously asked questions "
                                     f"in {phase} phase for deduplication"
