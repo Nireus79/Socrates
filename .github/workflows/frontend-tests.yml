@@ -2,12 +2,12 @@ name: Frontend Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main, master ]
     paths:
       - 'socrates-frontend/**'
       - '.github/workflows/frontend-tests.yml'
   pull_request:
-    branches: [ master ]
+    branches: [ main, master ]
     paths:
       - 'socrates-frontend/**'
       - '.github/workflows/frontend-tests.yml'
