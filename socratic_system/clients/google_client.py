@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Dict
 try:
     import google.generativeai as genai
 except ImportError:
-    genai = None
+    genai = None  # type: ignore[assignment]
 
 from cryptography.fernet import Fernet
 
