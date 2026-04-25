@@ -1,6 +1,9 @@
 # Socrates AI Requirements
 # Production dependencies only - development tools removed for faster Docker builds
 
+# Universal LLM Client Library
+socratic-nexus>=0.3.5
+
 # Core Socrates AI System
 anthropic>=0.40.0
 chromadb>=0.5.0
