@@ -12,7 +12,11 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Dict
 
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+
 from cryptography.fernet import Fernet
 
 from socratic_system.events import EventType
@@ -42,6 +46,12 @@ class GoogleClient:
             orchestrator: Reference to AgentOrchestrator for event emission and token tracking
             subscription_token: Optional - Google subscription token for subscription-based auth
         """
+        if genai is None:
+            raise ImportError(
+                "google-generativeai package is required for GoogleClient. "
+                "Install it with: pip install google-generativeai"
+            )
+
         self.api_key = api_key
         self.subscription_token = subscription_token
         self.orchestrator = orchestrator
