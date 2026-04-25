@@ -73,7 +73,7 @@ class RedisCache:
         Args:
             redis_url: Redis connection URL (e.g., "redis://localhost:6379")
         """
-        self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://redis:6379")
+        self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379")
         self.client = None
         self._connect()
 

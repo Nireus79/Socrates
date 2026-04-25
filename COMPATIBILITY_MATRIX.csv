@@ -1,0 +1,13 @@
+Library,Version,Primary Purpose,API Compatibility,Dependency Conflicts,Missing Features,Overall Compatibility,Status,Key Dependencies,Recommendation
+Socratic-agents,0.3.0,Multi-agent orchestration and skill generation,95%,None,None,95%,✅ STABLE,"pydantic>=2.0.0, loguru>=0.7.0, socratic-maturity>=0.1.0, [optional: nexus, conflict, learning, langchain]",Drop-in replacement for agents module
+Socratic-analyzer,0.1.5,Code analysis and pattern detection,90%,None,Direct monolith config integration,90%,✅ STABLE,"socrates-nexus>=0.3.1, [optional: langchain]",Use for analysis pipeline
+Socratic-knowledge,0.1.5,Knowledge base with versioning and collaboration,92%,None,Real-time collaboration (future),92%,✅ STABLE,"pydantic>=2.0.0, [optional: socratic-rag, langchain]",Enterprise knowledge management
+Socratic-learning,0.1.5,Learning models and pedagogy,93%,None,None,93%,✅ STABLE,"pydantic>=2.0.0, numpy>=1.20.0, scikit-learn>=1.0.0",ML-based learning analytics
+Socratic-rag,0.1.4,Retrieval-augmented generation,94%,Minor (vector store versions),None,94%,✅ STABLE,"numpy>=1.20.0, sentence-transformers>=2.0.0, [optional: chromadb, faiss, qdrant]",Primary choice for RAG
+Socratic-conflict,0.1.4,Conflict resolution and debate,91%,None,None,91%,✅ STABLE,"pydantic>=2.0.0, numpy>=1.20.0, [optional: nexus, workflow, agents, langchain]",Use for multi-agent scenarios
+Socratic-workflow,0.1.3,Task pipeline and orchestration,92%,None,None,92%,✅ STABLE,"pydantic>=2.0.0, [optional: agents, nexus]",Complex workflow management
+Socratic-nexus,0.3.4,LLM client abstraction (multi-provider),96%,None,None,96%,✅ STABLE,"pydantic>=2.0.0, [optional: anthropic>=0.40.0, openai>=1.0.0]",HIGHLY RECOMMENDED for LLM ops
+Socratic-core,0.1.4,Infrastructure (config, database, events),88%,None,Duplicates monolith functionality,88%,⚠️ REVIEW,"pydantic>=2.0.0, loguru>=0.7.0",Review integration strategy
+Socratic-docs,0.2.0,Documentation generation,89%,None,Limited standalone functionality,89%,✅ STABLE,"[dev only: pytest, pytest-asyncio, pytest-cov]",Documentation automation
+Socratic-performance,0.2.0,Caching and performance profiling,93%,None,Limited to DB queries,93%,✅ STABLE,"pydantic>=2.0.0",Performance optimization layer
+Socratic-maturity,0.1.1,Maturity assessment and metrics,94%,None,Limited documentation,94%,✅ STABLE,"[minimal dependencies]",REQUIRED for agents v0.3.0

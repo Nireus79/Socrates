@@ -78,7 +78,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize rate limiter before app creation
-_redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
+# Use localhost for local development, redis service for Docker deployments
+# Set REDIS_URL environment variable to override (e.g., for Docker Compose: "redis://redis:6379")
+_redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
 limiter = initialize_limiter(_redis_url)  # Export for use in routers
 
 # Global state
