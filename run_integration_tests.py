@@ -149,7 +149,7 @@ def test_ollama_client_import():
 def test_openai_client_initialization():
     """Test OpenAI client initializes correctly"""
     try:
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         orchestrator = MockOrchestrator()
         client = OpenAIClient(api_key="sk-test-key", orchestrator=orchestrator)
@@ -165,7 +165,7 @@ def test_openai_client_initialization():
 def test_google_client_initialization():
     """Test Google client initializes correctly"""
     try:
-        from socratic_system.clients.google_client import GoogleClient
+        from socratic_nexus.clients import GoogleClient
 
         orchestrator = MockOrchestrator()
         client = GoogleClient(api_key="AIza-test-key", orchestrator=orchestrator)
@@ -181,7 +181,7 @@ def test_google_client_initialization():
 def test_ollama_client_initialization():
     """Test Ollama client initializes correctly"""
     try:
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OllamaClient
 
         orchestrator = MockOrchestrator()
         client = OllamaClient(orchestrator=orchestrator)
@@ -197,7 +197,7 @@ def test_ollama_client_initialization():
 def test_cache_key_generation():
     """Test cache key generation"""
     try:
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         orchestrator = MockOrchestrator()
         client = OpenAIClient(api_key="sk-test", orchestrator=orchestrator)
@@ -215,7 +215,7 @@ def test_cache_key_generation():
 def test_insights_caching():
     """Test insights caching"""
     try:
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         orchestrator = MockOrchestrator()
         client = OpenAIClient(api_key="sk-test", orchestrator=orchestrator)
@@ -264,7 +264,7 @@ def test_database_api_key_storage():
 def test_token_tracking_integration():
     """Test token tracking with orchestrator"""
     try:
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         orchestrator = MockOrchestrator()
         client = OpenAIClient(api_key="sk-test", orchestrator=orchestrator)
@@ -291,9 +291,9 @@ def test_token_tracking_integration():
 def test_cost_calculation():
     """Test cost calculation for different providers"""
     try:
-        from socratic_system.clients.openai_client import OpenAIClient
-        from socratic_system.clients.google_client import GoogleClient
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OpenAIClient
+        from socratic_nexus.clients import GoogleClient
+        from socratic_nexus.clients import OllamaClient
 
         orchestrator = MockOrchestrator()
 
@@ -322,7 +322,7 @@ def test_cost_calculation():
 def test_json_parsing():
     """Test JSON response parsing"""
     try:
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         orchestrator = MockOrchestrator()
         client = OpenAIClient(api_key="sk-test", orchestrator=orchestrator)
@@ -354,9 +354,9 @@ def test_json_parsing():
 def test_method_presence():
     """Test all required methods exist in each client"""
     try:
-        from socratic_system.clients.openai_client import OpenAIClient
-        from socratic_system.clients.google_client import GoogleClient
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OpenAIClient
+        from socratic_nexus.clients import GoogleClient
+        from socratic_nexus.clients import OllamaClient
 
         orchestrator = MockOrchestrator()
 

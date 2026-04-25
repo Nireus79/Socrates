@@ -108,7 +108,7 @@ class TestOpenAIClientIntegration:
 
     def test_client_initialization(self, mock_orchestrator):
         """Test OpenAI client initializes with orchestrator"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="sk-test-key",
@@ -122,7 +122,7 @@ class TestOpenAIClientIntegration:
 
     def test_client_initialization_with_placeholder_key(self, mock_orchestrator):
         """Test client initializes with placeholder key"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="placeholder_key",
@@ -135,7 +135,7 @@ class TestOpenAIClientIntegration:
 
     def test_get_user_api_key_from_database(self, mock_orchestrator):
         """Test retrieving user API key from database"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="default-key",
@@ -166,7 +166,7 @@ class TestOpenAIClientIntegration:
 
     def test_fallback_to_default_key(self, mock_orchestrator):
         """Test fallback to default key when user key not found"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="default-key",
@@ -180,7 +180,7 @@ class TestOpenAIClientIntegration:
 
     def test_cache_key_generation(self, mock_orchestrator):
         """Test SHA256 cache key generation"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="sk-test-key",
@@ -195,7 +195,7 @@ class TestOpenAIClientIntegration:
 
     def test_insights_caching(self, mock_orchestrator):
         """Test insights extraction caching"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="sk-test-key",
@@ -213,7 +213,7 @@ class TestOpenAIClientIntegration:
 
     def test_error_on_no_api_key(self, mock_orchestrator, mock_openai):
         """Test APIError raised when no valid API key"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
         from socratic_system.exceptions import APIError
 
         client = OpenAIClient(
@@ -229,7 +229,7 @@ class TestOpenAIClientIntegration:
 
     def test_token_tracking(self, mock_orchestrator, mock_openai):
         """Test token usage tracking"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="sk-test-key",
@@ -255,7 +255,7 @@ class TestOpenAIClientIntegration:
 
     def test_cost_calculation(self, mock_orchestrator):
         """Test cost calculation for OpenAI"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="sk-test-key",
@@ -289,7 +289,7 @@ class TestGoogleClientIntegration:
 
     def test_client_initialization(self, mock_orchestrator, mock_google):
         """Test Google client initializes with orchestrator"""
-        from socratic_system.clients.google_client import GoogleClient
+        from socratic_nexus.clients import GoogleClient
 
         client = GoogleClient(
             api_key="AIza-test-key",
@@ -302,7 +302,7 @@ class TestGoogleClientIntegration:
 
     def test_token_estimation_google(self, mock_orchestrator, mock_google):
         """Test token estimation for Google (text-length based)"""
-        from socratic_system.clients.google_client import GoogleClient
+        from socratic_nexus.clients import GoogleClient
 
         client = GoogleClient(
             api_key="AIza-test-key",
@@ -323,7 +323,7 @@ class TestGoogleClientIntegration:
 
     def test_cost_calculation_google(self, mock_orchestrator, mock_google):
         """Test cost calculation for Google (text-length based)"""
-        from socratic_system.clients.google_client import GoogleClient
+        from socratic_nexus.clients import GoogleClient
 
         client = GoogleClient(
             api_key="AIza-test-key",
@@ -355,7 +355,7 @@ class TestOllamaClientIntegration:
 
     def test_client_initialization(self, mock_orchestrator, mock_requests):
         """Test Ollama client initializes with orchestrator"""
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OllamaClient
 
         client = OllamaClient(orchestrator=mock_orchestrator)
 
@@ -365,7 +365,7 @@ class TestOllamaClientIntegration:
 
     def test_ollama_url_from_config(self, mock_orchestrator, mock_requests):
         """Test Ollama URL can be configured"""
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OllamaClient
 
         mock_orchestrator.config.ollama_url = "http://custom-server:11434"
 
@@ -375,7 +375,7 @@ class TestOllamaClientIntegration:
 
     def test_ollama_model_from_config(self, mock_orchestrator, mock_requests):
         """Test Ollama model can be configured"""
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OllamaClient
 
         mock_orchestrator.config.ollama_model = "llama2"
 
@@ -385,7 +385,7 @@ class TestOllamaClientIntegration:
 
     def test_ollama_token_tracking(self, mock_orchestrator, mock_requests):
         """Test token tracking for Ollama"""
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OllamaClient
 
         client = OllamaClient(orchestrator=mock_orchestrator)
 
@@ -401,7 +401,7 @@ class TestOllamaClientIntegration:
 
     def test_ollama_cost_is_zero(self, mock_orchestrator, mock_requests):
         """Test Ollama always returns zero cost"""
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OllamaClient
 
         client = OllamaClient(orchestrator=mock_orchestrator)
 
@@ -419,9 +419,9 @@ class TestClientInterchangeability:
 
     def test_all_clients_have_same_methods(self, mock_orchestrator):
         """Test all clients implement same methods"""
-        from socratic_system.clients.openai_client import OpenAIClient
-        from socratic_system.clients.google_client import GoogleClient
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OpenAIClient
+        from socratic_nexus.clients import GoogleClient
+        from socratic_nexus.clients import OllamaClient
 
         clients = [
             OpenAIClient(api_key="test", orchestrator=mock_orchestrator),
@@ -453,9 +453,9 @@ class TestClientInterchangeability:
 
     def test_client_substitutability(self, mock_orchestrator):
         """Test that any client can substitute for another"""
-        from socratic_system.clients.openai_client import OpenAIClient
-        from socratic_system.clients.google_client import GoogleClient
-        from socratic_system.clients.ollama_client import OllamaClient
+        from socratic_nexus.clients import OpenAIClient
+        from socratic_nexus.clients import GoogleClient
+        from socratic_nexus.clients import OllamaClient
 
         def use_client(client, prompt: str):
             """Generic function that uses any client"""
@@ -484,7 +484,7 @@ class TestEventEmission:
 
     def test_token_usage_event_emission(self, mock_orchestrator):
         """Test TOKEN_USAGE event emitted"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
         from socratic_system.events import EventType
 
         client = OpenAIClient(
@@ -518,7 +518,7 @@ class TestEncryption:
 
     def test_encryption_key_from_env(self, mock_orchestrator, monkeypatch):
         """Test using custom encryption key from environment"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
         from cryptography.fernet import Fernet
         import hashlib
         import base64
@@ -544,7 +544,7 @@ class TestEncryption:
 
     def test_encryption_fallback_methods(self, mock_orchestrator, monkeypatch):
         """Test encryption method fallbacks"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
         import base64
 
         client = OpenAIClient(
@@ -572,7 +572,7 @@ class TestAsyncOperations:
     @pytest.mark.asyncio
     async def test_async_token_tracking(self, mock_orchestrator):
         """Test async token tracking"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="sk-test-key",
@@ -599,7 +599,7 @@ class TestErrorHandling:
 
     def test_api_error_on_missing_key(self, mock_orchestrator):
         """Test APIError raised with clear message"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
         from socratic_system.exceptions import APIError
 
         client = OpenAIClient(api_key=None, orchestrator=mock_orchestrator)
@@ -613,7 +613,7 @@ class TestErrorHandling:
 
     def test_json_parsing_handles_markdown(self, mock_orchestrator):
         """Test JSON parsing removes markdown code blocks"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="sk-test-key",
@@ -633,7 +633,7 @@ class TestErrorHandling:
 
     def test_json_parsing_handles_invalid_json(self, mock_orchestrator):
         """Test JSON parsing returns empty dict on invalid JSON"""
-        from socratic_system.clients.openai_client import OpenAIClient
+        from socratic_nexus.clients import OpenAIClient
 
         client = OpenAIClient(
             api_key="sk-test-key",

@@ -1,29 +1,22 @@
-"""Client integrations for Socrates AI"""
+"""
+Client integrations for Socrates AI
+
+This module re-exports clients from socratic-nexus library for backward compatibility.
+Direct imports from socratic_nexus.clients are now preferred.
+"""
 
 import logging
 
 logger = logging.getLogger("socrates.clients")
 
-# Always available - Anthropic SDK required
-from .claude_client import ClaudeClient
+# Import from socratic-nexus library (PyPI package)
+from socratic_nexus.clients import (
+    ClaudeClient,
+    GoogleClient,
+    OpenAIClient,
+    OllamaClient,
+)
 
-__all__ = ["ClaudeClient"]
+__all__ = ["ClaudeClient", "OpenAIClient", "GoogleClient", "OllamaClient"]
 
-# Optional providers - only import if their SDKs are available
-try:
-    from .openai_client import OpenAIClient
-    __all__.append("OpenAIClient")
-except ImportError as e:
-    logger.debug(f"OpenAI client not available: {e}")
-
-try:
-    from .google_client import GoogleClient
-    __all__.append("GoogleClient")
-except ImportError as e:
-    logger.debug(f"Google client not available: {e}")
-
-try:
-    from .ollama_client import OllamaClient
-    __all__.append("OllamaClient")
-except ImportError as e:
-    logger.debug(f"Ollama client not available: {e}")
+logger.info("Client imports sourced from socratic-nexus library")

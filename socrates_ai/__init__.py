@@ -22,7 +22,7 @@ from socratic_system import (
     ui,
     utils,
 )
-from socratic_system.clients import ClaudeClient
+from socratic_nexus.clients import ClaudeClient
 from socratic_system.config import ConfigBuilder, SocratesConfig
 from socratic_system.events import EventEmitter, EventType
 from socratic_system.exceptions import (

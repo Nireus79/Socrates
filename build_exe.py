@@ -82,6 +82,7 @@ def build_executable():
             "--hidden-import=socratic_system",
             "--hidden-import=socratic_system.agents",
             "--hidden-import=socratic_system.clients",
+            "--hidden-import=socratic_nexus.clients",
             "--hidden-import=socratic_system.database",
             "--hidden-import=socratic_system.models",
             "--hidden-import=socratic_system.orchestration",
