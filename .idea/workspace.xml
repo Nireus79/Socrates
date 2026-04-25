@@ -5,12 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_integration_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_integration_tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates_ai/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates_ai/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/ui/nlu_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/nlu_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_llm_clients_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_llm_clients_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
