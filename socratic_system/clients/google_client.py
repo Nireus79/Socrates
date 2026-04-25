@@ -12,7 +12,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Dict
 
-import google.genai as genai
+import google.generativeai as genai
 from cryptography.fernet import Fernet
 
 from socratic_system.events import EventType
