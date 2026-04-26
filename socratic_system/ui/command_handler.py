@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from colorama import Fore, Style
 
-from socratic_system.subscription.checker import SubscriptionChecker
+from socratic_system.performance import SubscriptionChecker
 from socratic_system.ui.commands.base import BaseCommand
 
 

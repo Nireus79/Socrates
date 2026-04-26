@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Any, Dict
 
 from socratic_system.models import ProjectContext
-from socratic_system.utils.artifact_saver import ArtifactSaver
+from socratic_system.docs import ArtifactSaver
 from socratic_system.utils.code_structure_analyzer import CodeStructureAnalyzer
-from socratic_system.utils.multi_file_splitter import (
+from socratic_system.docs import (
     MultiFileCodeSplitter,
     ProjectStructureGenerator,
 )

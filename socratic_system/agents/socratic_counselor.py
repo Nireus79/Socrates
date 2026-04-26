@@ -129,7 +129,7 @@ class SocraticCounselorAgent(Agent):
         context = self.orchestrator.context_analyzer.get_context_summary(project)
 
         # NEW: Check question limit
-        from socratic_system.subscription.checker import SubscriptionChecker
+        from socratic_system.performance import SubscriptionChecker
 
         # Get or create user (auto-create for CLI/local users)
         user = self.orchestrator.database.load_user(current_user)
@@ -1969,7 +1969,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
         Returns:
             WorkflowDefinition for current phase
         """
-        from socratic_system.core.workflow_builder import (
+        from socratic_system.workflow import (
             create_discovery_workflow_comprehensive,
             create_legacy_compatible_workflow,
         )

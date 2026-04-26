@@ -148,7 +148,7 @@ async def import_repository(
         logger.info("Checking subscription limits for GitHub import...")
         try:
             from socrates_api.routers.projects import get_current_user_object
-            from socratic_system.subscription.checker import SubscriptionChecker
+            from socratic_system.performance import SubscriptionChecker
 
             user_object = get_current_user_object(current_user)
 

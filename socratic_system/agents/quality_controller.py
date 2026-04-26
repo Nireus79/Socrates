@@ -8,8 +8,8 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from socratic_system.core.analytics_calculator import AnalyticsCalculator
-from socratic_system.core.maturity_calculator import MaturityCalculator
-from socratic_system.core.workflow_optimizer import WorkflowOptimizer
+from socratic_system.maturity import MaturityCalculator
+from socratic_system.workflow import WorkflowOptimizer
 from socratic_system.events import EventType
 from socratic_system.models import ProjectContext
 from socratic_system.models.workflow import WorkflowApprovalRequest

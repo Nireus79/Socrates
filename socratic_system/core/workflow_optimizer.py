@@ -10,9 +10,9 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from socratic_system.core.workflow_cost_calculator import WorkflowCostCalculator
-from socratic_system.core.workflow_path_finder import WorkflowPathFinder
-from socratic_system.core.workflow_risk_calculator import WorkflowRiskCalculator
+from socratic_system.analyzer import WorkflowCostCalculator
+from socratic_system.analyzer import WorkflowPathFinder
+from socratic_system.analyzer import WorkflowRiskCalculator
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.workflow import (
     PathDecisionStrategy,

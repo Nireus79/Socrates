@@ -371,7 +371,7 @@ class ProjectStructureGenerator:
         Returns:
             Complete file structure with paths and contents
         """
-        from socratic_system.utils.project_templates import ProjectTemplateGenerator
+        from socratic_system.docs import ProjectTemplateGenerator
 
         if dependencies is None:
             dependencies = []

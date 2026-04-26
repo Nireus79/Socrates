@@ -77,7 +77,7 @@ class ProjectManagerAgent(Agent):
             }
 
         # NEW: Check project limit
-        from socratic_system.subscription.checker import SubscriptionChecker
+        from socratic_system.performance import SubscriptionChecker
 
         user = self.orchestrator.database.load_user(owner)
 
@@ -389,7 +389,7 @@ class ProjectManagerAgent(Agent):
 
     def _validate_subscription(self, user, owner: str) -> Dict:
         """Validate user subscription allows project creation"""
-        from socratic_system.subscription.checker import SubscriptionChecker
+        from socratic_system.performance import SubscriptionChecker
 
         # Count only OWNED projects for tier limit, not collaborated projects
         all_projects = self.orchestrator.database.get_user_projects(owner)
@@ -531,7 +531,7 @@ class ProjectManagerAgent(Agent):
             }
 
         # NEW: Check team member limit
-        from socratic_system.subscription.checker import SubscriptionChecker
+        from socratic_system.performance import SubscriptionChecker
 
         user = self.orchestrator.database.load_user(project.owner)
         current_team_size = len(project.team_members or [])

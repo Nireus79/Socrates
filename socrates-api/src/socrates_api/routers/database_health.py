@@ -110,7 +110,7 @@ async def get_query_profiler():
     Returns:
         QueryProfiler: The global profiler instance
     """
-    from socratic_system.database.query_profiler import get_profiler
+    from socratic_system.performance import get_profiler
 
     return get_profiler()
 

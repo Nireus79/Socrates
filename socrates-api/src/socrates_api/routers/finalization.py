@@ -22,7 +22,7 @@ from socrates_api.auth.project_access import check_project_access
 from socratic_system.database import ProjectDatabase
 from socratic_system.utils.archive_builder import ArchiveBuilder
 from socratic_system.utils.git_initializer import GitInitializer
-from socratic_system.utils.documentation_generator import DocumentationGenerator
+from socratic_system.docs import DocumentationGenerator
 from socrates_api.models import APIResponse
 
 logger = logging.getLogger(__name__)
