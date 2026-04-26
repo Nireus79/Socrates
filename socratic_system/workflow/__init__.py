@@ -9,6 +9,9 @@ from socratic_workflow import (
     WorkflowExecutionState,
 )
 
+# Local workflow utilities not yet in library
+from socratic_system.core.workflow_optimizer import WorkflowOptimizer
+
 __all__ = [
     "WorkflowDefinition",
     "WorkflowNode",
@@ -16,4 +19,5 @@ __all__ = [
     "WorkflowPath",
     "WorkflowApprovalRequest",
     "WorkflowExecutionState",
+    "WorkflowOptimizer",
 ]
