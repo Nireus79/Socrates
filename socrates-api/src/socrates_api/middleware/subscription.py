@@ -13,7 +13,7 @@ from functools import wraps
 from typing import Callable
 
 from fastapi import HTTPException, status
-from socratic_system.performance import TIER_LIMITS
+from socratic_system.subscription.tiers import TIER_LIMITS
 
 logger = logging.getLogger(__name__)
 
