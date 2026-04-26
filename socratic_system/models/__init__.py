@@ -23,6 +23,11 @@ from .note import ProjectNote
 from .project import ProjectContext
 from .role import ROLE_FOCUS_AREAS, VALID_ROLES, TeamMemberRole
 from .user import User
+from .workflow import (
+    WorkflowApprovalRequest,
+    WorkflowDefinition,
+    WorkflowExecutionState,
+)
 
 __all__ = [
     "User",
@@ -46,4 +51,7 @@ __all__ = [
     "TeamMemberRole",
     "ROLE_FOCUS_AREAS",
     "VALID_ROLES",
+    "WorkflowApprovalRequest",
+    "WorkflowDefinition",
+    "WorkflowExecutionState",
 ]
