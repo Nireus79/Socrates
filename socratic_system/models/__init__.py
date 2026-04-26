@@ -2,9 +2,9 @@
 Data models for Socrates AI
 """
 
-from .conflict import ConflictInfo
-from .knowledge import KnowledgeEntry
-from .learning import (
+from socratic_system.conflict import ConflictInfo
+from socratic_system.knowledge import KnowledgeEntry
+from socratic_system.learning import (
     KnowledgeBaseDocument,
     QuestionEffectiveness,
     UserBehaviorPattern,
@@ -17,13 +17,13 @@ from .llm_provider import (
     get_provider_metadata,
     list_available_providers,
 )
-from .maturity import CategoryScore, MaturityEvent, PhaseMaturity
+from socratic_system.maturity import CategoryScore, MaturityEvent, PhaseMaturity
 from .monitoring import TokenUsage
 from .note import ProjectNote
 from .project import ProjectContext
 from .role import ROLE_FOCUS_AREAS, VALID_ROLES, TeamMemberRole
 from .user import User
-from .workflow import (
+from socratic_system.workflow import (
     WorkflowApprovalRequest,
     WorkflowDefinition,
     WorkflowExecutionState,

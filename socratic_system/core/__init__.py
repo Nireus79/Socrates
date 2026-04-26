@@ -3,8 +3,8 @@ Core calculation and utility modules for Socratic system
 """
 
 from .analytics_calculator import AnalyticsCalculator
-from .insight_categorizer import InsightCategorizer
-from .maturity_calculator import MaturityCalculator
+from socratic_system.analyzer import InsightCategorizer
+from socratic_system.maturity import MaturityCalculator
 from .project_categories import (
     PROJECT_TYPE_DESCRIPTIONS,
     VALID_PROJECT_TYPES,
