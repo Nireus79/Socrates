@@ -12,6 +12,7 @@ try:
         RequirementsConflictChecker,
         TechStackConflictChecker,
     )
+
     CONFLICT_CHECKERS_AVAILABLE = True
 except ImportError:
     CONFLICT_CHECKERS_AVAILABLE = False

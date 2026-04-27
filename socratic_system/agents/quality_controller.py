@@ -42,7 +42,9 @@ class QualityControllerAgent(Agent):
         logging.debug("Initializing QualityControllerAgent")
 
         if MaturityCalculator is None:
-            raise ImportError("socratic-maturity library not installed, required for QualityControllerAgent")
+            raise ImportError(
+                "socratic-maturity library not installed, required for QualityControllerAgent"
+            )
 
         # Initialize the pure calculation engine with Claude client for intelligent categorization
         claude_client = (

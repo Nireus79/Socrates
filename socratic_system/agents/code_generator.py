@@ -11,6 +11,7 @@ try:
         MultiFileCodeSplitter,
         ProjectStructureGenerator,
     )
+
     DOCS_AVAILABLE = True
 except ImportError:
     DOCS_AVAILABLE = False

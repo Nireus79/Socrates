@@ -11,6 +11,7 @@ if TYPE_CHECKING:
         WorkflowNode,
         WorkflowPath,
     )
+
     from socratic_system.core.workflow_builder import (
         create_discovery_workflow_comprehensive,
         create_legacy_compatible_workflow,
@@ -26,6 +27,7 @@ try:
         WorkflowNode,
         WorkflowPath,
     )
+
     WORKFLOW_AVAILABLE = True
 except ImportError:
     WORKFLOW_AVAILABLE = False
@@ -63,11 +65,13 @@ if create_legacy_compatible_workflow is not None:
 
 # Add workflow items that were successfully imported
 if WORKFLOW_AVAILABLE:
-    __all__.extend([
-        "WorkflowDefinition",
-        "WorkflowNode",
-        "WorkflowEdge",
-        "WorkflowPath",
-        "WorkflowApprovalRequest",
-        "WorkflowExecutionState",
-    ])
+    __all__.extend(
+        [
+            "WorkflowDefinition",
+            "WorkflowNode",
+            "WorkflowEdge",
+            "WorkflowPath",
+            "WorkflowApprovalRequest",
+            "WorkflowExecutionState",
+        ]
+    )
