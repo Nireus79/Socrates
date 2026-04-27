@@ -96,7 +96,7 @@ class PythonExtractor(BaseLanguageExtractor):
                         imports.append(module_name)
 
             # Deduplicate and sort
-            return sorted(list(set(imports)))
+            return sorted(set(imports))
 
         except Exception as e:
             logger.warning(f"Failed to extract imports: {e}")

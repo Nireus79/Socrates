@@ -220,14 +220,14 @@ class CodeExtractor:
             Dictionary with code statistics
         """
         lines = content.split("\n")
-        code_lines = [l for l in lines if l.strip() and not l.strip().startswith("#")]
-        comment_lines = [l for l in lines if l.strip().startswith("#")]
+        code_lines = [line for line in lines if line.strip() and not line.strip().startswith("#")]
+        comment_lines = [line for line in lines if line.strip().startswith("#")]
 
         stats = {
             "total_lines": len(lines),
             "code_lines": len(code_lines),
             "comment_lines": len(comment_lines),
-            "blank_lines": len([l for l in lines if not l.strip()]),
+            "blank_lines": len([line for line in lines if not line.strip()]),
             "is_valid_python": CodeExtractor.validate_python_syntax(content)[0],
         }
 
