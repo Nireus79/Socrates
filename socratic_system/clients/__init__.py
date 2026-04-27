@@ -12,10 +12,14 @@ from socratic_nexus.clients import (
     ClaudeClient,
     GoogleClient,
     OllamaClient,
-    OpenAIClient,
 )
 
-__all__ = ["ClaudeClient", "OpenAIClient", "GoogleClient", "OllamaClient"]
+# OpenAIClient may not be available in all versions
+try:
+    from socratic_nexus.clients import OpenAIClient
+    __all__ = ["ClaudeClient", "OpenAIClient", "GoogleClient", "OllamaClient"]
+except ImportError:
+    __all__ = ["ClaudeClient", "GoogleClient", "OllamaClient"]
 
 logger = logging.getLogger("socrates.clients")
 logger.info("Client imports sourced from socratic-nexus library")
