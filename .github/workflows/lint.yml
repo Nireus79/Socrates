@@ -159,18 +159,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e . -e ./socrates-cli -e ./socrates-api
-          pip install -e ".[dev]" pytest-cov
-          # Install optional external library dependencies for code coverage
-          # These are optional but improve test coverage when available
-          pip install socratic-analyzer socratic-conflict socratic-docs socratic-knowledge \
-                      socratic-learning socratic-maturity socratic-performance socratic-workflow \
-                      || echo "Warning: Some optional dependencies not available (expected if packages not published)"
+          # Install dev dependencies (includes optional external libraries for full test coverage)
+          pip install -e ".[dev]"
 
       - name: Run tests with coverage
         timeout-minutes: 55
         run: |
           pytest --cov=socratic_system --cov-report=term-missing:skip-covered \
-                  --cov-fail-under=15 -m "not integration" --tb=short
+                  --cov-fail-under=35 -m "not integration" --tb=short
 
   all-quality-checks-passed:
     name: All Quality Checks Passed

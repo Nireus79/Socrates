@@ -101,6 +101,15 @@ dev = [
     "mypy>=1.8.0",
     "isort>=5.13.0",
     "types-requests>=2.31.0",
+    # Optional external libraries - included in dev to ensure full test coverage
+    "socratic-analyzer>=0.1.6",
+    "socratic-conflict>=0.1.5",
+    "socratic-docs>=0.2.1",
+    "socratic-knowledge>=0.1.6",
+    "socratic-learning>=0.2.0",
+    "socratic-maturity>=0.2.0",
+    "socratic-performance>=0.2.1",
+    "socratic-workflow>=0.1.4",
 ]
 async = [
     "asyncio>=3.4.3",
