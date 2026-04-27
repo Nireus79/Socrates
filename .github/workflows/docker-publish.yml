@@ -29,6 +29,7 @@ jobs:
     timeout-minutes: 30
     outputs:
       api-image: ${{ steps.meta.outputs.tags }}
+      api-image-primary: ${{ steps.extract-image.outputs.primary }}
       api-digest: ${{ steps.build.outputs.digest }}
 
     steps:
@@ -80,6 +81,13 @@ jobs:
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
             VCS_REF=${{ github.sha }}
 
+      - name: Extract primary image tag
+        id: extract-image
+        run: |
+          TAGS="${{ steps.meta.outputs.tags }}"
+          PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
+          echo "primary=$PRIMARY_TAG" >> $GITHUB_OUTPUT
+
       - name: Generate SBOM (Optional)
         if: always()
         uses: anchore/sbom-action@v0
@@ -117,6 +125,7 @@ jobs:
     timeout-minutes: 30
     outputs:
       frontend-image: ${{ steps.meta.outputs.tags }}
+      frontend-image-primary: ${{ steps.extract-image.outputs.primary }}
       frontend-digest: ${{ steps.build.outputs.digest }}
 
     steps:
@@ -168,6 +177,13 @@ jobs:
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
             VCS_REF=${{ github.sha }}
             VITE_API_URL=${{ secrets.VITE_API_URL || 'https://api.socrates.app' }}
+
+      - name: Extract primary image tag
+        id: extract-image
+        run: |
+          TAGS="${{ steps.meta.outputs.tags }}"
+          PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
+          echo "primary=$PRIMARY_TAG" >> $GITHUB_OUTPUT
 
       - name: Generate SBOM (Optional)
         if: always()
@@ -241,13 +257,13 @@ jobs:
 
       - name: Load API image from ghcr.io
         run: |
-          docker pull ${{ needs.build-api.outputs.api-image }}
-          docker tag ${{ needs.build-api.outputs.api-image }} socrates-api:test
+          docker pull ${{ needs.build-api.outputs.api-image-primary }}
+          docker tag ${{ needs.build-api.outputs.api-image-primary }} socrates-api:test
 
       - name: Load frontend image from ghcr.io
         run: |
-          docker pull ${{ needs.build-frontend.outputs.frontend-image }}
-          docker tag ${{ needs.build-frontend.outputs.frontend-image }} socrates-frontend:test
+          docker pull ${{ needs.build-frontend.outputs.frontend-image-primary }}
+          docker tag ${{ needs.build-frontend.outputs.frontend-image-primary }} socrates-frontend:test
 
       - name: Test API image
         run: |
