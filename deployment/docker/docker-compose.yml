@@ -9,6 +9,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=sqlite:////app/data/socrates.db
       - REDIS_URL=redis://redis:6379/0
@@ -38,7 +39,9 @@ services:
   frontend:
     build:
       context: ./socrates-frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://api:8000
     ports:
       - "3000:3000"
     environment:
