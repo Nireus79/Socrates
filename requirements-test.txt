@@ -24,7 +24,7 @@ factory-boy>=3.2.0
 
 # Security Testing
 bandit>=1.7.0
-safety>=2.3.0
+safety>=3.7.0
 
 # Code Quality
 black>=24.0.0
