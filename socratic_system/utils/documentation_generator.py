@@ -114,6 +114,7 @@ class DocumentationGenerator:
 - Standard library modules
 """
 
+        # nosec B608 - f-string for documentation template, not SQL
         readme += f"""
 ## Installation
 
