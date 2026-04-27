@@ -160,6 +160,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e . -e ./socrates-cli -e ./socrates-api
           pip install -e ".[dev]" pytest-cov
+          # Install optional external library dependencies for code coverage
+          pip install socratic-analyzer socratic-conflict socratic-docs socratic-knowledge \
+                      socratic-learning socratic-maturity socratic-performance socratic-workflow \
+                      2>/dev/null || echo "Some optional dependencies not available"
 
       - name: Run tests with coverage
         timeout-minutes: 55
