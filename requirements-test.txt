@@ -10,7 +10,7 @@ pytest-timeout>=2.1.0
 pytest-xdist>=3.0.0
 
 # Coverage Tools
-coverage>=7.0.0
+coverage>=7.10.7
 coverage-badge>=1.1.0
 
 # API Testing
