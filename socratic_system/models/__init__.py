@@ -30,11 +30,16 @@ except ImportError:
     MaturityEvent = None
     PhaseMaturity = None
 
-from socratic_system.workflow import (
-    WorkflowApprovalRequest,
-    WorkflowDefinition,
-    WorkflowExecutionState,
-)
+try:
+    from socratic_system.workflow import (
+        WorkflowApprovalRequest,
+        WorkflowDefinition,
+        WorkflowExecutionState,
+    )
+except ImportError:
+    WorkflowApprovalRequest = None
+    WorkflowDefinition = None
+    WorkflowExecutionState = None
 
 from .llm_provider import (
     APIKeyRecord,
@@ -65,9 +70,6 @@ __all__ = [
     "TeamMemberRole",
     "ROLE_FOCUS_AREAS",
     "VALID_ROLES",
-    "WorkflowApprovalRequest",
-    "WorkflowDefinition",
-    "WorkflowExecutionState",
 ]
 
 # Add optional items that were successfully imported
@@ -79,3 +81,5 @@ if CategoryScore is not None:
     __all__.extend(["CategoryScore", "PhaseMaturity", "MaturityEvent"])
 if QuestionEffectiveness is not None:
     __all__.extend(["QuestionEffectiveness", "UserBehaviorPattern", "KnowledgeBaseDocument"])
+if WorkflowApprovalRequest is not None:
+    __all__.extend(["WorkflowApprovalRequest", "WorkflowDefinition", "WorkflowExecutionState"])

@@ -17,7 +17,11 @@ except ImportError:
 
 from socratic_system.models import ProjectContext
 from socratic_system.models.workflow import WorkflowApprovalRequest
-from socratic_system.workflow import WorkflowOptimizer
+
+try:
+    from socratic_system.workflow import WorkflowOptimizer
+except ImportError:
+    WorkflowOptimizer = None
 
 from .base import Agent
 
