@@ -18,6 +18,8 @@ import requests
 API_URL = "http://localhost:8008"
 
 
+@pytest.mark.integration
+@pytest.mark.e2e
 class TestAuthenticationWorkflow:
     """Test user registration and authentication flow."""
 
@@ -60,6 +62,8 @@ class TestAuthenticationWorkflow:
         return username, token
 
 
+@pytest.mark.integration
+@pytest.mark.e2e
 class TestProjectWorkflow:
     """Test project creation and management workflow."""
 
@@ -111,6 +115,8 @@ class TestProjectWorkflow:
         return username, token, project_id
 
 
+@pytest.mark.integration
+@pytest.mark.e2e
 class TestCodeGenerationWorkflow:
     """Test code generation and history tracking."""
 
@@ -146,6 +152,8 @@ class TestCodeGenerationWorkflow:
         return username, token, project_id
 
 
+@pytest.mark.integration
+@pytest.mark.e2e
 class TestErrorHandling:
     """Test error handling and edge cases."""
 
