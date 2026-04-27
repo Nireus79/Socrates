@@ -6,42 +6,16 @@
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/=0.2.9" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ANALYSIS_DOCUMENTATION_INDEX.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/COMPATIBILITY_ANALYSIS_INDEX.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/COMPATIBILITY_MATRIX.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/COMPREHENSIVE_LIBRARY_EXTRACTION_PLAN.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/CRITICAL_BUG_ROOT_CAUSE_ANALYSIS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DETAILED_FILE_MAPPING.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DIVERGENCE_ANALYSIS_INDEX.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DIVERGENCE_CODE_EXAMPLES.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DIVERGENCE_QUICK_CHECKLIST.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DIVERGENCE_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DIVERGENCE_SUMMARY.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EXTRACTION_DOCUMENTS_INDEX.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EXTRACTION_PLAN_COMPLETE.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EXTRACTION_PLAN_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EXTRACTION_PLAN_SUMMARY_WITH_GIT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EXTRACTION_QUICK_REFERENCE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EXTRACTION_STEP_BY_STEP_GUIDE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EXTRACTION_WITH_GIT_WORKFLOW.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/FINAL_PARAMETER_FIX.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/IMPORT_REWRITING_RULES.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/LIBRARY_ANALYSIS_SUMMARY.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/LIBRARY_COMPATIBILITY_ANALYSIS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/LIBRARY_EXTRACTION_GIT_INDEX.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/LIBRARY_INTEGRATION_GOTCHAS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/LIBRARY_INTEGRATION_QUICK_REFERENCE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/MODULAR_LIBRARIES_ORCHESTRATOR_COMPATIBILITY_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/QUICK_COMPATIBILITY_SUMMARY.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README_COMPATIBILITY_ANALYSIS.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README_EXTRACTION_PLAN.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/START_HERE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/TECHNICAL_COMPATIBILITY_DETAILS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/comprehensive_divergence_analyzer.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/divergence_analyzer.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/final_divergence_report.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/conflict_detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/conflict_detector.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/analyzer/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/analyzer/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/conflict/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/conflict/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/docs/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/docs/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/knowledge/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/knowledge/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/learning/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/learning/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/maturity/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/maturity/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/performance/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/performance/__init__.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

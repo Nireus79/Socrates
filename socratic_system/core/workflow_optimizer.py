@@ -10,11 +10,19 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from socratic_system.analyzer import (
-    WorkflowCostCalculator,
-    WorkflowPathFinder,
-    WorkflowRiskCalculator,
-)
+try:
+    from socratic_system.analyzer import (
+        WorkflowCostCalculator,
+        WorkflowPathFinder,
+        WorkflowRiskCalculator,
+    )
+    ANALYZER_AVAILABLE = True
+except ImportError:
+    ANALYZER_AVAILABLE = False
+    WorkflowCostCalculator = None
+    WorkflowPathFinder = None
+    WorkflowRiskCalculator = None
+
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.workflow import (
     PathDecisionStrategy,
@@ -31,6 +39,8 @@ class WorkflowOptimizer:
 
     def __init__(self):
         """Initialize optimizer with calculation components"""
+        if not ANALYZER_AVAILABLE:
+            raise ImportError("socratic-analyzer library not installed, required for WorkflowOptimizer")
         self.path_finder_class = WorkflowPathFinder
         self.cost_calculator = WorkflowCostCalculator()
         self.risk_calculator = WorkflowRiskCalculator()

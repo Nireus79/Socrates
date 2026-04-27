@@ -20,8 +20,18 @@ from decimal import Decimal
 from typing import Any, Dict
 
 from socratic_system.agents.base import Agent
-from socratic_system.learning import LearningEngine
-from socratic_system.models import KnowledgeBaseDocument, QuestionEffectiveness, UserBehaviorPattern
+
+try:
+    from socratic_system.learning import LearningEngine
+except ImportError:
+    LearningEngine = None
+
+try:
+    from socratic_system.models import KnowledgeBaseDocument, QuestionEffectiveness, UserBehaviorPattern
+except ImportError:
+    KnowledgeBaseDocument = None
+    QuestionEffectiveness = None
+    UserBehaviorPattern = None
 
 
 class UserLearningAgent(Agent):
@@ -44,6 +54,8 @@ class UserLearningAgent(Agent):
     def __init__(self, orchestrator):
         """Initialize agent with learning engine"""
         super().__init__("User Learning", orchestrator)
+        if LearningEngine is None:
+            raise ImportError("socratic-learning library not installed, required for UserLearningAgent")
         self.learning_engine = LearningEngine(self.logger)
         self.logger.info("UserLearningAgent initialized")
 

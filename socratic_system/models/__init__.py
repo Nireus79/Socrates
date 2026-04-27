@@ -2,14 +2,34 @@
 Data models for Socrates AI
 """
 
-from socratic_system.conflict import ConflictInfo
-from socratic_system.knowledge import KnowledgeEntry
-from socratic_system.learning import (
-    KnowledgeBaseDocument,
-    QuestionEffectiveness,
-    UserBehaviorPattern,
-)
-from socratic_system.maturity import CategoryScore, MaturityEvent, PhaseMaturity
+try:
+    from socratic_system.conflict import ConflictInfo
+except ImportError:
+    ConflictInfo = None
+
+try:
+    from socratic_system.knowledge import KnowledgeEntry
+except ImportError:
+    KnowledgeEntry = None
+
+try:
+    from socratic_system.learning import (
+        KnowledgeBaseDocument,
+        QuestionEffectiveness,
+        UserBehaviorPattern,
+    )
+except ImportError:
+    KnowledgeBaseDocument = None
+    QuestionEffectiveness = None
+    UserBehaviorPattern = None
+
+try:
+    from socratic_system.maturity import CategoryScore, MaturityEvent, PhaseMaturity
+except ImportError:
+    CategoryScore = None
+    MaturityEvent = None
+    PhaseMaturity = None
+
 from socratic_system.workflow import (
     WorkflowApprovalRequest,
     WorkflowDefinition,
@@ -30,19 +50,12 @@ from .project import ProjectContext
 from .role import ROLE_FOCUS_AREAS, VALID_ROLES, TeamMemberRole
 from .user import User
 
+# Build __all__ dynamically, excluding None values (failed imports)
 __all__ = [
     "User",
     "ProjectContext",
-    "KnowledgeEntry",
     "TokenUsage",
-    "ConflictInfo",
     "ProjectNote",
-    "CategoryScore",
-    "PhaseMaturity",
-    "MaturityEvent",
-    "QuestionEffectiveness",
-    "UserBehaviorPattern",
-    "KnowledgeBaseDocument",
     "LLMProviderConfig",
     "APIKeyRecord",
     "LLMUsageRecord",
@@ -56,3 +69,13 @@ __all__ = [
     "WorkflowDefinition",
     "WorkflowExecutionState",
 ]
+
+# Add optional items that were successfully imported
+if ConflictInfo is not None:
+    __all__.append("ConflictInfo")
+if KnowledgeEntry is not None:
+    __all__.append("KnowledgeEntry")
+if CategoryScore is not None:
+    __all__.extend(["CategoryScore", "PhaseMaturity", "MaturityEvent"])
+if QuestionEffectiveness is not None:
+    __all__.extend(["QuestionEffectiveness", "UserBehaviorPattern", "KnowledgeBaseDocument"])

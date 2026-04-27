@@ -2,8 +2,15 @@
 Core calculation and utility modules for Socratic system
 """
 
-from socratic_system.analyzer import InsightCategorizer
-from socratic_system.maturity import MaturityCalculator
+try:
+    from socratic_system.analyzer import InsightCategorizer
+except ImportError:
+    InsightCategorizer = None
+
+try:
+    from socratic_system.maturity import MaturityCalculator
+except ImportError:
+    MaturityCalculator = None
 
 from .analytics_calculator import AnalyticsCalculator
 from .project_categories import (
@@ -15,8 +22,6 @@ from .project_categories import (
 )
 
 __all__ = [
-    "MaturityCalculator",
-    "InsightCategorizer",
     "AnalyticsCalculator",
     "get_phase_categories",
     "get_all_project_types",
@@ -24,3 +29,9 @@ __all__ = [
     "VALID_PROJECT_TYPES",
     "PROJECT_TYPE_DESCRIPTIONS",
 ]
+
+# Add optional items that were successfully imported
+if MaturityCalculator is not None:
+    __all__.append("MaturityCalculator")
+if InsightCategorizer is not None:
+    __all__.append("InsightCategorizer")

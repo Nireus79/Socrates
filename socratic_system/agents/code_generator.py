@@ -5,11 +5,19 @@ Code generation agent for Socrates AI
 from pathlib import Path
 from typing import Any, Dict
 
-from socratic_system.docs import (
-    ArtifactSaver,
-    MultiFileCodeSplitter,
-    ProjectStructureGenerator,
-)
+try:
+    from socratic_system.docs import (
+        ArtifactSaver,
+        MultiFileCodeSplitter,
+        ProjectStructureGenerator,
+    )
+    DOCS_AVAILABLE = True
+except ImportError:
+    DOCS_AVAILABLE = False
+    ArtifactSaver = None
+    MultiFileCodeSplitter = None
+    ProjectStructureGenerator = None
+
 from socratic_system.models import ProjectContext
 from socratic_system.utils.code_structure_analyzer import CodeStructureAnalyzer
 

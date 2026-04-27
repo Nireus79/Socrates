@@ -1,13 +1,17 @@
 """Knowledge management and RAG - imported from socratic-knowledge library."""
 
-from socratic_knowledge import (
-    DEFAULT_KNOWLEDGE,
-    CodeParser,
-    KnowledgeEntry,
-)
+try:
+    from socratic_knowledge import (
+        DEFAULT_KNOWLEDGE,
+        CodeParser,
+        KnowledgeEntry,
+    )
 
-__all__ = [
-    "KnowledgeEntry",
-    "CodeParser",
-    "DEFAULT_KNOWLEDGE",
-]
+    __all__ = [
+        "KnowledgeEntry",
+        "CodeParser",
+        "DEFAULT_KNOWLEDGE",
+    ]
+except ImportError:
+    # socratic-knowledge library not installed
+    __all__ = []

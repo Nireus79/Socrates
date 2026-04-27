@@ -9,7 +9,12 @@ from typing import Any, Dict, Optional
 
 from socratic_system.core.analytics_calculator import AnalyticsCalculator
 from socratic_system.events import EventType
-from socratic_system.maturity import MaturityCalculator
+
+try:
+    from socratic_system.maturity import MaturityCalculator
+except ImportError:
+    MaturityCalculator = None
+
 from socratic_system.models import ProjectContext
 from socratic_system.models.workflow import WorkflowApprovalRequest
 from socratic_system.workflow import WorkflowOptimizer
@@ -31,6 +36,9 @@ class QualityControllerAgent(Agent):
     def __init__(self, orchestrator):
         super().__init__("QualityController", orchestrator)
         logging.debug("Initializing QualityControllerAgent")
+
+        if MaturityCalculator is None:
+            raise ImportError("socratic-maturity library not installed, required for QualityControllerAgent")
 
         # Initialize the pure calculation engine with Claude client for intelligent categorization
         claude_client = (
