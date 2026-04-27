@@ -27,6 +27,9 @@ from socratic_system.models import (
     UserBehaviorPattern,
 )
 
+# Skip learning tests if optional library not available
+LEARNING_AVAILABLE = QuestionEffectiveness is not None and UserBehaviorPattern is not None
+
 
 @pytest.fixture
 def temp_db():
@@ -263,6 +266,7 @@ class TestProjectDatabaseNotesOperations:
         assert success is True
 
 
+@pytest.mark.skipif(not LEARNING_AVAILABLE, reason="socratic-learning library not installed")
 class TestProjectDatabaseLearningOperations:
     """Tests for learning data storage."""
 
