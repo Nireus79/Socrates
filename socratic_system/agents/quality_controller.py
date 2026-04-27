@@ -11,7 +11,7 @@ from socratic_system.core.analytics_calculator import AnalyticsCalculator
 from socratic_system.events import EventType
 
 try:
-    from socratic_system.maturity import MaturityCalculator
+    from socratic_maturity import MaturityCalculator
 except ImportError:
     MaturityCalculator = None
 

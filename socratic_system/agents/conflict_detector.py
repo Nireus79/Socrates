@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
 try:
-    from socratic_system.conflict import (
+    from socratic_conflict import (
         ConstraintsConflictChecker,
         GoalsConflictChecker,
         RequirementsConflictChecker,

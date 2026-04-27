@@ -3,12 +3,12 @@ Core calculation and utility modules for Socratic system
 """
 
 try:
-    from socratic_system.analyzer import InsightCategorizer
+    from socratic_analyzer import InsightCategorizer
 except ImportError:
     InsightCategorizer = None
 
 try:
-    from socratic_system.maturity import MaturityCalculator
+    from socratic_maturity import MaturityCalculator
 except ImportError:
     MaturityCalculator = None
 

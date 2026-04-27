@@ -22,7 +22,7 @@ from typing import Any, Dict
 from socratic_system.agents.base import Agent
 
 try:
-    from socratic_system.learning import LearningEngine
+    from socratic_learning import LearningEngine
 except ImportError:
     LearningEngine = None
 

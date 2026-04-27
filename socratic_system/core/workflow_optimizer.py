@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import List
 
 try:
-    from socratic_system.analyzer import (
+    from socratic_analyzer import (
         WorkflowCostCalculator,
         WorkflowPathFinder,
         WorkflowRiskCalculator,
