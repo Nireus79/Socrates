@@ -15,7 +15,7 @@ import tempfile
 import pytest
 
 from socratic_system.database.vector_db import VectorDatabase
-from socratic_system.models.knowledge import KnowledgeEntry
+from socratic_system.models import KnowledgeEntry
 
 
 @pytest.fixture

@@ -8,12 +8,17 @@ ensuring questions target specific categories.
 import logging
 from typing import Any, Dict, List, Optional, Set, Union
 
-from socratic_system.models.project import ProjectContext
-from socratic_system.models.workflow import (
+from socratic_system.models import (
     WorkflowDefinition,
     WorkflowExecutionState,
-    WorkflowNodeType,
 )
+from socratic_system.models.project import ProjectContext
+
+# Import WorkflowNodeType from workflow module (it's not re-exported in models/__init__.py)
+try:
+    from socratic_workflow import WorkflowNodeType
+except ImportError:
+    WorkflowNodeType = None
 
 logger = logging.getLogger(__name__)
 

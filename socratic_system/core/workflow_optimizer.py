@@ -24,13 +24,21 @@ except ImportError:
     WorkflowPathFinder = None
     WorkflowRiskCalculator = None
 
-from socratic_system.models.project import ProjectContext
-from socratic_system.models.workflow import (
-    PathDecisionStrategy,
+from socratic_system.models import (
     WorkflowApprovalRequest,
     WorkflowDefinition,
-    WorkflowPath,
 )
+from socratic_system.models.project import ProjectContext
+
+# Import workflow-specific types from external library
+try:
+    from socratic_workflow import (
+        PathDecisionStrategy,
+        WorkflowPath,
+    )
+except ImportError:
+    PathDecisionStrategy = None
+    WorkflowPath = None
 
 logger = logging.getLogger(__name__)
 

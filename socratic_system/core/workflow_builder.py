@@ -9,14 +9,24 @@ import logging
 import uuid
 from typing import Dict, List, Optional
 
-from socratic_system.models.project import ProjectContext
-from socratic_system.models.workflow import (
-    PathDecisionStrategy,
+from socratic_system.models import (
     WorkflowDefinition,
-    WorkflowEdge,
-    WorkflowNode,
-    WorkflowNodeType,
 )
+from socratic_system.models.project import ProjectContext
+
+# Import workflow-specific types from external library
+try:
+    from socratic_workflow import (
+        PathDecisionStrategy,
+        WorkflowEdge,
+        WorkflowNode,
+        WorkflowNodeType,
+    )
+except ImportError:
+    PathDecisionStrategy = None
+    WorkflowEdge = None
+    WorkflowNode = None
+    WorkflowNodeType = None
 
 logger = logging.getLogger(__name__)
 

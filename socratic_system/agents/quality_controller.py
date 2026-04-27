@@ -15,8 +15,7 @@ try:
 except ImportError:
     MaturityCalculator = None
 
-from socratic_system.models import ProjectContext
-from socratic_system.models.workflow import WorkflowApprovalRequest
+from socratic_system.models import ProjectContext, WorkflowApprovalRequest
 
 try:
     from socratic_system.workflow import WorkflowOptimizer
