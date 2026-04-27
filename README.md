@@ -7,6 +7,7 @@ multi-agent orchestration, and production-grade infrastructure.
 > **Status**: Production Ready (v1.1.0)
 > **License**: MIT
 > **Architecture**: FastAPI Backend + React Frontend + PostgreSQL + Redis + ChromaDB
+<img width="1887" height="918" alt="SocratesSS" src="https://github.com/user-attachments/assets/63c74ccb-869d-46c1-ace7-f0ed358acdb9" />
 
 ## Key Features
 
