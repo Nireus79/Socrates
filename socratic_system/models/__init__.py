@@ -3,17 +3,17 @@ Data models for Socrates AI
 """
 
 try:
-    from socratic_system.conflict import ConflictInfo
+    from socratic_conflict import ConflictInfo
 except ImportError:
     ConflictInfo = None
 
 try:
-    from socratic_system.knowledge import KnowledgeEntry
+    from socratic_knowledge import KnowledgeEntry
 except ImportError:
     KnowledgeEntry = None
 
 try:
-    from socratic_system.learning import (
+    from socratic_learning import (
         KnowledgeBaseDocument,
         QuestionEffectiveness,
         UserBehaviorPattern,
@@ -24,14 +24,14 @@ except ImportError:
     UserBehaviorPattern = None
 
 try:
-    from socratic_system.maturity import CategoryScore, MaturityEvent, PhaseMaturity
+    from socratic_maturity import CategoryScore, MaturityEvent, PhaseMaturity
 except ImportError:
     CategoryScore = None
     MaturityEvent = None
     PhaseMaturity = None
 
 try:
-    from socratic_system.workflow import (
+    from socratic_workflow import (
         WorkflowApprovalRequest,
         WorkflowDefinition,
         WorkflowExecutionState,
