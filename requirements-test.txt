@@ -30,7 +30,7 @@ safety>=2.3.0
 black>=24.0.0
 isort>=5.13.0
 mypy>=1.8.0
-ruff>=0.4.0
+ruff>=0.15.12
 
 # Performance Testing
 locust>=2.15.0
