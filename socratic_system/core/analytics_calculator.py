@@ -5,11 +5,15 @@ Pure computation logic for analyzing project maturity data and generating
 actionable recommendations for improvement.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 from socratic_system.core.project_categories import get_phase_categories
-from socratic_system.models import ProjectContext
+
+if TYPE_CHECKING:
+    from socratic_system.models import ProjectContext
 
 logger = logging.getLogger(__name__)
 
