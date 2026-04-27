@@ -28,7 +28,6 @@ from socrates_api.models import (
     GetChatMessagesResponse,
     ListChatSessionsResponse,
 )
-from socratic_system.utils.logger import is_debug_mode
 from socratic_system.database import ProjectDatabase
 
 
