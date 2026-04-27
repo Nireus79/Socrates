@@ -48,7 +48,7 @@ async def list_providers(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Available LLM providers",
             data=result.get("data", result),
         )
@@ -98,7 +98,7 @@ async def get_config(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="LLM configuration",
             data=result.get("data", result),
         )
@@ -151,7 +151,7 @@ async def set_default_provider(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Default provider set to {provider}",
             data=result.get("data", result),
         )
@@ -211,7 +211,7 @@ async def set_api_key(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"API key set for {provider}",
             data={"provider": provider},
         )
@@ -263,7 +263,7 @@ async def get_usage_stats(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Usage statistics",
             data=result.get("data", result),
         )

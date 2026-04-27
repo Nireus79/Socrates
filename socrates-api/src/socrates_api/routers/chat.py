@@ -76,7 +76,7 @@ async def get_next_question(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Next question generated",
             data=result,
         )
@@ -136,7 +136,7 @@ async def get_conversation_history(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Conversation history retrieved",
             data={"history": history, "count": len(history)},
         )
@@ -204,7 +204,7 @@ async def get_conversation_summary(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Conversation summary generated",
             data=result,
         )
@@ -217,8 +217,3 @@ async def get_conversation_summary(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate summary: {str(e)}",
         )
-
-
-
-
-

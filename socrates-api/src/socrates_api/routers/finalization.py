@@ -169,7 +169,7 @@ async def generate_final_artifacts(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Final artifacts generated successfully",
             data={
                 "finalization_id": finalization_id,
@@ -248,7 +248,8 @@ async def generate_final_documentation(
             description=project.description or f"Project: {project.name}",
             tech_stack=project.tech_stack or [],
             requirements=project.requirements or [],
-            features=getattr(project, 'features', None) or [
+            features=getattr(project, "features", None)
+            or [
                 "Modular architecture",
                 "Production-ready configuration",
                 "Comprehensive test coverage",
@@ -281,7 +282,7 @@ async def generate_final_documentation(
             description=project.description or f"Project: {project.name}",
             tech_stack=project.tech_stack or [],
             architecture_notes=f"Project maturity: {int(project.overall_maturity)}%\n"
-                                f"Deployment target: {project.deployment_target}",
+            f"Deployment target: {project.deployment_target}",
         )
 
         doc_package["sections"].append(
@@ -439,7 +440,7 @@ For deployment issues:
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Final documentation package generated successfully",
             data={
                 "doc_id": doc_id,
@@ -512,17 +513,14 @@ async def export_project(
         if not project_dirs:
             raise HTTPException(
                 status_code=404,
-                detail="Generated project files not found. Please generate code first."
+                detail="Generated project files not found. Please generate code first.",
             )
 
         # Use the most recently modified directory
         project_root = max(project_dirs, key=lambda p: p.stat().st_mtime)
 
         if not project_root.is_dir():
-            raise HTTPException(
-                status_code=404,
-                detail="Invalid generated project directory"
-            )
+            raise HTTPException(status_code=404, detail="Invalid generated project directory")
 
         logger.info(f"Found project directory: {project_root}")
 
@@ -556,16 +554,14 @@ async def export_project(
                 media_type = "application/x-bzip2"
             else:  # Default to ZIP
                 archive_path = tmpdir_path / f"{base_filename}.zip"
-                success, message = ArchiveBuilder.create_zip_archive(
-                    project_root, archive_path
-                )
+                success, message = ArchiveBuilder.create_zip_archive(project_root, archive_path)
                 media_type = "application/zip"
 
             if not success:
                 logger.error(f"Failed to create archive: {message}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Failed to create archive: {message}"
+                    detail=f"Failed to create archive: {message}",
                 )
 
             logger.info(f"Successfully created archive: {archive_path}")
@@ -576,6 +572,7 @@ async def export_project(
 
             # Record export event
             from socrates_api.routers.events import record_event
+
             record_event(
                 "project_exported",
                 {
@@ -782,6 +779,7 @@ async def publish_to_github(
 
         # Record publish event
         from socrates_api.routers.events import record_event
+
         record_event(
             "project_published_to_github",
             {

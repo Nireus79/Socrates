@@ -606,6 +606,7 @@ async def toggle_debug_mode(
     """
     try:
         import sys
+
         print(f"[ENDPOINT] toggle_debug_mode called with enabled={enabled}", file=sys.stderr)
 
         current_state = is_debug_mode()

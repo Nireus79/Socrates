@@ -34,7 +34,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 if TYPE_CHECKING:
     import socrates
 
-from socrates_api.auth import get_current_user, get_current_user_object, get_current_user_object_optional
+from socrates_api.auth import (
+    get_current_user,
+    get_current_user_object,
+    get_current_user_object_optional,
+)
 from socrates_api.auth.project_access import (
     check_project_access,
 )
@@ -115,7 +119,14 @@ async def list_projects(
         # Load all projects for user
         projects = db.get_user_projects(current_user)
 
-        project_responses = [_project_to_response(p).dict() if hasattr(_project_to_response(p), 'dict') else _project_to_response(p) for p in projects]
+        project_responses = [
+            (
+                _project_to_response(p).dict()
+                if hasattr(_project_to_response(p), "dict")
+                else _project_to_response(p)
+            )
+            for p in projects
+        ]
 
         return APIResponse(
             success=True,
@@ -184,7 +195,9 @@ async def create_project(
 
             # Check project limit for subscription tier (testing mode checked via database flag)
             # If testing mode is enabled in database, bypass subscription checks
-            testing_mode_enabled = getattr(user_object, "testing_mode", False) if user_object else False
+            testing_mode_enabled = (
+                getattr(user_object, "testing_mode", False) if user_object else False
+            )
             if not testing_mode_enabled:
                 # Count only OWNED projects for tier limit, not collaborated projects
                 all_projects = db.get_user_projects(current_user)
@@ -196,7 +209,9 @@ async def create_project(
                     logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
                     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
 
-            logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier})")
+            logger.info(
+                f"Subscription validation passed for {current_user} (tier: {subscription_tier})"
+            )
         except HTTPException:
             raise
         except Exception as e:
@@ -238,7 +253,11 @@ async def create_project(
                         success=True,
                         status="created",
                         message="Project created successfully",
-                        data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+                        data=(
+                            _project_to_response(project).dict()
+                            if hasattr(_project_to_response(project), "dict")
+                            else _project_to_response(project)
+                        ),
                     )
                 else:
                     error_message = result.get("message", "Failed to create project")
@@ -333,12 +352,17 @@ async def create_project(
         # Extract insights if we have content to analyze
         if context_to_analyze:
             try:
-                logger.info("Analyzing project description and knowledge base for initial specifications...")
+                logger.info(
+                    "Analyzing project description and knowledge base for initial specifications..."
+                )
                 # Use the same approach as ProjectManagerAgent
                 from socrates_api.main import app_state
+
                 orchestrator = app_state.get("orchestrator")
                 if orchestrator and hasattr(orchestrator, "claude_client"):
-                    insights = await orchestrator.claude_client.extract_insights(context_to_analyze, project)
+                    insights = await orchestrator.claude_client.extract_insights(
+                        context_to_analyze, project
+                    )
 
                     if insights:
                         # Apply extracted insights to project (goals, requirements, tech_stack, constraints)
@@ -358,6 +382,7 @@ async def create_project(
                 # Save knowledge base content as a knowledge document
                 # Using the description or content as the source for the knowledge base
                 import uuid
+
                 doc_id = str(uuid.uuid4())
                 db.save_knowledge_document(
                     user_id=current_user,
@@ -376,8 +401,8 @@ async def create_project(
                     metadata={
                         "project_id": project_id,
                         "source": "initial_knowledge_base",
-                        "type": "knowledge_base"
-                    }
+                        "type": "knowledge_base",
+                    },
                 )
 
                 logger.info(
@@ -420,7 +445,11 @@ async def create_project(
             success=True,
             status="created",
             message="Project created successfully",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=(
+                _project_to_response(project).dict()
+                if hasattr(_project_to_response(project), "dict")
+                else _project_to_response(project)
+            ),
         )
 
     except HTTPException as e:
@@ -490,7 +519,11 @@ async def get_project(
             success=True,
             status="success",
             message="Project retrieved successfully",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=(
+                _project_to_response(project).dict()
+                if hasattr(_project_to_response(project), "dict")
+                else _project_to_response(project)
+            ),
         )
 
     except HTTPException:
@@ -563,7 +596,11 @@ async def update_project(
             success=True,
             status="updated",
             message="Project updated successfully",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=(
+                _project_to_response(project).dict()
+                if hasattr(_project_to_response(project), "dict")
+                else _project_to_response(project)
+            ),
         )
 
     except HTTPException:
@@ -702,7 +739,11 @@ async def restore_project(
             success=True,
             status="success",
             message="Project restored successfully",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=(
+                _project_to_response(project).dict()
+                if hasattr(_project_to_response(project), "dict")
+                else _project_to_response(project)
+            ),
         )
 
     except HTTPException:
@@ -773,7 +814,7 @@ async def get_project_stats(
             success=True,
             status="success",
             data=stats,
-            message="Project statistics retrieved successfully"
+            message="Project statistics retrieved successfully",
         )
 
     except HTTPException:
@@ -912,7 +953,7 @@ async def get_maturity_analysis(
             "project_type": getattr(project, "project_type", "software"),
             "current_phase": getattr(project, "current_phase", "discovery"),
             "overall_maturity": getattr(project, "overall_maturity", 0.0),
-            "phases": {}
+            "phases": {},
         }
 
         # Analyze each phase
@@ -930,11 +971,31 @@ async def get_maturity_analysis(
             missing_categories = []
 
             for cat_name, cat_data in phase_categories.items():
-                percentage = cat_data.get("percentage", 0.0) if isinstance(cat_data, dict) else getattr(cat_data, "percentage", 0.0)
-                current_score = cat_data.get("current_score", 0.0) if isinstance(cat_data, dict) else getattr(cat_data, "current_score", 0.0)
-                target_score = cat_data.get("target_score", 15.0) if isinstance(cat_data, dict) else getattr(cat_data, "target_score", 15.0)
-                spec_count = cat_data.get("spec_count", 0) if isinstance(cat_data, dict) else getattr(cat_data, "spec_count", 0)
-                confidence = cat_data.get("confidence", 0.0) if isinstance(cat_data, dict) else getattr(cat_data, "confidence", 0.0)
+                percentage = (
+                    cat_data.get("percentage", 0.0)
+                    if isinstance(cat_data, dict)
+                    else getattr(cat_data, "percentage", 0.0)
+                )
+                current_score = (
+                    cat_data.get("current_score", 0.0)
+                    if isinstance(cat_data, dict)
+                    else getattr(cat_data, "current_score", 0.0)
+                )
+                target_score = (
+                    cat_data.get("target_score", 15.0)
+                    if isinstance(cat_data, dict)
+                    else getattr(cat_data, "target_score", 15.0)
+                )
+                spec_count = (
+                    cat_data.get("spec_count", 0)
+                    if isinstance(cat_data, dict)
+                    else getattr(cat_data, "spec_count", 0)
+                )
+                confidence = (
+                    cat_data.get("confidence", 0.0)
+                    if isinstance(cat_data, dict)
+                    else getattr(cat_data, "confidence", 0.0)
+                )
 
                 category_info = {
                     "name": cat_name,
@@ -944,7 +1005,7 @@ async def get_maturity_analysis(
                     "spec_count": spec_count,
                     "confidence": confidence,
                     "remaining_score": max(0.0, target_score - current_score),
-                    "specs_needed_estimate": max(0, int((target_score - current_score) / 0.85))
+                    "specs_needed_estimate": max(0, int((target_score - current_score) / 0.85)),
                 }
 
                 if percentage >= 80:
@@ -958,17 +1019,26 @@ async def get_maturity_analysis(
 
             # Calculate statistics
             total_categories = len(phase_categories)
-            completed_categories = sum(1 for cat in phase_categories.values()
-                                     if (isinstance(cat, dict) and cat.get("percentage", 0) >= 100) or
-                                        (hasattr(cat, "percentage") and cat.percentage >= 100))
+            completed_categories = sum(
+                1
+                for cat in phase_categories.values()
+                if (isinstance(cat, dict) and cat.get("percentage", 0) >= 100)
+                or (hasattr(cat, "percentage") and cat.percentage >= 100)
+            )
 
             # Estimate metrics for reaching milestones
-            current_score_sum = sum((cat.get("current_score", 0) if isinstance(cat, dict) else getattr(cat, "current_score", 0))
-                                   for cat in phase_categories.values())
+            current_score_sum = sum(
+                (
+                    cat.get("current_score", 0)
+                    if isinstance(cat, dict)
+                    else getattr(cat, "current_score", 0)
+                )
+                for cat in phase_categories.values()
+            )
 
             milestone_60 = max(0, 54.0 - current_score_sum)  # 60% of 90
             milestone_80 = max(0, 72.0 - current_score_sum)  # 80% of 90
-            milestone_100 = max(0, 90.0 - current_score_sum) # 100% of 90
+            milestone_100 = max(0, 90.0 - current_score_sum)  # 100% of 90
 
             # Estimate sessions needed (assuming 6.5 points per session)
             avg_points_per_session = analytics.get("velocity", 6.5)
@@ -978,13 +1048,21 @@ async def get_maturity_analysis(
 
             analysis_data["phases"][phase_name] = {
                 "overall_percentage": phase_score,
-                "status": "complete" if phase_score >= 100 else "ready" if phase_score >= 60 else "warning" if phase_score >= 40 else "critical",
+                "status": (
+                    "complete"
+                    if phase_score >= 100
+                    else (
+                        "ready"
+                        if phase_score >= 60
+                        else "warning" if phase_score >= 40 else "critical"
+                    )
+                ),
                 "ready_to_advance": phase_score >= 60,
                 "categories": {
                     "strong": strong_categories,
                     "adequate": adequate_categories,
                     "weak": weak_categories,
-                    "missing": missing_categories
+                    "missing": missing_categories,
                 },
                 "statistics": {
                     "total_categories": total_categories,
@@ -995,33 +1073,31 @@ async def get_maturity_analysis(
                     "missing_count": len(missing_categories),
                     "total_points_earned": current_score_sum,
                     "total_points_possible": 90.0,
-                    "average_category_confidence": analytics.get("avg_confidence", 0.85)
+                    "average_category_confidence": analytics.get("avg_confidence", 0.85),
                 },
                 "milestones": {
                     "reach_60_percent": {
                         "target_score": 54.0,
                         "points_needed": milestone_60,
                         "estimated_specs": max(0, int(milestone_60 / 0.85)),
-                        "estimated_sessions": sessions_to_60
+                        "estimated_sessions": sessions_to_60,
                     },
                     "reach_80_percent": {
                         "target_score": 72.0,
                         "points_needed": milestone_80,
                         "estimated_specs": max(0, int(milestone_80 / 0.85)),
-                        "estimated_sessions": sessions_to_80
+                        "estimated_sessions": sessions_to_80,
                     },
                     "reach_100_percent": {
                         "target_score": 90.0,
                         "points_needed": milestone_100,
                         "estimated_specs": max(0, int(milestone_100 / 0.85)),
-                        "estimated_sessions": sessions_to_100
-                    }
+                        "estimated_sessions": sessions_to_100,
+                    },
                 },
                 "recommendations": _generate_recommendations(
-                    weak_categories,
-                    missing_categories,
-                    phase_score
-                )
+                    weak_categories, missing_categories, phase_score
+                ),
             }
 
         return APIResponse(
@@ -1047,48 +1123,60 @@ def _generate_recommendations(weak_categories, missing_categories, phase_score):
 
     # Priority 1: Critical gaps
     if phase_score < 40:
-        recommendations.append({
-            "priority": "critical",
-            "title": "Phase Maturity Very Low",
-            "description": "Your phase maturity is below 40%. Consider answering more questions to strengthen your specification.",
-            "focus_areas": [cat["name"] for cat in missing_categories[:3]]
-        })
+        recommendations.append(
+            {
+                "priority": "critical",
+                "title": "Phase Maturity Very Low",
+                "description": "Your phase maturity is below 40%. Consider answering more questions to strengthen your specification.",
+                "focus_areas": [cat["name"] for cat in missing_categories[:3]],
+            }
+        )
 
     # Priority 2: Weak categories
     if weak_categories:
         weakest = sorted(weak_categories, key=lambda x: x["percentage"])[:2]
-        recommendations.append({
-            "priority": "high",
-            "title": "Strengthen Weak Areas",
-            "description": f"Focus on {', '.join([cat['name'] for cat in weakest])} categories to improve overall maturity.",
-            "focus_areas": [cat["name"] for cat in weakest]
-        })
+        recommendations.append(
+            {
+                "priority": "high",
+                "title": "Strengthen Weak Areas",
+                "description": f"Focus on {', '.join([cat['name'] for cat in weakest])} categories to improve overall maturity.",
+                "focus_areas": [cat["name"] for cat in weakest],
+            }
+        )
 
     # Priority 3: Missing categories
     if missing_categories:
-        recommendations.append({
-            "priority": "high",
-            "title": "Complete Missing Categories",
-            "description": f"Start coverage in: {', '.join([cat['name'] for cat in missing_categories[:3]])}",
-            "focus_areas": [cat["name"] for cat in missing_categories[:3]]
-        })
+        recommendations.append(
+            {
+                "priority": "high",
+                "title": "Complete Missing Categories",
+                "description": f"Start coverage in: {', '.join([cat['name'] for cat in missing_categories[:3]])}",
+                "focus_areas": [cat["name"] for cat in missing_categories[:3]],
+            }
+        )
 
     # Priority 4: Ready decision
     if phase_score >= 60:
         if phase_score < 80:
-            recommendations.append({
-                "priority": "info",
-                "title": "Ready to Advance (Consider Strengthening)",
-                "description": "Your phase is ready (60%+), but strengthening weak areas before advancing will reduce rework later.",
-                "focus_areas": [cat["name"] for cat in weak_categories[:2]] if weak_categories else []
-            })
+            recommendations.append(
+                {
+                    "priority": "info",
+                    "title": "Ready to Advance (Consider Strengthening)",
+                    "description": "Your phase is ready (60%+), but strengthening weak areas before advancing will reduce rework later.",
+                    "focus_areas": (
+                        [cat["name"] for cat in weak_categories[:2]] if weak_categories else []
+                    ),
+                }
+            )
         elif phase_score >= 100:
-            recommendations.append({
-                "priority": "success",
-                "title": "Phase Complete",
-                "description": "Excellent work! This phase is fully specified and ready for the next phase.",
-                "focus_areas": []
-            })
+            recommendations.append(
+                {
+                    "priority": "success",
+                    "title": "Phase Complete",
+                    "description": "Excellent work! This phase is fully specified and ready for the next phase.",
+                    "focus_areas": [],
+                }
+            )
 
     return recommendations
 
@@ -1172,7 +1260,11 @@ async def advance_phase(
             success=True,
             status="updated",
             message=f"Project phase advanced to {new_phase}",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=(
+                _project_to_response(project).dict()
+                if hasattr(_project_to_response(project), "dict")
+                else _project_to_response(project)
+            ),
         )
 
     except HTTPException:
@@ -1183,6 +1275,7 @@ async def advance_phase(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error advancing project phase",
         )
+
 
 @router.post(
     "/{project_id}/phase/rollback",
@@ -1257,7 +1350,11 @@ async def rollback_phase(
             success=True,
             status="updated",
             message=f"Project phase rolled back to {new_phase}",
-            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+            data=(
+                _project_to_response(project).dict()
+                if hasattr(_project_to_response(project), "dict")
+                else _project_to_response(project)
+            ),
         )
 
     except HTTPException:
@@ -1268,7 +1365,6 @@ async def rollback_phase(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error rolling back project phase",
         )
-
 
 
 @router.get(
@@ -1616,7 +1712,9 @@ async def delete_project_file(
     try:
         from pathlib import Path
 
-        logger.debug(f"Delete file request: project_id={project_id}, file_name={file_name}, user={current_user}")
+        logger.debug(
+            f"Delete file request: project_id={project_id}, file_name={file_name}, user={current_user}"
+        )
 
         # Check project access - requires editor or better
         await check_project_access(project_id, current_user, db, min_role="editor")
@@ -1677,7 +1775,10 @@ async def delete_project_file(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting file {project_id}/{file_name}: {type(e).__name__}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error deleting file {project_id}/{file_name}: {type(e).__name__}: {str(e)}",
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting file: {str(e)}",

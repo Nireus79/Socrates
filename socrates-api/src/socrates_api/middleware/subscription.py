@@ -17,6 +17,7 @@ from socratic_system.subscription.tiers import TIER_LIMITS
 
 logger = logging.getLogger(__name__)
 
+
 # Build API-compatible feature matrix from central TIER_LIMITS
 # This maintains backward compatibility while using the centralized definitions
 def _build_tier_features():
@@ -46,6 +47,7 @@ def _build_tier_features():
             },
         }
     return tier_features
+
 
 # Dynamically built from central TIER_LIMITS
 # FREEMIUM MODEL: All tiers have FULL FEATURE ACCESS, limited only by quotas (projects, team members, storage).
@@ -176,7 +178,9 @@ def require_subscription_feature(feature: str) -> Callable:
 
             # If testing mode is enabled, bypass subscription checks
             if getattr(user, "testing_mode", False):
-                logger.debug(f"Testing mode enabled for {current_user}, bypassing subscription check for feature: {feature}")
+                logger.debug(
+                    f"Testing mode enabled for {current_user}, bypassing subscription check for feature: {feature}"
+                )
                 return await func(*args, **kwargs)
 
             # Check feature access
@@ -249,7 +253,9 @@ def require_subscription_tier(required_tier: str) -> Callable:
 
             # If testing mode is enabled, bypass subscription tier checks
             if getattr(user, "testing_mode", False):
-                logger.debug(f"Testing mode enabled for {current_user}, bypassing subscription tier check for required tier: {required_tier}")
+                logger.debug(
+                    f"Testing mode enabled for {current_user}, bypassing subscription tier check for required tier: {required_tier}"
+                )
                 return await func(*args, **kwargs)
 
             # Check tier

@@ -458,7 +458,7 @@ async def change_password(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Password changed successfully",
         )
 
@@ -514,7 +514,7 @@ async def logout(
         logger.info(f"User logged out and tokens revoked: {current_user}")
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Logout successful. All refresh tokens have been revoked. Access token will expire in 15 minutes.\n\nτῷ Ἀσκληπιῷ ὀφείλομεν ἀλεκτρυόνα, ἀπόδοτε καὶ μὴ ἀμελήσετε.",
         )
     except Exception as e:
@@ -707,8 +707,7 @@ async def delete_account(
         # Call helper function to perform deletion
         await _delete_user_helper(current_user, db)
 
-        return APIResponse(success=True,
-        status="success", message="Account deleted successfully")
+        return APIResponse(success=True, status="success", message="Account deleted successfully")
 
     except HTTPException:
         raise
@@ -789,7 +788,7 @@ async def set_testing_mode(
         return APIResponse(
             success=True,
             status="success",
-            message=f"Testing mode {'enabled' if enabled else 'disabled'}"
+            message=f"Testing mode {'enabled' if enabled else 'disabled'}",
         )
 
     except HTTPException:
@@ -839,7 +838,7 @@ async def archive_account(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Account archived successfully",
             data={
                 "user_id": current_user,
@@ -898,7 +897,7 @@ async def restore_account(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Account restored successfully",
             data={
                 "user_id": current_user,

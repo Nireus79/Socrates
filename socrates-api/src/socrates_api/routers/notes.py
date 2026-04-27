@@ -95,7 +95,7 @@ async def add_note(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Note added successfully",
             data={"note": note},
         )
@@ -160,7 +160,7 @@ async def list_notes(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Notes retrieved",
             data={
                 "notes": notes,
@@ -227,7 +227,7 @@ async def search_notes(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Search completed",
             data={
                 "results": results,
@@ -294,7 +294,7 @@ async def delete_note(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Note deleted successfully",
             data={"note_id": note_id},
         )

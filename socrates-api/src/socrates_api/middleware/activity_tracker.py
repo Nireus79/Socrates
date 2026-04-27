@@ -2,6 +2,7 @@
 Activity Tracking Middleware - Track last API activity per user
 and manage server shutdown scheduling.
 """
+
 import time
 import logging
 from typing import Dict, Optional
@@ -66,9 +67,7 @@ def has_recent_activity(since_seconds: int = 300) -> bool:
     now = time.time()
     cutoff = now - since_seconds
 
-    has_activity = any(
-        timestamp > cutoff for timestamp in _user_activity.values()
-    )
+    has_activity = any(timestamp > cutoff for timestamp in _user_activity.values())
 
     if has_activity:
         logger.debug(f"Recent activity detected within {since_seconds} seconds")

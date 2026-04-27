@@ -135,7 +135,9 @@ async def github_sponsors_webhook(
                             {
                                 "sponsorship_id": sponsorship_id,
                                 "username": github_username,
-                                "change_type": "upgrade" if granted_tier > previous_tier else "downgrade",
+                                "change_type": (
+                                    "upgrade" if granted_tier > previous_tier else "downgrade"
+                                ),
                                 "old_tier": previous_tier,
                                 "new_tier": granted_tier,
                                 "old_amount": None,  # Previous sponsorship amount unknown
@@ -146,7 +148,9 @@ async def github_sponsors_webhook(
                                 "notes": f"Tier changed via GitHub Sponsors from {previous_tier} to {granted_tier}",
                             }
                         )
-                        logger.info(f"Recorded tier change for user {github_username}: {previous_tier} → {granted_tier}")
+                        logger.info(
+                            f"Recorded tier change for user {github_username}: {previous_tier} → {granted_tier}"
+                        )
                 except Exception as e:
                     logger.warning(f"Could not record tier change: {e}")
 
@@ -253,8 +257,7 @@ async def verify_sponsorship(
                 "expires_at": sponsorship.get("tier_expires_at"),
                 "days_remaining": (
                     (
-                        datetime.fromisoformat(sponsorship.get("tier_expires_at"))
-                        - datetime.now()
+                        datetime.fromisoformat(sponsorship.get("tier_expires_at")) - datetime.now()
                     ).days
                     if sponsorship.get("tier_expires_at")
                     else None
@@ -341,14 +344,10 @@ async def get_payment_history(
     try:
         payments = db.get_payment_history(current_user, limit=limit)
 
-        total_successful = sum(
-            1 for p in payments if p.get("payment_status") == "success"
-        )
+        total_successful = sum(1 for p in payments if p.get("payment_status") == "success")
         total_failed = sum(1 for p in payments if p.get("payment_status") == "failed")
         total_amount = sum(
-            float(p.get("amount", 0))
-            for p in payments
-            if p.get("payment_status") == "success"
+            float(p.get("amount", 0)) for p in payments if p.get("payment_status") == "success"
         )
 
         return APIResponse(
@@ -731,7 +730,7 @@ async def get_admin_dashboard(
 
     try:
         # Get all sponsorship data from database
-        sponsorships = db.get_all_sponsorships() if hasattr(db, 'get_all_sponsorships') else []
+        sponsorships = db.get_all_sponsorships() if hasattr(db, "get_all_sponsorships") else []
 
         if not sponsorships:
             return APIResponse(
@@ -752,27 +751,19 @@ async def get_admin_dashboard(
         active_sponsors = [s for s in sponsorships if s.get("sponsorship_status") == "active"]
         cancelled_sponsors = [s for s in sponsorships if s.get("sponsorship_status") == "cancelled"]
 
-        total_monthly_revenue = sum(
-            float(s.get("sponsorship_amount", 0)) for s in active_sponsors
-        )
+        total_monthly_revenue = sum(float(s.get("sponsorship_amount", 0)) for s in active_sponsors)
 
         # Group by tier
         sponsorships_by_tier = {}
         for sponsorship in sponsorships:
             tier = sponsorship.get("socrates_tier_granted", "unknown")
             if tier not in sponsorships_by_tier:
-                sponsorships_by_tier[tier] = {
-                    "count": 0,
-                    "total_revenue": 0.0,
-                    "sponsors": []
-                }
+                sponsorships_by_tier[tier] = {"count": 0, "total_revenue": 0.0, "sponsors": []}
             sponsorships_by_tier[tier]["count"] += 1
             sponsorships_by_tier[tier]["total_revenue"] += float(
                 sponsorship.get("sponsorship_amount", 0)
             )
-            sponsorships_by_tier[tier]["sponsors"].append(
-                sponsorship.get("github_username")
-            )
+            sponsorships_by_tier[tier]["sponsors"].append(sponsorship.get("github_username"))
 
         # Format tier data
         tier_summary = {}
@@ -785,9 +776,7 @@ async def get_admin_dashboard(
 
         # Get recent sponsorships (last 10)
         recent_sponsorships = sorted(
-            sponsorships,
-            key=lambda x: x.get("sponsored_at", ""),
-            reverse=True
+            sponsorships, key=lambda x: x.get("sponsored_at", ""), reverse=True
         )[:10]
 
         # Calculate total refunded (sum of all refunds across all users)
@@ -796,9 +785,7 @@ async def get_admin_dashboard(
             username = sponsorship.get("username")
             if username:
                 refunds = db.get_refund_history(username, limit=1000)
-                total_refunded += sum(
-                    float(r.get("refund_amount", 0)) for r in refunds
-                )
+                total_refunded += sum(float(r.get("refund_amount", 0)) for r in refunds)
 
         return APIResponse(
             success=True,

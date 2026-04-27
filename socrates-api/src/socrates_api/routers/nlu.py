@@ -53,7 +53,12 @@ class NLUInterpretResponse(BaseModel):
     intent: Optional[str] = None
 
 
-async def _extract_entities(text: str, context: Optional[dict] = None, user_id: str = None, user_auth_method: str = "api_key") -> Dict[str, Any]:
+async def _extract_entities(
+    text: str,
+    context: Optional[dict] = None,
+    user_id: str = None,
+    user_auth_method: str = "api_key",
+) -> Dict[str, Any]:
     """
     Extract entities from user input using Claude AI.
 
@@ -86,7 +91,9 @@ Extract the following in JSON format:
 
 Respond ONLY with valid JSON."""
 
-        response = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
+        response = orchestrator.claude_client.generate_response(
+            prompt, user_auth_method=user_auth_method, user_id=user_id
+        )
 
         try:
             entities = json.loads(response)
@@ -113,7 +120,10 @@ Respond ONLY with valid JSON."""
 
 
 async def _get_ai_command_suggestions(
-    text: str, context: Optional[dict] = None, user_id: str = None, user_auth_method: str = "api_key"
+    text: str,
+    context: Optional[dict] = None,
+    user_id: str = None,
+    user_auth_method: str = "api_key",
 ) -> List[Dict[str, Any]]:
     """
     Get AI-powered command suggestions using Claude.
@@ -176,7 +186,9 @@ Respond with JSON:
 
 Respond ONLY with valid JSON."""
 
-        response = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
+        response = orchestrator.claude_client.generate_response(
+            prompt, user_auth_method=user_auth_method, user_id=user_id
+        )
 
         try:
             result = json.loads(response)
@@ -244,7 +256,9 @@ async def interpret_input(
                     note_content = f"[NLU] {request.input}"
                     if not project.notes:
                         project.notes = []
-                    project.notes.append({"timestamp": str(datetime.now()), "content": note_content})
+                    project.notes.append(
+                        {"timestamp": str(datetime.now()), "content": note_content}
+                    )
                     db.save_project(project)
                     logger.debug(f"Saved NLU dialogue as note for project {project_id}")
             except Exception as e:
@@ -260,9 +274,10 @@ async def interpret_input(
         user_auth_method = "api_key"
         if current_user:
             from socrates_api.database import get_database
+
             db = get_database()
             user_obj = db.load_user(current_user)
-            if user_obj and hasattr(user_obj, 'claude_auth_method'):
+            if user_obj and hasattr(user_obj, "claude_auth_method"):
                 user_auth_method = user_obj.claude_auth_method or "api_key"
 
         # Check if input is a direct command (starts with /)
@@ -286,14 +301,18 @@ async def interpret_input(
         logger.debug("Using AI-powered NLU interpretation")
 
         # Extract entities using Claude
-        entities = await _extract_entities(user_input, request.context, user_id=current_user, user_auth_method=user_auth_method)
+        entities = await _extract_entities(
+            user_input, request.context, user_id=current_user, user_auth_method=user_auth_method
+        )
         intent = entities.get("intent_category", "query")
         entity_confidence = entities.get("confidence", 0.0)
 
         # Get AI suggestions if confidence is moderate or higher
         ai_suggestions = []
         if entity_confidence >= 0.3:
-            ai_suggestions = await _get_ai_command_suggestions(user_input, request.context, user_id=current_user, user_auth_method=user_auth_method)
+            ai_suggestions = await _get_ai_command_suggestions(
+                user_input, request.context, user_id=current_user, user_auth_method=user_auth_method
+            )
 
             # Format AI suggestions properly
             if ai_suggestions:
@@ -558,7 +577,12 @@ async def get_available_commands(
                     "aliases": [],
                 },
                 {"name": "hint", "usage": "/hint", "description": "Get a hint", "aliases": []},
-                {"name": "skipped", "usage": "/skipped", "description": "View and reopen skipped questions", "aliases": []},
+                {
+                    "name": "skipped",
+                    "usage": "/skipped",
+                    "description": "View and reopen skipped questions",
+                    "aliases": [],
+                },
                 {
                     "name": "explain",
                     "usage": "/explain <topic>",
@@ -673,7 +697,6 @@ async def get_available_commands(
     status_code=status.HTTP_200_OK,
     summary="Get context-aware command suggestions",
 )
-
 async def get_context_aware_suggestions(
     project_id: Optional[str] = None,
     current_phase: Optional[str] = None,

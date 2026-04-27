@@ -349,9 +349,7 @@ async def get_workflow_info(
         )
 
         if not approval:
-            raise HTTPException(
-                status_code=404, detail=f"Approval request not found: {request_id}"
-            )
+            raise HTTPException(status_code=404, detail=f"Approval request not found: {request_id}")
 
         return APIResponse(
             success=True,
@@ -366,9 +364,3 @@ async def get_workflow_info(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve workflow information",
         )
-
-
-
-
-
-

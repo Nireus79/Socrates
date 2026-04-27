@@ -141,7 +141,9 @@ async def get_progress(
         # Safely convert category scores to numbers
         safe_category_scores = {}
         numeric_values = []
-        for category, score in (category_scores.items() if isinstance(category_scores, dict) else []):
+        for category, score in (
+            category_scores.items() if isinstance(category_scores, dict) else []
+        ):
             if isinstance(score, dict):
                 numeric_score = score.get("score", 0) if isinstance(score, dict) else score
             else:
@@ -204,7 +206,7 @@ async def get_progress(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Project progress retrieved successfully",
             data=progress_data,
         )
@@ -311,7 +313,13 @@ async def get_progress_status(
                     if len(recent_scores) >= 2
                     else "No data"
                 ),
-                "last_update": recent_history[-1].get("timestamp") if recent_history and isinstance(recent_history[-1], dict) else (getattr(recent_history[-1], "timestamp", None) if recent_history else None),
+                "last_update": (
+                    recent_history[-1].get("timestamp")
+                    if recent_history and isinstance(recent_history[-1], dict)
+                    else (
+                        getattr(recent_history[-1], "timestamp", None) if recent_history else None
+                    )
+                ),
             },
             "phase_status": {
                 "current": getattr(project, "current_phase", "planning"),
@@ -331,7 +339,7 @@ async def get_progress_status(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Progress status retrieved successfully",
             data=status_data,
         )
@@ -418,17 +426,29 @@ async def get_project_stats(
 
         # Count insights (messages with type='insight')
         insight_count = len(
-            [msg for msg in conversation_history if isinstance(msg, dict) and msg.get("type") == "insight"]
+            [
+                msg
+                for msg in conversation_history
+                if isinstance(msg, dict) and msg.get("type") == "insight"
+            ]
         )
 
         # Count questions (messages with type='question')
         question_count = len(
-            [msg for msg in conversation_history if isinstance(msg, dict) and msg.get("type") == "question"]
+            [
+                msg
+                for msg in conversation_history
+                if isinstance(msg, dict) and msg.get("type") == "question"
+            ]
         )
 
         # Count code blocks generated
         code_count = len(
-            [msg for msg in conversation_history if isinstance(msg, dict) and msg.get("type") == "code"]
+            [
+                msg
+                for msg in conversation_history
+                if isinstance(msg, dict) and msg.get("type") == "code"
+            ]
         )
 
         # Get current phase
@@ -457,7 +477,7 @@ async def get_project_stats(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Project statistics retrieved successfully",
             data=stats_data,
         )
@@ -470,9 +490,3 @@ async def get_project_stats(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get project stats: {str(e)}",
         )
-
-
-
-
-
-

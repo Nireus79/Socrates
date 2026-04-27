@@ -96,6 +96,7 @@ def _build_subscription_tiers():
 
     return tiers
 
+
 # Dynamically built from central TIER_LIMITS
 SUBSCRIPTION_TIERS = _build_subscription_tiers()
 
@@ -143,7 +144,7 @@ async def get_subscription_status(
         # Get team members count (from owned projects)
         team_members_count = 1  # User is always a member of their own project
         for proj in owned_projects:
-            if hasattr(proj, 'team_members') and proj.team_members:
+            if hasattr(proj, "team_members") and proj.team_members:
                 team_members_count = max(team_members_count, len(proj.team_members) + 1)
 
         # Calculate storage usage
@@ -154,7 +155,7 @@ async def get_subscription_status(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Subscription status retrieved",
             data={
                 "current_tier": current_tier,
@@ -167,7 +168,11 @@ async def get_subscription_status(
                     "team_members_limit": tier_info["team_members_limit"],
                     "storage_used_gb": round(storage_used_gb, 2),
                     "storage_limit_gb": storage_limit_gb,
-                    "storage_percentage_used": round((storage_used_gb / storage_limit_gb * 100), 2) if storage_limit_gb else 0,
+                    "storage_percentage_used": (
+                        round((storage_used_gb / storage_limit_gb * 100), 2)
+                        if storage_limit_gb
+                        else 0
+                    ),
                 },
                 "billing": {
                     "next_billing_date": "2025-01-26",
@@ -214,6 +219,7 @@ async def get_storage_usage(
 
         # Import here to avoid circular imports at module level
         from socrates_api.database import get_database as get_db_instance
+
         db = get_db_instance()
 
         report = StorageQuotaManager.get_storage_usage_report(current_user, db)
@@ -279,7 +285,7 @@ async def list_subscription_plans(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Plans retrieved",
             data={"plans": plans},
         )
@@ -326,7 +332,7 @@ async def upgrade_subscription(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Successfully upgraded to {tier_info['display_name']}",
             data={
                 "previous_tier": "free",
@@ -386,7 +392,7 @@ async def downgrade_subscription(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Successfully downgraded to {tier_info['display_name']}",
             data={
                 "previous_tier": "pro",

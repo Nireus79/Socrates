@@ -76,6 +76,7 @@ async def list_documents(
         if project_id:
             # Verify user has access to project using RBAC (viewers and above can read knowledge)
             from socrates_api.auth.project_access import check_project_access
+
             await check_project_access(project_id, current_user, db, min_role="viewer")
             documents = db.get_project_knowledge_documents(project_id)
         else:
@@ -206,6 +207,7 @@ async def get_all_knowledge_sources(
         orchestrator = None
         try:
             from socrates_api.main import app_state
+
             orchestrator = app_state.get("orchestrator")
         except Exception:
             pass
@@ -224,23 +226,27 @@ async def get_all_knowledge_sources(
                 chunk_count = 0
                 if orchestrator and orchestrator.vector_db:
                     doc_source = doc.get("source") or doc["title"]
-                    chunk_count = orchestrator.vector_db.count_chunks_by_source(doc_source, project_id)
+                    chunk_count = orchestrator.vector_db.count_chunks_by_source(
+                        doc_source, project_id
+                    )
 
-                all_sources["documents"].append({
-                    "id": doc["id"],
-                    "title": doc["title"],
-                    "source_type": doc.get("document_type", "file"),
-                    "source": doc.get("source"),
-                    "created_at": doc.get("uploaded_at"),
-                    "chunk_count": chunk_count,
-                    "type": "document",
-                })
+                all_sources["documents"].append(
+                    {
+                        "id": doc["id"],
+                        "title": doc["title"],
+                        "source_type": doc.get("document_type", "file"),
+                        "source": doc.get("source"),
+                        "created_at": doc.get("uploaded_at"),
+                        "chunk_count": chunk_count,
+                        "type": "document",
+                    }
+                )
         except Exception as e:
             logger.warning(f"Error fetching documents: {e}")
 
         # 2. Get project notes
         try:
-            if hasattr(project, 'notes') and project.notes:
+            if hasattr(project, "notes") and project.notes:
                 for note in project.notes:
                     chunk_count = 0
                     if orchestrator and orchestrator.vector_db:
@@ -248,49 +254,66 @@ async def get_all_knowledge_sources(
                             f"note_{note.note_id}", project_id
                         )
 
-                    all_sources["notes"].append({
-                        "id": note.note_id,
-                        "title": note.title,
-                        "source_type": "note",
-                        "note_type": note.note_type,
-                        "content_preview": note.content[:200] + "..." if len(note.content) > 200 else note.content,
-                        "created_at": note.created_at.isoformat() if hasattr(note.created_at, 'isoformat') else str(note.created_at),
-                        "chunk_count": chunk_count,
-                        "type": "note",
-                    })
+                    all_sources["notes"].append(
+                        {
+                            "id": note.note_id,
+                            "title": note.title,
+                            "source_type": "note",
+                            "note_type": note.note_type,
+                            "content_preview": (
+                                note.content[:200] + "..."
+                                if len(note.content) > 200
+                                else note.content
+                            ),
+                            "created_at": (
+                                note.created_at.isoformat()
+                                if hasattr(note.created_at, "isoformat")
+                                else str(note.created_at)
+                            ),
+                            "chunk_count": chunk_count,
+                            "type": "note",
+                        }
+                    )
         except Exception as e:
             logger.warning(f"Error fetching notes: {e}")
 
         # 3. Get GitHub repositories
         try:
-            if hasattr(project, 'repository_url') and project.repository_url:
+            if hasattr(project, "repository_url") and project.repository_url:
                 # Count chunks for README and code files
                 readme_chunks = 0
                 code_chunks = 0
 
                 if orchestrator and orchestrator.vector_db:
                     # Count README chunks
-                    readme_chunks = orchestrator.vector_db.count_chunks_by_source("README.md", project_id)
+                    readme_chunks = orchestrator.vector_db.count_chunks_by_source(
+                        "README.md", project_id
+                    )
                     # Count code file chunks (they all have source_type: github_code)
                     # This is approximate - we can enhance if needed
-                    code_chunks = max(0, orchestrator.vector_db.count_chunks_by_source(
-                        project.repository_url, project_id
-                    ))
+                    code_chunks = max(
+                        0,
+                        orchestrator.vector_db.count_chunks_by_source(
+                            project.repository_url, project_id
+                        ),
+                    )
 
                 total_chunks = readme_chunks + code_chunks
 
-                all_sources["repositories"].append({
-                    "id": project.project_id,
-                    "title": f"{project.repository_owner}/{project.repository_name}",
-                    "source_type": "github",
-                    "url": project.repository_url,
-                    "owner": project.repository_owner,
-                    "name": project.repository_name,
-                    "chunk_count": total_chunks,
-                    "readme_chunks": readme_chunks,
-                    "code_chunks": code_chunks,
-                    "type": "repository",
-                })
+                all_sources["repositories"].append(
+                    {
+                        "id": project.project_id,
+                        "title": f"{project.repository_owner}/{project.repository_name}",
+                        "source_type": "github",
+                        "url": project.repository_url,
+                        "owner": project.repository_owner,
+                        "name": project.repository_name,
+                        "chunk_count": total_chunks,
+                        "readme_chunks": readme_chunks,
+                        "code_chunks": code_chunks,
+                        "type": "repository",
+                    }
+                )
         except Exception as e:
             logger.warning(f"Error fetching GitHub repo info: {e}")
 
@@ -306,9 +329,7 @@ async def get_all_knowledge_sources(
                     "notes": len(all_sources["notes"]),
                     "repositories": len(all_sources["repositories"]),
                     "total_chunks": sum(
-                        s.get("chunk_count", 0)
-                        for sources in all_sources.values()
-                        for s in sources
+                        s.get("chunk_count", 0) for sources in all_sources.values() for s in sources
                     ),
                 },
             },
@@ -444,9 +465,7 @@ async def download_document(
         file_obj = Path(file_path)
         if not file_obj.exists():
             logger.error(f"File not found on disk: {file_path}")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
 
         # Return file for download
         return FileResponse(
@@ -514,6 +533,7 @@ async def import_file(
             # Check RBAC for write operations (requires editor or owner role)
             # Import here to avoid circular imports
             from socrates_api.auth.project_access import check_project_access as rbac_check
+
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Create document ID first
@@ -534,6 +554,7 @@ async def import_file(
         user_object = db.load_user(current_user)
         if user_object:
             from socratic_system.subscription.storage import StorageQuotaManager
+
             can_upload, error_msg = StorageQuotaManager.can_upload_document(
                 user_object, db, file_size, testing_mode=False
             )
@@ -582,6 +603,7 @@ async def import_file(
                         try:
                             from pypdf import PdfReader
                             import io
+
                             pdf_reader = PdfReader(io.BytesIO(file_content))
                             for page in pdf_reader.pages:
                                 extracted_content += page.extract_text() + "\n"
@@ -612,7 +634,9 @@ async def import_file(
                 file_size=file_size,
             )
 
-            logger.info(f"File imported successfully: {file.filename} ({len(content_preview)} chars preview, {file_size} bytes)")
+            logger.info(
+                f"File imported successfully: {file.filename} ({len(content_preview)} chars preview, {file_size} bytes)"
+            )
 
             # Emit DOCUMENT_IMPORTED event to trigger knowledge analysis and question regeneration
             try:
@@ -717,6 +741,7 @@ async def import_url(
             # Check RBAC for write operations (requires editor or owner role)
             # Import here to avoid circular imports
             from socrates_api.auth.project_access import check_project_access as rbac_check
+
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Create document ID first (for source consistency)
@@ -840,6 +865,7 @@ async def import_text(
             # Check RBAC for write operations (requires editor or owner role)
             # Import here to avoid circular imports
             from socrates_api.auth.project_access import check_project_access as rbac_check
+
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Create document ID first (for source consistency)
@@ -850,6 +876,7 @@ async def import_text(
         user_object = db.load_user(current_user)
         if user_object:
             from socratic_system.subscription.storage import StorageQuotaManager
+
             can_upload, error_msg = StorageQuotaManager.can_upload_document(
                 user_object, db, content_size_bytes, testing_mode=False
             )
@@ -984,6 +1011,7 @@ async def search_knowledge(
             # Check RBAC for write operations (requires editor or owner role)
             # Import here to avoid circular imports
             from socrates_api.auth.project_access import check_project_access as rbac_check
+
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Use VectorDatabase via orchestrator
@@ -1207,6 +1235,7 @@ async def bulk_import_documents(
             # Check RBAC for write operations (requires editor or owner role)
             # Import here to avoid circular imports
             from socrates_api.auth.project_access import check_project_access as rbac_check
+
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         results = []
@@ -1417,6 +1446,7 @@ async def add_knowledge_entry(
             # Check RBAC for write operations (requires editor or owner role)
             # Import here to avoid circular imports
             from socrates_api.auth.project_access import check_project_access as rbac_check
+
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Process as text import with category metadata

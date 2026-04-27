@@ -121,7 +121,7 @@ async def set_skills(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Skill '{skill_name}' set successfully",
             data={
                 "skill_id": existing_skill.get("id"),
@@ -219,7 +219,7 @@ async def list_skills(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Skills retrieved successfully",
             data={
                 "project_id": project_id,
@@ -254,7 +254,3 @@ async def list_skills(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list skills: {str(e)}",
         )
-
-
-
-

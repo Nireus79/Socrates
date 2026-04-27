@@ -47,7 +47,7 @@ def _chunk_code_content(content: str, chunk_size: int = 300, overlap: int = 30) 
     """
 
     # Split into lines to maintain code structure
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     chunks = []
     current_chunk = []
@@ -59,7 +59,7 @@ def _chunk_code_content(content: str, chunk_size: int = 300, overlap: int = 30) 
         # If adding this line exceeds chunk size and we have content
         if current_words + line_words > chunk_size and current_chunk:
             # Save current chunk
-            chunk_text = '\n'.join(current_chunk).strip()
+            chunk_text = "\n".join(current_chunk).strip()
             if chunk_text:
                 chunks.append(chunk_text)
 
@@ -83,7 +83,7 @@ def _chunk_code_content(content: str, chunk_size: int = 300, overlap: int = 30) 
 
     # Add last chunk
     if current_chunk:
-        chunk_text = '\n'.join(current_chunk).strip()
+        chunk_text = "\n".join(current_chunk).strip()
         if chunk_text:
             chunks.append(chunk_text)
 
@@ -159,7 +159,9 @@ async def import_repository(
 
             # Check project limit for subscription tier (testing mode checked via database flag)
             # If testing mode is enabled in database, bypass subscription checks
-            testing_mode_enabled = getattr(user_object, "testing_mode", False) if user_object else False
+            testing_mode_enabled = (
+                getattr(user_object, "testing_mode", False) if user_object else False
+            )
             if not testing_mode_enabled:
                 # Count only OWNED projects for tier limit, not collaborated projects
                 all_projects = db.get_user_projects(current_user)
@@ -168,14 +170,20 @@ async def import_repository(
                     subscription_tier, len(owned_projects)
                 )
                 if not can_create:
-                    logger.warning(f"User {current_user} exceeded project limit via GitHub import: {error_msg}")
+                    logger.warning(
+                        f"User {current_user} exceeded project limit via GitHub import: {error_msg}"
+                    )
                     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
 
-            logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier})")
+            logger.info(
+                f"Subscription validation passed for {current_user} (tier: {subscription_tier})"
+            )
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error validating subscription for GitHub import: {type(e).__name__}: {e}")
+            logger.error(
+                f"Error validating subscription for GitHub import: {type(e).__name__}: {e}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error validating subscription: {str(e)[:100]}",
@@ -256,11 +264,12 @@ async def import_repository(
         repo_knowledge_result = {
             "status": "pending",
             "entries_added": 0,
-            "message": "Repository content vectorization pending"
+            "message": "Repository content vectorization pending",
         }
 
         try:
             from github import Github
+
             github_token = os.getenv("GITHUB_TOKEN")
             if github_token:
                 g = Github(github_token)
@@ -271,10 +280,15 @@ async def import_repository(
                     readme_content = None
                     try:
                         readme = repo.get_readme()
-                        readme_content = readme.decoded_string.decode('utf-8') if isinstance(readme.decoded_string, bytes) else str(readme.decoded_string)
+                        readme_content = (
+                            readme.decoded_string.decode("utf-8")
+                            if isinstance(readme.decoded_string, bytes)
+                            else str(readme.decoded_string)
+                        )
                         if readme_content and len(readme_content.strip()) > 0:
                             # Add README to vector database
                             from socratic_system.database import VectorDatabase
+
                             vector_db = VectorDatabase()
                             metadata = {
                                 "source": "README.md",
@@ -290,7 +304,17 @@ async def import_repository(
 
                     # Extract and vectorize common code files
                     vectorized_files = 0
-                    supported_extensions = {".py", ".js", ".ts", ".java", ".cpp", ".c", ".go", ".rs", ".rb"}
+                    supported_extensions = {
+                        ".py",
+                        ".js",
+                        ".ts",
+                        ".java",
+                        ".cpp",
+                        ".c",
+                        ".go",
+                        ".rs",
+                        ".rb",
+                    }
 
                     try:
                         # Get up to 10 common code files
@@ -309,7 +333,9 @@ async def import_repository(
                                         files_to_process.append(item)
                                 elif item.type == "dir" and depth < max_depth:
                                     try:
-                                        extract_code_files(repo.get_contents(item.path), depth + 1, max_depth)
+                                        extract_code_files(
+                                            repo.get_contents(item.path), depth + 1, max_depth
+                                        )
                                     except Exception:
                                         pass
 
@@ -317,14 +343,23 @@ async def import_repository(
 
                         # Process extracted code files with chunking
                         from socratic_system.database import VectorDatabase
+
                         vector_db = VectorDatabase()
 
                         for code_file in files_to_process:
                             try:
-                                file_content = code_file.decoded_content.decode('utf-8') if isinstance(code_file.decoded_content, bytes) else str(code_file.decoded_content)
-                                if file_content and len(file_content.strip()) > 100:  # Only include non-trivial files
+                                file_content = (
+                                    code_file.decoded_content.decode("utf-8")
+                                    if isinstance(code_file.decoded_content, bytes)
+                                    else str(code_file.decoded_content)
+                                )
+                                if (
+                                    file_content and len(file_content.strip()) > 100
+                                ):  # Only include non-trivial files
                                     # Chunk the code file (300-word chunks for code, 30-word overlap for function boundaries)
-                                    chunks = _chunk_code_content(file_content, chunk_size=300, overlap=30)
+                                    chunks = _chunk_code_content(
+                                        file_content, chunk_size=300, overlap=30
+                                    )
 
                                     # Store each chunk
                                     for chunk_idx, chunk in enumerate(chunks):
@@ -340,7 +375,9 @@ async def import_repository(
                                             vector_db.add_text(chunk, metadata=metadata)
                                             repo_knowledge_result["entries_added"] += 1
                                         except Exception as chunk_error:
-                                            logger.warning(f"Could not add chunk {chunk_idx + 1} of {code_file.path}: {chunk_error}")
+                                            logger.warning(
+                                                f"Could not add chunk {chunk_idx + 1} of {code_file.path}: {chunk_error}"
+                                            )
 
                                     vectorized_files += 1
                             except Exception as e:
@@ -348,14 +385,20 @@ async def import_repository(
 
                         if vectorized_files > 0:
                             repo_knowledge_result["status"] = "success"
-                            repo_knowledge_result["message"] = f"Vectorized {vectorized_files} code files and README"
-                            logger.info(f"Vectorized {vectorized_files} code files from {repo_owner}/{repo_name}")
+                            repo_knowledge_result["message"] = (
+                                f"Vectorized {vectorized_files} code files and README"
+                            )
+                            logger.info(
+                                f"Vectorized {vectorized_files} code files from {repo_owner}/{repo_name}"
+                            )
 
                     except Exception as e:
                         logger.warning(f"Could not extract code files from repository: {e}")
                         if repo_knowledge_result["entries_added"] > 0:
                             repo_knowledge_result["status"] = "partial"
-                            repo_knowledge_result["message"] = f"Partially vectorized repository (added {repo_knowledge_result['entries_added']} entries)"
+                            repo_knowledge_result["message"] = (
+                                f"Partially vectorized repository (added {repo_knowledge_result['entries_added']} entries)"
+                            )
 
                 except Exception as e:
                     logger.warning(f"Could not vectorize repository content: {e}")
@@ -394,7 +437,7 @@ async def import_repository(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Repository imported as project '{project_name}'",
             data={
                 "project_id": project.project_id,
@@ -510,7 +553,7 @@ async def pull_changes(
                 repo_url=project.repository_url,
                 sync_function=perform_pull,
                 max_retries=3,
-                timeout_per_attempt=60
+                timeout_per_attempt=60,
             )
 
         except NetworkSyncFailedError as e:
@@ -527,9 +570,7 @@ async def pull_changes(
         if project_path and os.path.exists(project_path):
             try:
                 conflict_result = handler.handle_merge_conflicts(
-                    repo_path=project_path,
-                    conflict_info={},
-                    default_strategy="ours"
+                    repo_path=project_path, conflict_info={}, default_strategy="ours"
                 )
 
                 if conflict_result["status"] in ["success", "partial"]:
@@ -701,18 +742,19 @@ async def push_changes(
         if project_path and os.path.exists(project_path):
             try:
                 import subprocess
+
                 result = subprocess.run(
                     ["git", "diff", "--name-only", "HEAD"],
                     cwd=project_path,
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
 
                 if result.returncode == 0:
                     files_to_push = [
                         os.path.join(project_path, f)
-                        for f in result.stdout.strip().split('\n')
+                        for f in result.stdout.strip().split("\n")
                         if f
                     ]
 
@@ -723,8 +765,7 @@ async def push_changes(
         if files_to_push:
             try:
                 file_validation_report = handler.handle_large_files(
-                    files_to_push=files_to_push,
-                    strategy="exclude"
+                    files_to_push=files_to_push, strategy="exclude"
                 )
 
                 if file_validation_report["status"] == "error":
@@ -758,7 +799,7 @@ async def push_changes(
                 repo_url=project.repository_url,
                 sync_function=perform_push,
                 max_retries=3,
-                timeout_per_attempt=60
+                timeout_per_attempt=60,
             )
 
         except NetworkSyncFailedError as e:
@@ -893,10 +934,7 @@ async def sync_project(
 
         # Step 1: Check repository access before syncing
         try:
-            has_access, reason = handler.check_repo_access(
-                project.repository_url,
-                user_token
-            )
+            has_access, reason = handler.check_repo_access(project.repository_url, user_token)
 
             if not has_access:
                 logger.warning(f"Repository access check failed: {reason}")
@@ -937,7 +975,7 @@ async def sync_project(
                 repo_url=project.repository_url,
                 sync_function=perform_sync,
                 max_retries=3,
-                timeout_per_attempt=60
+                timeout_per_attempt=60,
             )
 
         except NetworkSyncFailedError as e:
@@ -954,9 +992,7 @@ async def sync_project(
         if project_path and os.path.exists(project_path):
             try:
                 conflict_result = handler.handle_merge_conflicts(
-                    repo_path=project_path,
-                    conflict_info={},
-                    default_strategy="ours"
+                    repo_path=project_path, conflict_info={}, default_strategy="ours"
                 )
 
                 if conflict_result["status"] in ["success", "partial"]:
@@ -980,25 +1016,25 @@ async def sync_project(
             try:
                 # Get list of modified files
                 import subprocess
+
                 result = subprocess.run(
                     ["git", "diff", "--name-only", "HEAD"],
                     cwd=project_path,
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
 
                 if result.returncode == 0:
                     modified_files = [
                         os.path.join(project_path, f)
-                        for f in result.stdout.strip().split('\n')
+                        for f in result.stdout.strip().split("\n")
                         if f
                     ]
 
                     if modified_files:
                         file_result = handler.handle_large_files(
-                            files_to_push=modified_files,
-                            strategy="exclude"
+                            files_to_push=modified_files, strategy="exclude"
                         )
 
                         if file_result["status"] == "partial":
@@ -1111,7 +1147,7 @@ async def get_sync_status(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Sync status retrieved",
             data={
                 "project_id": project_id,
@@ -1166,7 +1202,7 @@ async def pull_github_changes(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Successfully pulled latest changes from GitHub",
             data={
                 "status": "success",
@@ -1221,7 +1257,7 @@ async def push_github_changes(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Successfully pushed changes to GitHub",
             data={
                 "status": "success",
@@ -1271,7 +1307,7 @@ async def get_github_status(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Sync status retrieved",
             data={
                 "status": "synced",
@@ -1320,7 +1356,7 @@ async def disconnect_github(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="GitHub integration disconnected successfully",
             data={
                 "status": "disconnected",
@@ -1335,12 +1371,3 @@ async def disconnect_github(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to disconnect GitHub: {str(e)}",
         )
-
-
-
-
-
-
-
-
-

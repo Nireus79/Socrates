@@ -70,7 +70,7 @@ async def validate_code(
             if not project.repository_url:
                 raise HTTPException(
                     status_code=400,
-                    detail="Project must be imported from GitHub or have source files for code validation"
+                    detail="Project must be imported from GitHub or have source files for code validation",
                 )
 
             # For now, get project path from repository if available
@@ -111,7 +111,7 @@ async def validate_code(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Code validation completed",
             data=validation_results,
         )
@@ -212,7 +212,7 @@ async def assess_maturity(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Maturity assessment for {phase} phase",
             data=maturity_data,
         )
@@ -272,7 +272,7 @@ async def run_tests(
         if not project.repository_url:
             raise HTTPException(
                 status_code=400,
-                detail="Project must be imported from GitHub or have source files for testing"
+                detail="Project must be imported from GitHub or have source files for testing",
             )
 
         project_path = project.repository_url or project_id
@@ -304,7 +304,7 @@ async def run_tests(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Tests completed",
             data=test_results,
         )
@@ -372,7 +372,9 @@ async def analyze_structure(
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to analyze structure"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to analyze structure")
+            )
 
         structure_data = result
 
@@ -386,7 +388,7 @@ async def analyze_structure(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Context analysis completed",
             data=structure_data,
         )
@@ -470,7 +472,7 @@ async def review_code(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Code statistics retrieved",
             data=stats,
         )
@@ -553,7 +555,7 @@ async def auto_fix_issues(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Code generation completed",
             data=fix_results,
         )
@@ -637,7 +639,7 @@ async def get_analysis_report(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Analysis report generated",
             data=report,
         )

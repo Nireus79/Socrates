@@ -74,6 +74,7 @@ async def add_knowledge_document(
         user_object = db.load_user(current_user)
         if user_object:
             from socratic_system.subscription.storage import StorageQuotaManager
+
             can_upload, error_msg = StorageQuotaManager.can_upload_document(
                 user_object, db, content_size_bytes, testing_mode=False
             )
@@ -175,6 +176,7 @@ async def add_knowledge(
         user_object = db.load_user(current_user)
         if user_object:
             from socratic_system.subscription.storage import StorageQuotaManager
+
             can_upload, error_msg = StorageQuotaManager.can_upload_document(
                 user_object, db, content_size_bytes, testing_mode=False
             )
@@ -212,7 +214,7 @@ async def add_knowledge(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Knowledge item added successfully",
             data={
                 "knowledge_id": knowledge_item["id"],
@@ -303,7 +305,7 @@ async def list_knowledge(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Knowledge items retrieved successfully",
             data={
                 "project_id": project_id,
@@ -387,7 +389,7 @@ async def search_knowledge(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Found {len(results)} matching knowledge items",
             data={
                 "query": query,
@@ -462,7 +464,7 @@ async def remember_knowledge(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Knowledge item remembered successfully",
             data={"knowledge_id": knowledge_id, "pinned": True},
         )
@@ -528,7 +530,7 @@ async def remove_knowledge(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Knowledge item removed successfully",
             data={"knowledge_id": knowledge_id, "deleted": True},
         )
@@ -619,7 +621,7 @@ async def export_knowledge(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Knowledge base exported as {format}",
             data={
                 "format": format,
@@ -705,7 +707,7 @@ async def import_knowledge(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Successfully imported {imported_count} knowledge items",
             data={
                 "imported_count": imported_count,

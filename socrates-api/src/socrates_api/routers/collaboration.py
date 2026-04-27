@@ -422,7 +422,9 @@ async def list_collaborators(
         is_owner = project.owner == current_user
         is_collaborator = False
         if project.team_members:
-            is_collaborator = any(member.username == current_user for member in project.team_members)
+            is_collaborator = any(
+                member.username == current_user for member in project.team_members
+            )
 
         if not (is_owner or is_collaborator):
             raise HTTPException(

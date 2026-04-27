@@ -620,12 +620,11 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
                 logger.info("API key connection successful")
             except Exception as e:
                 logger.warning(f"API key connection test failed: {e}")
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"API key is invalid: {str(e)}"
-                )
+                raise HTTPException(status_code=400, detail=f"API key is invalid: {str(e)}")
         else:
-            logger.info("No API key provided in request. Using placeholder for per-user keys from database")
+            logger.info(
+                "No API key provided in request. Using placeholder for per-user keys from database"
+            )
 
             # Create orchestrator with placeholder - will use per-user keys
             orchestrator = AgentOrchestrator(

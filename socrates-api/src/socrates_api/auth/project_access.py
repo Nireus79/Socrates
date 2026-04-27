@@ -107,6 +107,7 @@ async def check_project_access(
 
 # Convenient dependency factories for common use cases
 
+
 def require_editor_or_owner():
     """
     Dependency that ensures user has editor or owner role.
@@ -121,14 +122,13 @@ def require_editor_or_owner():
         ):
             ...
     """
+
     async def verify_role(
         project_id: str,
         current_user: str = Depends(get_current_user),
         db: ProjectDatabase = Depends(get_database),
     ) -> str:
-        return await check_project_access(
-            project_id, current_user, db, min_role="editor"
-        )
+        return await check_project_access(project_id, current_user, db, min_role="editor")
 
     return Depends(verify_role)
 
@@ -147,14 +147,13 @@ def require_owner():
         ):
             ...
     """
+
     async def verify_owner(
         project_id: str,
         current_user: str = Depends(get_current_user),
         db: ProjectDatabase = Depends(get_database),
     ) -> str:
-        return await check_project_access(
-            project_id, current_user, db, min_role="owner"
-        )
+        return await check_project_access(project_id, current_user, db, min_role="owner")
 
     return Depends(verify_owner)
 
@@ -173,13 +172,12 @@ def require_viewer_or_better():
         ):
             ...
     """
+
     async def verify_viewer(
         project_id: str,
         current_user: str = Depends(get_current_user),
         db: ProjectDatabase = Depends(get_database),
     ) -> str:
-        return await check_project_access(
-            project_id, current_user, db, min_role="viewer"
-        )
+        return await check_project_access(project_id, current_user, db, min_role="viewer")
 
     return Depends(verify_viewer)

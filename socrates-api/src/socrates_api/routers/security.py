@@ -122,7 +122,7 @@ async def change_password(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Password changed successfully",
             data={"changed_at": datetime.now(timezone.utc).isoformat()},
         )
@@ -230,7 +230,7 @@ async def setup_2fa(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="2FA setup initiated. Scan QR code or enter manual key.",
             data=setup_data,
         )
@@ -329,7 +329,7 @@ async def verify_2fa(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="2FA enabled successfully",
             data={"enabled_at": datetime.now(timezone.utc).isoformat()},
         )
@@ -425,7 +425,7 @@ async def disable_2fa(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="2FA disabled",
             data={"disabled_at": datetime.now(timezone.utc).isoformat()},
         )
@@ -475,7 +475,9 @@ async def list_sessions(
                     "id": session.get("session_id") or session.get("id"),
                     "device": session.get("device", "Unknown device"),
                     "ip_address": session.get("ip_address", "Unknown"),
-                    "last_activity": session.get("last_activity", datetime.now(timezone.utc).isoformat()),
+                    "last_activity": session.get(
+                        "last_activity", datetime.now(timezone.utc).isoformat()
+                    ),
                     "created_at": session.get("created_at", datetime.now(timezone.utc).isoformat()),
                     "is_current": session.get("is_current", False),
                 }
@@ -485,7 +487,7 @@ async def list_sessions(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Sessions retrieved",
             data={"sessions": formatted_sessions, "total": len(formatted_sessions)},
         )
@@ -559,7 +561,7 @@ async def revoke_session(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Session revoked successfully",
             data={"session_id": session_id},
         )
@@ -635,7 +637,7 @@ async def revoke_all_sessions(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="All sessions revoked. You have been signed out from all other devices.",
             data={"revoked_count": revoked_count},
         )

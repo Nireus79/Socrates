@@ -609,14 +609,20 @@ async def send_message(
         # Get user's auth method
         user_auth_method = "api_key"
         user_obj = db.load_user(current_user)
-        if user_obj and hasattr(user_obj, 'claude_auth_method'):
+        if user_obj and hasattr(user_obj, "claude_auth_method"):
             user_auth_method = user_obj.claude_auth_method or "api_key"
 
         # Determine chat mode: prioritize request.mode if provided, else use project setting
         # This allows dynamic mode switching without updating the project
-        chat_mode = request.mode if hasattr(request, 'mode') and request.mode else getattr(project, "chat_mode", "socratic")
+        chat_mode = (
+            request.mode
+            if hasattr(request, "mode") and request.mode
+            else getattr(project, "chat_mode", "socratic")
+        )
         orchestrator = get_orchestrator()
-        logger.info(f"Chat mode resolved to: {chat_mode} (request.mode: {getattr(request, 'mode', 'not provided')}, project.chat_mode: {getattr(project, 'chat_mode', 'not set')})")
+        logger.info(
+            f"Chat mode resolved to: {chat_mode} (request.mode: {getattr(request, 'mode', 'not provided')}, project.chat_mode: {getattr(project, 'chat_mode', 'not set')})"
+        )
 
         if chat_mode == "direct":
             # Direct mode: Generate a direct answer without Socratic questioning
@@ -648,16 +654,20 @@ Provide a helpful, direct answer."""
             )
 
             # Save to conversation history
-            project.conversation_history.append({
-                "role": "user",
-                "content": request.message,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-            project.conversation_history.append({
-                "role": "assistant",
-                "content": answer,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            project.conversation_history.append(
+                {
+                    "role": "user",
+                    "content": request.message,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            project.conversation_history.append(
+                {
+                    "role": "assistant",
+                    "content": answer,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
             db.save_project(project)
             if project.conversation_history:
                 db.save_conversation_history(project_id, project.conversation_history)
@@ -673,18 +683,20 @@ Provide a helpful, direct answer."""
                     combined_text,
                     project,  # Required parameter: ProjectContext
                     user_auth_method=user_auth_method,
-                    user_id=current_user
+                    user_id=current_user,
                 )
                 logger.debug(f"Extracted insights from user input and assistant answer: {insights}")
 
                 # If there are any extracted specs, format debug message and prepare for modal
                 if insights:
-                    specs_count = sum([
-                        len(insights.get("goals", [])),
-                        len(insights.get("requirements", [])),
-                        len(insights.get("tech_stack", [])),
-                        len(insights.get("constraints", [])),
-                    ])
+                    specs_count = sum(
+                        [
+                            len(insights.get("goals", [])),
+                            len(insights.get("requirements", [])),
+                            len(insights.get("tech_stack", [])),
+                            len(insights.get("constraints", [])),
+                        ]
+                    )
 
                     if specs_count > 0:
                         # Always show debug message if specs found (not just in debug mode)
@@ -692,13 +704,23 @@ Provide a helpful, direct answer."""
                         if insights.get("goals"):
                             insights_message += f"- Goals: {', '.join(insights['goals'])}\n"
                         if insights.get("requirements"):
-                            insights_message += f"- Requirements: {', '.join(insights['requirements'])}\n"
+                            insights_message += (
+                                f"- Requirements: {', '.join(insights['requirements'])}\n"
+                            )
                         if insights.get("tech_stack"):
-                            insights_message += f"- Tech Stack: {', '.join(insights['tech_stack'])}\n"
+                            insights_message += (
+                                f"- Tech Stack: {', '.join(insights['tech_stack'])}\n"
+                            )
                         if insights.get("constraints"):
-                            insights_message += f"- Constraints: {', '.join(insights['constraints'])}\n"
-                        insights_message += "\n*Would you like to save these specs to your project?*"
-                        logger.info(f"Detected {specs_count} specs in direct mode dialogue - modal will be shown to user")
+                            insights_message += (
+                                f"- Constraints: {', '.join(insights['constraints'])}\n"
+                            )
+                        insights_message += (
+                            "\n*Would you like to save these specs to your project?*"
+                        )
+                        logger.info(
+                            f"Detected {specs_count} specs in direct mode dialogue - modal will be shown to user"
+                        )
 
             except Exception as e:
                 logger.warning(f"Failed to extract insights in direct mode: {str(e)}")
@@ -718,12 +740,14 @@ Provide a helpful, direct answer."""
                     "mode": "direct",
                     # Include extracted specs for user confirmation (not auto-saved)
                     "extracted_specs": insights,
-                    "extracted_specs_count": sum([
-                        len(insights.get("goals", [])) if insights else 0,
-                        len(insights.get("requirements", [])) if insights else 0,
-                        len(insights.get("tech_stack", [])) if insights else 0,
-                        len(insights.get("constraints", [])) if insights else 0,
-                    ]),
+                    "extracted_specs_count": sum(
+                        [
+                            len(insights.get("goals", [])) if insights else 0,
+                            len(insights.get("requirements", [])) if insights else 0,
+                            len(insights.get("tech_stack", [])) if insights else 0,
+                            len(insights.get("constraints", [])) if insights else 0,
+                        ]
+                    ),
                 },
             )
         else:
@@ -775,10 +799,13 @@ Provide a helpful, direct answer."""
             # They are silently extracted and stored in the project without dialogue interference
             insights = result.get("insights", {})
             if insights:
-                logger.debug("Insights extracted and saved to project (hidden from Socratic dialogue)")
+                logger.debug(
+                    "Insights extracted and saved to project (hidden from Socratic dialogue)"
+                )
 
             # Check if debug mode is enabled - if so, return insights for debugging
             from socratic_system.utils.logger import is_debug_mode
+
             response_data = {}
 
             if is_debug_mode() and insights:
@@ -786,8 +813,12 @@ Provide a helpful, direct answer."""
                 response_data["extracted_insights"] = insights
                 response_data["extracted_specs"] = insights
                 response_data["extracted_specs_count"] = len([v for v in insights.values() if v])
-                response_data["debug_message"] = f"Extracted {response_data['extracted_specs_count']} insight categories"
-                logger.debug(f"Returning {response_data['extracted_specs_count']} insight categories to frontend")
+                response_data["debug_message"] = (
+                    f"Extracted {response_data['extracted_specs_count']} insight categories"
+                )
+                logger.debug(
+                    f"Returning {response_data['extracted_specs_count']} insight categories to frontend"
+                )
 
             # In Socratic mode, don't return insights as a message to the frontend (unless debug mode)
             # The frontend will proceed directly to generate the next question
@@ -798,9 +829,13 @@ Provide a helpful, direct answer."""
                 if result.get("phase_complete"):
                     logger.info(f"Phase {project.phase} is complete for project {project_id}")
                     response_data["phase_complete"] = True
-                    response_data["phase_completion_message"] = result.get("phase_completion_message")
+                    response_data["phase_completion_message"] = result.get(
+                        "phase_completion_message"
+                    )
                     response_data["next_phase"] = result.get("next_phase")
-                    logger.debug(f"Phase completion data: {response_data.get('phase_completion_message', '')[:100]}...")
+                    logger.debug(
+                        f"Phase completion data: {response_data.get('phase_completion_message', '')[:100]}..."
+                    )
             except Exception as phase_error:
                 logger.error(f"Error handling phase completion: {str(phase_error)}", exc_info=True)
                 # Don't fail the entire response if phase completion handling fails
@@ -983,7 +1018,9 @@ async def get_hint(
             return APIResponse(
                 success=True,
                 status="success",
-                data={"hint": "Review the project requirements and consider what step comes next in your learning journey."},
+                data={
+                    "hint": "Review the project requirements and consider what step comes next in your learning journey."
+                },
             )
 
         return APIResponse(
@@ -1294,7 +1331,9 @@ async def get_maturity_history(
                 "total_events": len(project.maturity_history or []),
                 "current_overall_maturity": round(project.overall_maturity, 2),
                 "current_overall_maturity_formatted": f"{round(project.overall_maturity, 2)}%",
-                "current_phase_maturity": round((project.phase_maturity_scores or {}).get(project.phase, 0.0), 2),
+                "current_phase_maturity": round(
+                    (project.phase_maturity_scores or {}).get(project.phase, 0.0), 2
+                ),
                 "current_phase_maturity_formatted": f"{round((project.phase_maturity_scores or {}).get(project.phase, 0.0), 2)}%",
             },
         )
@@ -1437,7 +1476,9 @@ async def get_questions(
         # Filter by status if specified
         if status_filter:
             questions = [q for q in questions if q.get("status") == status_filter]
-            logger.info(f"Filtered {len(questions)} questions with status '{status_filter}' out of {len(project.pending_questions or [])} total")
+            logger.info(
+                f"Filtered {len(questions)} questions with status '{status_filter}' out of {len(project.pending_questions or [])} total"
+            )
         else:
             logger.info(f"Returning all {len(questions)} questions")
 
@@ -1496,7 +1537,9 @@ async def reopen_question(
         )
 
         if result.get("status") != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to reopen question"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to reopen question")
+            )
 
         db.save_project(project)
 
@@ -1619,28 +1662,28 @@ async def get_answer_suggestions(
                     "Describe your target audience and their needs",
                     "What problem does this solve?",
                     "What alternatives have you considered?",
-                    "What would success look like?"
+                    "What would success look like?",
                 ],
                 "analysis": [
                     "Break down your requirements into components",
                     "What are the key constraints and limitations?",
                     "How would you prioritize these requirements?",
                     "What dependencies exist?",
-                    "What trade-offs are necessary?"
+                    "What trade-offs are necessary?",
                 ],
                 "design": [
                     "Sketch the high-level system architecture",
                     "What design patterns apply here?",
                     "How would you organize the components?",
                     "What are the critical design decisions?",
-                    "How would this handle edge cases?"
+                    "How would this handle edge cases?",
                 ],
                 "implementation": [
                     "What's the first feature to implement?",
                     "Which technologies would you use?",
                     "How would you test this?",
                     "What's your deployment strategy?",
-                    "How would you measure success?"
+                    "How would you measure success?",
                 ],
             }
             suggestions = phase_suggestions.get(project.phase, phase_suggestions["discovery"])
@@ -1678,28 +1721,28 @@ async def get_answer_suggestions(
                     "Who are your target users?",
                     "What are the key challenges?",
                     "What existing solutions exist?",
-                    "What would success look like?"
+                    "What would success look like?",
                 ],
                 "analysis": [
                     "Break down the requirements into components",
                     "What are the technical constraints?",
                     "How would you prioritize requirements?",
                     "What dependencies exist?",
-                    "What trade-offs are needed?"
+                    "What trade-offs are needed?",
                 ],
                 "design": [
                     "Sketch the high-level architecture",
                     "What design patterns apply?",
                     "How would you organize components?",
                     "What are the key decisions?",
-                    "How would this handle edge cases?"
+                    "How would this handle edge cases?",
                 ],
                 "implementation": [
                     "What feature would you implement first?",
                     "Which technologies would you use?",
                     "How would you test this?",
                     "What's the deployment strategy?",
-                    "How would you measure success?"
+                    "How would you measure success?",
                 ],
             }
             suggestions = phase_suggestions.get(project.phase, phase_suggestions["discovery"])
@@ -1791,7 +1834,11 @@ async def save_extracted_specs(
         if request.goals:
             # If goals is a list, take first item or join
             if isinstance(request.goals, list):
-                project.goals = request.goals[0] if len(request.goals) == 1 else ", ".join(str(g) for g in request.goals)
+                project.goals = (
+                    request.goals[0]
+                    if len(request.goals) == 1
+                    else ", ".join(str(g) for g in request.goals)
+                )
             else:
                 project.goals = str(request.goals)
             specs_saved["goals"] = [project.goals]
@@ -1837,6 +1884,7 @@ async def save_extracted_specs(
         # Update maturity score for the project based on saved specs
         try:
             from socrates_api.main import get_orchestrator
+
             orchestrator = get_orchestrator()
 
             # Convert specs_saved to insights format for maturity calculation
@@ -1954,7 +2002,9 @@ async def resolve_conflicts(
         # IMPORTANT: Preserve categorized_specs (which includes confidence info)
         # The conflict resolution only modifies the simple fields (tech_stack, requirements, etc.)
         # Confidence metadata from the original specs is preserved in categorized_specs
-        logger.debug(f"Current categorized_specs before conflict resolution: {len(project.categorized_specs)} categories")
+        logger.debug(
+            f"Current categorized_specs before conflict resolution: {len(project.categorized_specs)} categories"
+        )
 
         # Apply each conflict resolution
         for conflict in conflicts:

@@ -46,10 +46,11 @@ def get_phase_readiness_status(project, maturity_calculator: MaturityCalculator)
             "ready_threshold": maturity_calculator.READY_THRESHOLD,
             "complete_threshold": maturity_calculator.COMPLETE_THRESHOLD,
             "is_complete": score >= maturity_calculator.COMPLETE_THRESHOLD,
-            "status": "complete" if score >= maturity_calculator.COMPLETE_THRESHOLD
-                     else "ready" if is_ready
-                     else "in_progress" if score > 0
-                     else "not_started",
+            "status": (
+                "complete"
+                if score >= maturity_calculator.COMPLETE_THRESHOLD
+                else "ready" if is_ready else "in_progress" if score > 0 else "not_started"
+            ),
         }
 
     return readiness_status
@@ -202,7 +203,7 @@ async def get_analytics_summary(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Analytics summary retrieved",
             data=summary,
         )
@@ -305,8 +306,7 @@ async def get_project_analytics(
             "advancement_guidance": {
                 "current_phase": getattr(project, "current_phase", "discovery") or "discovery",
                 "ready_to_advance": any(
-                    phase_readiness[ph].get("is_ready_to_advance", False)
-                    for ph in phase_readiness
+                    phase_readiness[ph].get("is_ready_to_advance", False) for ph in phase_readiness
                 ),
                 "next_action": (
                     "You're ready to advance to the next phase. Review findings and proceed to the next phase."
@@ -331,7 +331,7 @@ async def get_project_analytics(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Analytics retrieved for project {project_id}",
             data=analytics,
         )
@@ -380,7 +380,7 @@ async def get_code_metrics():
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Code metrics retrieved",
             data=metrics,
         )
@@ -429,7 +429,7 @@ async def get_usage_analytics():
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Usage analytics retrieved",
             data=usage,
         )
@@ -545,7 +545,7 @@ async def get_trends(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Trends retrieved",
             data=trends_response,
         )
@@ -663,7 +663,7 @@ async def get_recommendations(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Recommendations retrieved",
             data=recommendations_response,
         )
@@ -1007,7 +1007,7 @@ async def compare_projects(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Projects compared",
             data=comparison,
         )
@@ -1091,7 +1091,7 @@ async def generate_report(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Report generated",
             data=report,
         )
@@ -1164,7 +1164,7 @@ async def analyze_project(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Analysis completed",
             data=analysis,
         )
@@ -1215,8 +1215,7 @@ async def get_dashboard_analytics(
         # Calculate completion from phase maturity scores
         maturity_scores = project.phase_maturity_scores or {}
         overall_project_completion = (
-            sum(maturity_scores.values()) / len(maturity_scores)
-            if maturity_scores else 0
+            sum(maturity_scores.values()) / len(maturity_scores) if maturity_scores else 0
         )
 
         # Get overall maturity from project
@@ -1254,11 +1253,11 @@ async def get_dashboard_analytics(
             "advancement_guidance": {
                 "current_phase": getattr(project, "current_phase", "discovery") or "discovery",
                 "ready_to_advance": any(
-                    phase_readiness[ph].get("is_ready_to_advance", False)
-                    for ph in phase_readiness
+                    phase_readiness[ph].get("is_ready_to_advance", False) for ph in phase_readiness
                 ),
                 "next_steps": [
-                    pr.get("phase") for pr in phase_readiness.values()
+                    pr.get("phase")
+                    for pr in phase_readiness.values()
                     if pr.get("is_ready_to_advance", False)
                 ],
                 "recommendation": (
@@ -1280,8 +1279,16 @@ async def get_dashboard_analytics(
                 "issues_resolved": 0,  # Would require issue tracking
             },
             "top_metrics": [
-                {"name": "Overall Completion", "score": round(overall_project_completion, 1), "unit": "%"},
-                {"name": "Current Phase Maturity", "score": round(overall_maturity, 1), "unit": "%"},
+                {
+                    "name": "Overall Completion",
+                    "score": round(overall_project_completion, 1),
+                    "unit": "%",
+                },
+                {
+                    "name": "Current Phase Maturity",
+                    "score": round(overall_maturity, 1),
+                    "unit": "%",
+                },
                 {"name": "Code Quality", "score": round(code_quality, 1), "unit": "%"},
                 {"name": "Test Coverage", "score": round(test_coverage, 1), "unit": "%"},
                 {"name": "Documentation", "score": round(documentation, 1), "unit": "%"},
@@ -1296,7 +1303,7 @@ async def get_dashboard_analytics(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Dashboard data retrieved",
             data=dashboard,
         )
@@ -1397,7 +1404,7 @@ async def get_analytics_breakdown(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Analytics breakdown retrieved",
             data=breakdown,
         )
@@ -1487,7 +1494,7 @@ async def get_analytics_status(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Analytics status retrieved",
             data=status_data,
         )

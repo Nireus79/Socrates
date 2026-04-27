@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # ============================================================================
 # Standardized API Response Model
 # ============================================================================
@@ -32,12 +31,9 @@ class APIResponse(BaseModel):
                 "success": True,
                 "status": "success",
                 "message": "Operation completed successfully",
-                "data": {
-                    "project_id": "proj_abc123",
-                    "name": "My Project"
-                },
+                "data": {"project_id": "proj_abc123", "name": "My Project"},
                 "error_code": None,
-                "timestamp": "2026-01-08T12:30:45.123456Z"
+                "timestamp": "2026-01-08T12:30:45.123456Z",
             }
         }
     )
@@ -728,7 +724,9 @@ class ChatMessageRequest(BaseModel):
         },
     )
 
-    message: str = Field(..., min_length=1, max_length=5000, description="Message content (max 5000 characters)")
+    message: str = Field(
+        ..., min_length=1, max_length=5000, description="Message content (max 5000 characters)"
+    )
     role: str = Field(default="user", description="Message role (user or assistant)")
     mode: str = Field(default="socratic", description="Chat mode (socratic or direct)")
 

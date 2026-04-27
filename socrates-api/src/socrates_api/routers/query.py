@@ -86,7 +86,7 @@ async def explain_concept(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Explanation for {concept}",
             data={
                 "concept": concept,
@@ -197,7 +197,7 @@ async def search_knowledge(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message="Search completed",
             data={
                 "query": query,
@@ -266,7 +266,7 @@ async def find_similar_concepts(
 
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Similar concepts to {concept}",
             data={
                 "concept": concept,

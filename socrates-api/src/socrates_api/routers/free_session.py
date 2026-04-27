@@ -99,7 +99,9 @@ class ProjectRecommendation(BaseModel):
     reason: str
 
 
-async def _extract_conversation_topics(conversation_history: List[Dict], user_id: str = None, user_auth_method: str = "api_key") -> List[str]:
+async def _extract_conversation_topics(
+    conversation_history: List[Dict], user_id: str = None, user_auth_method: str = "api_key"
+) -> List[str]:
     """
     Extract topics/intents from conversation history using Claude.
 
@@ -134,7 +136,9 @@ Conversation:
 
 Return ONLY a JSON array of topics (strings), like: ["web development", "python", "database design"]"""
 
-        response = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
+        response = orchestrator.claude_client.generate_response(
+            prompt, user_auth_method=user_auth_method, user_id=user_id
+        )
 
         # Parse JSON response
         import json
@@ -265,7 +269,7 @@ async def ask_question(
         # Get user's auth method
         user_auth_method = "api_key"
         user_obj = db.load_user(current_user)
-        if user_obj and hasattr(user_obj, 'claude_auth_method'):
+        if user_obj and hasattr(user_obj, "claude_auth_method"):
             user_auth_method = user_obj.claude_auth_method or "api_key"
 
         # Get orchestrator (database is already injected as parameter)
@@ -299,7 +303,9 @@ async def ask_question(
 
         # Get answer from Claude
         logger.info("[free-session] Calling Claude API...")
-        answer = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=current_user)
+        answer = orchestrator.claude_client.generate_response(
+            prompt, user_auth_method=user_auth_method, user_id=current_user
+        )
         logger.info(
             f"[free-session] Claude response received, length={len(answer) if answer else 0}"
         )
@@ -327,7 +333,7 @@ async def ask_question(
             conversation_history
             + [{"role": "user", "content": question}, {"role": "assistant", "content": answer}],
             user_id=current_user,
-            user_auth_method=user_auth_method
+            user_auth_method=user_auth_method,
         )
         suggested_commands = await _generate_command_suggestions(
             conversation_history + [{"role": "user", "content": question}], topics
