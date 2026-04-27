@@ -10,15 +10,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Copy and install requirements FIRST (better layer caching)
 COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip cache purge
+
+# Copy application code
 COPY socratic_system socratic_system/
 COPY socrates-api socrates-api/
 COPY socrates-cli socrates-cli/
-
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime
 FROM python:3.11-slim
@@ -60,5 +61,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose ports
 EXPOSE 8000
 
-# Default command - start API server
+# Default command - start API server with increased timeout
 CMD ["python", "-m", "socrates_api.main"]
