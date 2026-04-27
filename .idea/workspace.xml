@@ -6,9 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/agents/quality_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/quality_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/workflow/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/workflow/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/command_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/command_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/code_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/code_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/finalize_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/finalize_commands.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -6,7 +6,11 @@ from typing import Any, Dict, List, Optional
 
 from colorama import Fore, Style
 
-from socratic_system.performance import SubscriptionChecker
+try:
+    from socratic_system.performance import SubscriptionChecker
+except ImportError:
+    SubscriptionChecker = None
+
 from socratic_system.ui.commands.base import BaseCommand
 
 
@@ -148,7 +152,7 @@ class CommandHandler:
 
         # NEW: Check subscription access before executing
         user = context.get("user")
-        if user:
+        if user and SubscriptionChecker is not None:
             has_access, error_message = SubscriptionChecker.check_command_access(user, command.name)
             if not has_access:
                 return {

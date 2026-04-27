@@ -7,7 +7,11 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
-from socratic_system.docs import ArtifactSaver
+try:
+    from socratic_system.docs import ArtifactSaver
+except ImportError:
+    ArtifactSaver = None
+
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
@@ -82,6 +86,9 @@ class CodeGenerateCommand(BaseCommand):
 
     def _display_multi_file_structure(self, save_path: str) -> None:
         """Display multi-file project structure"""
+        if ArtifactSaver is None:
+            print(f"{Fore.RED}Error: Documentation tools not available{Style.RESET_ALL}")
+            return
         print(ArtifactSaver.get_save_location_message(save_path))
         print(f"\n{Fore.CYAN}Project Structure:{Style.RESET_ALL}")
         tree = ArtifactSaver.get_project_structure_tree(save_path)
@@ -102,7 +109,8 @@ class CodeGenerateCommand(BaseCommand):
     def _display_save_location(self, save_path: str, warning_msg: str) -> None:
         """Display save location or warning if not found"""
         if Path(save_path).exists():
-            print(ArtifactSaver.get_save_location_message(save_path))
+            if ArtifactSaver is not None:
+                print(ArtifactSaver.get_save_location_message(save_path))
         else:
             self.print_warning(f"{warning_msg}: {save_path}")
 
