@@ -2,6 +2,12 @@
 
 This document provides a comprehensive technical overview of Socrates AI's architecture, design patterns, and internal systems.
 
+## Quick Start
+
+**New to Socrates architecture?** Socrates v1.3.3+ uses a modular library-based architecture. Start with:
+- [LIBRARY_INTEGRATION.md](LIBRARY_INTEGRATION.md) - How libraries integrate into Socrates
+- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) - Setting up your development environment
+
 ## Table of Contents
 
 1. [System Overview](#system-overview)
