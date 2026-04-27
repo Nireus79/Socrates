@@ -114,7 +114,8 @@ class DocumentationGenerator:
 - Standard library modules
 """
 
-        installation_section = f"""
+        # nosec B608 - documentation template, not SQL
+        readme += f"""
 ## Installation
 
 ### Prerequisites
@@ -154,8 +155,7 @@ Once published to PyPI, install with:
 pip install {project_name}
 ```
 
-## Quick Start"""
-        readme += installation_section  # nosec B608
+## Quick Start
 
 ### Basic Usage
 
