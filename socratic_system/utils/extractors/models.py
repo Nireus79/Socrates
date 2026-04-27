@@ -34,5 +34,5 @@ class ExtractionResult:
     code_blocks_found: int = 0
 
     def __bool__(self):
-        """ExtractionResult is truthy if code is valid"""
+        """Return True if code extraction was valid"""
         return self.is_valid

@@ -220,7 +220,6 @@ module = [
     "socratic_system.ui.commands.*",
     "socratic_system.ui.nlu_handler",
     "socratic_system.agents.*",
-    "socratic_system.clients.claude_client",
     "socratic_system.database.*",
     "socratic_system.core.analytics_calculator",
     "socratic_system.models.project",
