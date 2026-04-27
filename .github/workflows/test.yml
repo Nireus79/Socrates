@@ -310,6 +310,7 @@ jobs:
           python-version: '3.11'
 
       - name: Create coverage badge
+        continue-on-error: true
         run: |
           python -m pip install coverage-badge
           coverage-badge -o coverage.svg -f
