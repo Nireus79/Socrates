@@ -92,7 +92,7 @@ jobs:
         if: always()
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ steps.meta.outputs.tags }}
+          image: ${{ steps.extract-image.outputs.primary }}
           format: spdx-json
           output-file: sbom-api.spdx.json
         continue-on-error: true
@@ -189,7 +189,7 @@ jobs:
         if: always()
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ steps.meta.outputs.tags }}
+          image: ${{ steps.extract-image.outputs.primary }}
           format: spdx-json
           output-file: sbom-frontend.spdx.json
         continue-on-error: true
@@ -213,7 +213,7 @@ jobs:
       - name: Run Trivy vulnerability scanner (API)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-api.outputs.api-image }}
+          image-ref: ${{ needs.build-api.outputs.api-image-primary }}
           format: 'sarif'
           output: 'trivy-api-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -222,7 +222,7 @@ jobs:
       - name: Run Trivy vulnerability scanner (Frontend)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-frontend.outputs.frontend-image }}
+          image-ref: ${{ needs.build-frontend.outputs.frontend-image-primary }}
           format: 'sarif'
           output: 'trivy-frontend-results.sarif'
           severity: 'CRITICAL,HIGH'
