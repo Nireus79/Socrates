@@ -8,7 +8,7 @@ actionable recommendations for improvement.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING
 
 from socratic_system.core.project_categories import get_phase_categories
 
@@ -44,7 +44,7 @@ class AnalyticsCalculator:
     # Category Analysis Methods
     # ============================================================================
 
-    def analyze_category_performance(self, project: ProjectContext) -> Dict:
+    def analyze_category_performance(self, project: ProjectContext) -> dict:
         """
         Analyze category strengths/weaknesses across current phase.
 
@@ -115,7 +115,7 @@ class AnalyticsCalculator:
             "balance": balance,
         }
 
-    def identify_weak_categories(self, project: ProjectContext) -> List[str]:
+    def identify_weak_categories(self, project: ProjectContext) -> list[str]:
         """Find categories consistently scoring < 30% in current phase."""
         logger.debug(f"Identifying weak categories for phase: {project.phase}")
         current_phase = project.phase
@@ -134,7 +134,7 @@ class AnalyticsCalculator:
         logger.info(f"Found {len(weak)} weak categories (< 30%) in {current_phase}: {weak}")
         return weak
 
-    def identify_strong_categories(self, project: ProjectContext) -> List[str]:
+    def identify_strong_categories(self, project: ProjectContext) -> list[str]:
         """Find categories consistently scoring > 70% in current phase."""
         logger.debug(f"Identifying strong categories for phase: {project.phase}")
         current_phase = project.phase
@@ -153,7 +153,7 @@ class AnalyticsCalculator:
         logger.info(f"Found {len(strong)} strong categories (> 70%) in {current_phase}: {strong}")
         return strong
 
-    def analyze_category_balance(self, project: ProjectContext) -> Dict:
+    def analyze_category_balance(self, project: ProjectContext) -> dict:
         """
         Detect over/under investment in categories.
 
@@ -208,7 +208,7 @@ class AnalyticsCalculator:
 
         return {"status": status, "messages": messages}
 
-    def get_missing_categories(self, project: ProjectContext) -> Dict[str, List[str]]:
+    def get_missing_categories(self, project: ProjectContext) -> dict[str, list[str]]:
         """Get categories with 0 specs per phase."""
         logger.debug("Identifying missing categories across all phases")
         missing = {}
@@ -268,7 +268,7 @@ class AnalyticsCalculator:
         )
         return velocity
 
-    def analyze_progression_trends(self, project: ProjectContext) -> Dict:
+    def analyze_progression_trends(self, project: ProjectContext) -> dict:
         """
         Analyze maturity progression over time.
 
@@ -300,7 +300,7 @@ class AnalyticsCalculator:
         )
         return result
 
-    def identify_plateaus(self, project: ProjectContext) -> List[Dict]:
+    def identify_plateaus(self, project: ProjectContext) -> list[dict]:
         """Find periods where maturity stagnates."""
         logger.debug("Identifying plateau periods in maturity progression")
 
@@ -346,7 +346,7 @@ class AnalyticsCalculator:
     # Recommendation Methods
     # ============================================================================
 
-    def generate_recommendations(self, project: ProjectContext) -> List[Dict]:
+    def generate_recommendations(self, project: ProjectContext) -> list[dict]:
         """
         Generate prioritized recommendations based on weak areas.
 
@@ -456,7 +456,7 @@ class AnalyticsCalculator:
         )
         return recommendations[:10]  # Top 10 recommendations
 
-    def suggest_next_questions(self, project: ProjectContext, count: int = 5) -> List[str]:
+    def suggest_next_questions(self, project: ProjectContext, count: int = 5) -> list[str]:
         """Suggest questions targeting weak categories."""
         logger.debug(f"Suggesting next {count} questions for phase: {project.phase}")
 
@@ -544,7 +544,7 @@ class AnalyticsCalculator:
 
         return questions.get(category, f"Can you elaborate on {category.replace('_', ' ')}?")
 
-    def _generate_insights(self, qa_events: List[Dict], velocity: float) -> List[str]:
+    def _generate_insights(self, qa_events: list[dict], velocity: float) -> list[str]:
         """Generate insights from progression data."""
         logger.debug(
             f"Generating insights from {len(qa_events)} Q&A events, velocity={velocity:.2f}"
@@ -566,7 +566,7 @@ class AnalyticsCalculator:
         logger.debug(f"Generated {len(result)} insights")
         return result
 
-    def _detect_plateaus(self, qa_events: List[Dict], insights: List[str]) -> None:
+    def _detect_plateaus(self, qa_events: list[dict], insights: list[str]) -> None:
         """Detect plateau patterns in Q&A events and add to insights."""
         plateaus = []
         consecutive_low = 0
@@ -589,7 +589,7 @@ class AnalyticsCalculator:
             logger.debug(f"Detected plateau: Q{start} for {duration} sessions")
 
     def _detect_acceleration(
-        self, qa_events: List[Dict], velocity: float, insights: List[str]
+        self, qa_events: list[dict], velocity: float, insights: list[str]
     ) -> None:
         """Detect acceleration patterns in recent Q&A events and add to insights."""
         if len(qa_events) >= 5:
