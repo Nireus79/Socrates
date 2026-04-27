@@ -322,7 +322,9 @@ Focus on the connection between the user's statement and these insights."""
         print(f"\n{Fore.CYAN}Specifications saved to database:{Style.RESET_ALL}")
 
         if project.goals:
-            goals_text = project.goals if isinstance(project.goals, str) else ", ".join(project.goals)
+            goals_text = (
+                project.goals if isinstance(project.goals, str) else ", ".join(project.goals)
+            )
             print(f"  {Fore.GREEN}✓ Goals:{Style.RESET_ALL} {goals_text[:60]}...")
 
         if project.requirements:

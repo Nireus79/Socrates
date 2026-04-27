@@ -262,9 +262,7 @@ class ProjectDatabase:
         # Save notes separately
         if project.notes:
             self._save_project_notes(project.project_id, project.notes)
-            self.logger.debug(
-                f"Saved {len(project.notes)} notes for project {project.project_id}"
-            )
+            self.logger.debug(f"Saved {len(project.notes)} notes for project {project.project_id}")
 
     def _save_main_project_record(self, cursor, project: ProjectContext, now: datetime) -> None:
         """Save main project record"""
@@ -883,7 +881,7 @@ class ProjectDatabase:
             cursor.execute("DELETE FROM project_notes WHERE project_id = ?", (project_id,))
 
             # Insert new notes
-            import json
+
             for note in notes:
                 cursor.execute(
                     """
@@ -2497,14 +2495,12 @@ class ProjectDatabase:
             items = []
 
             if item_type == "projects":
-                cursor.execute(
-                    """
+                cursor.execute("""
                     SELECT project_id, name, owner, phase, updated_at
                     FROM projects
                     WHERE is_archived = 1
                     ORDER BY updated_at DESC
-                """
-                )
+                """)
 
                 for row in cursor.fetchall():
                     items.append(
@@ -2519,14 +2515,12 @@ class ProjectDatabase:
                     )
 
             elif item_type == "users":
-                cursor.execute(
-                    """
+                cursor.execute("""
                     SELECT username, created_at
                     FROM users
                     WHERE is_archived = 1
                     ORDER BY created_at DESC
-                """
-                )
+                """)
 
                 for row in cursor.fetchall():
                     items.append(
@@ -3717,12 +3711,10 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT * FROM sponsorships
                 ORDER BY sponsored_at DESC
-            """
-            )
+            """)
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
         except Exception as e:

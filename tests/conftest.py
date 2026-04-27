@@ -33,9 +33,7 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "asyncio: mark test as async (deselect with '-m \"not asyncio\"')"
     )
-    config.addinivalue_line(
-        "markers", "slow: mark test as slow (deselect with '-m \"not slow\"')"
-    )
+    config.addinivalue_line("markers", "slow: mark test as slow (deselect with '-m \"not slow\"')")
 
 
 def pytest_collection_modifyitems(config, items):

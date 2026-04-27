@@ -22,31 +22,26 @@ Markers:
 - @pytest.mark.requires_api: Tests that need GitHub API access (mocked)
 """
 
-import pytest
-import unittest
-from unittest.mock import Mock, patch, MagicMock, call
 import os
 import tempfile
-from datetime import datetime, timedelta, timezone
+import unittest
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Import the components we're testing
-from socrates_api.routers.github import (
-    sync_project,
-    pull_changes,
-    push_changes,
+from socratic_system.agents.github_sync_handler import (
+    ConflictResolutionError,
+    NetworkSyncFailedError,
+    PermissionDeniedError,
+    RepositoryNotFoundError,
+    TokenExpiredError,
+    create_github_sync_handler,
 )
 from socratic_system.ui.commands.github_commands import (
     GithubPullCommand,
     GithubPushCommand,
     GithubSyncCommand,
-)
-from socratic_system.agents.github_sync_handler import (
-    create_github_sync_handler,
-    TokenExpiredError,
-    PermissionDeniedError,
-    RepositoryNotFoundError,
-    NetworkSyncFailedError,
-    ConflictResolutionError,
 )
 
 
@@ -61,8 +56,8 @@ class TestSyncProjectEndpoint(unittest.TestCase):
         self.repo_url = "https://github.com/test/repo"
         self.token = "ghp_test_token"
 
-    @patch('socrates_api.routers.github.get_database')
-    @patch('socrates_api.routers.github.get_current_user')
+    @patch("socrates_api.routers.github.get_database")
+    @patch("socrates_api.routers.github.get_current_user")
     async def test_sync_project_success(self, mock_user, mock_db):
         """Test successful project sync"""
         # Setup mocks
@@ -80,8 +75,8 @@ class TestSyncProjectEndpoint(unittest.TestCase):
         # Note: This would need FastAPI test client or actual endpoint testing
         # This is a simplified example showing the pattern
 
-    @patch('socrates_api.routers.github.create_github_sync_handler')
-    @patch('socrates_api.routers.github.get_database')
+    @patch("socrates_api.routers.github.create_github_sync_handler")
+    @patch("socrates_api.routers.github.get_database")
     async def test_sync_project_with_token_expired(self, mock_db, mock_handler):
         """Test sync endpoint handles token expiry"""
         mock_handler_instance = Mock()
@@ -91,7 +86,7 @@ class TestSyncProjectEndpoint(unittest.TestCase):
         # Verify that TokenExpiredError is caught and handled
         self.assertTrue(issubclass(TokenExpiredError, Exception))
 
-    @patch('socrates_api.routers.github.create_github_sync_handler')
+    @patch("socrates_api.routers.github.create_github_sync_handler")
     async def test_sync_project_with_permission_denied(self, mock_handler):
         """Test sync endpoint handles permission denied"""
         mock_handler_instance = Mock()
@@ -101,7 +96,7 @@ class TestSyncProjectEndpoint(unittest.TestCase):
         # Verify that PermissionDeniedError is caught and handled
         self.assertTrue(issubclass(PermissionDeniedError, Exception))
 
-    @patch('socrates_api.routers.github.create_github_sync_handler')
+    @patch("socrates_api.routers.github.create_github_sync_handler")
     async def test_sync_project_with_conflict(self, mock_handler):
         """Test sync endpoint handles merge conflicts"""
         mock_handler_instance = Mock()
@@ -126,7 +121,7 @@ class TestPullChangesEndpoint(unittest.TestCase):
         self.repo_url = "https://github.com/test/repo"
         self.token = "ghp_test_token"
 
-    @patch('socrates_api.routers.github.create_github_sync_handler')
+    @patch("socrates_api.routers.github.create_github_sync_handler")
     def test_pull_with_conflict_detection(self, mock_handler):
         """Test pull endpoint detects and resolves conflicts"""
         mock_handler_instance = Mock()
@@ -143,7 +138,7 @@ class TestPullChangesEndpoint(unittest.TestCase):
         handler = mock_handler()
         self.assertIsNotNone(handler.detect_merge_conflicts)
 
-    @patch('socrates_api.routers.github.create_github_sync_handler')
+    @patch("socrates_api.routers.github.create_github_sync_handler")
     def test_pull_with_token_validation(self, mock_handler):
         """Test pull endpoint validates token before pulling"""
         mock_handler_instance = Mock()
@@ -154,7 +149,7 @@ class TestPullChangesEndpoint(unittest.TestCase):
         is_valid = handler.check_token_validity(self.token)
         self.assertTrue(is_valid)
 
-    @patch('socrates_api.routers.github.create_github_sync_handler')
+    @patch("socrates_api.routers.github.create_github_sync_handler")
     def test_pull_with_network_retry(self, mock_handler):
         """Test pull endpoint retries on network failure"""
         mock_handler_instance = Mock()
@@ -166,9 +161,7 @@ class TestPullChangesEndpoint(unittest.TestCase):
 
         handler = mock_handler()
         result = handler.sync_with_retry_and_resume(
-            self.repo_url,
-            lambda url: {"status": "success"},
-            max_retries=3
+            self.repo_url, lambda url: {"status": "success"}, max_retries=3
         )
         self.assertEqual(result["attempt"], 2)
 
@@ -182,7 +175,7 @@ class TestPushChangesEndpoint(unittest.TestCase):
         self.repo_url = "https://github.com/test/repo"
         self.token = "ghp_test_token"
 
-    @patch('socrates_api.routers.github.create_github_sync_handler')
+    @patch("socrates_api.routers.github.create_github_sync_handler")
     def test_push_with_file_size_validation(self, mock_handler):
         """Test push endpoint validates file sizes"""
         mock_handler_instance = Mock()
@@ -197,14 +190,13 @@ class TestPushChangesEndpoint(unittest.TestCase):
 
         handler = mock_handler()
         result = handler.handle_large_files(
-            ["/path/to/large_file.bin", "/path/to/small_file.py"],
-            strategy="exclude"
+            ["/path/to/large_file.bin", "/path/to/small_file.py"], strategy="exclude"
         )
 
         self.assertEqual(result["status"], "partial")
         self.assertEqual(len(result["excluded_files"]), 1)
 
-    @patch('socrates_api.routers.github.create_github_sync_handler')
+    @patch("socrates_api.routers.github.create_github_sync_handler")
     def test_push_with_token_expired(self, mock_handler):
         """Test push endpoint handles token expiry"""
         mock_handler_instance = Mock()
@@ -233,8 +225,8 @@ class TestGithubPullCommand(unittest.TestCase):
             "orchestrator": Mock(),
         }
 
-    @patch('socratic_system.ui.commands.github_commands.create_github_sync_handler')
-    @patch('socratic_system.ui.commands.github_commands.GitRepositoryManager')
+    @patch("socratic_system.ui.commands.github_commands.create_github_sync_handler")
+    @patch("socratic_system.ui.commands.github_commands.GitRepositoryManager")
     def test_pull_command_with_conflicts(self, mock_git_manager, mock_handler):
         """Test pull command detects and resolves conflicts"""
         # Setup handler mock
@@ -265,7 +257,7 @@ class TestGithubPullCommand(unittest.TestCase):
         # Verify handler was created
         mock_handler.assert_called()
 
-    @patch('socratic_system.ui.commands.github_commands.create_github_sync_handler')
+    @patch("socratic_system.ui.commands.github_commands.create_github_sync_handler")
     def test_pull_command_token_expired_error(self, mock_handler):
         """Test pull command handles token expiry"""
         mock_handler.side_effect = TokenExpiredError("Token expired")
@@ -293,8 +285,8 @@ class TestGithubPushCommand(unittest.TestCase):
             "orchestrator": Mock(),
         }
 
-    @patch('socratic_system.ui.commands.github_commands.create_github_sync_handler')
-    @patch('socratic_system.ui.commands.github_commands.GitRepositoryManager')
+    @patch("socratic_system.ui.commands.github_commands.create_github_sync_handler")
+    @patch("socratic_system.ui.commands.github_commands.GitRepositoryManager")
     def test_push_command_with_file_validation(self, mock_git_manager, mock_handler):
         """Test push command validates file sizes"""
         # Setup handler mock
@@ -319,7 +311,7 @@ class TestGithubPushCommand(unittest.TestCase):
         handler = mock_handler()
         self.assertIsNotNone(handler.handle_large_files)
 
-    @patch('socratic_system.ui.commands.github_commands.create_github_sync_handler')
+    @patch("socratic_system.ui.commands.github_commands.create_github_sync_handler")
     def test_push_command_permission_denied_error(self, mock_handler):
         """Test push command handles permission denied"""
         mock_handler.side_effect = PermissionDeniedError("Access denied")
@@ -347,8 +339,8 @@ class TestGithubSyncCommand(unittest.TestCase):
             "orchestrator": Mock(),
         }
 
-    @patch.object(GithubPushCommand, 'execute')
-    @patch.object(GithubPullCommand, 'execute')
+    @patch.object(GithubPushCommand, "execute")
+    @patch.object(GithubPullCommand, "execute")
     def test_sync_command_executes_pull_then_push(self, mock_pull, mock_push):
         """Test sync command executes pull then push"""
         mock_pull.return_value = {"data": {"status": "success"}}
@@ -378,7 +370,7 @@ class TestGitHubSyncHandlerIntegration(unittest.TestCase):
         handler = create_github_sync_handler(db=mock_db)
         self.assertEqual(handler.db, mock_db)
 
-    @patch('socratic_system.agents.github_sync_handler.requests.get')
+    @patch("socratic_system.agents.github_sync_handler.requests.get")
     def test_token_validity_check(self, mock_get):
         """Test token validity checking"""
         mock_response = Mock()
@@ -402,7 +394,7 @@ class TestGitHubSyncHandlerIntegration(unittest.TestCase):
 
     def test_conflict_detection_mock(self):
         """Test conflict detection with mock"""
-        with patch('subprocess.run') as mock_run:
+        with patch("subprocess.run") as mock_run:
             mock_result = Mock()
             mock_result.returncode = 0
             mock_result.stdout = ""
@@ -465,8 +457,8 @@ class TestEdgeCaseHandling(unittest.TestCase):
         handler = create_github_sync_handler()
 
         # Verify handler has file handling methods
-        self.assertTrue(hasattr(handler, 'validate_file_sizes'))
-        self.assertTrue(hasattr(handler, 'handle_large_files'))
+        self.assertTrue(hasattr(handler, "validate_file_sizes"))
+        self.assertTrue(hasattr(handler, "handle_large_files"))
 
 
 if __name__ == "__main__":

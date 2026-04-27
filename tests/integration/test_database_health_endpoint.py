@@ -221,12 +221,15 @@ class TestDetailedHealthEndpoint:
 
     def test_detailed_health_includes_metrics(self, client, mock_pool, mock_profiler):
         """Test detailed health endpoint includes pool and query metrics."""
-        with patch(
-            "socrates_api.routers.database_health.get_connection_pool",
-            return_value=mock_pool,
-        ), patch(
-            "socrates_api.routers.database_health.get_query_profiler",
-            return_value=mock_profiler,
+        with (
+            patch(
+                "socrates_api.routers.database_health.get_connection_pool",
+                return_value=mock_pool,
+            ),
+            patch(
+                "socrates_api.routers.database_health.get_query_profiler",
+                return_value=mock_profiler,
+            ),
         ):
             response = client.get("/database/health/detailed")
 
@@ -247,12 +250,15 @@ class TestStatsEndpoint:
 
     def test_stats_endpoint_returns_metrics(self, client, mock_pool, mock_profiler):
         """Test stats endpoint returns all database metrics."""
-        with patch(
-            "socrates_api.routers.database_health.get_connection_pool",
-            return_value=mock_pool,
-        ), patch(
-            "socrates_api.routers.database_health.get_query_profiler",
-            return_value=mock_profiler,
+        with (
+            patch(
+                "socrates_api.routers.database_health.get_connection_pool",
+                return_value=mock_pool,
+            ),
+            patch(
+                "socrates_api.routers.database_health.get_query_profiler",
+                return_value=mock_profiler,
+            ),
         ):
             response = client.get("/database/stats")
 
@@ -275,12 +281,15 @@ class TestSlowQueriesEndpoint:
 
     def test_slow_queries_endpoint(self, client, mock_pool, mock_profiler):
         """Test slow queries endpoint returns slow query list."""
-        with patch(
-            "socrates_api.routers.database_health.get_connection_pool",
-            return_value=mock_pool,
-        ), patch(
-            "socrates_api.routers.database_health.get_query_profiler",
-            return_value=mock_profiler,
+        with (
+            patch(
+                "socrates_api.routers.database_health.get_connection_pool",
+                return_value=mock_pool,
+            ),
+            patch(
+                "socrates_api.routers.database_health.get_query_profiler",
+                return_value=mock_profiler,
+            ),
         ):
             response = client.get("/database/slow-queries?min_count=5")
 
@@ -301,12 +310,15 @@ class TestSlowestQueriesEndpoint:
 
     def test_slowest_queries_endpoint(self, client, mock_pool, mock_profiler):
         """Test slowest queries endpoint returns top N slowest queries."""
-        with patch(
-            "socrates_api.routers.database_health.get_connection_pool",
-            return_value=mock_pool,
-        ), patch(
-            "socrates_api.routers.database_health.get_query_profiler",
-            return_value=mock_profiler,
+        with (
+            patch(
+                "socrates_api.routers.database_health.get_connection_pool",
+                return_value=mock_pool,
+            ),
+            patch(
+                "socrates_api.routers.database_health.get_query_profiler",
+                return_value=mock_profiler,
+            ),
         ):
             response = client.get("/database/slowest-queries?limit=5")
 
@@ -330,12 +342,15 @@ class TestStatsResetEndpoint:
 
     def test_reset_all_statistics(self, client, mock_pool, mock_profiler):
         """Test resetting all statistics."""
-        with patch(
-            "socrates_api.routers.database_health.get_connection_pool",
-            return_value=mock_pool,
-        ), patch(
-            "socrates_api.routers.database_health.get_query_profiler",
-            return_value=mock_profiler,
+        with (
+            patch(
+                "socrates_api.routers.database_health.get_connection_pool",
+                return_value=mock_pool,
+            ),
+            patch(
+                "socrates_api.routers.database_health.get_query_profiler",
+                return_value=mock_profiler,
+            ),
         ):
             response = client.post("/database/stats/reset")
 
@@ -347,12 +362,15 @@ class TestStatsResetEndpoint:
 
     def test_reset_single_query_statistics(self, client, mock_pool, mock_profiler):
         """Test resetting statistics for single query."""
-        with patch(
-            "socrates_api.routers.database_health.get_connection_pool",
-            return_value=mock_pool,
-        ), patch(
-            "socrates_api.routers.database_health.get_query_profiler",
-            return_value=mock_profiler,
+        with (
+            patch(
+                "socrates_api.routers.database_health.get_connection_pool",
+                return_value=mock_pool,
+            ),
+            patch(
+                "socrates_api.routers.database_health.get_query_profiler",
+                return_value=mock_profiler,
+            ),
         ):
             response = client.post("/database/stats/reset?query_name=query1")
 

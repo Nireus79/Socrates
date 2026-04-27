@@ -4,12 +4,12 @@ Base abstract class for language-specific code extractors
 Defines the interface that all language extractors must implement.
 """
 
-import re
 import logging
+import re
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 
-from .models import ValidationResult, ExtractionResult
+from .models import ExtractionResult, ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -148,16 +148,14 @@ class BaseLanguageExtractor(ABC):
             ExtractionResult with extracted code and metadata
         """
         if not content:
-            return ExtractionResult(extracted_code="", is_valid=False, validation_error="Empty content")
+            return ExtractionResult(
+                extracted_code="", is_valid=False, validation_error="Empty content"
+            )
 
         # Check if this looks like markdown
         if not self.is_markdown_format(content):
             self.logger.debug("Content doesn't appear to be markdown, returning as-is")
-            return ExtractionResult(
-                extracted_code=content,
-                is_valid=True,
-                was_markdown=False
-            )
+            return ExtractionResult(extracted_code=content, is_valid=True, was_markdown=False)
 
         self.logger.info(f"Extracting {self.language} code from markdown format")
 
@@ -185,7 +183,7 @@ class BaseLanguageExtractor(ABC):
                 is_valid=validation.is_valid,
                 validation_error=validation.error_message,
                 was_markdown=True,
-                code_blocks_found=len(code_blocks)
+                code_blocks_found=len(code_blocks),
             )
 
         # If no code fences found but content looks like markdown,
@@ -219,7 +217,7 @@ class BaseLanguageExtractor(ABC):
                 is_valid=validation.is_valid,
                 validation_error=validation.error_message,
                 was_markdown=True,
-                code_blocks_found=0
+                code_blocks_found=0,
             )
 
         # Fallback: return original if extraction failed
@@ -229,7 +227,7 @@ class BaseLanguageExtractor(ABC):
             is_valid=False,
             validation_error="Could not extract valid code from markdown",
             was_markdown=True,
-            code_blocks_found=0
+            code_blocks_found=0,
         )
 
     def extract_and_validate(self, content: str) -> ExtractionResult:
@@ -259,7 +257,7 @@ class BaseLanguageExtractor(ABC):
             is_valid=validation.is_valid,
             validation_error=validation.error_message,
             was_markdown=extracted.was_markdown,
-            code_blocks_found=extracted.code_blocks_found
+            code_blocks_found=extracted.code_blocks_found,
         )
 
     def get_code_statistics(self, code: str) -> dict:

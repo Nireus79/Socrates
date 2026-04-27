@@ -1,12 +1,12 @@
 """Documentation generation and code extraction - imported from socratic-docs library."""
 
 from socratic_docs import (
-    DocumentationGenerator,
-    CodeExtractor,
     ArtifactSaver,
-    ProjectTemplateGenerator,
-    MultiFileCodeSplitter,
+    CodeExtractor,
+    DocumentationGenerator,
     GitInitializer,
+    MultiFileCodeSplitter,
+    ProjectTemplateGenerator,
 )
 
 # ProjectStructureGenerator is still in local utils - import from there

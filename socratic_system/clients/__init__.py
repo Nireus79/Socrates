@@ -13,8 +13,8 @@ logger = logging.getLogger("socrates.clients")
 from socratic_nexus.clients import (
     ClaudeClient,
     GoogleClient,
-    OpenAIClient,
     OllamaClient,
+    OpenAIClient,
 )
 
 __all__ = ["ClaudeClient", "OpenAIClient", "GoogleClient", "OllamaClient"]

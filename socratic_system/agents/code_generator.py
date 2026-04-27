@@ -5,13 +5,13 @@ Code generation agent for Socrates AI
 from pathlib import Path
 from typing import Any, Dict
 
-from socratic_system.models import ProjectContext
-from socratic_system.docs import ArtifactSaver
-from socratic_system.utils.code_structure_analyzer import CodeStructureAnalyzer
 from socratic_system.docs import (
+    ArtifactSaver,
     MultiFileCodeSplitter,
     ProjectStructureGenerator,
 )
+from socratic_system.models import ProjectContext
+from socratic_system.utils.code_structure_analyzer import CodeStructureAnalyzer
 
 from .base import Agent
 
@@ -211,7 +211,11 @@ class CodeGeneratorAgent(Agent):
 
         try:
             documentation = self.orchestrator.claude_client.generate_documentation(
-                project, artifact, artifact_type, user_auth_method=user_auth_method, user_id=current_user
+                project,
+                artifact,
+                artifact_type,
+                user_auth_method=user_auth_method,
+                user_id=current_user,
             )
 
             self.log(f"Generated documentation for {artifact_type}")

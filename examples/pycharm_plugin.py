@@ -404,9 +404,7 @@ def demo():
     print("=" * 60)
     try:
         result = bridge.create_project(
-            name="Example API Project",
-            owner="demo_user",
-            description="A demonstration project"
+            name="Example API Project", owner="demo_user", description="A demonstration project"
         )
         print(f"✓ Project created: {result}")
     except Exception as e:

@@ -5,14 +5,11 @@ Tests the /projects/{id}/export and /projects/{id}/publish-to-github endpoints.
 Uses FastAPI TestClient for endpoint testing.
 """
 
-import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch, AsyncMock
-from io import BytesIO
+from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
 
 
 class TestExportEndpoint:
@@ -67,7 +64,9 @@ class TestExportEndpoint:
 
     def test_export_zip_format_success(self, temp_project_dir):
         """Test export creates valid ZIP archive"""
-        with patch('socratic_system.utils.archive_builder.ArchiveBuilder.create_zip_archive') as mock_zip:
+        with patch(
+            "socratic_system.utils.archive_builder.ArchiveBuilder.create_zip_archive"
+        ) as mock_zip:
             mock_zip.return_value = (True, "ZIP created")
 
             success, message = mock_zip.return_value
@@ -76,7 +75,9 @@ class TestExportEndpoint:
 
     def test_export_tar_gz_format_success(self, temp_project_dir):
         """Test export creates valid TAR.GZ archive"""
-        with patch('socratic_system.utils.archive_builder.ArchiveBuilder.create_tarball') as mock_tar:
+        with patch(
+            "socratic_system.utils.archive_builder.ArchiveBuilder.create_tarball"
+        ) as mock_tar:
             mock_tar.return_value = (True, "TAR.GZ created")
 
             success, message = mock_tar.return_value
@@ -134,7 +135,9 @@ class TestExportEndpoint:
 
     def test_export_validates_archive_integrity(self, temp_project_dir):
         """Test exported archive is valid and extractable"""
-        with patch('socratic_system.utils.archive_builder.ArchiveBuilder.verify_archive') as mock_verify:
+        with patch(
+            "socratic_system.utils.archive_builder.ArchiveBuilder.verify_archive"
+        ) as mock_verify:
             mock_verify.return_value = (True, "Valid archive")
 
             valid, message = mock_verify.return_value
@@ -151,7 +154,7 @@ class TestPublishToGitHubEndpoint:
             "repo_name": "test-project",
             "description": "A test project",
             "private": True,
-            "github_token": "ghp_validtoken1234567890abcdefghij"
+            "github_token": "ghp_validtoken1234567890abcdefghij",
         }
 
     def test_publish_endpoint_requires_authentication(self):
@@ -169,11 +172,16 @@ class TestPublishToGitHubEndpoint:
         """Test publish validates repository name format"""
         # Valid: alphanumeric, hyphens, underscores
         # Invalid: UPPERCASE only, special chars, spaces
-        with patch('socratic_system.utils.git_initializer.GitInitializer.create_github_repository') as mock_create:
-            mock_create.return_value = (True, {
-                "html_url": "https://github.com/user/test-project",
-                "clone_url": "https://github.com/user/test-project.git"
-            })
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.create_github_repository"
+        ) as mock_create:
+            mock_create.return_value = (
+                True,
+                {
+                    "html_url": "https://github.com/user/test-project",
+                    "clone_url": "https://github.com/user/test-project.git",
+                },
+            )
 
             success, data = mock_create.return_value
             assert success is True
@@ -192,7 +200,9 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_rejects_invalid_token(self):
         """Test publish handles invalid GitHub token"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.create_github_repository') as mock_create:
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.create_github_repository"
+        ) as mock_create:
             mock_create.return_value = (False, {"error": "Invalid authentication"})
 
             success, data = mock_create.return_value
@@ -201,7 +211,9 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_repo_already_exists(self):
         """Test publish handles existing repository"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.create_github_repository') as mock_create:
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.create_github_repository"
+        ) as mock_create:
             mock_create.return_value = (False, {"error": "Repository already exists"})
 
             success, data = mock_create.return_value
@@ -209,12 +221,17 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_success_returns_repo_url(self, valid_publish_request):
         """Test publish success includes repository URL"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.create_github_repository') as mock_create:
-            mock_create.return_value = (True, {
-                "html_url": "https://github.com/user/test-project",
-                "clone_url": "https://github.com/user/test-project.git",
-                "github_user": "user"
-            })
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.create_github_repository"
+        ) as mock_create:
+            mock_create.return_value = (
+                True,
+                {
+                    "html_url": "https://github.com/user/test-project",
+                    "clone_url": "https://github.com/user/test-project.git",
+                    "github_user": "user",
+                },
+            )
 
             success, data = mock_create.return_value
             assert success is True
@@ -224,7 +241,9 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_initializes_git_repo(self):
         """Test publish initializes local git repository"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.initialize_repository') as mock_init:
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.initialize_repository"
+        ) as mock_init:
             mock_init.return_value = (True, "Repository initialized")
 
             success, message = mock_init.return_value
@@ -232,7 +251,9 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_pushes_to_github(self):
         """Test publish pushes code to GitHub"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.push_to_github') as mock_push:
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.push_to_github"
+        ) as mock_push:
             mock_push.return_value = (True, "Successfully pushed")
 
             success, message = mock_push.return_value
@@ -246,11 +267,7 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_description_optional(self):
         """Test description field is optional"""
-        request = {
-            "repo_name": "test",
-            "private": True,
-            "github_token": "ghp_test123"
-        }
+        request = {"repo_name": "test", "private": True, "github_token": "ghp_test123"}
         # Should work without description field
         assert "repo_name" in request
 
@@ -265,7 +282,9 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_github_api_error(self):
         """Test publish handles GitHub API errors"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.create_github_repository') as mock_create:
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.create_github_repository"
+        ) as mock_create:
             mock_create.return_value = (False, {"error": "GitHub API error"})
 
             success, data = mock_create.return_value
@@ -273,7 +292,9 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_network_error(self):
         """Test publish handles network errors gracefully"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.create_github_repository') as mock_create:
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.create_github_repository"
+        ) as mock_create:
             mock_create.side_effect = Exception("Network error")
 
             try:
@@ -284,7 +305,9 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_rate_limit_error(self):
         """Test publish handles GitHub rate limiting"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.create_github_repository') as mock_create:
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.create_github_repository"
+        ) as mock_create:
             mock_create.return_value = (False, {"error": "API rate limit exceeded"})
 
             success, data = mock_create.return_value
@@ -297,11 +320,16 @@ class TestPublishToGitHubEndpoint:
 
     def test_publish_returns_clone_command(self):
         """Test response includes git clone command"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.push_to_github') as mock_push:
-            mock_push.return_value = (True, {
-                "clone_url": "https://github.com/user/repo.git",
-                "clone_command": "git clone https://github.com/user/repo.git"
-            })
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.push_to_github"
+        ) as mock_push:
+            mock_push.return_value = (
+                True,
+                {
+                    "clone_url": "https://github.com/user/repo.git",
+                    "clone_command": "git clone https://github.com/user/repo.git",
+                },
+            )
 
             success, data = mock_push.return_value
             assert success is True
@@ -369,7 +397,9 @@ class TestEndpointErrorHandling:
 
     def test_publish_handles_git_error(self):
         """Test publish handles git command errors"""
-        with patch('socratic_system.utils.git_initializer.GitInitializer.initialize_repository') as mock_init:
+        with patch(
+            "socratic_system.utils.git_initializer.GitInitializer.initialize_repository"
+        ) as mock_init:
             mock_init.return_value = (False, "Git init failed")
 
             success, message = mock_init.return_value

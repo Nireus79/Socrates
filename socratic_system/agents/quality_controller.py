@@ -8,11 +8,11 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from socratic_system.core.analytics_calculator import AnalyticsCalculator
-from socratic_system.maturity import MaturityCalculator
-from socratic_system.workflow import WorkflowOptimizer
 from socratic_system.events import EventType
+from socratic_system.maturity import MaturityCalculator
 from socratic_system.models import ProjectContext
 from socratic_system.models.workflow import WorkflowApprovalRequest
+from socratic_system.workflow import WorkflowOptimizer
 
 from .base import Agent
 
@@ -248,7 +248,9 @@ class QualityControllerAgent(Agent):
 
         # Notify user if phase just reached 100% completion
         if score_before < self.COMPLETE_THRESHOLD and score_after >= self.COMPLETE_THRESHOLD:
-            logging.info(f"Phase {project.phase} reached 100% completion during response processing!")
+            logging.info(
+                f"Phase {project.phase} reached 100% completion during response processing!"
+            )
             self.emit_event(
                 EventType.PHASE_READY_TO_ADVANCE,
                 {

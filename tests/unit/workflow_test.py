@@ -12,21 +12,19 @@ Tests cover:
 
 import unittest
 from datetime import datetime
-from unittest.mock import Mock, patch
+
+from socratic_system.core.workflow_cost_calculator import WorkflowCostCalculator
+from socratic_system.core.workflow_path_finder import WorkflowPathFinder
+from socratic_system.core.workflow_risk_calculator import WorkflowRiskCalculator
 
 from socratic_system.core.workflow_builder import (
     WorkflowBuilder,
     create_discovery_workflow_comprehensive,
     create_discovery_workflow_simple,
 )
-from socratic_system.core.workflow_cost_calculator import WorkflowCostCalculator
-from socratic_system.core.workflow_path_finder import WorkflowPathFinder
-from socratic_system.core.workflow_risk_calculator import WorkflowRiskCalculator
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.workflow import (
     PathDecisionStrategy,
-    WorkflowEdge,
-    WorkflowNode,
     WorkflowNodeType,
 )
 

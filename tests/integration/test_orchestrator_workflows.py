@@ -8,15 +8,15 @@ Tests real workflows through the orchestrator including:
 - Learning progression tracking
 """
 
-import pytest
-import tempfile
 import os
-from pathlib import Path
 import shutil
+import tempfile
+from pathlib import Path
 
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
+import pytest
+
 from socratic_system.config import SocratesConfig
-from socratic_system.models.project import ProjectContext
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
 @pytest.fixture
@@ -120,7 +120,9 @@ class TestLearningProgression:
         """Test database is accessible for storing learning records."""
         assert orchestrator.database is not None
         # Verify database has expected methods for project operations
-        assert hasattr(orchestrator.database, 'load_project') or hasattr(orchestrator.database, 'save_project')
+        assert hasattr(orchestrator.database, "load_project") or hasattr(
+            orchestrator.database, "save_project"
+        )
 
 
 @pytest.mark.integration
@@ -143,4 +145,4 @@ class TestErrorHandling:
         """Test orchestrator event emitter is functional."""
         assert orchestrator.event_emitter is not None
         # Verify event emitter has emit method
-        assert hasattr(orchestrator.event_emitter, 'emit')
+        assert hasattr(orchestrator.event_emitter, "emit")

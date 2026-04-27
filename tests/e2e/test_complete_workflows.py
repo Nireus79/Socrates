@@ -7,17 +7,18 @@ Tests complete user journeys including:
 - Database operations
 """
 
-import pytest
-import tempfile
-import shutil
-from pathlib import Path
-from datetime import datetime
-
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
-from socratic_system.config import SocratesConfig
-from socratic_system.models.project import ProjectContext
-from socratic_system.database.project_db import ProjectDatabase
 import os
+import shutil
+import tempfile
+from datetime import datetime
+from pathlib import Path
+
+import pytest
+
+from socratic_system.config import SocratesConfig
+from socratic_system.database.project_db import ProjectDatabase
+from socratic_system.models.project import ProjectContext
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
 @pytest.fixture
@@ -94,7 +95,7 @@ class TestProjectWorkflow:
             phase="phase1",
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            description="End-to-end test project"
+            description="End-to-end test project",
         )
 
         # Save project
@@ -234,9 +235,9 @@ class TestIntegrationBetweenComponents:
         assert database is not None
 
         # Both should have core functionality
-        assert hasattr(orchestrator, 'database')
-        assert hasattr(database, 'save_project')
-        assert hasattr(database, 'load_project')
+        assert hasattr(orchestrator, "database")
+        assert hasattr(database, "save_project")
+        assert hasattr(database, "load_project")
 
     def test_shared_data_models(self, database):
         """Test shared data models (ProjectContext) work correctly."""

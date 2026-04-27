@@ -5,7 +5,7 @@ Provides standardized structures for extraction and validation operations.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import List, Optional
 
 
 @dataclass

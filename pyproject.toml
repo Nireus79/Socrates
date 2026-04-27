@@ -7,7 +7,7 @@ name = "socrates-ai"
 version = "1.3.3"
 description = "Production-ready collaborative development platform with GitHub-ready project generation, Socratic AI guidance, multi-agent orchestration, real-time collaboration, and RAG knowledge management"
 readme = "README.md"
-license = {text = "MIT"}
+license = {file = "LICENSE"}
 authors = [
     {name = "Socrates AI Contributors"}
 ]
@@ -46,7 +46,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -127,15 +126,23 @@ packages = [
     "socratic_system.agents",
     "socratic_system.clients",
     "socratic_system.config",
-    "socratic_system.conflict_resolution",
+    "socratic_system.conflict",
     "socratic_system.database",
+    "socratic_system.docs",
     "socratic_system.events",
     "socratic_system.exceptions",
+    "socratic_system.knowledge",
+    "socratic_system.learning",
+    "socratic_system.maturity",
     "socratic_system.models",
     "socratic_system.orchestration",
+    "socratic_system.performance",
+    "socratic_system.subscription",
     "socratic_system.ui",
     "socratic_system.ui.commands",
     "socratic_system.utils",
+    "socratic_system.utils.extractors",
+    "socratic_system.workflow",
 ]
 
 [tool.setuptools.package-data]

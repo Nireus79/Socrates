@@ -409,7 +409,9 @@ class GitInitializer:
                     timeout=5,
                     text=True,
                 )
-                remote_lines = [line.split()[0] for line in result.stdout.strip().split("\n") if line]
+                remote_lines = [
+                    line.split()[0] for line in result.stdout.strip().split("\n") if line
+                ]
                 status["remotes"] = list(set(remote_lines))  # Remove duplicates
             except subprocess.CalledProcessError:
                 pass

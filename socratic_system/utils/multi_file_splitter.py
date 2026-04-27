@@ -78,7 +78,7 @@ class MultiFileCodeSplitter:
                         "- Review the content in `main.py`\n"
                         "- Extract the actual Python code from the markdown\n"
                         "- Re-save as proper Python modules\n"
-                    )
+                    ),
                 }
 
             # Not markdown - regular syntax error
@@ -471,9 +471,7 @@ class ProjectStructureGenerator:
             complete_structure["README.md"] = f"# {project_name}\n\nProject description.\n"
 
         if "main.py" not in complete_structure and "src/__init__.py" in complete_structure:
-            complete_structure[
-                "main.py"
-            ] = '''"""Entry point"""
+            complete_structure["main.py"] = '''"""Entry point"""
 
 if __name__ == "__main__":
     print("Starting application...")
@@ -481,9 +479,7 @@ if __name__ == "__main__":
 
         # Add .gitignore if not present
         if ".gitignore" not in complete_structure:
-            complete_structure[
-                ".gitignore"
-            ] = """# Python
+            complete_structure[".gitignore"] = """# Python
 __pycache__/
 *.py[cod]
 *$py.class

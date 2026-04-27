@@ -8,14 +8,12 @@ Uses mocking for external dependencies (git commands, GitHub API).
 import subprocess
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
+
 from socratic_system.utils.git_initializer import (
     GitInitializer,
-    GitInitializationError,
-    GitOperationError,
-    GitHubError,
 )
 
 
@@ -79,14 +77,14 @@ class TestGitInitializer:
 
     @patch("subprocess.run")
     @patch.object(GitInitializer, "is_git_installed", return_value=True)
-    def test_initialize_repository_custom_author(self, mock_is_installed, mock_run, temp_project_dir):
+    def test_initialize_repository_custom_author(
+        self, mock_is_installed, mock_run, temp_project_dir
+    ):
         """Test repo initialization with custom author"""
         mock_run.return_value.returncode = 0
 
         success, message = GitInitializer.initialize_repository(
-            temp_project_dir,
-            author_name="Test Author",
-            author_email="test@example.com"
+            temp_project_dir, author_name="Test Author", author_email="test@example.com"
         )
 
         assert success is True
@@ -97,14 +95,15 @@ class TestGitInitializer:
 
     @patch("subprocess.run")
     @patch.object(GitInitializer, "is_git_installed", return_value=True)
-    def test_initialize_repository_custom_message(self, mock_is_installed, mock_run, temp_project_dir):
+    def test_initialize_repository_custom_message(
+        self, mock_is_installed, mock_run, temp_project_dir
+    ):
         """Test repo initialization with custom commit message"""
         mock_run.return_value.returncode = 0
 
         custom_msg = "Custom initial commit"
         success, message = GitInitializer.initialize_repository(
-            temp_project_dir,
-            initial_commit_message=custom_msg
+            temp_project_dir, initial_commit_message=custom_msg
         )
 
         assert success is True
@@ -115,7 +114,9 @@ class TestGitInitializer:
 
     @patch("subprocess.run")
     @patch.object(GitInitializer, "is_git_installed", return_value=True)
-    def test_initialize_repository_already_exists(self, mock_is_installed, mock_run, temp_project_dir):
+    def test_initialize_repository_already_exists(
+        self, mock_is_installed, mock_run, temp_project_dir
+    ):
         """Test initializing repo when .git already exists"""
         # Create .git directory
         (temp_project_dir / ".git").mkdir()
@@ -156,10 +157,7 @@ class TestGitInitializer:
         mock_post.return_value = mock_response
 
         success, data = GitInitializer.create_github_repository(
-            repo_name="test-repo",
-            description="Test repo",
-            private=True,
-            github_token="ghp_test123"
+            repo_name="test-repo", description="Test repo", private=True, github_token="ghp_test123"
         )
 
         assert success is True
@@ -173,10 +171,7 @@ class TestGitInitializer:
         mock_post.return_value = mock_response
 
         success, data = GitInitializer.create_github_repository(
-            repo_name="test-repo",
-            description="Test repo",
-            private=True,
-            github_token="ghp_invalid"
+            repo_name="test-repo", description="Test repo", private=True, github_token="ghp_invalid"
         )
 
         assert success is False
@@ -190,14 +185,14 @@ class TestGitInitializer:
         mock_post.return_value = mock_response
 
         success, data = GitInitializer.create_github_repository(
-            repo_name="existing-repo",
-            description="Test",
-            private=True,
-            github_token="ghp_test123"
+            repo_name="existing-repo", description="Test", private=True, github_token="ghp_test123"
         )
 
         assert success is False
-        assert "already exists" in data.get("error", "").lower() or "invalid" in data.get("error", "").lower()
+        assert (
+            "already exists" in data.get("error", "").lower()
+            or "invalid" in data.get("error", "").lower()
+        )
 
     @patch("requests.post")
     def test_create_github_repository_api_error(self, mock_post):
@@ -208,10 +203,7 @@ class TestGitInitializer:
         mock_post.return_value = mock_response
 
         success, data = GitInitializer.create_github_repository(
-            repo_name="test-repo",
-            description="Test",
-            private=True,
-            github_token="ghp_test123"
+            repo_name="test-repo", description="Test", private=True, github_token="ghp_test123"
         )
 
         assert success is False
@@ -223,10 +215,7 @@ class TestGitInitializer:
         mock_post.side_effect = Exception("Network error")
 
         success, data = GitInitializer.create_github_repository(
-            repo_name="test-repo",
-            description="Test",
-            private=True,
-            github_token="ghp_test123"
+            repo_name="test-repo", description="Test", private=True, github_token="ghp_test123"
         )
 
         assert success is False
@@ -245,8 +234,7 @@ class TestGitInitializer:
         mock_run.return_value.returncode = 0
 
         success, message = GitInitializer.push_to_github(
-            temp_project_dir,
-            "https://github.com/user/repo.git"
+            temp_project_dir, "https://github.com/user/repo.git"
         )
 
         assert success is True
@@ -261,8 +249,7 @@ class TestGitInitializer:
         mock_run.return_value.stderr = "fatal: Authentication failed"
 
         success, message = GitInitializer.push_to_github(
-            temp_project_dir,
-            "https://github.com/user/repo.git"
+            temp_project_dir, "https://github.com/user/repo.git"
         )
 
         assert success is False
@@ -271,8 +258,7 @@ class TestGitInitializer:
     def test_push_to_github_not_git_repo(self, temp_project_dir):
         """Test push when not a git repository"""
         success, message = GitInitializer.push_to_github(
-            temp_project_dir,
-            "https://github.com/user/repo.git"
+            temp_project_dir, "https://github.com/user/repo.git"
         )
 
         assert success is False
@@ -314,11 +300,7 @@ class TestGitInitializer:
         """Test successful GitHub user info retrieval"""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "login": "testuser",
-            "id": 123,
-            "name": "Test User"
-        }
+        mock_response.json.return_value = {"login": "testuser", "id": 123, "name": "Test User"}
         mock_get.return_value = mock_response
 
         success, data = GitInitializer.get_github_user_info("ghp_test123")

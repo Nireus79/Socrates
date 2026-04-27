@@ -82,14 +82,13 @@ class VectorDatabase:
 
                 # Load model with device specification to avoid meta tensor issues
                 self._embedding_model_instance = SentenceTransformer(
-                    self.embedding_model_name,
-                    device=device
+                    self.embedding_model_name, device=device
                 )
                 self.logger.info(f"Embedding model loaded successfully on {device}")
             except Exception as e:
                 self.logger.error(
                     f"Failed to load embedding model {self.embedding_model_name}: {e}",
-                    exc_info=True
+                    exc_info=True,
                 )
                 raise RuntimeError(
                     f"Failed to load embedding model '{self.embedding_model_name}'. "

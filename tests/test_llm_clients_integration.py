@@ -11,17 +11,13 @@ Tests verify:
 - Cache functionality
 """
 
-import asyncio
 import base64
 import hashlib
-import json
 import logging
 import os
-import sqlite3
-import tempfile
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from typing import Dict
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -110,10 +106,7 @@ class TestOpenAIClientIntegration:
         """Test OpenAI client initializes with orchestrator"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         assert client.api_key == "sk-test-key"
         assert client.orchestrator is mock_orchestrator
@@ -124,10 +117,7 @@ class TestOpenAIClientIntegration:
         """Test client initializes with placeholder key"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="placeholder_key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="placeholder_key", orchestrator=mock_orchestrator)
 
         # Should not create clients with placeholder key
         assert client.api_key == "placeholder_key"
@@ -137,10 +127,7 @@ class TestOpenAIClientIntegration:
         """Test retrieving user API key from database"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="default-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="default-key", orchestrator=mock_orchestrator)
 
         # Setup user API key in database
         encryption_key_base = os.getenv("SOCRATES_ENCRYPTION_KEY", "default-socrates-key")
@@ -148,15 +135,13 @@ class TestOpenAIClientIntegration:
         encryption_key = base64.urlsafe_b64encode(key_hash)
 
         from cryptography.fernet import Fernet
+
         cipher = Fernet(encryption_key)
         user_key = "sk-user-specific-key"
         encrypted = cipher.encrypt(user_key.encode()).decode()
 
         mock_orchestrator.database.save_api_key(
-            "user123",
-            "openai",
-            encrypted,
-            hashlib.sha256(user_key.encode()).hexdigest()
+            "user123", "openai", encrypted, hashlib.sha256(user_key.encode()).hexdigest()
         )
 
         # Retrieve user-specific key
@@ -168,10 +153,7 @@ class TestOpenAIClientIntegration:
         """Test fallback to default key when user key not found"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="default-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="default-key", orchestrator=mock_orchestrator)
 
         # No user key in database
         api_key, is_user_specific = client._get_user_api_key("nonexistent_user")
@@ -182,10 +164,7 @@ class TestOpenAIClientIntegration:
         """Test SHA256 cache key generation"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         message = "Test message"
         cache_key = client._get_cache_key(message)
@@ -197,10 +176,7 @@ class TestOpenAIClientIntegration:
         """Test insights extraction caching"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         # Manually add to cache
         test_response = {"goals": "build app", "requirements": ["fast", "scalable"]}
@@ -214,12 +190,10 @@ class TestOpenAIClientIntegration:
     def test_error_on_no_api_key(self, mock_orchestrator, mock_openai):
         """Test APIError raised when no valid API key"""
         from socratic_nexus.clients import OpenAIClient
+
         from socratic_system.exceptions import APIError
 
-        client = OpenAIClient(
-            api_key=None,
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key=None, orchestrator=mock_orchestrator)
 
         with pytest.raises(APIError) as exc_info:
             client._get_client(user_id="nonexistent_user")
@@ -231,10 +205,7 @@ class TestOpenAIClientIntegration:
         """Test token usage tracking"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         # Mock usage object
         mock_usage = Mock()
@@ -257,10 +228,7 @@ class TestOpenAIClientIntegration:
         """Test cost calculation for OpenAI"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         mock_usage = Mock()
         mock_usage.prompt_tokens = 1000
@@ -291,10 +259,7 @@ class TestGoogleClientIntegration:
         """Test Google client initializes with orchestrator"""
         from socratic_nexus.clients import GoogleClient
 
-        client = GoogleClient(
-            api_key="AIza-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = GoogleClient(api_key="AIza-test-key", orchestrator=mock_orchestrator)
 
         assert client.api_key == "AIza-test-key"
         assert client.orchestrator is mock_orchestrator
@@ -304,10 +269,7 @@ class TestGoogleClientIntegration:
         """Test token estimation for Google (text-length based)"""
         from socratic_nexus.clients import GoogleClient
 
-        client = GoogleClient(
-            api_key="AIza-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = GoogleClient(api_key="AIza-test-key", orchestrator=mock_orchestrator)
 
         input_len = 400  # 400 chars ≈ 100 tokens (4 chars per token)
         output_len = 200  # 200 chars ≈ 50 tokens
@@ -325,10 +287,7 @@ class TestGoogleClientIntegration:
         """Test cost calculation for Google (text-length based)"""
         from socratic_nexus.clients import GoogleClient
 
-        client = GoogleClient(
-            api_key="AIza-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = GoogleClient(api_key="AIza-test-key", orchestrator=mock_orchestrator)
 
         # 1000 chars input, 500 chars output
         cost = client._calculate_cost_google(1000, 500)
@@ -419,9 +378,7 @@ class TestClientInterchangeability:
 
     def test_all_clients_have_same_methods(self, mock_orchestrator):
         """Test all clients implement same methods"""
-        from socratic_nexus.clients import OpenAIClient
-        from socratic_nexus.clients import GoogleClient
-        from socratic_nexus.clients import OllamaClient
+        from socratic_nexus.clients import GoogleClient, OllamaClient, OpenAIClient
 
         clients = [
             OpenAIClient(api_key="test", orchestrator=mock_orchestrator),
@@ -453,9 +410,7 @@ class TestClientInterchangeability:
 
     def test_client_substitutability(self, mock_orchestrator):
         """Test that any client can substitute for another"""
-        from socratic_nexus.clients import OpenAIClient
-        from socratic_nexus.clients import GoogleClient
-        from socratic_nexus.clients import OllamaClient
+        from socratic_nexus.clients import GoogleClient, OllamaClient, OpenAIClient
 
         def use_client(client, prompt: str):
             """Generic function that uses any client"""
@@ -485,12 +440,10 @@ class TestEventEmission:
     def test_token_usage_event_emission(self, mock_orchestrator):
         """Test TOKEN_USAGE event emitted"""
         from socratic_nexus.clients import OpenAIClient
+
         from socratic_system.events import EventType
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         mock_usage = Mock()
         mock_usage.prompt_tokens = 100
@@ -518,18 +471,16 @@ class TestEncryption:
 
     def test_encryption_key_from_env(self, mock_orchestrator, monkeypatch):
         """Test using custom encryption key from environment"""
-        from socratic_nexus.clients import OpenAIClient
-        from cryptography.fernet import Fernet
-        import hashlib
         import base64
+        import hashlib
+
+        from cryptography.fernet import Fernet
+        from socratic_nexus.clients import OpenAIClient
 
         custom_key = "my-custom-encryption-key"
         monkeypatch.setenv("SOCRATES_ENCRYPTION_KEY", custom_key)
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         # Encrypt with custom key
         key_hash = hashlib.sha256(custom_key.encode()).digest()
@@ -544,13 +495,11 @@ class TestEncryption:
 
     def test_encryption_fallback_methods(self, mock_orchestrator, monkeypatch):
         """Test encryption method fallbacks"""
-        from socratic_nexus.clients import OpenAIClient
         import base64
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        from socratic_nexus.clients import OpenAIClient
+
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         # Test Base64 fallback (Method 3)
         original_key = "sk-test-key"
@@ -574,10 +523,7 @@ class TestAsyncOperations:
         """Test async token tracking"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         mock_usage = Mock()
         mock_usage.prompt_tokens = 100
@@ -600,6 +546,7 @@ class TestErrorHandling:
     def test_api_error_on_missing_key(self, mock_orchestrator):
         """Test APIError raised with clear message"""
         from socratic_nexus.clients import OpenAIClient
+
         from socratic_system.exceptions import APIError
 
         client = OpenAIClient(api_key=None, orchestrator=mock_orchestrator)
@@ -615,17 +562,14 @@ class TestErrorHandling:
         """Test JSON parsing removes markdown code blocks"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
-        response_with_markdown = '''```json
+        response_with_markdown = """```json
         {
             "goals": "build app",
             "requirements": ["fast"]
         }
-        ```'''
+        ```"""
 
         result = client._parse_json_response(response_with_markdown)
         assert result["goals"] == "build app"
@@ -635,10 +579,7 @@ class TestErrorHandling:
         """Test JSON parsing returns empty dict on invalid JSON"""
         from socratic_nexus.clients import OpenAIClient
 
-        client = OpenAIClient(
-            api_key="sk-test-key",
-            orchestrator=mock_orchestrator
-        )
+        client = OpenAIClient(api_key="sk-test-key", orchestrator=mock_orchestrator)
 
         invalid_json = "This is not JSON {invalid"
         result = client._parse_json_response(invalid_json)
@@ -654,12 +595,7 @@ class TestDatabaseIntegration:
         db = MockDatabase()
 
         # Save API key
-        success = db.save_api_key(
-            "user123",
-            "openai",
-            "encrypted_key_value",
-            "key_hash"
-        )
+        success = db.save_api_key("user123", "openai", "encrypted_key_value", "key_hash")
         assert success is True
 
         # Retrieve API key

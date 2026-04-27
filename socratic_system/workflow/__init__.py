@@ -1,12 +1,12 @@
 """Workflow orchestration and optimization - imported from socratic-workflow library."""
 
 from socratic_workflow import (
-    WorkflowDefinition,
-    WorkflowNode,
-    WorkflowEdge,
-    WorkflowPath,
     WorkflowApprovalRequest,
+    WorkflowDefinition,
+    WorkflowEdge,
     WorkflowExecutionState,
+    WorkflowNode,
+    WorkflowPath,
 )
 
 # Local workflow utilities not yet in library

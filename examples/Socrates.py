@@ -70,32 +70,38 @@ async def main():
     try:
         # Example: Create a project
         print("Creating a new project...")
-        project = await orchestrator.agents["ProjectManager"].execute({
-            "action": "create_project",
-            "name": "CLI Calculator",
-            "description": "A command-line calculator application",
-            "owner": "example_user",
-        })
+        project = await orchestrator.agents["ProjectManager"].execute(
+            {
+                "action": "create_project",
+                "name": "CLI Calculator",
+                "description": "A command-line calculator application",
+                "owner": "example_user",
+            }
+        )
         print(f"✓ Project created: {project.get('project_id')}\n")
 
         # Example: Ask a Socratic question
         print("Generating Socratic questions...")
-        question = await orchestrator.agents["SocraticCounselor"].execute({
-            "action": "generate_question",
-            "project_id": project.get("project_id"),
-            "topic": "CLI application design",
-            "difficulty": "intermediate",
-        })
+        question = await orchestrator.agents["SocraticCounselor"].execute(
+            {
+                "action": "generate_question",
+                "project_id": project.get("project_id"),
+                "topic": "CLI application design",
+                "difficulty": "intermediate",
+            }
+        )
         print(f"✓ Question: {question.get('question')}\n")
 
         # Example: Generate code
         print("Generating code...")
-        code = await orchestrator.agents["CodeGenerator"].execute({
-            "action": "generate_code",
-            "project_id": project.get("project_id"),
-            "specification": "Create a Python calculator with add, subtract, multiply, divide operations",
-            "language": "python",
-        })
+        code = await orchestrator.agents["CodeGenerator"].execute(
+            {
+                "action": "generate_code",
+                "project_id": project.get("project_id"),
+                "specification": "Create a Python calculator with add, subtract, multiply, divide operations",
+                "language": "python",
+            }
+        )
         print(f"✓ Code generated: {len(code.get('code', ''))} characters\n")
 
         print("=" * 70)

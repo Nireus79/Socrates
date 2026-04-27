@@ -7,19 +7,20 @@ Tests real database interactions including:
 - Learning records
 """
 
-import pytest
 import tempfile
+from datetime import datetime
 from pathlib import Path
+
+import pytest
 
 from socratic_system.database.project_db import ProjectDatabase
 from socratic_system.models.project import ProjectContext
-from datetime import datetime
 
 
 @pytest.fixture
 def temp_db():
     """Create temporary database."""
-    temp_file = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+    temp_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
     db_path = temp_file.name
     temp_file.close()
 
@@ -45,7 +46,8 @@ class TestDatabaseInitialization:
     def test_database_with_env_path(self):
         """Test database can be created with explicit path."""
         import tempfile
-        temp_file = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+
+        temp_file = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
         db_path = temp_file.name
         temp_file.close()
 
@@ -71,7 +73,7 @@ class TestProjectOperations:
             phase="phase1",
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            description="A test project"
+            description="A test project",
         )
 
         # Save project
@@ -97,14 +99,16 @@ class TestDatabaseMethods:
 
     def test_database_has_project_methods(self, temp_db):
         """Test database has project-related methods."""
-        assert hasattr(temp_db, 'save_project')
-        assert hasattr(temp_db, 'load_project')
-        assert hasattr(temp_db, 'delete_project')
+        assert hasattr(temp_db, "save_project")
+        assert hasattr(temp_db, "load_project")
+        assert hasattr(temp_db, "delete_project")
 
     def test_database_has_activity_methods(self, temp_db):
         """Test database has activity tracking methods."""
-        assert hasattr(temp_db, 'get_project_activities') or hasattr(temp_db, 'count_project_activities')
+        assert hasattr(temp_db, "get_project_activities") or hasattr(
+            temp_db, "count_project_activities"
+        )
 
     def test_database_has_knowledge_methods(self, temp_db):
         """Test database has knowledge document methods."""
-        assert hasattr(temp_db, 'get_project_knowledge_documents')
+        assert hasattr(temp_db, "get_project_knowledge_documents")

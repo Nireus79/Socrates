@@ -3,11 +3,11 @@
 from socratic_performance import (
     QueryProfiler,
     QueryStats,
+    SubscriptionChecker,
+    TierLimits,
     TTLCache,
     cached,
     get_profiler,
-    SubscriptionChecker,
-    TierLimits,
 )
 
 __all__ = [

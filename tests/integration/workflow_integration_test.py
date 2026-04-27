@@ -10,10 +10,9 @@ Tests cover:
 
 import unittest
 from datetime import datetime
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import MagicMock
 
 from socratic_system.agents.quality_controller import QualityControllerAgent
-from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
 from socratic_system.core.question_selector import QuestionSelector
 from socratic_system.core.workflow_builder import create_discovery_workflow_comprehensive
 from socratic_system.models.project import ProjectContext
@@ -135,9 +134,7 @@ class TestWorkflowApprovalFlow(unittest.TestCase):
         )
 
         # Get pending approvals
-        result = qc_agent._get_pending_approvals(
-            {"project_id": self.project.project_id}
-        )
+        result = qc_agent._get_pending_approvals({"project_id": self.project.project_id})
 
         self.assertEqual(result["status"], "success")
         self.assertGreaterEqual(result["total_count"], 2)

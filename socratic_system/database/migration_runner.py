@@ -123,13 +123,11 @@ class MigrationRunner:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT name FROM sqlite_master
                 WHERE type='table'
                 ORDER BY name
-                """
-            )
+                """)
 
             tables = [row[0] for row in cursor.fetchall()]
             conn.close()
@@ -158,10 +156,9 @@ class MigrationRunner:
         users_column_exists = self._column_exists("users", "claude_auth_method")
 
         # Check for file_path and file_size columns in knowledge_documents table
-        knowledge_columns_exist = (
-            self._column_exists("knowledge_documents", "file_path")
-            and self._column_exists("knowledge_documents", "file_size")
-        )
+        knowledge_columns_exist = self._column_exists(
+            "knowledge_documents", "file_path"
+        ) and self._column_exists("knowledge_documents", "file_size")
 
         # Check for code_history column in projects table
         code_history_exists = self._column_exists("projects", "code_history")

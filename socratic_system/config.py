@@ -169,7 +169,8 @@ class SocratesConfig:
         """
         config_dict = {
             "api_key": overrides.get("api_key")
-            or os.getenv("ANTHROPIC_API_KEY") or os.getenv("API_KEY_CLAUDE"),
+            or os.getenv("ANTHROPIC_API_KEY")
+            or os.getenv("API_KEY_CLAUDE"),
             "claude_model": overrides.get("claude_model")
             or os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
             "data_dir": overrides.get("data_dir")

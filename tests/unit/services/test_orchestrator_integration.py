@@ -230,9 +230,7 @@ class TestOrchestratorWithMockedAPI:
         self, mock_orchestrator, mock_anthropic_client, test_config
     ):
         """Test orchestrator with mocked Anthropic client"""
-        with patch(
-            "anthropic.Anthropic", return_value=mock_anthropic_client
-        ):
+        with patch("anthropic.Anthropic", return_value=mock_anthropic_client):
             orchestrator = AgentOrchestrator(test_config)
 
             assert orchestrator.claude_client is not None

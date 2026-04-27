@@ -653,7 +653,7 @@ class TestCommandValidation:
                         "confidence": 0.90,
                         "reasoning": "Real command",
                         "args": [],
-                    }
+                    },
                 ]
             }
         )

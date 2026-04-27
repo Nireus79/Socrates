@@ -10,10 +10,10 @@ Problem Solved:
 - Solution: Extract actual Python code from markdown before processing
 """
 
-import re
 import ast
 import logging
-from typing import Tuple, Optional, List
+import re
+from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,9 @@ class CodeExtractor:
             return True
 
         # Check for multiple markdown headers
-        header_count = sum(1 for line in lines if re.match(CodeExtractor.MARKDOWN_HEADER_PATTERN, line))
+        header_count = sum(
+            1 for line in lines if re.match(CodeExtractor.MARKDOWN_HEADER_PATTERN, line)
+        )
         if header_count >= 2:
             logger.debug(f"Detected {header_count} markdown headers (##)")
             return True
@@ -98,11 +100,7 @@ class CodeExtractor:
         logger.info("Extracting Python code from markdown format")
 
         # Find all code fences with python/py language
-        code_blocks = re.findall(
-            CodeExtractor.CODE_FENCE_PATTERN,
-            content,
-            re.DOTALL
-        )
+        code_blocks = re.findall(CodeExtractor.CODE_FENCE_PATTERN, content, re.DOTALL)
 
         if code_blocks:
             logger.info(f"Found {len(code_blocks)} code block(s) in markdown")
@@ -238,13 +236,17 @@ class CodeExtractor:
             tree = ast.parse(content)
             classes = [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
             functions = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)]
-            imports = [node for node in ast.walk(tree) if isinstance(node, (ast.Import, ast.ImportFrom))]
+            imports = [
+                node for node in ast.walk(tree) if isinstance(node, (ast.Import, ast.ImportFrom))
+            ]
 
-            stats.update({
-                "class_count": len(classes),
-                "function_count": len(functions),
-                "import_count": len(imports),
-            })
+            stats.update(
+                {
+                    "class_count": len(classes),
+                    "function_count": len(functions),
+                    "import_count": len(imports),
+                }
+            )
         except Exception as e:
             logger.warning(f"Could not parse AST for statistics: {e}")
 

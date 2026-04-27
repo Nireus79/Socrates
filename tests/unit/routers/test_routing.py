@@ -8,7 +8,6 @@ Tests specifically the endpoints that were fixed to verify they:
 3. Handle authentication properly
 """
 
-
 import requests
 
 BASE_URL = "http://localhost:8000"

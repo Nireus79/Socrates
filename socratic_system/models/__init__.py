@@ -9,6 +9,13 @@ from socratic_system.learning import (
     QuestionEffectiveness,
     UserBehaviorPattern,
 )
+from socratic_system.maturity import CategoryScore, MaturityEvent, PhaseMaturity
+from socratic_system.workflow import (
+    WorkflowApprovalRequest,
+    WorkflowDefinition,
+    WorkflowExecutionState,
+)
+
 from .llm_provider import (
     APIKeyRecord,
     LLMProviderConfig,
@@ -17,17 +24,11 @@ from .llm_provider import (
     get_provider_metadata,
     list_available_providers,
 )
-from socratic_system.maturity import CategoryScore, MaturityEvent, PhaseMaturity
 from .monitoring import TokenUsage
 from .note import ProjectNote
 from .project import ProjectContext
 from .role import ROLE_FOCUS_AREAS, VALID_ROLES, TeamMemberRole
 from .user import User
-from socratic_system.workflow import (
-    WorkflowApprovalRequest,
-    WorkflowDefinition,
-    WorkflowExecutionState,
-)
 
 __all__ = [
     "User",
