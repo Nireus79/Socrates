@@ -27,7 +27,11 @@ except ImportError:
     LearningEngine = None
 
 try:
-    from socratic_system.models import KnowledgeBaseDocument, QuestionEffectiveness, UserBehaviorPattern
+    from socratic_system.models import (
+        KnowledgeBaseDocument,
+        QuestionEffectiveness,
+        UserBehaviorPattern,
+    )
 except ImportError:
     KnowledgeBaseDocument = None
     QuestionEffectiveness = None
