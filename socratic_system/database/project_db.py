@@ -25,7 +25,10 @@ from pathlib import Path
 from typing import Any
 
 from socratic_system.database.migration_runner import MigrationRunner
-from socratic_system.models.learning import QuestionEffectiveness, UserBehaviorPattern
+from socratic_system.models import (
+    QuestionEffectiveness,
+    UserBehaviorPattern,
+)
 from socratic_system.models.llm_provider import LLMUsageRecord
 from socratic_system.models.note import ProjectNote
 from socratic_system.models.project import ProjectContext

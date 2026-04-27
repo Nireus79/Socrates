@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Dict, List
 
 from socratic_system.agents.base import Agent
 from socratic_system.events import EventType
-from socratic_system.models.knowledge import KnowledgeEntry
+from socratic_system.models import KnowledgeEntry
 
 if TYPE_CHECKING:
     from socratic_system.orchestration.orchestrator import AgentOrchestrator

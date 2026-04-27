@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
-from socratic_system.models.knowledge import KnowledgeEntry
+from socratic_system.models import KnowledgeEntry
 from socratic_system.ui.commands.base import BaseCommand
 
 
