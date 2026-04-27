@@ -3,7 +3,7 @@
 from typing import Optional, Tuple
 
 from socratic_system.models.user import User
-from socratic_system.performance import get_tier_limits
+from socratic_system.subscription.tiers import get_tier_limits
 
 
 class StorageQuotaManager:
