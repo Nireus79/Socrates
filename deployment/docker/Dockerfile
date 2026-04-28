@@ -12,9 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy requirements
 COPY requirements.txt .
+
+# Copy application code (note: socrates-api has src/ subdirectory)
 COPY socratic_system socratic_system/
-COPY socrates-api socrates-api/
-COPY socrates-cli socrates-cli/
+COPY socrates-api/src socrates-api/src/
+COPY socrates-cli/src socrates-cli/src/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
@@ -51,7 +53,8 @@ USER socrates
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/home/socrates/.local/bin:$PATH"
+    PATH="/home/socrates/.local/bin:$PATH" \
+    PYTHONPATH="/app:/app/socrates-api/src:/app/socrates-cli/src"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

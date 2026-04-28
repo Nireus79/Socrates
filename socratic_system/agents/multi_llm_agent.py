@@ -761,7 +761,7 @@ class MultiLLMAgent(Agent):
         if not secret:
             error_msg = (
                 "SOCRATES_ENCRYPTION_KEY environment variable is required for API key encryption. "
-                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+                'Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
             )
             self.logger.error(error_msg)
             raise RuntimeError(error_msg)
