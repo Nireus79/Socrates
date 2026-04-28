@@ -27,6 +27,19 @@ multi-agent orchestration, and production-grade infrastructure.
 
 ☸️ **Kubernetes-Ready**: Complete Kubernetes manifests, Helm charts, Docker multi-platform builds, CI/CD automation
 
+## 📚 Documentation
+
+Quick links to get you started:
+- **[Quick Start Guide](docs/QUICK_START_GUIDE.md)** ⚡ - Get running in 5-10 minutes
+- **[Installation Guide](docs/INSTALLATION.md)** - Detailed setup for all platforms
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Understand the system design
+- **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy to production
+- **[GitHub Integration](docs/GITHUB_INTEGRATION.md)** - Advanced GitHub features
+
+---
+
 ## Quick Start
 
 ### Docker Compose (Local Development)
@@ -213,19 +226,53 @@ See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for production Kubernetes setup.
 
 ## Development
 
+### Prerequisites
+
+Before setting up locally, ensure you have:
+
+- **Python**: 3.11+ (recommended) or 3.8+ (minimum)
+  - Check: `python --version` or `python3 --version`
+  - Download from: https://www.python.org/downloads/
+
+- **Node.js & npm**: 14+ (LTS version recommended)
+  - Check: `node --version` and `npm --version`
+  - Download from: https://nodejs.org/
+
+- **Anthropic API Key** (required for AI features)
+  - Get from: https://console.anthropic.com/api/keys
+  - Keep it safe - you'll add it to .env
+
+- **System Requirements**:
+  - RAM: 4GB minimum (8GB recommended)
+  - Disk: 2GB for dependencies and data
+  - Internet: Required for Claude API access
+
 ### Setup Development Environment (Local - SQLite)
 
 ```bash
 # Clone and setup
 git clone https://github.com/Nireus79/Socrates.git
-cd socrates
+cd Socrates
 
 # Create environment (uses SQLite by default)
 cp deployment/configurations/.env.example .env
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Edit .env and add your Anthropic API key (required!)
+# Open .env and set: ANTHROPIC_API_KEY=sk-ant-your-actual-key-here
+nano .env  # or use your preferred editor
+
+# Create virtual environment (Python)
+python -m venv .venv
+
+# Activate virtual environment
+# On Linux/macOS:
+source .venv/bin/activate
+
+# On Windows (Command Prompt):
+.venv\Scripts\activate
+
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
 
 # Install dependencies
 pip install -r requirements.txt
@@ -236,11 +283,57 @@ npm install
 cd ..
 
 # Run development servers
-scripts/start-dev.sh  # On Windows: scripts/start-dev.bat
+# On Linux/macOS:
+bash scripts/start-dev.sh
 
+# On Windows:
+scripts\start-dev.bat
+
+# Success! You should see:
 # Frontend: http://localhost:5173 (Vite dev server)
 # Backend: http://localhost:8000
 # API Docs: http://localhost:8000/docs
+```
+
+### What's Next After Startup?
+
+1. **Open Frontend**: Visit http://localhost:5173 in your browser
+2. **Create Account**: Click "Sign Up" and create your first user account
+3. **Add API Key**:
+   - Go to Settings > LLM > Anthropic
+   - Paste your API key and save
+4. **Create a Project**: Click "New Project" and fill in project details
+5. **Explore Features**: Try Socratic Questioning, Code Generation, etc.
+
+### Troubleshooting Local Setup
+
+**Port already in use?**
+```bash
+# Find process using port
+lsof -i :8000  # Linux/macOS
+netstat -ano | findstr :8000  # Windows
+
+# Or modify .env to use different port
+# SOCRATES_API_PORT=9000
+```
+
+**Module not found errors?**
+```bash
+# Ensure virtual environment is activated
+source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate     # Windows
+
+# Reinstall dependencies
+pip install -r requirements.txt
+```
+
+**API key errors?**
+```bash
+# Verify API key is set in .env
+cat .env | grep ANTHROPIC_API_KEY  # Linux/macOS
+type .env | findstr ANTHROPIC_API_KEY  # Windows
+
+# Also verify in UI: Settings > LLM > Anthropic
 ```
 
 ### Run Tests
@@ -262,17 +355,19 @@ pytest --cov=socratic_system --cov-report=html
 
 ```bash
 # Format code
-black socrates_api/ socratic_system/
-isort socrates_api/ socratic_system/
+black socratic_system/ socrates-api/src/ socrates-cli/src/
 
-# Lint
-ruff check socrates_api/ socratic_system/
+# Import sorting
+isort socratic_system/ socrates-api/src/ socrates-cli/src/
 
-# Type check
-mypy socrates_api/ socratic_system/
+# Lint with ruff
+ruff check socratic_system/ socrates-api/src/ socrates-cli/src/
 
-# Security scan
-bandit -r socrates_api/ socratic_system/
+# Type checking with mypy
+mypy socratic_system/ --ignore-missing-imports
+
+# Security scanning with bandit
+bandit -r socratic_system/ socrates-api/src/ socrates-cli/src/
 ```
 
 ## ☕ Support Socrates Development
