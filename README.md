@@ -35,13 +35,18 @@ multi-agent orchestration, and production-grade infrastructure.
 git clone https://github.com/Nireus79/Socrates.git
 cd Socrates
 
-# Create environment
-cp .env.production.example .env.local
+# Create environment (for local development with SQLite)
+cp deployment/configurations/.env.example .env
+
+# Or for production with PostgreSQL:
+# cp deployment/configurations/.env.production.example .env
 
 # Start services
-docker-compose up -d
+docker-compose -f deployment/docker/docker-compose.yml up -d
 
-# Access at http://localhost:3000 (Frontend) and http://localhost:8000 (API)
+# Access Frontend at http://localhost:3000 (via Nginx)
+# Access API at http://localhost:8000
+# API Documentation at http://localhost:8000/docs
 ```
 
 ### Kubernetes (Production)
@@ -188,31 +193,61 @@ See [API_REFERENCE.md](docs/API_REFERENCE.md) for complete endpoint documentatio
 - Prometheus metrics & Grafana dashboards
 - Structured logging
 
+## Deployment
+
+### Docker Compose (Recommended for Local Development)
+
+Includes PostgreSQL, Redis, ChromaDB, and Nginx:
+
+```bash
+cd deployment/docker
+docker-compose up -d
+
+# Wait for services to be ready (30-60 seconds)
+# Frontend: http://localhost:3000 (via Nginx proxy)
+# API: http://localhost:8000
+# PostgreSQL: localhost:5432 (user: socrates / pass: socrates_dev_password)
+```
+
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for production Kubernetes setup.
+
 ## Development
 
-### Setup Development Environment
+### Setup Development Environment (Local - SQLite)
 
 ```bash
 # Clone and setup
-git clone https://github.com/your-org/socrates.git
+git clone https://github.com/Nireus79/Socrates.git
 cd socrates
 
-# Create environment
-cp .env.production.example .env.local
+# Create environment (uses SQLite by default)
+cp deployment/configurations/.env.example .env
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
-npm install  # For frontend
 
-# Run tests
-pytest tests/ --cov=socratic_system
+# Install frontend dependencies
+cd socrates-frontend
+npm install
+cd ..
+
+# Run development servers
+scripts/start-dev.sh  # On Windows: scripts/start-dev.bat
+
+# Frontend: http://localhost:5173 (Vite dev server)
+# Backend: http://localhost:8000
+# API Docs: http://localhost:8000/docs
 ```
 
 ### Run Tests
 
 ```bash
 # All tests with coverage
-pytest tests/ -v --cov=socratic_system
+pytest tests/ --cov=socratic_system
 
 # Specific test category
 pytest tests/unit/ -v

@@ -74,6 +74,17 @@ if ! python3 -c "import fastapi, uvicorn" 2>/dev/null; then
 fi
 print_ok "Python dependencies ready"
 
+# Configure frontend environment
+if [ ! -f "socrates-frontend/.env" ]; then
+    print_info "Configuring frontend environment..."
+    if [ -f "socrates-frontend/.env.example" ]; then
+        cp socrates-frontend/.env.example socrates-frontend/.env
+        print_ok "Frontend .env configured"
+    else
+        print_info "Frontend .env.example not found, will use defaults"
+    fi
+fi
+
 # Install Node dependencies
 if [ ! -d "socrates-frontend/node_modules" ]; then
     print_info "Installing Node.js dependencies..."

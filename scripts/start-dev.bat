@@ -63,6 +63,18 @@ if not exist "venv" (
 )
 echo [OK] Python dependencies ready
 
+REM Configure frontend environment if needed
+if not exist "socrates-frontend\.env" (
+    echo.
+    echo Configuring frontend environment...
+    copy socrates-frontend\.env.example socrates-frontend\.env >nul
+    if errorlevel 1 (
+        echo [WARNING] Failed to create frontend .env, will use defaults
+    ) else (
+        echo [OK] Frontend .env configured
+    )
+)
+
 REM Install Node dependencies if needed
 if not exist "socrates-frontend\node_modules" (
     echo.
@@ -93,7 +105,7 @@ echo Press Ctrl+C in each terminal to stop services
 echo.
 
 REM Start Backend in one window
-start cmd /k "title Socrates Backend && python -m uvicorn socratic_system.main:app --host 0.0.0.0 --port 8000 --reload"
+start cmd /k "title Socrates Backend && python -m uvicorn socrates_api.main:app --host 0.0.0.0 --port 8000 --reload"
 
 REM Wait a moment for backend to start
 timeout /t 2 /nobreak

@@ -125,14 +125,16 @@ export const llmAPI = {
 
   /**
    * Add or update API key for provider
+   *
+   * SECURITY: API key is sent in request body (not URL) to prevent logging in server logs/proxies
    */
   async addAPIKey(provider: string, apiKey: string): Promise<{ provider: string; key_last_4: string }> {
-    const params = new URLSearchParams();
-    params.append('provider', provider);
-    params.append('api_key', apiKey);
     return apiClient.post<{ provider: string; key_last_4: string }>(
-      `/llm/api-key?${params.toString()}`,
-      {}
+      `/llm/api-key`,
+      {
+        provider: provider,
+        api_key: apiKey,
+      }
     );
   },
 

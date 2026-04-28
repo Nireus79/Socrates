@@ -737,30 +737,40 @@ class MultiLLMAgent(Agent):
 
     def _encrypt_api_key(self, api_key: str) -> str:
         """
-        Encrypt API key.
+        Encrypt API key using Fernet symmetric encryption with PBKDF2 key derivation.
 
         Args:
             api_key: Raw API key string
 
         Returns:
             Encrypted API key
+
+        Raises:
+            RuntimeError: If encryption fails (SOCRATES_ENCRYPTION_KEY must be set)
         """
+        import base64
+        import os
+
+        from cryptography.fernet import Fernet
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+        # Require encryption key - fail fast if not set
+        secret = os.getenv("SOCRATES_ENCRYPTION_KEY")
+        if not secret:
+            error_msg = (
+                "SOCRATES_ENCRYPTION_KEY environment variable is required for API key encryption. "
+                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+            )
+            self.logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
         try:
-            import base64
-            import os
+            secret_bytes = secret.encode()
 
-            from cryptography.fernet import Fernet
-            from cryptography.hazmat.backends import default_backend
-            from cryptography.hazmat.primitives import hashes
-            from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
-            # Use a secret key from config or environment
-            secret = os.getenv(
-                "SOCRATES_ENCRYPTION_KEY", "default-insecure-key-change-in-production"
-            ).encode()
-
-            # Derive key using PBKDF2
-            salt = b"socrates-salt"  # In production, use random per-record
+            # Use random salt per encryption for better security
+            salt = os.urandom(16)
             kdf = PBKDF2HMAC(
                 algorithm=hashes.SHA256(),
                 length=32,
@@ -768,19 +778,81 @@ class MultiLLMAgent(Agent):
                 iterations=100000,
                 backend=default_backend(),
             )
-            derived_key = base64.urlsafe_b64encode(kdf.derive(secret))
+            derived_key = base64.urlsafe_b64encode(kdf.derive(secret_bytes))
 
-            # Encrypt
+            # Encrypt with Fernet
             cipher = Fernet(derived_key)
             encrypted = cipher.encrypt(api_key.encode())
-            return encrypted.decode()
+
+            # Include salt in output for decryption (format: salt:encrypted)
+            salt_b64 = base64.urlsafe_b64encode(salt).decode()
+            encrypted_b64 = encrypted.decode()
+            return f"{salt_b64}:{encrypted_b64}"
 
         except Exception as e:
-            self.logger.warning(f"Encryption failed, using base64 fallback: {e}")
-            # Fallback to base64 if crypto unavailable
-            import base64
+            error_msg = f"Failed to encrypt API key: {e}"
+            self.logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
-            return base64.b64encode(api_key.encode()).decode()
+    def _decrypt_api_key(self, encrypted_data: str) -> str:
+        """
+        Decrypt API key using Fernet symmetric encryption.
+
+        Args:
+            encrypted_data: Encrypted API key with salt (format: salt_b64:encrypted_b64)
+
+        Returns:
+            Decrypted API key
+
+        Raises:
+            RuntimeError: If decryption fails
+        """
+        import base64
+        import os
+
+        from cryptography.fernet import Fernet
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+        # Require encryption key
+        secret = os.getenv("SOCRATES_ENCRYPTION_KEY")
+        if not secret:
+            raise RuntimeError(
+                "SOCRATES_ENCRYPTION_KEY environment variable is required for API key decryption"
+            )
+
+        try:
+            # Extract salt and encrypted data
+            if ":" in encrypted_data:
+                salt_b64, encrypted_b64 = encrypted_data.split(":", 1)
+                salt = base64.urlsafe_b64decode(salt_b64)
+            else:
+                # Fallback for old format without salt (not recommended)
+                salt = b"socrates-salt"
+                encrypted_b64 = encrypted_data
+
+            secret_bytes = secret.encode()
+
+            # Derive key using same parameters as encryption
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt,
+                iterations=100000,
+                backend=default_backend(),
+            )
+            derived_key = base64.urlsafe_b64encode(kdf.derive(secret_bytes))
+
+            # Decrypt
+            cipher = Fernet(derived_key)
+            decrypted = cipher.decrypt(encrypted_b64.encode())
+            return decrypted.decode()
+
+        except Exception as e:
+            error_msg = f"Failed to decrypt API key: {e}"
+            self.logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
     def _hash_api_key(self, api_key: str) -> str:
         """Hash API key for verification without storing plaintext."""
