@@ -51,6 +51,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-type-check
 
+    env:
+      # Required for encryption tests
+      SOCRATES_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+      DATABASE_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -86,6 +91,11 @@ jobs:
     name: Test Batch 2 - Database Units
     runs-on: ubuntu-latest
     needs: lint-and-type-check
+
+    env:
+      # Required for encryption tests
+      SOCRATES_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+      DATABASE_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
 
     steps:
       - name: Checkout code
@@ -123,6 +133,11 @@ jobs:
     name: Test Batch 2b - Agent Units
     runs-on: ubuntu-latest
     needs: lint-and-type-check
+
+    env:
+      # Required for encryption tests
+      SOCRATES_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+      DATABASE_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
 
     steps:
       - name: Checkout code
@@ -162,6 +177,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-type-check
 
+    env:
+      # Required for encryption tests
+      SOCRATES_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+      DATABASE_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -199,6 +219,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-type-check
 
+    env:
+      # Required for encryption tests
+      SOCRATES_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+      DATABASE_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -228,6 +253,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-type-check
     timeout-minutes: 15
+
+    env:
+      # Required for encryption tests
+      SOCRATES_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+      DATABASE_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
 
     steps:
       - name: Checkout code
@@ -266,6 +296,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-type-check
     timeout-minutes: 15
+
+    env:
+      # Required for encryption tests
+      SOCRATES_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
+      DATABASE_ENCRYPTION_KEY: test-encryption-key-32-chars-long-12345
 
     steps:
       - name: Checkout code

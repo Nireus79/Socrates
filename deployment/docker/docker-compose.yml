@@ -9,12 +9,22 @@ services:
     ports:
       - "8000:8000"
     environment:
+      # API Configuration
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=sqlite:////app/data/socrates.db
-      - REDIS_URL=redis://redis:6379/0
       - LOG_LEVEL=INFO
       - ENVIRONMENT=development
+
+      # Database Configuration
+      - DATABASE_URL=sqlite:////app/data/socrates.db
+      - REDIS_URL=redis://redis:6379/0
+
+      # Security - ENCRYPTION KEYS (REQUIRED for API key security)
+      # These should be set in .env or passed from host environment
+      - SOCRATES_ENCRYPTION_KEY=${SOCRATES_ENCRYPTION_KEY:-change-me-in-production}
+      - DATABASE_ENCRYPTION_KEY=${DATABASE_ENCRYPTION_KEY:-change-me-in-production}
+
+      # API Security
       - ALLOWED_HOSTS=localhost,127.0.0.1,api
       - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
     volumes:
@@ -56,12 +66,14 @@ services:
       - socrates_network
 
   # PostgreSQL Database (for production-like setup)
+  # Default credentials for development: user=socrates, password=socrates_dev_password
+  # For production, override via .env file with strong credentials
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=socrates
-      - POSTGRES_PASSWORD=socrates_dev_password
-      - POSTGRES_DB=socrates_db
+      - POSTGRES_USER=${POSTGRES_USER:-socrates}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-socrates_dev_password}
+      - POSTGRES_DB=${POSTGRES_DB:-socrates_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
