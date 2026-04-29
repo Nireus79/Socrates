@@ -305,7 +305,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add security headers middleware
 # Auto-detect environment: if ENVIRONMENT is not explicitly set and running on local machine, use development
 environment = os.getenv("ENVIRONMENT")
 if not environment:
@@ -321,16 +320,7 @@ if not environment:
 else:
     environment = environment.lower()
 
-add_security_headers_middleware(app, environment=environment)
-
-# Add metrics middleware
-add_metrics_middleware(app)
-
-# Add activity tracking middleware
-from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
-
-app.add_middleware(ActivityTrackerMiddleware)
-
+# IMPORTANT: Add CORS middleware FIRST (before all other middleware) to ensure it's the outermost layer
 # Configure CORS based on environment
 if environment == "production":
     # Production: Only allow specific origins
@@ -345,29 +335,24 @@ elif environment == "staging":
     ).split(",")
     allowed_origins = [origin.strip() for origin in allowed_origins]
 else:
-    # Development: Allow localhost and common dev URLs
+    # Development: Allow common localhost origins for easier local development
     allowed_origins = [
-        "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5174",
         "http://localhost:5175",
         "http://localhost:5176",
-        "http://localhost:8080",
-        "http://127.0.0.1:3000",
+        "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
         "http://127.0.0.1:5175",
         "http://127.0.0.1:5176",
-        "http://127.0.0.1:8080",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
+        "http://127.0.0.1:3000",
     ]
-    # Allow additional dev origins from environment variable
-    dev_origins = os.getenv("ALLOWED_ORIGINS", "")
-    if dev_origins:
-        allowed_origins.extend([o.strip() for o in dev_origins.split(",")])
 
-# Add CORS middleware with hardened configuration
+# Add CORS middleware as the OUTERMOST layer
+# This ensures it processes requests before any other middleware
+logger.info(f"Environment: {environment}")
+logger.info(f"CORS allowed origins: {allowed_origins}")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -375,10 +360,16 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "X-Testing-Mode"],
     expose_headers=["X-Process-Time", "X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
-    max_age=3600,  # Cache preflight requests for 1 hour
+    max_age=3600,
 )
 
-logger.info(f"CORS configured for {environment} environment with origins: {allowed_origins}")
+# Add other middleware AFTER CORS
+add_security_headers_middleware(app, environment=environment)
+add_metrics_middleware(app)
+
+# Add activity tracking middleware
+from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
+app.add_middleware(ActivityTrackerMiddleware)
 
 
 # Include API routers
