@@ -24,7 +24,7 @@ if env_path.exists():
     load_dotenv(env_path)
 else:
     load_dotenv()  # Load from current directory or system environment
-from fastapi.middleware.cors import CORSMiddleware
+from socrates_api.middleware.cors_fix import SimpleCORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
 
@@ -350,18 +350,10 @@ else:
     ]
 
 # Add CORS middleware as the OUTERMOST layer
-# This ensures it processes requests before any other middleware
+# Using custom SimpleCORSMiddleware for better compatibility with other BaseHTTPMiddleware classes
 logger.info(f"Environment: {environment}")
 logger.info(f"CORS allowed origins: {allowed_origins}")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "X-Testing-Mode"],
-    expose_headers=["X-Process-Time", "X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
-    max_age=3600,
-)
+app.add_middleware(SimpleCORSMiddleware, allowed_origins=allowed_origins)
 
 # Add other middleware AFTER CORS
 add_security_headers_middleware(app, environment=environment)
