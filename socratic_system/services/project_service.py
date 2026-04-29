@@ -19,7 +19,7 @@ from socratic_system.events import EventEmitter
 from socratic_system.models import ProjectContext
 from socratic_system.services.base import Service
 from socratic_system.services.repositories import ProjectRepository
-from socratic_system.utils import id_generator
+from socratic_system.utils.id_generator import ProjectIDGenerator
 
 
 class ProjectService(Service):
@@ -81,12 +81,18 @@ class ProjectService(Service):
 
         self.log_info(f"Creating project '{name}' for user {user_id}")
 
+        from datetime import datetime
+
         # Create project object
+        now = datetime.now()
         project = ProjectContext(
-            project_id=id_generator.generate_id(),
+            project_id=ProjectIDGenerator.generate(owner=user_id),
             name=name.strip(),
             description=description or "",
-            owner_id=user_id,
+            owner=user_id,
+            phase=kwargs.pop("phase", "discovery"),
+            created_at=now,
+            updated_at=now,
             **kwargs
         )
 

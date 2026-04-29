@@ -64,15 +64,14 @@ class KnowledgeService(Service):
 
         self.log_info(f"Adding knowledge to project {project_id}")
 
-        # Create knowledge entry
-        from socratic_system.utils import id_generator
+        # Create knowledge entry (using external library interface)
+        import uuid
 
+        entry_id = f"know_{str(uuid.uuid4())}"
         knowledge = KnowledgeEntry(
-            id=id_generator.generate_id(),
+            id=entry_id,
             content=content.strip(),
-            project_id=project_id,
-            metadata=metadata or {},
-            created_at=self._get_timestamp(),
+            category=metadata.get("category", "general") if metadata else "general"
         )
 
         # Save to repository (includes vector embedding)
@@ -197,6 +196,6 @@ class KnowledgeService(Service):
 
     def _get_timestamp(self) -> str:
         """Get current timestamp."""
-        from datetime import datetime
+        from datetime import datetime, timezone
 
-        return datetime.utcnow().isoformat()
+        return datetime.now(timezone.utc).isoformat()

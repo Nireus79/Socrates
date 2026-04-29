@@ -222,6 +222,6 @@ class QualityService(Service):
 
     def _get_timestamp(self) -> str:
         """Get current timestamp."""
-        from datetime import datetime
+        from datetime import datetime, timezone
 
-        return datetime.utcnow().isoformat()
+        return datetime.now(timezone.utc).isoformat()
