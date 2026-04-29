@@ -31,8 +31,8 @@ def get_phase_readiness_status(project, maturity_calculator: MaturityCalculator)
     Returns information about whether user is ready to advance to next phase.
     """
     phase_maturity_scores = getattr(project, "phase_maturity_scores", {}) or {}
-    all_phases = maturity_calculator.get_all_phases()
-    getattr(project, "current_phase", "discovery") or "discovery"
+    all_phases = list(maturity_calculator.phase_categories.keys())
+    current_phase = getattr(project, "current_phase", "discovery") or "discovery"
 
     readiness_status = {}
     for phase in all_phases:
