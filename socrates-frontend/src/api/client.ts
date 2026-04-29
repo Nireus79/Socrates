@@ -12,10 +12,13 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // Initialize API_BASE_URL with fallback chain:
-// 1. Try to load from API's port-config endpoint (dynamic port allocation)
-// 2. Try to load from server-config.json (written by full-stack startup)
-// 3. Fall back to environment variable
+// 1. For production with reverse proxy: use /api path (same origin)
+// 2. For development: try to auto-detect API on common ports
+// 3. Fall back to environment variable (VITE_API_URL)
 // 4. Final fallback to localhost:8000
+//
+// When running with reverse proxy (docker-compose), VITE_API_URL will be set to '/api'
+// which tells the client to use relative /api paths (served from reverse proxy)
 let API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Store callback for when config is loaded
