@@ -121,7 +121,7 @@ async def list_projects(
 
         project_responses = [
             (
-                _project_to_response(p).dict()
+                _project_to_response(p).model_dump()
                 if hasattr(_project_to_response(p), "dict")
                 else _project_to_response(p)
             )
@@ -254,7 +254,7 @@ async def create_project(
                         status="created",
                         message="Project created successfully",
                         data=(
-                            _project_to_response(project).dict()
+                            _project_to_response(project).model_dump()
                             if hasattr(_project_to_response(project), "dict")
                             else _project_to_response(project)
                         ),
@@ -446,7 +446,7 @@ async def create_project(
             status="created",
             message="Project created successfully",
             data=(
-                _project_to_response(project).dict()
+                _project_to_response(project).model_dump()
                 if hasattr(_project_to_response(project), "dict")
                 else _project_to_response(project)
             ),
@@ -520,7 +520,7 @@ async def get_project(
             status="success",
             message="Project retrieved successfully",
             data=(
-                _project_to_response(project).dict()
+                _project_to_response(project).model_dump()
                 if hasattr(_project_to_response(project), "dict")
                 else _project_to_response(project)
             ),
@@ -597,7 +597,7 @@ async def update_project(
             status="updated",
             message="Project updated successfully",
             data=(
-                _project_to_response(project).dict()
+                _project_to_response(project).model_dump()
                 if hasattr(_project_to_response(project), "dict")
                 else _project_to_response(project)
             ),
@@ -740,7 +740,7 @@ async def restore_project(
             status="success",
             message="Project restored successfully",
             data=(
-                _project_to_response(project).dict()
+                _project_to_response(project).model_dump()
                 if hasattr(_project_to_response(project), "dict")
                 else _project_to_response(project)
             ),
@@ -1261,7 +1261,7 @@ async def advance_phase(
             status="updated",
             message=f"Project phase advanced to {new_phase}",
             data=(
-                _project_to_response(project).dict()
+                _project_to_response(project).model_dump()
                 if hasattr(_project_to_response(project), "dict")
                 else _project_to_response(project)
             ),
@@ -1351,7 +1351,7 @@ async def rollback_phase(
             status="updated",
             message=f"Project phase rolled back to {new_phase}",
             data=(
-                _project_to_response(project).dict()
+                _project_to_response(project).model_dump()
                 if hasattr(_project_to_response(project), "dict")
                 else _project_to_response(project)
             ),
@@ -1463,7 +1463,7 @@ async def get_project_analytics(
                 project_id=project_id,
                 period="all_time",
                 metrics=analytics,
-            ).dict(),
+            ).model_dump(),
         )
 
     except HTTPException:

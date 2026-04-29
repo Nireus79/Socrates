@@ -14,6 +14,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
+from socrates_api.auth import get_current_user
 from socrates_api.models import APIResponse
 from socratic_system.database import ProjectDatabase
 
@@ -75,6 +76,7 @@ async def get_event_history(
     limit: Optional[int] = 100,
     offset: Optional[int] = 0,
     event_type: Optional[str] = None,
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -138,6 +140,7 @@ async def get_event_history(
     },
 )
 async def stream_events(
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
     """

@@ -1316,7 +1316,7 @@ async def bulk_import_documents(
                 imported_count=success_count,
                 failed_count=failed_count,
                 details=results,
-            ).dict(),
+            ).model_dump(),
         )
 
     except HTTPException:

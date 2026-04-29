@@ -324,7 +324,7 @@ async def generate_code(
                     token_usage=token_usage,
                     generation_id=generation_id,
                     created_at=datetime.now(timezone.utc).isoformat(),
-                ).dict(),
+                ).model_dump(),
             )
 
         except Exception as e:
@@ -341,7 +341,7 @@ async def generate_code(
                     token_usage=0,
                     generation_id=f"gen_{int(time.time() * 1000)}",
                     created_at=datetime.now(timezone.utc).isoformat(),
-                ).dict(),
+                ).model_dump(),
             )
 
     except HTTPException:
@@ -517,7 +517,7 @@ async def validate_code(
                 suggestions=suggestions,
                 complexity_score=complexity_score,
                 readability_score=readability_score,
-            ).dict(),
+            ).model_dump(),
         )
 
     except HTTPException:
@@ -592,7 +592,7 @@ async def get_code_history(
                 limit=limit,
                 offset=offset,
                 generations=generations,
-            ).dict(),
+            ).model_dump(),
         )
 
     except HTTPException:
@@ -625,7 +625,7 @@ async def get_supported_languages():
         data=SupportedLanguagesData(
             languages=SUPPORTED_LANGUAGES,
             total=len(SUPPORTED_LANGUAGES),
-        ).dict(),
+        ).model_dump(),
     )
 
 
@@ -846,7 +846,7 @@ async def refactor_code(
                     language=language,
                     refactor_type=refactor_type,
                     changes=changes if changes else ["Code analyzed and refactored"],
-                ).dict(),
+                ).model_dump(),
             )
 
         except Exception as e:
@@ -1055,7 +1055,7 @@ async def generate_documentation(
                 format=format,
                 length=len(output),
                 generation_id=generation_id,
-            ).dict(),
+            ).model_dump(),
         )
 
     except HTTPException:
