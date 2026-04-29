@@ -11,10 +11,19 @@ import signal
 import socket
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request, status
+
+# Load environment variables from .env file
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    load_dotenv()  # Load from current directory or system environment
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
