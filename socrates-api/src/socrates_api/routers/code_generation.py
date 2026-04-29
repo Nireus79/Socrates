@@ -688,14 +688,6 @@ async def refactor_code(
             )
 
         logger.info(f"Subscription validation passed for code refactoring by {current_user}")
-        except Exception as e:
-            logger.error(
-                f"Error validating subscription for code refactoring: {type(e).__name__}: {e}"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
-            )
 
         # Validate inputs
         if language not in SUPPORTED_LANGUAGES:
