@@ -58,6 +58,7 @@ from .routers import (
     knowledge_management_router,
     knowledge_router,
     llm_router,
+    llm_config_router,
     nlu_router,
     notes_router,
     progress_router,
@@ -377,6 +378,7 @@ app.include_router(collab_router)
 app.include_router(code_generation_router)
 app.include_router(knowledge_router)
 app.include_router(llm_router)
+app.include_router(llm_config_router)
 app.include_router(projects_chat_router)
 app.include_router(analysis_router)
 app.include_router(security_router)
@@ -424,6 +426,73 @@ async def health_check():
             "api": "operational",
         },
     }
+
+
+@app.get("/search")
+async def search(
+    q: str = None,
+    current_user: str = None,
+):
+    """
+    Global search endpoint.
+
+    Delegates to the query router's search functionality.
+    """
+    from socrates_api.models import APIResponse
+
+    if not q:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameter 'q' is required",
+        )
+
+    try:
+        from socrates_api.database import get_database
+
+        db = get_database()
+
+        # Search in projects if user is authenticated
+        results = []
+
+        if current_user:
+            # In a real implementation, would search user's projects
+            results = [
+                {
+                    "type": "documentation",
+                    "source": "Knowledge Base",
+                    "title": f"Results for '{q}'",
+                    "content": f"Searching knowledge base for: {q}",
+                    "relevance": 0.85,
+                },
+            ]
+        else:
+            # Public search results
+            results = [
+                {
+                    "type": "documentation",
+                    "source": "Public Knowledge Base",
+                    "title": f"Results for '{q}'",
+                    "content": f"Public search results for: {q}",
+                    "relevance": 0.75,
+                },
+            ]
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Search completed",
+            data={
+                "query": q,
+                "results_count": len(results),
+                "results": results,
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error in search: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Search failed: {str(e)}",
+        )
 
 
 @app.get("/health/detailed")

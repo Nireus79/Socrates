@@ -3,9 +3,33 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.models import APIResponse
+
+
+class ApiKeyRequest(BaseModel):
+    """Request model for setting API key."""
+    provider: str
+    api_key: str
+
+
+class DefaultProviderRequest(BaseModel):
+    """Request model for setting default provider."""
+    provider: str
+
+
+class ModelRequest(BaseModel):
+    """Request model for setting model."""
+    provider: str
+    model: str
+
+
+class AuthMethodRequest(BaseModel):
+    """Request model for setting authentication method."""
+    provider: str
+    auth_method: str
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/llm", tags=["llm"])
@@ -52,14 +76,17 @@ async def get_config(current_user: str = Depends(get_current_user)):
 
 
 @router.put("/default-provider", response_model=APIResponse)
-async def set_default_provider(provider: str, current_user: str = Depends(get_current_user)):
+async def set_default_provider(
+    request: DefaultProviderRequest,
+    current_user: str = Depends(get_current_user),
+):
     try:
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
         result = orchestrator.process_request(
             "multi_llm",
-            {"action": "set_default_provider", "user_id": current_user, "provider": provider},
+            {"action": "set_default_provider", "user_id": current_user, "provider": request.provider},
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
@@ -73,7 +100,10 @@ async def set_default_provider(provider: str, current_user: str = Depends(get_cu
 
 
 @router.put("/model", response_model=APIResponse)
-async def set_model(provider: str, model: str, current_user: str = Depends(get_current_user)):
+async def set_model(
+    request: ModelRequest,
+    current_user: str = Depends(get_current_user),
+):
     try:
         from socrates_api.main import get_orchestrator
 
@@ -83,8 +113,8 @@ async def set_model(provider: str, model: str, current_user: str = Depends(get_c
             {
                 "action": "set_provider_model",
                 "user_id": current_user,
-                "provider": provider,
-                "model": model,
+                "provider": request.provider,
+                "model": request.model,
             },
         )
         if result.get("status") != "success":
@@ -99,7 +129,10 @@ async def set_model(provider: str, model: str, current_user: str = Depends(get_c
 
 
 @router.post("/api-key", response_model=APIResponse)
-async def set_api_key(provider: str, api_key: str, current_user: str = Depends(get_current_user)):
+async def set_api_key(
+    request: ApiKeyRequest,
+    current_user: str = Depends(get_current_user),
+):
     try:
         from socrates_api.main import get_orchestrator
 
@@ -109,8 +142,8 @@ async def set_api_key(provider: str, api_key: str, current_user: str = Depends(g
             {
                 "action": "add_api_key",
                 "user_id": current_user,
-                "provider": provider,
-                "api_key": api_key,
+                "provider": request.provider,
+                "api_key": request.api_key,
             },
         )
         if result.get("status") != "success":
@@ -119,7 +152,7 @@ async def set_api_key(provider: str, api_key: str, current_user: str = Depends(g
             success=True,
             status="success",
             message="API key set",
-            data={"provider": provider},
+            data={"provider": request.provider},
         )
     except HTTPException:
         raise
@@ -152,7 +185,8 @@ async def remove_api_key(provider: str, current_user: str = Depends(get_current_
 
 @router.put("/auth-method", response_model=APIResponse)
 async def set_auth_method(
-    provider: str, auth_method: str, current_user: str = Depends(get_current_user)
+    request: AuthMethodRequest,
+    current_user: str = Depends(get_current_user),
 ):
     """Set authentication method for a provider (e.g., Claude subscription vs API key)."""
     try:
@@ -164,8 +198,8 @@ async def set_auth_method(
             {
                 "action": "set_auth_method",
                 "user_id": current_user,
-                "provider": provider,
-                "auth_method": auth_method,
+                "provider": request.provider,
+                "auth_method": request.auth_method,
             },
         )
         if result.get("status") != "success":
@@ -174,7 +208,7 @@ async def set_auth_method(
             success=True,
             status="success",
             message="Auth method updated",
-            data={"provider": provider, "auth_method": auth_method},
+            data={"provider": request.provider, "auth_method": request.auth_method},
         )
     except HTTPException:
         raise

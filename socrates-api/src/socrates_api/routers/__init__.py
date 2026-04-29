@@ -18,6 +18,7 @@ from socrates_api.routers.github import router as github_router
 from socrates_api.routers.knowledge import router as knowledge_router
 from socrates_api.routers.knowledge_management import router as knowledge_management_router
 from socrates_api.routers.llm import router as llm_router
+from socrates_api.routers.llm_config import router as llm_config_router
 from socrates_api.routers.nlu import router as nlu_router
 from socrates_api.routers.notes import router as notes_router
 from socrates_api.routers.progress import router as progress_router
@@ -38,6 +39,7 @@ __all__ = [
     "code_generation_router",
     "knowledge_router",
     "llm_router",
+    "llm_config_router",
     "projects_chat_router",
     "analysis_router",
     "security_router",
