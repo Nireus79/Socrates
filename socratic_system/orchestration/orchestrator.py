@@ -405,6 +405,14 @@ class AgentOrchestrator:
             )
             return True
 
+        except TypeError as e:
+            # Handle type errors (e.g., NoneType errors) with more detail
+            entry_id = entry_data.get('id', 'unknown')
+            self.logger.error(
+                f"Type error adding knowledge entry '{entry_id}': {e}. "
+                f"Entry data keys: {list(entry_data.keys())}"
+            )
+            return False
         except Exception as e:
             self.logger.error(
                 f"Failed to add knowledge entry '{entry_data.get('id', 'unknown')}': {e}"

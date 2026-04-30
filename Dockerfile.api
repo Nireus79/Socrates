@@ -46,8 +46,8 @@ COPY --chown=socrates:socrates . .
 RUN mkdir -p /app/logs /app/data /app/migration_scripts && \
     chown -R socrates:socrates /app
 
-# Copy migration scripts to expected location
-COPY --chown=socrates:socrates archive/migration_scripts/* /app/migration_scripts/ 2>/dev/null || true
+# Copy migration scripts if they exist
+# RUN if [ -d /app/archive/migration_scripts ]; then cp -r /app/archive/migration_scripts/* /app/migration_scripts/; fi
 
 # Switch to non-root user
 USER socrates
