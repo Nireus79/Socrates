@@ -43,8 +43,11 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --chown=socrates:socrates . .
 
 # Create directories for logs and data
-RUN mkdir -p /app/logs /app/data && \
+RUN mkdir -p /app/logs /app/data /app/migration_scripts && \
     chown -R socrates:socrates /app
+
+# Copy migration scripts to expected location
+COPY --chown=socrates:socrates archive/migration_scripts/* /app/migration_scripts/ 2>/dev/null || true
 
 # Switch to non-root user
 USER socrates

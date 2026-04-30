@@ -62,21 +62,21 @@ echo ""
 echo "=== SERVICE HEALTH CHECKS ==="
 
 log_test "API service is running"
-if docker compose ps api | grep -q "running"; then
+if docker compose ps api | grep -q "Up"; then
     log_pass "API service is running"
 else
     log_fail "API service is not running"
 fi
 
 log_test "Redis service is running"
-if docker compose ps redis | grep -q "running"; then
+if docker compose ps redis | grep -q "Up"; then
     log_pass "Redis service is running"
 else
     log_fail "Redis service is not running"
 fi
 
 log_test "Web (reverse proxy) service is running"
-if docker compose ps web | grep -q "running"; then
+if docker compose ps web | grep -q "Up"; then
     log_pass "Web service is running"
 else
     log_fail "Web service is not running"

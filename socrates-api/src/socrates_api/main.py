@@ -323,10 +323,9 @@ else:
 # IMPORTANT: Add CORS middleware FIRST (before all other middleware) to ensure it's the outermost layer
 # Configure CORS based on environment
 if environment == "production":
-    # Production: Only allow specific origins
-    allowed_origins = os.getenv(
-        "ALLOWED_ORIGINS", "https://socrates.app"  # Default production origin
-    ).split(",")
+    # Production: Allow configured origins plus localhost for testing
+    default_origins = "https://socrates.app,http://localhost,http://127.0.0.1"
+    allowed_origins = os.getenv("ALLOWED_ORIGINS", default_origins).split(",")
     allowed_origins = [origin.strip() for origin in allowed_origins]
 elif environment == "staging":
     # Staging: Allow staging domains
