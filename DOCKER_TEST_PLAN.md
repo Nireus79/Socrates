@@ -1,5 +1,25 @@
 # Docker Test Plan - Socrates Reverse Proxy Setup
 
+## ⚠️ QUICK START AFTER SYSTEM RESTART
+
+Run this in WSL 2 Ubuntu terminal:
+
+```bash
+cd /mnt/c/Users/themi/PycharmProjects/Socrates
+docker compose build --no-cache && docker compose up -d && docker compose ps
+```
+
+The REDIS_URL fix is already applied to docker-compose.yml. This command will rebuild images and start all services.
+
+---
+
+## Documentation Reference
+  - REVERSE_PROXY_SETUP.md - Production deployment guide
+  - VALIDATION_REPORT.md - Configuration validation
+  - DOCKER_TEST_PLAN.md - Testing procedures (this file)
+  - TEST_SUITE.sh - Automated test script
+  - TESTING_SUMMARY.md - Complete status report
+
 ## Current Status
 
 ### Static Validation: PASSED (8/8 checks)
@@ -18,15 +38,53 @@
 - [PASS] Security headers configured
 - [PASS] Gzip compression enabled
 
-## Docker Installation Status
+## Docker Installation Status - UPDATED
 
-Docker Desktop installation initiated via `winget install Docker.DockerDesktop`.
+### Current State (After System Restart):
+Native Docker installed in WSL 2 Ubuntu (Docker Desktop was broken and abandoned).
 
-### Next Steps:
-1. Wait for installation to complete (may require system restart)
-2. Verify Docker is installed: `docker --version`
-3. Verify docker-compose: `docker-compose --version`
-4. Proceed with runtime tests below
+### CRITICAL FIX APPLIED:
+✓ **REDIS_URL environment variable added to docker-compose.yml**
+  - Location: Line 16 in docker-compose.yml
+  - Value: `REDIS_URL: redis://redis:6379`
+  - This fixes the API container failing to connect to Redis
+  - The API was trying `localhost:6379` (wrong for Docker network) instead of `redis:6379` (service name)
+
+### Known Issue Before Restart:
+- Docker daemon became unresponsive after multiple restarts and attempts
+- Commands would hang indefinitely or fail with permission errors
+- System restart should clear this issue
+
+### Next Steps After System Restart:
+1. Open WSL 2 Ubuntu terminal
+2. Run the complete rebuild and startup sequence:
+
+```bash
+cd /mnt/c/Users/themi/PycharmProjects/Socrates
+
+# Build fresh images with the REDIS_URL fix
+docker compose build --no-cache
+
+# Start all services
+docker compose up -d
+
+# Verify status
+docker compose ps
+```
+
+3. If docker commands still hang after restart:
+   - Completely reinstall Docker in WSL:
+   ```bash
+   sudo systemctl stop docker 2>/dev/null || true
+   sudo apt-get remove -y docker docker.io 2>/dev/null || true
+   sudo rm -rf /var/lib/docker 2>/dev/null || true
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sudo sh get-docker.sh
+   sudo usermod -aG docker $USER
+   newgrp docker
+   docker ps  # Test it works
+   ```
+   - Then proceed with build and startup above
 
 ## Runtime Test Plan
 
