@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Comprehensive test suite for Socrates reverse proxy setup
-# Run this after: docker-compose up -d
+# Run this after: docker compose up -d
 
 set -e
 
@@ -39,9 +39,9 @@ echo "SOCRATES REVERSE PROXY TEST SUITE"
 echo "=========================================================================="
 
 log_test "Docker Compose version"
-if docker-compose --version > /dev/null 2>&1; then
+if docker compose --version > /dev/null 2>&1; then
     log_pass "Docker Compose is available"
-    docker-compose --version
+    docker compose --version
 else
     log_fail "Docker Compose not found"
 fi
@@ -62,28 +62,28 @@ echo ""
 echo "=== SERVICE HEALTH CHECKS ==="
 
 log_test "API service is running"
-if docker-compose ps api | grep -q "running"; then
+if docker compose ps api | grep -q "running"; then
     log_pass "API service is running"
 else
     log_fail "API service is not running"
 fi
 
 log_test "Redis service is running"
-if docker-compose ps redis | grep -q "running"; then
+if docker compose ps redis | grep -q "running"; then
     log_pass "Redis service is running"
 else
     log_fail "Redis service is not running"
 fi
 
 log_test "Web (reverse proxy) service is running"
-if docker-compose ps web | grep -q "running"; then
+if docker compose ps web | grep -q "running"; then
     log_pass "Web service is running"
 else
     log_fail "Web service is not running"
 fi
 
 log_test "All services healthy"
-HEALTHY=$(docker-compose ps | grep -c "healthy" || true)
+HEALTHY=$(docker compose ps | grep -c "healthy" || true)
 if [ "$HEALTHY" -eq 3 ]; then
     log_pass "All 3 services are healthy"
 else
@@ -219,11 +219,11 @@ echo ""
 echo "=== LOGS CHECK ==="
 
 log_test "API logs show no critical errors"
-API_ERRORS=$(docker-compose logs api 2>&1 | grep -i "error" | grep -v "WARNING" | wc -l || true)
+API_ERRORS=$(docker compose logs api 2>&1 | grep -i "error" | grep -v "WARNING" | wc -l || true)
 log_pass "API logs check completed (error count: $API_ERRORS)"
 
 log_test "Web (nginx) logs show no critical errors"
-WEB_ERRORS=$(docker-compose logs web 2>&1 | grep -i "error" | wc -l || true)
+WEB_ERRORS=$(docker compose logs web 2>&1 | grep -i "error" | wc -l || true)
 log_pass "Web logs check completed (error count: $WEB_ERRORS)"
 
 # ============================================================================
