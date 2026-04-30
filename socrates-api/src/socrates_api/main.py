@@ -53,6 +53,7 @@ from .models import (
     SystemInfoResponse,
 )
 from .routers import (
+    agents_router,
     analysis_router,
     analytics_router,
     auth_router,
@@ -365,6 +366,7 @@ app.add_middleware(ActivityTrackerMiddleware)
 
 # Include API routers
 app.include_router(auth_router)
+app.include_router(agents_router)
 app.include_router(projects_router)
 app.include_router(collaboration_router)
 app.include_router(collab_router)

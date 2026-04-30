@@ -4,6 +4,7 @@ API route modules for Socrates.
 Organizes endpoints by functional area (auth, projects, chat, etc.)
 """
 
+from socrates_api.routers.agents import router as agents_router
 from socrates_api.routers.analysis import router as analysis_router
 from socrates_api.routers.analytics import router as analytics_router
 from socrates_api.routers.auth import router as auth_router
@@ -32,6 +33,7 @@ from socrates_api.routers.subscription import router as subscription_router
 from socrates_api.routers.system import router as system_router
 
 __all__ = [
+    "agents_router",
     "auth_router",
     "projects_router",
     "collaboration_router",
