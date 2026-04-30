@@ -48,6 +48,7 @@ colorama>=0.4.6
 
 # Socratic System Extensions
 socratic-maturity>=0.2.0
+socratic-docs>=0.2.1
 
 # Security & Cryptography
 cryptography>=41.0.0
