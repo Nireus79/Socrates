@@ -43,6 +43,9 @@ slowapi>=0.1.9
 # Monitoring & Metrics
 prometheus-client>=0.19.0
 
+# Logging & Output Formatting
+colorama>=0.4.6
+
 # Security & Cryptography
 cryptography>=41.0.0
 

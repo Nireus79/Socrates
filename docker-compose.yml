@@ -12,6 +12,8 @@ services:
       SOCRATES_API_HOST: 0.0.0.0
       SOCRATES_API_PORT: 8000
       ENVIRONMENT: production
+      # Redis connection for Docker (use service name on docker network)
+      REDIS_URL: redis://redis:6379
       # Add your encryption key here or pass via environment
       # SOCRATES_ENCRYPTION_KEY: your-key-here
       # ALLOWED_ORIGINS: http://localhost:80
