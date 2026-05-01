@@ -20,17 +20,19 @@ class BackgroundHandlers:
     client polling.
     """
 
-    def __init__(self, orchestrator, cache, job_tracker):
+    def __init__(self, orchestrator, cache, job_tracker, websocket_broadcaster=None):
         """Initialize background handlers.
 
         Args:
             orchestrator: AgentOrchestrator instance
             cache: AnalysisCache instance for storing results
             job_tracker: JobTracker instance for tracking jobs
+            websocket_broadcaster: Optional function to broadcast WebSocket updates
         """
         self.orchestrator = orchestrator
         self.cache = cache
         self.job_tracker = job_tracker
+        self.websocket_broadcaster = websocket_broadcaster
         self._register_handlers()
         logger.info("BackgroundHandlers initialized")
 
@@ -143,6 +145,15 @@ class BackgroundHandlers:
                 }
             )
 
+            # Broadcast WebSocket update if available
+            if self.websocket_broadcaster:
+                try:
+                    await self.websocket_broadcaster(
+                        project_id, "quality", quality_result
+                    )
+                except Exception as e:
+                    logger.warning(f"[BACKGROUND] WebSocket broadcast failed: {e}")
+
             logger.info(f"[BACKGROUND] Quality analysis completed for {project_id}")
 
         except Exception as e:
@@ -205,6 +216,15 @@ class BackgroundHandlers:
                 }
             )
 
+            # Broadcast WebSocket update if available
+            if self.websocket_broadcaster:
+                try:
+                    await self.websocket_broadcaster(
+                        project_id, "conflicts", conflicts_result
+                    )
+                except Exception as e:
+                    logger.warning(f"[BACKGROUND] WebSocket broadcast failed: {e}")
+
             logger.info(f"[BACKGROUND] Conflict analysis completed for {project_id}")
 
         except Exception as e:
@@ -266,6 +286,15 @@ class BackgroundHandlers:
                     "timestamp": datetime.now().isoformat()
                 }
             )
+
+            # Broadcast WebSocket update if available
+            if self.websocket_broadcaster:
+                try:
+                    await self.websocket_broadcaster(
+                        project_id, "insights", insights_result
+                    )
+                except Exception as e:
+                    logger.warning(f"[BACKGROUND] WebSocket broadcast failed: {e}")
 
             logger.info(f"[BACKGROUND] Insight analysis completed for {project_id}")
 
