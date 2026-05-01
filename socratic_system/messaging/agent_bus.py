@@ -16,9 +16,12 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from socratic_system.events import EventEmitter
+
+if TYPE_CHECKING:
+    from socratic_system.messaging.agent_registry import AgentRegistry
 from socratic_system.messaging.exceptions import (
     AgentTimeoutError,
     AgentNotFoundError,
@@ -108,6 +111,7 @@ class AgentBus:
     def __init__(
         self,
         event_emitter: EventEmitter,
+        registry: Optional["AgentRegistry"] = None,
         max_concurrent_requests: int = 100,
         default_timeout: float = 30.0,
     ):
@@ -116,10 +120,12 @@ class AgentBus:
 
         Args:
             event_emitter: EventEmitter for decoupled communication
+            registry: AgentRegistry for agent discovery (Phase 2)
             max_concurrent_requests: Maximum concurrent request limit
             default_timeout: Default timeout for requests
         """
         self.event_emitter = event_emitter
+        self.registry = registry  # Phase 2: Agent registry for discovery
         self.max_concurrent_requests = max_concurrent_requests
         self.default_timeout = default_timeout
 
@@ -145,6 +151,7 @@ class AgentBus:
             "failed_requests": 0,
             "timeout_requests": 0,
             "fire_and_forget": 0,
+            "direct_handler_invocations": 0,  # Phase 2: Direct calls via registry
         }
 
     async def send_request(
@@ -175,6 +182,44 @@ class AgentBus:
         """
         if timeout is None:
             timeout = self.default_timeout
+
+        # Phase 2: Check registry for direct handler invocation (faster than events)
+        if self.registry and self.registry.is_available(target_agent):
+            handler = self.registry.get_handler(target_agent)
+            if handler and not fire_and_forget:
+                try:
+                    # Create request and invoke handler directly
+                    request = RequestMessage(
+                        sender="bus",
+                        target_agent=target_agent,
+                        action=action,
+                        payload=payload or {},
+                        timeout=timeout,
+                    )
+
+                    self._store_message_history(request.to_dict())
+                    self.metrics["direct_handler_invocations"] += 1
+
+                    # Invoke handler with timeout
+                    try:
+                        response = await asyncio.wait_for(
+                            handler.invoke(request),
+                            timeout=timeout
+                        )
+                        self.metrics["successful_requests"] += 1
+                        self._get_circuit_breaker(target_agent).record_success()
+                        return response
+                    except asyncio.TimeoutError:
+                        self._get_circuit_breaker(target_agent).record_failure()
+                        self.metrics["timeout_requests"] += 1
+                        raise AgentTimeoutError(target_agent, timeout)
+
+                except Exception as e:
+                    # Fallback to event-based routing
+                    self.logger.debug(
+                        f"Direct invocation failed for {target_agent}, "
+                        f"falling back to events: {e}"
+                    )
 
         # Check circuit breaker
         breaker = self._get_circuit_breaker(target_agent)
@@ -306,6 +351,72 @@ class AgentBus:
         if agent_name:
             breaker = self._get_circuit_breaker(agent_name)
             breaker.record_failure()
+
+    async def broadcast(
+        self,
+        action: str,
+        payload: Optional[Dict[str, Any]] = None,
+        capability_filter: Optional[str] = None,
+        timeout: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """
+        Broadcast message to multiple agents (Phase 2).
+
+        Sends same action to all agents, optionally filtered by capability.
+        Uses fire-and-forget pattern for efficiency.
+
+        Args:
+            action: Action to broadcast
+            payload: Message payload
+            capability_filter: Optional capability to filter agents
+            timeout: Request timeout (uses default if None)
+
+        Returns:
+            Dictionary with broadcast results
+
+        Example:
+            >>> result = await bus.broadcast(
+            ...     action="refresh_cache",
+            ...     capability_filter="cache_aware"
+            ... )
+            >>> print(result["agents_notified"])  # List of agents that received message
+        """
+        if not self.registry:
+            self.logger.warning("Broadcast called but registry not available")
+            return {"status": "error", "message": "Registry not available"}
+
+        # Find target agents
+        agents = self.registry.find_by_capability(
+            capability_filter
+        ) if capability_filter else self.registry.list_agents()
+
+        if not agents:
+            return {
+                "status": "success",
+                "agents_notified": [],
+                "message": "No matching agents found"
+            }
+
+        # Send to all agents (fire-and-forget)
+        tasks = []
+        for agent_name in agents:
+            task = self.send_request(
+                target_agent=agent_name,
+                action=action,
+                payload=payload,
+                timeout=timeout,
+                fire_and_forget=True
+            )
+            tasks.append(task)
+
+        # Wait for all broadcasts
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+        return {
+            "status": "success",
+            "agents_notified": agents,
+            "count": len(agents)
+        }
 
     def enable_caching(self) -> None:
         """Enable response caching"""

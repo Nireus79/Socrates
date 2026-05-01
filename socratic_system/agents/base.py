@@ -28,17 +28,22 @@ class Agent(ABC):
     - Structured error handling
     """
 
-    def __init__(self, name: str, orchestrator: "AgentOrchestrator"):
+    def __init__(self, name: str, orchestrator: "AgentOrchestrator", auto_register: bool = True):
         """
         Initialize an agent.
 
         Args:
             name: Display name for the agent
             orchestrator: Reference to the AgentOrchestrator for accessing other agents/services
+            auto_register: Whether to auto-register with agent bus (Phase 2)
         """
         self.name = name
         self.orchestrator = orchestrator
         self.logger = logging.getLogger(f"socrates.agents.{name}")
+
+        # Phase 2: Auto-register with agent bus if available
+        if auto_register:
+            self._register_with_bus()
 
     @abstractmethod
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -180,3 +185,92 @@ class Agent(ABC):
                 "timestamp": datetime.now().isoformat(),
             },
         )
+
+    # Phase 2: Agent Bus Integration Methods
+
+    def _register_with_bus(self) -> None:
+        """
+        Register this agent with the agent bus for message routing.
+
+        Called automatically in __init__ if auto_register=True.
+        Agents can override get_capabilities() and get_metadata() to customize registration.
+        """
+        if not hasattr(self.orchestrator, "agent_bus"):
+            return  # Bus not initialized yet
+
+        try:
+            bus = self.orchestrator.agent_bus
+            bus.registry.register(
+                agent_name=self.name,
+                handler=self._handle_bus_message,
+                capabilities=self.get_capabilities(),
+                metadata=self.get_metadata(),
+                supports_sync=True,
+                supports_async=True,
+            )
+            self.logger.debug(f"Registered {self.name} with agent bus")
+        except Exception as e:
+            self.logger.warning(f"Failed to register {self.name} with bus: {e}")
+
+    async def _handle_bus_message(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle a message from the agent bus.
+
+        Adapts bus message format to agent's process methods.
+        This is called by the bus when routing a message to this agent.
+
+        Args:
+            request: Message from bus (typically contains 'action' and payload)
+
+        Returns:
+            Response dictionary with 'status', 'data', etc.
+        """
+        try:
+            # Use async processing if available
+            result = await self.process_async(request)
+
+            # Ensure response has status
+            if "status" not in result:
+                result["status"] = "success"
+
+            return result
+        except Exception as e:
+            self.logger.error(f"Error handling bus message: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def get_capabilities(self) -> list:
+        """
+        Get list of capabilities this agent provides.
+
+        Override in subclasses to declare what actions/capabilities the agent supports.
+        Used by agent bus for capability-based routing.
+
+        Returns:
+            List of capability strings (e.g., ["project_management", "code_generation"])
+
+        Example:
+            >>> class ProjectManagerAgent(Agent):
+            ...     def get_capabilities(self):
+            ...         return ["project_management", "project_creation", "project_loading"]
+        """
+        return []
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """
+        Get metadata about this agent.
+
+        Override in subclasses to provide additional metadata for registration.
+
+        Returns:
+            Dictionary with agent metadata (version, description, etc.)
+
+        Example:
+            >>> class ProjectManagerAgent(Agent):
+            ...     def get_metadata(self):
+            ...         return {
+            ...             "version": "1.0",
+            ...             "description": "Manages project lifecycle",
+            ...             "author": "Socrates"
+            ...         }
+        """
+        return {"version": "1.0"}

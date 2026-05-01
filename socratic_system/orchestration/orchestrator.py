@@ -74,6 +74,19 @@ class AgentOrchestrator:
         # Initialize event emitter
         self.event_emitter = EventEmitter()
 
+        # Phase 2: Initialize agent bus and registry for message routing
+        from socratic_system.messaging.agent_registry import AgentRegistry
+        from socratic_system.messaging.agent_bus import AgentBus
+
+        self.agent_registry = AgentRegistry(health_check_timeout=60)
+        self.agent_bus = AgentBus(
+            event_emitter=self.event_emitter,
+            registry=self.agent_registry,
+            max_concurrent_requests=100,
+            default_timeout=30.0,
+        )
+        self.logger.info("Agent bus and registry initialized (Phase 2)")
+
         # Initialize database components with configured paths
         self.logger.info("Initializing database components...")
 

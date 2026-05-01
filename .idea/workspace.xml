@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
-      <change beforePath="$PROJECT_DIR$/socratic_system/repositories/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/repositories/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/services/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/services/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/services/insight_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/services/insight_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
