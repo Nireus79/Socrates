@@ -195,6 +195,9 @@ class AgentBus:
             backoff_factor=2.0,
         )
 
+        # Set up event routing for agent requests
+        self._setup_event_routing()
+
     def _get_circuit_breaker(self, agent_name: str) -> CircuitBreaker:
         """Get or create circuit breaker for agent.
 
@@ -207,6 +210,122 @@ class AgentBus:
         if agent_name not in self.circuit_breakers:
             self.circuit_breakers[agent_name] = CircuitBreaker()
         return self.circuit_breakers[agent_name]
+
+    def _setup_event_routing(self) -> None:
+        """Set up event routing for agent requests.
+
+        Creates a wrapper around event_emitter.emit() to intercept and route
+        agent request events to registered handlers. This ensures that when
+        send_request() emits an "agent.{name}.request" event, the handler is
+        invoked and the response is returned to the caller via handle_response().
+        """
+        # Store the original emit method
+        self._original_emit = self.event_emitter.emit
+
+        # Create a wrapper that intercepts agent request events
+        def wrapped_emit(event_type, data=None, skip_logging=False):
+            """Wrapper around event_emitter.emit that routes agent requests."""
+            # Convert event_type to string for pattern matching
+            from socratic_system.events import EventType
+
+            event_name = (
+                event_type.value if isinstance(event_type, EventType) else str(event_type)
+            )
+
+            # Check if this is an agent request event: "agent.{agent_name}.request"
+            if event_name.startswith("agent.") and event_name.endswith(".request"):
+                parts = event_name.split(".")
+                if len(parts) == 3:
+                    agent_name = parts[1]
+                    # Schedule async handler without blocking emit
+                    try:
+                        loop = asyncio.get_event_loop()
+                        if loop.is_running():
+                            asyncio.create_task(
+                                self._handle_agent_request(agent_name, data)
+                            )
+                        else:
+                            # Fallback: run synchronously if no event loop
+                            asyncio.run(self._handle_agent_request(agent_name, data))
+                    except RuntimeError:
+                        # No event loop available, run synchronously
+                        asyncio.run(self._handle_agent_request(agent_name, data))
+
+            # Continue with normal event emission
+            self._original_emit(event_type, data, skip_logging)
+
+        # Replace the emit method with the wrapper
+        self.event_emitter.emit = wrapped_emit
+
+    async def _handle_agent_request(self, agent_name: str, request_data: Dict[str, Any]) -> None:
+        """Handle an incoming agent request by invoking the registered handler.
+
+        Routes the request to the appropriate agent handler via the registry,
+        executes it, and returns the response to the requester via handle_response().
+
+        Args:
+            agent_name: Name of the target agent
+            request_data: Request data containing request_id and payload
+        """
+        request_id = request_data.get("request_id")
+        payload = request_data.get("payload", {})
+
+        if not request_id:
+            self.logger.error(f"[AgentBus] Request missing request_id")
+            return
+
+        try:
+            # Look up the handler from the registry
+            if not self.registry:
+                self.logger.error(f"[AgentBus] No registry available for request routing")
+                self.handle_response(
+                    request_id,
+                    {"status": "error", "message": "Agent bus registry not configured"},
+                )
+                return
+
+            handler = self.registry.get_handler(agent_name)
+            if not handler:
+                self.logger.warning(
+                    f"[AgentBus] No handler registered for agent '{agent_name}'"
+                )
+                self.handle_response(
+                    request_id,
+                    {
+                        "status": "error",
+                        "message": f"Agent '{agent_name}' not found or not registered",
+                    },
+                )
+                return
+
+            self.logger.debug(
+                f"[AgentBus] Routing request to agent '{agent_name}' (id: {request_id})"
+            )
+
+            # Invoke the handler
+            response = await handler.invoke(payload)
+
+            # Ensure response has proper structure
+            if not isinstance(response, dict):
+                response = {"status": "success", "data": response}
+            if "status" not in response:
+                response["status"] = "success"
+
+            self.logger.debug(
+                f"[AgentBus] Agent '{agent_name}' returned response (id: {request_id})"
+            )
+
+            # Send response back to the requester
+            self.handle_response(request_id, response)
+
+        except Exception as e:
+            self.logger.error(
+                f"[AgentBus] Error handling request for agent '{agent_name}': {e}"
+            )
+            self.handle_response(
+                request_id,
+                {"status": "error", "message": f"Agent processing error: {str(e)}"},
+            )
 
     async def send_request(
         self,
