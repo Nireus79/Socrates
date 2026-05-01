@@ -1,6 +1,8 @@
 """
 Knowledge Manager Agent for automatic knowledge enrichment
 
+Phase 2B Migration: Async-first implementation with agent bus support
+
 Manages project-specific knowledge enrichment through:
 - Collecting knowledge suggestions from other agents
 - Storing suggested knowledge for review
@@ -8,6 +10,7 @@ Manages project-specific knowledge enrichment through:
 - Enabling knowledge export/import
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List
@@ -24,19 +27,23 @@ class KnowledgeManagerAgent(Agent):
     """
     Manages knowledge enrichment for projects.
 
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All blocking operations run in thread pool (non-blocking)
+
     Listens for knowledge suggestions, collects them, and provides
     mechanisms for storing and reviewing project-specific knowledge.
     """
 
-    def __init__(self, name: str, orchestrator: "AgentOrchestrator"):
+    def __init__(self, orchestrator: "AgentOrchestrator"):
         """
         Initialize Knowledge Manager Agent.
 
         Args:
-            name: Agent name
             orchestrator: Reference to the orchestrator
         """
-        super().__init__(name, orchestrator)
+        super().__init__("KnowledgeManager", orchestrator, auto_register=True)
         self.logger = logging.getLogger("socrates.agents.knowledge_manager")
 
         # Suggestion queue per project
@@ -51,7 +58,9 @@ class KnowledgeManagerAgent(Agent):
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process knowledge management requests.
+        Process knowledge management requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
 
         Args:
             request: Request dictionary with action and parameters
@@ -62,17 +71,61 @@ class KnowledgeManagerAgent(Agent):
         action = request.get("action")
 
         if action == "get_suggestions":
-            return self._get_suggestions(request)
+            return self._get_suggestions_sync(request)
         elif action == "approve_suggestion":
-            return self._approve_suggestion(request)
+            return self._approve_suggestion_sync(request)
         elif action == "reject_suggestion":
-            return self._reject_suggestion(request)
+            return self._reject_suggestion_sync(request)
         elif action == "get_queue_status":
-            return self._get_queue_status(request)
+            return self._get_queue_status_sync(request)
         elif action == "clear_suggestions":
-            return self._clear_suggestions(request)
+            return self._clear_suggestions_sync(request)
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
+
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process knowledge management requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+
+        Args:
+            request: Request dictionary with action and parameters
+
+        Returns:
+            Response dictionary with status and data
+        """
+        action = request.get("action")
+
+        if action == "get_suggestions":
+            return await self._get_suggestions_async(request)
+        elif action == "approve_suggestion":
+            return await self._approve_suggestion_async(request)
+        elif action == "reject_suggestion":
+            return await self._reject_suggestion_async(request)
+        elif action == "get_queue_status":
+            return await self._get_queue_status_async(request)
+        elif action == "clear_suggestions":
+            return await self._clear_suggestions_async(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return [
+            "knowledge_management",
+            "suggestion_processing",
+            "knowledge_enrichment",
+            "knowledge_approval",
+        ]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Knowledge enrichment and suggestion management",
+            "capabilities_count": 4,
+        }
 
     def _handle_knowledge_suggestion(self, data: Dict[str, Any]) -> None:
         """
@@ -114,7 +167,7 @@ class KnowledgeManagerAgent(Agent):
             {"message": f"Knowledge suggestion from {suggestion['agent']}: {suggestion['topic']}"},
         )
 
-    def _get_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_suggestions_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Get pending suggestions for a project"""
         project_id = request.get("project_id", "default")
         status_filter = request.get("status", "pending")
@@ -129,7 +182,11 @@ class KnowledgeManagerAgent(Agent):
 
         return {"status": "success", "suggestions": suggestions, "count": len(suggestions)}
 
-    def _approve_suggestion(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def _get_suggestions_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get pending suggestions asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_suggestions_sync, request)
+
+    def _approve_suggestion_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Approve and add suggestion to project knowledge"""
         project_id = request.get("project_id", "default")
         suggestion_id = request.get("suggestion_id")
@@ -176,7 +233,11 @@ class KnowledgeManagerAgent(Agent):
             self.logger.error(f"Failed to approve suggestion: {str(e)}")
             return {"status": "error", "message": f"Approval failed: {str(e)}"}
 
-    def _reject_suggestion(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def _approve_suggestion_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Approve suggestion asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._approve_suggestion_sync, request)
+
+    def _reject_suggestion_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Reject a suggestion"""
         project_id = request.get("project_id", "default")
         suggestion_id = request.get("suggestion_id")
@@ -193,7 +254,11 @@ class KnowledgeManagerAgent(Agent):
 
         return {"status": "error", "message": f"Suggestion not found: {suggestion_id}"}
 
-    def _get_queue_status(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def _reject_suggestion_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Reject suggestion asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._reject_suggestion_sync, request)
+
+    def _get_queue_status_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Get status of knowledge suggestion queue"""
         project_id = request.get("project_id", "default")
 
@@ -210,7 +275,11 @@ class KnowledgeManagerAgent(Agent):
             "total": len(suggestions),
         }
 
-    def _clear_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def _get_queue_status_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get queue status asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_queue_status_sync, request)
+
+    def _clear_suggestions_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Clear processed suggestions for a project"""
         project_id = request.get("project_id", "default")
         keep_pending = request.get("keep_pending", True)
@@ -234,6 +303,10 @@ class KnowledgeManagerAgent(Agent):
         self.logger.info(f"Cleared {cleared_count} processed suggestions")
 
         return {"status": "success", "cleared": cleared_count}
+
+    async def _clear_suggestions_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Clear suggestions asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._clear_suggestions_sync, request)
 
     def _generate_suggestion_id(self) -> str:
         """Generate unique suggestion ID"""
