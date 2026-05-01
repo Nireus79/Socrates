@@ -1,6 +1,8 @@
 """
 Knowledge Analysis Agent for dynamic knowledge-based question regeneration
 
+Phase 2B Migration: Async-first implementation with agent bus support
+
 When new knowledge is imported (PDFs, code repos, web pages, notes), this agent:
 1. Analyzes the imported knowledge
 2. Identifies gaps and new learning opportunities
@@ -8,6 +10,7 @@ When new knowledge is imported (PDFs, code repos, web pages, notes), this agent:
 4. Emits events for UI updates
 """
 
+import asyncio
 import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict
@@ -22,6 +25,11 @@ if TYPE_CHECKING:
 class KnowledgeAnalysisAgent(Agent):
     """
     Analyzes imported knowledge and triggers adaptive question regeneration.
+
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All blocking operations run in thread pool (non-blocking)
 
     When documents are imported, this agent:
     - Extracts key concepts from the imported knowledge
@@ -38,7 +46,7 @@ class KnowledgeAnalysisAgent(Agent):
         Args:
             orchestrator: Reference to the orchestrator
         """
-        super().__init__("KnowledgeAnalysis", orchestrator)
+        super().__init__("KnowledgeAnalysis", orchestrator, auto_register=True)
         self.logger = logging.getLogger("socrates.agents.knowledge_analysis")
 
         # Register for document import events
@@ -50,7 +58,9 @@ class KnowledgeAnalysisAgent(Agent):
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process knowledge analysis requests.
+        Process knowledge analysis requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
 
         Args:
             request: Request dictionary with action and parameters
@@ -61,13 +71,53 @@ class KnowledgeAnalysisAgent(Agent):
         action = request.get("action")
 
         if action == "analyze_knowledge":
-            return self._analyze_knowledge(request)
+            return self._analyze_knowledge_sync(request)
         elif action == "regenerate_questions":
-            return self._regenerate_questions(request)
+            return self._regenerate_questions_sync(request)
         elif action == "get_knowledge_gaps":
-            return self._get_knowledge_gaps(request)
+            return self._get_knowledge_gaps_sync(request)
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
+
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process knowledge analysis requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+
+        Args:
+            request: Request dictionary with action and parameters
+
+        Returns:
+            Response dictionary with status and analysis results
+        """
+        action = request.get("action")
+
+        if action == "analyze_knowledge":
+            return await self._analyze_knowledge_async(request)
+        elif action == "regenerate_questions":
+            return await self._regenerate_questions_async(request)
+        elif action == "get_knowledge_gaps":
+            return await self._get_knowledge_gaps_async(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return [
+            "knowledge_analysis",
+            "question_regeneration",
+            "gap_analysis",
+            "knowledge_enrichment",
+        ]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Knowledge analysis and adaptive question regeneration",
+            "capabilities_count": 4,
+        }
 
     def _handle_document_imported(self, data: Dict[str, Any]) -> None:
         """
@@ -93,7 +143,7 @@ class KnowledgeAnalysisAgent(Agent):
                 return
 
             # Trigger analysis and question regeneration
-            analysis_result = self._analyze_knowledge(
+            analysis_result = self._analyze_knowledge_sync(
                 {
                     "action": "analyze_knowledge",
                     "project_id": project_id,
@@ -105,7 +155,7 @@ class KnowledgeAnalysisAgent(Agent):
 
             if analysis_result.get("status") == "success":
                 # Trigger question regeneration
-                regen_result = self._regenerate_questions(
+                regen_result = self._regenerate_questions_sync(
                     {
                         "action": "regenerate_questions",
                         "project_id": project_id,
@@ -132,7 +182,7 @@ class KnowledgeAnalysisAgent(Agent):
         except Exception as e:
             self.logger.error(f"Error handling document import: {str(e)}", exc_info=True)
 
-    def _analyze_knowledge(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_knowledge_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
         Analyze imported knowledge in context of project goals.
 
@@ -193,7 +243,11 @@ class KnowledgeAnalysisAgent(Agent):
             self.logger.error(f"Error analyzing knowledge: {str(e)}")
             return {"status": "error", "message": f"Analysis failed: {str(e)}"}
 
-    def _regenerate_questions(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def _analyze_knowledge_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze knowledge asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._analyze_knowledge_sync, request)
+
+    def _regenerate_questions_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
         Regenerate questions based on new knowledge analysis.
 
@@ -251,7 +305,11 @@ class KnowledgeAnalysisAgent(Agent):
             self.logger.error(f"Error regenerating questions: {str(e)}")
             return {"status": "error", "message": f"Regeneration failed: {str(e)}"}
 
-    def _get_knowledge_gaps(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def _regenerate_questions_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Regenerate questions asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._regenerate_questions_sync, request)
+
+    def _get_knowledge_gaps_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
         Identify knowledge gaps for a project.
 
@@ -284,6 +342,10 @@ class KnowledgeAnalysisAgent(Agent):
         except Exception as e:
             self.logger.error(f"Error identifying knowledge gaps: {str(e)}")
             return {"status": "error", "message": f"Gap analysis failed: {str(e)}"}
+
+    async def _get_knowledge_gaps_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get knowledge gaps asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_knowledge_gaps_sync, request)
 
     def _extract_key_concepts(self, search_results: list) -> list:
         """
