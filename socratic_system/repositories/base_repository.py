@@ -1,58 +1,143 @@
-"""
-Base Repository class for data access abstraction.
+"""Base repository class for data access abstraction.
 
-Phase 1: Service Layer - Repository pattern abstracts database access.
-
-Repositories provide a single point of change for database schema updates.
-Services use repositories instead of calling database directly.
-
-This allows:
-- Single place to update queries for schema changes
-- Easy mocking for testing
-- Clear separation of concerns
+Repository pattern provides single point of change for database access.
+Services depend on repository interfaces, not database implementation.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Generic, List, Optional, TypeVar
-
-if TYPE_CHECKING:
-    from socratic_system.database import ProjectDatabase
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 T = TypeVar("T")
+logger = logging.getLogger(__name__)
 
 
-class BaseRepository(Generic[T]):
-    """
-    Base repository for data access.
+class BaseRepository(ABC, Generic[T]):
+    """Abstract base repository for all domain models.
 
-    Generic base class for all repositories.
-    Subclasses implement domain-specific methods.
-
-    Attributes:
-        database: ProjectDatabase instance
-        logger: Logger for this repository
+    Provides interface for data access without exposing database details.
     """
 
-    def __init__(self, database: "ProjectDatabase"):
-        """
-        Initialize repository.
+    def __init__(self, database):
+        """Initialize repository.
 
         Args:
-            database: ProjectDatabase instance for data access
+            database: Database connection/session
         """
         self.database = database
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.debug(f"{self.__class__.__name__} initialized")
 
-    def _log_operation(self, operation: str, details: dict = None):
-        """
-        Log a repository operation.
+    @abstractmethod
+    def save(self, entity: T) -> T:
+        """Save entity to database.
 
         Args:
-            operation: Operation name
-            details: Additional operation details
+            entity: Entity to save
+
+        Returns:
+            Saved entity
         """
-        if details:
-            self.logger.debug(f"{operation}: {details}")
-        else:
-            self.logger.debug(operation)
+        pass
+
+    @abstractmethod
+    def load(self, entity_id: str) -> Optional[T]:
+        """Load entity from database.
+
+        Args:
+            entity_id: Entity identifier
+
+        Returns:
+            Entity if found, None otherwise
+        """
+        pass
+
+    @abstractmethod
+    def delete(self, entity_id: str) -> bool:
+        """Delete entity from database.
+
+        Args:
+            entity_id: Entity identifier
+
+        Returns:
+            True if deleted, False otherwise
+        """
+        pass
+
+    @abstractmethod
+    def list_all(self) -> List[T]:
+        """List all entities.
+
+        Returns:
+            List of entities
+        """
+        pass
+
+
+class ProjectRepository(BaseRepository):
+    """Repository for ProjectContext entities."""
+
+    def save(self, entity) -> Any:
+        """Save project to database."""
+        self.database.save_project(entity)
+        return entity
+
+    def load(self, entity_id: str) -> Optional[Any]:
+        """Load project from database."""
+        return self.database.load_project(entity_id)
+
+    def delete(self, entity_id: str) -> bool:
+        """Delete project from database."""
+        try:
+            self.database.delete_project(entity_id)
+            return True
+        except Exception:
+            return False
+
+    def list_all(self) -> List[Any]:
+        """List all projects."""
+        return self.database.list_projects()
+
+
+class UserRepository(BaseRepository):
+    """Repository for User entities."""
+
+    def save(self, entity) -> Any:
+        """Save user to database."""
+        self.database.save_user(entity)
+        return entity
+
+    def load(self, entity_id: str) -> Optional[Any]:
+        """Load user from database."""
+        return self.database.load_user(entity_id)
+
+    def delete(self, entity_id: str) -> bool:
+        """Delete user from database."""
+        try:
+            self.database.delete_user(entity_id)
+            return True
+        except Exception:
+            return False
+
+    def list_all(self) -> List[Any]:
+        """List all users."""
+        return self.database.list_users()
+
+
+class KnowledgeRepository(BaseRepository):
+    """Repository for Knowledge documents."""
+
+    def save(self, entity) -> Any:
+        """Save knowledge document."""
+        return entity
+
+    def load(self, entity_id: str) -> Optional[Any]:
+        """Load knowledge document."""
+        return None
+
+    def delete(self, entity_id: str) -> bool:
+        """Delete knowledge document."""
+        return False
+
+    def list_all(self) -> List[Any]:
+        """List all knowledge documents."""
+        return []
