@@ -59,7 +59,7 @@ class UserLearningAgent(Agent):
 
     def __init__(self, orchestrator):
         """Initialize agent with learning engine"""
-        super().__init__("User Learning", orchestrator, auto_register=True)
+        super().__init__("learning", orchestrator, auto_register=True)
         if LearningEngine is None:
             raise ImportError(
                 "socratic-learning library not installed, required for UserLearningAgent"

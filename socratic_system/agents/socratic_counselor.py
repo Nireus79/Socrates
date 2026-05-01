@@ -34,7 +34,7 @@ class SocraticCounselorAgent(Agent):
     """
 
     def __init__(self, orchestrator: "AgentOrchestrator") -> None:
-        super().__init__("SocraticCounselor", orchestrator, auto_register=True)
+        super().__init__("socratic_counselor", orchestrator, auto_register=True)
         self.use_dynamic_questions = True  # Toggle for dynamic vs static questions
         self.max_questions_per_phase = 5
         self.phase_docs_cache = {}  # Cache document context per phase to reduce vector DB calls

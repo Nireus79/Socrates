@@ -24,7 +24,7 @@ class NoteManagerAgent(Agent):
 
     def __init__(self, orchestrator: "AgentOrchestrator"):
         """Initialize note manager agent"""
-        super().__init__("NoteManager", orchestrator, auto_register=True)
+        super().__init__("note_manager", orchestrator, auto_register=True)
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process note-related requests (sync wrapper for backward compatibility).

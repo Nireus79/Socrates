@@ -45,7 +45,7 @@ class QualityControllerAgent(Agent):
     """
 
     def __init__(self, orchestrator):
-        super().__init__("QualityController", orchestrator, auto_register=True)
+        super().__init__("quality_controller", orchestrator, auto_register=True)
         logging.debug("Initializing QualityControllerAgent")
 
         if MaturityCalculator is None:

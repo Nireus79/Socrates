@@ -37,7 +37,7 @@ class ConflictDetectorAgent(Agent):
     """
 
     def __init__(self, orchestrator):
-        super().__init__("ConflictDetector", orchestrator, auto_register=True)
+        super().__init__("conflict_detector", orchestrator, auto_register=True)
 
         # Initialize pluggable conflict checkers if available
         if CONFLICT_CHECKERS_AVAILABLE:

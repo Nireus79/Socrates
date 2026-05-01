@@ -23,7 +23,7 @@ class ContextAnalyzerAgent(Agent):
     """
 
     def __init__(self, orchestrator):
-        super().__init__("ContextAnalyzer", orchestrator, auto_register=True)
+        super().__init__("context_analyzer", orchestrator, auto_register=True)
         self.current_user = None
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:

@@ -23,7 +23,7 @@ class SystemMonitorAgent(Agent):
     """
 
     def __init__(self, orchestrator):
-        super().__init__("SystemMonitor", orchestrator, auto_register=True)
+        super().__init__("system_monitor", orchestrator, auto_register=True)
         self.token_usage = []
         self.connection_status = True
         self.last_health_check = datetime.datetime.now()

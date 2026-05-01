@@ -38,7 +38,7 @@ class CodeGeneratorAgent(Agent):
     """
 
     def __init__(self, orchestrator):
-        super().__init__("CodeGenerator", orchestrator, auto_register=True)
+        super().__init__("code_generator", orchestrator, auto_register=True)
         self.current_user = None
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:

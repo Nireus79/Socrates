@@ -43,7 +43,7 @@ class MultiLLMAgent(Agent):
 
     def __init__(self, orchestrator):
         """Initialize multi-LLM agent"""
-        super().__init__("Multi-LLM Manager", orchestrator, auto_register=True)
+        super().__init__("multi_llm", orchestrator, auto_register=True)
         self.logger.info("MultiLLMAgent initialized")
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:

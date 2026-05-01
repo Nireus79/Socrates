@@ -30,7 +30,7 @@ class QuestionQueueAgent(Agent):
 
     def __init__(self, orchestrator):
         """Initialize question queue agent."""
-        super().__init__("QuestionQueue", orchestrator, auto_register=True)
+        super().__init__("question_queue", orchestrator, auto_register=True)
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process question queue requests (sync wrapper for backward compatibility).

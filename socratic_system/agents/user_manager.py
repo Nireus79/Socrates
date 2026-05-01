@@ -20,7 +20,7 @@ class UserManagerAgent(Agent):
     """
 
     def __init__(self, orchestrator):
-        super().__init__("UserManager", orchestrator, auto_register=True)
+        super().__init__("user_manager", orchestrator, auto_register=True)
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process user management requests (sync wrapper for backward compatibility)

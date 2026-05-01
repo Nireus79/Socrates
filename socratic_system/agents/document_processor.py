@@ -28,7 +28,7 @@ class DocumentProcessorAgent(Agent):
     """
 
     def __init__(self, orchestrator):
-        super().__init__("DocumentProcessor", orchestrator, auto_register=True)
+        super().__init__("document_agent", orchestrator, auto_register=True)
         self.logger = get_logger("document_processor")
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:

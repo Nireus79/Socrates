@@ -30,7 +30,7 @@ class ProjectManagerAgent(Agent):
     """
 
     def __init__(self, orchestrator: "AgentOrchestrator") -> None:
-        super().__init__("ProjectManager", orchestrator, auto_register=True)
+        super().__init__("project_manager", orchestrator, auto_register=True)
 
     @staticmethod
     def _generate_auto_user_email(username: str) -> str:

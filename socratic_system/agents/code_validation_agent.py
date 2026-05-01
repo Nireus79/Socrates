@@ -28,7 +28,7 @@ class CodeValidationAgent(Agent):
     """Orchestrates code validation pipeline"""
 
     def __init__(self, orchestrator):
-        super().__init__("CodeValidation", orchestrator, auto_register=True)
+        super().__init__("code_validation", orchestrator, auto_register=True)
         self.syntax_validator = SyntaxValidator()
         self.dependency_validator = DependencyValidator()
         self.test_executor = TestExecutor()

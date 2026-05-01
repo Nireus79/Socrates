@@ -43,7 +43,7 @@ class KnowledgeManagerAgent(Agent):
         Args:
             orchestrator: Reference to the orchestrator
         """
-        super().__init__("KnowledgeManager", orchestrator, auto_register=True)
+        super().__init__("knowledge_manager", orchestrator, auto_register=True)
         self.logger = logging.getLogger("socrates.agents.knowledge_manager")
 
         # Suggestion queue per project

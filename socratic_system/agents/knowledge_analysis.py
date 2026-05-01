@@ -46,7 +46,7 @@ class KnowledgeAnalysisAgent(Agent):
         Args:
             orchestrator: Reference to the orchestrator
         """
-        super().__init__("KnowledgeAnalysis", orchestrator, auto_register=True)
+        super().__init__("knowledge_analysis", orchestrator, auto_register=True)
         self.logger = logging.getLogger("socrates.agents.knowledge_analysis")
 
         # Register for document import events
