@@ -14,6 +14,7 @@ Available Repositories:
 from .base_repository import BaseRepository
 from .conflict_repository import ConflictRepository
 from .document_repository import DocumentRepository
+from .insight_repository import InsightRepository
 from .project_repository import ProjectRepository
 from .quality_repository import QualityRepository
 
@@ -23,4 +24,5 @@ __all__ = [
     "QualityRepository",
     "ConflictRepository",
     "DocumentRepository",
+    "InsightRepository",
 ]

@@ -11,12 +11,14 @@ Available Services:
 - ConflictService: Conflict detection and resolution
 - DocumentService: Document import and processing
 - DocumentUnderstandingService: Document analysis and summarization
+- InsightService: Insight analysis, categorization, and recommendations
 """
 
 from .base_service import BaseService
 from .conflict_service import ConflictService
 from .document_service import DocumentService
 from .document_understanding import DocumentUnderstandingService
+from .insight_service import InsightService
 from .project_service import ProjectService
 from .quality_service import QualityService
 
@@ -24,6 +26,7 @@ __all__ = [
     "BaseService",
     "DocumentUnderstandingService",
     "DocumentService",
+    "InsightService",
     "ProjectService",
     "QualityService",
     "ConflictService",
