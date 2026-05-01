@@ -60,7 +60,7 @@ async def get_next_question(
 
         # Call socratic_counselor to generate question
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "socratic_counselor",
             {
                 "action": "generate_question",
@@ -189,7 +189,7 @@ async def get_conversation_summary(
 
         # Call context analyzer to generate summary
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "context_analyzer",
             {
                 "action": "generate_summary",

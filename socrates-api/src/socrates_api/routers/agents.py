@@ -135,7 +135,7 @@ async def invoke_agent_sync(
                 logger.warning(f"Could not load project {project_id}: {e}")
 
         # Invoke agent
-        result = await orchestrator.process_request_async(agent_name, request)
+        result = await orchestrator.agent_bus.send_request(agent_name, request)
 
         # Wrap result in standard response
         success = result.get("status") == "success"
@@ -211,7 +211,7 @@ async def invoke_agent_async(
 
         # Submit async job
         async def run_agent_job():
-            return await orchestrator.process_request_async(agent_name, request)
+            return await orchestrator.agent_bus.send_request(agent_name, request)
 
         job_id = await job_queue.submit(
             run_agent_job,

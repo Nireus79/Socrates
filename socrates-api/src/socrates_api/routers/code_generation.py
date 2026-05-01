@@ -188,7 +188,7 @@ async def generate_code(
             orchestrator = get_orchestrator()
 
             # Use code generator agent via orchestrator routing (not direct call)
-            result = await orchestrator.process_request_async(
+            result = await orchestrator.agent_bus.send_request(
                 "code_generator",
                 {
                     "action": "generate_artifact",
@@ -728,7 +728,7 @@ async def refactor_code(
             orchestrator = get_orchestrator()
 
             # Use code generator agent via orchestrator routing for refactoring
-            result = await orchestrator.process_request_async(
+            result = await orchestrator.agent_bus.send_request(
                 "code_generator",
                 {
                     "action": "refactor_code",

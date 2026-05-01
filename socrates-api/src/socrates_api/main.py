@@ -274,6 +274,17 @@ async def lifespan(app: FastAPI):
 
         logger.error(f"Traceback: {traceback.format_exc()}")
 
+        # Ensure database is still initialized even if orchestrator fails
+        # This allows auth endpoints to work even without full orchestrator
+        try:
+            from socrates_api.database import DatabaseSingleton
+            logger.info("Ensuring database is initialized as fallback...")
+            DatabaseSingleton.initialize()  # Initialize with defaults
+            db = DatabaseSingleton.get_instance()
+            logger.info(f"Database initialized as fallback: {db is not None}")
+        except Exception as db_e:
+            logger.error(f"Failed to initialize database fallback: {db_e}")
+
     # Start shutdown monitor background task
     logger.info("Starting shutdown monitor background task...")
     shutdown_monitor_task = asyncio.create_task(_monitor_shutdown())
@@ -792,7 +803,7 @@ async def ask_question(project_id: str, request: AskQuestionRequest):
         )
 
     try:
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "question_generator",
             {
                 "action": "generate_question",
@@ -840,7 +851,7 @@ async def process_response(project_id: str, request: ProcessResponseRequest):
         )
 
     try:
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "response_evaluator",
             {
                 "action": "evaluate_response",
@@ -889,7 +900,7 @@ async def generate_code(request: GenerateCodeRequest):
 
     try:
         # Load project
-        project_result = orchestrator.process_request(
+        project_result = orchestrator.agent_bus.send_request_sync(
             "project_manager", {"action": "load_project", "project_id": request.project_id}
         )
 
@@ -899,7 +910,7 @@ async def generate_code(request: GenerateCodeRequest):
         project = project_result["project"]
 
         # Generate code
-        code_result = orchestrator.process_request(
+        code_result = orchestrator.agent_bus.send_request_sync(
             "code_generator",
             {
                 "action": "generate_code",

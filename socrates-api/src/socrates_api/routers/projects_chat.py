@@ -532,7 +532,7 @@ async def get_question(
         # Call socratic_counselor to generate question
         # Question caching happens internally to avoid redundant Claude calls
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "socratic_counselor",
             {
                 "action": "generate_question",
@@ -756,7 +756,7 @@ Provide a helpful, direct answer."""
 
             # Call socratic_counselor to process response
             # Pre-extracted insights caching and async processing happen internally
-            result = orchestrator.process_request(
+            result = orchestrator.agent_bus.send_request_sync(
                 "socratic_counselor",
                 {
                     "action": "process_response",
@@ -1003,7 +1003,7 @@ async def get_hint(
 
         # Call orchestrator to generate context-aware hint
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "socratic_counselor",
             {
                 "action": "generate_hint",
@@ -1122,7 +1122,7 @@ async def get_summary(
 
         # Call context analyzer to generate summary
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "context_analyzer",
             {
                 "action": "generate_summary",
@@ -1527,7 +1527,7 @@ async def reopen_question(
             raise HTTPException(status_code=404, detail="Project not found")
 
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "socratic_counselor",
             {
                 "action": "reopen_question",
@@ -1699,7 +1699,7 @@ async def get_answer_suggestions(
             )
 
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "socratic_counselor",
             {
                 "action": "generate_answer_suggestions",
@@ -1897,7 +1897,7 @@ async def save_extracted_specs(
 
             # Only update maturity if specs were actually saved
             if any(specs_saved.values()):
-                maturity_result = orchestrator.process_request(
+                maturity_result = orchestrator.agent_bus.send_request_sync(
                     "quality_controller",
                     {
                         "action": "update_after_response",

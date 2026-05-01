@@ -523,7 +523,7 @@ async def get_trends(
 
         # Call learning agent via orchestrator to get trends
         orchestrator = get_orchestrator()
-        result = await orchestrator.process_request_async(
+        result = await orchestrator.agent_bus.send_request(
             "learning",
             {
                 "action": "get_trends",
@@ -643,7 +643,7 @@ async def get_recommendations(
 
         # Call learning agent via orchestrator for recommendations
         orchestrator = get_orchestrator()
-        result = await orchestrator.process_request_async(
+        result = await orchestrator.agent_bus.send_request(
             "learning",
             {
                 "action": "get_recommendations",

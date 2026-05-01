@@ -78,7 +78,7 @@ async def validate_code(
             project_path = project.repository_url or project_id
 
             # Call code validation agent - same as CLI uses
-            result = orchestrator.process_request(
+            result = orchestrator.agent_bus.send_request_sync(
                 "code_validation",
                 {
                     "action": "validate_project",
@@ -183,7 +183,7 @@ async def assess_maturity(
         orchestrator = get_orchestrator()
 
         # Call quality_controller to calculate maturity - same as CLI does
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "quality_controller",
             {
                 "action": "calculate_maturity",
@@ -279,7 +279,7 @@ async def run_tests(
 
         # Call code_validation agent - same as CLI uses
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "code_validation",
             {
                 "action": "run_tests",
@@ -362,7 +362,7 @@ async def analyze_structure(
 
         # Call context analyzer - same as CLI uses
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "context_analyzer",
             {
                 "action": "analyze_context",
@@ -446,7 +446,7 @@ async def review_code(
 
         # Call context analyzer to get project statistics
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "context_analyzer",
             {
                 "action": "analyze_context",
@@ -529,7 +529,7 @@ async def auto_fix_issues(
 
         # Call code generator to generate improved code
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "code_generator",
             {
                 "action": "generate_script",
@@ -613,7 +613,7 @@ async def get_analysis_report(
 
         # Call context analyzer to generate report/summary
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = orchestrator.agent_bus.send_request_sync(
             "context_analyzer",
             {
                 "action": "generate_summary",

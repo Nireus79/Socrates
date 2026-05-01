@@ -231,7 +231,7 @@ async def create_project(
                 logger.info("Orchestrator available, using it...")
                 # Use orchestrator pattern (same as CLI)
                 # Pass description and knowledge_base_content so ProjectManagerAgent can analyze them
-                result = orchestrator.process_request(
+                result = orchestrator.agent_bus.send_request_sync(
                     "project_manager",
                     {
                         "action": "create_project",
@@ -422,7 +422,7 @@ async def create_project(
                 # Get orchestrator and quality controller
                 orchestrator = _get_orchestrator()
                 # Use quality controller to calculate initial maturity
-                maturity_result = await orchestrator.process_request(
+                maturity_result = orchestrator.agent_bus.send_request_sync(
                     "quality_controller",
                     {
                         "action": "calculate_maturity",
