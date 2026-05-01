@@ -834,7 +834,7 @@ Provide a helpful, direct answer."""
                     )
                     response_data["next_phase"] = result.get("next_phase")
                     logger.debug(
-                        f"Phase completion data: {response_data.get('phase_completion_message', '')[:100]}..."
+                        f"Phase completion data: {(response_data.get('phase_completion_message') or '')[:100]}..."
                     )
             except Exception as phase_error:
                 logger.error(f"Error handling phase completion: {str(phase_error)}", exc_info=True)
