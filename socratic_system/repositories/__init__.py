@@ -8,10 +8,12 @@ Available Repositories:
 - ProjectRepository: All project database operations
 - QualityRepository: Quality metrics and maturity data access
 - ConflictRepository: Conflict detection and resolution data access
+- DocumentRepository: Document import and metadata data access
 """
 
 from .base_repository import BaseRepository
 from .conflict_repository import ConflictRepository
+from .document_repository import DocumentRepository
 from .project_repository import ProjectRepository
 from .quality_repository import QualityRepository
 
@@ -20,4 +22,5 @@ __all__ = [
     "ProjectRepository",
     "QualityRepository",
     "ConflictRepository",
+    "DocumentRepository",
 ]

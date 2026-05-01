@@ -9,11 +9,13 @@ Available Services:
 - ProjectService: Project creation, loading, management
 - QualityService: Maturity calculations and quality metrics
 - ConflictService: Conflict detection and resolution
+- DocumentService: Document import and processing
 - DocumentUnderstandingService: Document analysis and summarization
 """
 
 from .base_service import BaseService
 from .conflict_service import ConflictService
+from .document_service import DocumentService
 from .document_understanding import DocumentUnderstandingService
 from .project_service import ProjectService
 from .quality_service import QualityService
@@ -21,6 +23,7 @@ from .quality_service import QualityService
 __all__ = [
     "BaseService",
     "DocumentUnderstandingService",
+    "DocumentService",
     "ProjectService",
     "QualityService",
     "ConflictService",
