@@ -71,6 +71,9 @@ class SocratesConfig:
     # Custom Knowledge
     custom_knowledge: List[str] = field(default_factory=list)
 
+    # Encryption Configuration
+    encryption_key: Optional[str] = None  # Auto-generated if not provided
+
     def __post_init__(self) -> None:
         """Initialize derived paths and create directories"""
         self._validate_api_key()
@@ -79,6 +82,7 @@ class SocratesConfig:
         self._validate_all_paths()
         self._setup_knowledge_base_path()
         self._create_directories()
+        self._initialize_encryption_key()
 
     def _validate_api_key(self) -> None:
         """
@@ -147,6 +151,57 @@ class SocratesConfig:
 
         if self.log_file and isinstance(self.log_file, Path):
             self.log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    def _initialize_encryption_key(self) -> None:
+        """Auto-generate or load encryption key for API key storage.
+
+        Encryption key is stored in data_dir/.encryption_key to ensure:
+        - Each installation has its own unique key
+        - Key persists across restarts
+        - No need for environment variables
+        - User doesn't need to manage keys
+        """
+        # Check if key provided via environment or config
+        if self.encryption_key:
+            os.environ["SOCRATES_ENCRYPTION_KEY"] = self.encryption_key
+            return
+
+        # Check environment variable
+        env_key = os.getenv("SOCRATES_ENCRYPTION_KEY")
+        if env_key:
+            self.encryption_key = env_key
+            return
+
+        # Try to load from file
+        key_file = self.data_dir / ".encryption_key"
+        if key_file.exists():
+            try:
+                with open(key_file, "r") as f:
+                    self.encryption_key = f.read().strip()
+                os.environ["SOCRATES_ENCRYPTION_KEY"] = self.encryption_key
+                return
+            except Exception as e:
+                print(f"Warning: Failed to load encryption key from file: {e}")
+
+        # Auto-generate new key
+        import secrets
+        self.encryption_key = secrets.token_urlsafe(32)
+
+        # Save to file with restricted permissions
+        try:
+            key_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(key_file, "w") as f:
+                f.write(self.encryption_key)
+            # Restrict file permissions to owner only (Unix-like systems)
+            try:
+                os.chmod(key_file, 0o600)
+            except Exception:
+                pass  # Windows doesn't support chmod
+            os.environ["SOCRATES_ENCRYPTION_KEY"] = self.encryption_key
+        except Exception as e:
+            print(f"Warning: Failed to save encryption key to file: {e}")
+            # Still set it in environment even if file save failed
+            os.environ["SOCRATES_ENCRYPTION_KEY"] = self.encryption_key
 
     @classmethod
     def from_env(cls, **overrides) -> "SocratesConfig":
