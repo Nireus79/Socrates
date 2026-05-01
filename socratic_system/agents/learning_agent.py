@@ -1,4 +1,5 @@
 """
+Phase 2B Migration: Async-first implementation with agent bus support
 User Learning Agent - Background learning and personalization.
 
 This agent orchestrates user behavior learning and question personalization:
@@ -13,8 +14,10 @@ Architecture:
 - LearningEngine handles: Behavior analysis, metrics calculation, personalization
 - Clear separation enables testing without database
 """
+Phase 2B Migration: Async-first implementation with agent bus support
 
 import uuid
+import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Dict

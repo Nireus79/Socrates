@@ -1,7 +1,10 @@
 """
 Context analysis agent for Socrates AI
+
+Phase 2B Migration: Async-first implementation with agent bus support
 """
 
+import asyncio
 import datetime
 from typing import Any, Dict, List
 
@@ -11,32 +14,81 @@ from .base import Agent
 
 
 class ContextAnalyzerAgent(Agent):
-    """Analyzes project context and identifies patterns"""
+    """Analyzes project context and identifies patterns
+
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All blocking operations run in thread pool (non-blocking)
+    """
 
     def __init__(self, orchestrator):
-        super().__init__("ContextAnalyzer", orchestrator)
+        super().__init__("ContextAnalyzer", orchestrator, auto_register=True)
         self.current_user = None
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process context analysis requests"""
+        """Process context analysis requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+        """
         action = request.get("action")
 
         if action == "analyze_context":
-            return self._analyze_context(request)
+            return self._analyze_context_sync(request)
         elif action == "get_summary":
-            return self._get_summary(request)
+            return self._get_summary_sync(request)
         elif action == "find_similar":
-            return self._find_similar(request)
+            return self._find_similar_sync(request)
         elif action == "search_conversations":
-            return self._search_conversations(request)
+            return self._search_conversations_sync(request)
         elif action == "generate_summary":
-            return self._generate_summary(request)
+            return self._generate_summary_sync(request)
         elif action == "get_statistics":
-            return self._get_statistics(request)
+            return self._get_statistics_sync(request)
 
         return {"status": "error", "message": "Unknown action"}
 
-    def _analyze_context(self, request: Dict) -> Dict:
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process context analysis requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "analyze_context":
+            return await self._analyze_context_async(request)
+        elif action == "get_summary":
+            return await self._get_summary_async(request)
+        elif action == "find_similar":
+            return await self._find_similar_async(request)
+        elif action == "search_conversations":
+            return await self._search_conversations_async(request)
+        elif action == "generate_summary":
+            return await self._generate_summary_async(request)
+        elif action == "get_statistics":
+            return await self._get_statistics_async(request)
+
+        return {"status": "error", "message": "Unknown action"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return [
+            "context_analysis",
+            "conversation_search",
+            "summary_generation",
+            "knowledge_search",
+            "statistics_tracking",
+        ]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Project context analysis and conversation management",
+            "capabilities_count": 5,
+        }
+
+    def _analyze_context_sync(self, request: Dict) -> Dict:
         """Analyze project context and patterns"""
         project = request.get("project")
         conversation = request.get("conversation")
@@ -74,13 +126,13 @@ class ContextAnalyzerAgent(Agent):
 
         return "\n".join(summary_parts)
 
-    def _get_summary(self, request: Dict) -> Dict:
+    def _get_summary_sync(self, request: Dict) -> Dict:
         """Get project summary"""
         project = request.get("project")
         summary = self.get_context_summary(project)
         return {"status": "success", "summary": summary}
 
-    def _find_similar(self, request: Dict) -> Dict:
+    def _find_similar_sync(self, request: Dict) -> Dict:
         """Find similar projects or knowledge"""
         query = request.get("query")
         results = self.orchestrator.vector_db.search_similar(query, top_k=3)
@@ -99,7 +151,7 @@ class ContextAnalyzerAgent(Agent):
 
         return patterns
 
-    def _search_conversations(self, request: Dict) -> Dict:
+    def _search_conversations_sync(self, request: Dict) -> Dict:
         """Search conversation history for a query"""
         try:
             project = request.get("project")
@@ -128,7 +180,7 @@ class ContextAnalyzerAgent(Agent):
             self.log(f"Error searching conversations: {str(e)}", level="ERROR")
             return {"status": "error", "message": f"Error searching conversations: {str(e)}"}
 
-    def _generate_summary(self, request: Dict) -> Dict:
+    def _generate_summary_sync(self, request: Dict) -> Dict:
         """Generate AI-powered conversation summary"""
         try:
             project = request.get("project")
@@ -183,7 +235,7 @@ Provide a concise, focused summary."""
             self.log(f"Error generating summary: {str(e)}", level="ERROR")
             return {"status": "error", "message": f"Error generating summary: {str(e)}"}
 
-    def _get_statistics(self, request: Dict) -> Dict:
+    def _get_statistics_sync(self, request: Dict) -> Dict:
         """Generate project statistics"""
         try:
             project = request.get("project")
@@ -237,3 +289,31 @@ Provide a concise, focused summary."""
         except Exception as e:
             self.log(f"Error generating statistics: {str(e)}", level="ERROR")
             return {"status": "error", "message": f"Error generating statistics: {str(e)}"}
+
+    # ========================================================================
+    # Phase 2B Async Wrapper Methods
+    # ========================================================================
+
+    async def _analyze_context_async(self, request: Dict) -> Dict:
+        """Analyze context asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._analyze_context_sync, request)
+
+    async def _get_summary_async(self, request: Dict) -> Dict:
+        """Get summary asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_summary_sync, request)
+
+    async def _find_similar_async(self, request: Dict) -> Dict:
+        """Find similar asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._find_similar_sync, request)
+
+    async def _search_conversations_async(self, request: Dict) -> Dict:
+        """Search conversations asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._search_conversations_sync, request)
+
+    async def _generate_summary_async(self, request: Dict) -> Dict:
+        """Generate summary asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._generate_summary_sync, request)
+
+    async def _get_statistics_async(self, request: Dict) -> Dict:
+        """Get statistics asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_statistics_sync, request)

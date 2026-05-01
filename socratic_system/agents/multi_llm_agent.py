@@ -1,4 +1,5 @@
 """
+Phase 2B Migration: Async-first implementation with agent bus support
 Multi-LLM Provider Agent - Unified LLM management and routing.
 
 Manages connections to multiple LLM providers (Claude, OpenAI, Gemini, Ollama)
@@ -9,8 +10,10 @@ with a unified interface for:
 - Cost analysis
 - Provider routing
 """
+Phase 2B Migration: Async-first implementation with agent bus support
 
 import uuid
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict
 

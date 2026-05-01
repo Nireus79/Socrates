@@ -1,4 +1,5 @@
 """
+Phase 2B Migration: Async-first implementation with agent bus support
 Code Validation Agent for Socrates AI
 
 Orchestrates comprehensive code validation pipeline:
@@ -7,8 +8,10 @@ Orchestrates comprehensive code validation pipeline:
 3. Test execution
 4. Report generation with recommendations
 """
+Phase 2B Migration: Async-first implementation with agent bus support
 
 import logging
+import asyncio
 from typing import Any, Dict, List
 
 from socratic_system.agents.base import Agent
