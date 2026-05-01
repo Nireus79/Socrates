@@ -1,5 +1,5 @@
 # Circular Import Avoidance Architecture - Discovery Document
-
+# CIRCULAR_IMPORT_ARCHITECTURE.md
 ## How Current Architecture Avoids Circular Imports
 
 The Socrates agent system uses **4 patterns** to avoid circular imports while maintaining agent interconnectivity:
