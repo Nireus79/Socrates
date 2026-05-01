@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse
+from socratic_system.database import ProjectDatabase
 from socratic_system.sponsorships.webhook import (
     handle_sponsorship_webhook,
     verify_github_signature,
