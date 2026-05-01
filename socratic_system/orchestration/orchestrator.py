@@ -141,6 +141,10 @@ class AgentOrchestrator:
         )
         self.logger.info("Analysis caching and background handlers initialized (Phase 3)")
 
+        # Phase 4: Pre-initialize all agents for agent bus discovery
+        # This ensures handlers are registered before any endpoints call agent_bus.send_request()
+        self._initialize_all_agents()
+
         # Emit system initialized event
         self.event_emitter.emit(
             EventType.SYSTEM_INITIALIZED,
@@ -183,6 +187,49 @@ class AgentOrchestrator:
         if self._knowledge_thread is not None:
             self._knowledge_thread.join(timeout=timeout)
         return self.knowledge_loaded
+
+    def _initialize_all_agents(self) -> None:
+        """Pre-initialize all agents so they register with the agent bus.
+
+        This ensures handlers are available when endpoints call agent_bus.send_request().
+        Each agent property access triggers __init__ which registers with the bus.
+        """
+        try:
+            self.logger.info("Pre-initializing all agents for agent bus registration...")
+
+            # Access each agent property to trigger initialization and registration
+            agent_names = [
+                "project_manager",
+                "socratic_counselor",
+                "context_analyzer",
+                "code_generator",
+                "system_monitor",
+                "conflict_detector",
+                "document_processor",
+                "user_manager",
+                "note_manager",
+                "knowledge_manager",
+                "knowledge_analysis",
+                "quality_controller",
+                "learning_agent",
+                "multi_llm_agent",
+                "question_queue",
+                "code_validation_agent",
+            ]
+
+            for agent_name in agent_names:
+                try:
+                    agent = getattr(self, agent_name)
+                    self.logger.debug(f"Initialized agent: {agent.name}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to initialize agent {agent_name}: {e}")
+
+            # Verify agents are registered with the bus
+            registered_count = self.agent_registry.count()
+            self.logger.info(f"Agent initialization complete: {registered_count} agents registered")
+
+        except Exception as e:
+            self.logger.error(f"Error during agent pre-initialization: {e}")
 
     # Lazy-loaded agent properties
     @property
