@@ -88,5 +88,17 @@ class EventType(Enum):
     COLLABORATOR_ADDED = "collaborator.added"
     COLLABORATOR_REMOVED = "collaborator.removed"
 
+    # Phase 3: Event-driven background processing
+    QUALITY_ANALYSIS_REQUESTED = "quality.analysis.requested"
+    QUALITY_ANALYSIS_COMPLETED = "quality.analysis.completed"
+    QUALITY_ANALYSIS_FAILED = "quality.analysis.failed"
+
+    CONFLICT_ANALYSIS_REQUESTED = "conflict.analysis.requested"
+    CONFLICT_ANALYSIS_COMPLETED = "conflict.analysis.completed"
+    CONFLICT_ANALYSIS_FAILED = "conflict.analysis.failed"
+
+    INSIGHTS_ANALYSIS_COMPLETED = "insights.analysis.completed"
+    INSIGHTS_ANALYSIS_FAILED = "insights.analysis.failed"
+
     # Custom events
     CUSTOM = "custom"

@@ -127,6 +127,20 @@ class AgentOrchestrator:
             # In test mode, mark as loaded immediately (tests use mocks)
             self.knowledge_loaded = True
 
+        # Phase 3: Initialize caching and background handlers for non-blocking processing
+        from socratic_system.caching import InMemoryAnalysisCache
+        from socratic_system.jobs import JobTracker
+        from socratic_system.handlers import BackgroundHandlers
+
+        self.cache = InMemoryAnalysisCache()
+        self.job_tracker = JobTracker()
+        self.background_handlers = BackgroundHandlers(
+            orchestrator=self,
+            cache=self.cache,
+            job_tracker=self.job_tracker
+        )
+        self.logger.info("Analysis caching and background handlers initialized (Phase 3)")
+
         # Emit system initialized event
         self.event_emitter.emit(
             EventType.SYSTEM_INITIALIZED,

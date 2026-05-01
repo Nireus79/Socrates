@@ -626,6 +626,52 @@ Return only the question, no additional text or explanation."""
                 return fallbacks[(question_count - len(questions)) % len(fallbacks)]
             return "What would you like to explore further?"
 
+    def _check_phase_completion_quick(self, project: ProjectContext, logger) -> Dict[str, Any]:
+        """
+        Quick phase completion check without blocking calls (Phase 3).
+
+        This is a heuristic check that doesn't call quality_controller.
+        The actual maturity assessment happens in background via BackgroundHandlers.
+
+        Returns:
+            Dict with is_complete bool (heuristic only, not definitive)
+        """
+        try:
+            # Simple heuristic: check if all questions in current phase are answered
+            if not project.pending_questions:
+                # No pending questions is a positive sign
+                logger.debug("[PHASE 3] No pending questions - phase may be complete")
+                return {
+                    "is_complete": True,
+                    "message": "Phase appears complete (background analysis will confirm maturity)",
+                }
+
+            # Check how many questions are answered
+            answered_count = sum(
+                1 for q in project.pending_questions if q.get("status") == "answered"
+            )
+            total_count = len(project.pending_questions)
+
+            # If all are answered, likely complete (but not 100% sure without maturity check)
+            if answered_count == total_count and total_count > 0:
+                logger.debug(
+                    f"[PHASE 3] All {total_count} questions answered - phase may be complete"
+                )
+                return {"is_complete": True, "message": None}
+
+            # Heuristic: if >80% answered, might be complete
+            completion_ratio = answered_count / total_count if total_count > 0 else 0
+            if completion_ratio >= 0.8:
+                logger.debug(
+                    f"[PHASE 3] {completion_ratio*100:.0f}% of questions answered"
+                )
+
+            return {"is_complete": False, "message": None}
+
+        except Exception as e:
+            logger.debug(f"[PHASE 3] Quick phase completion check failed: {e}")
+            return {"is_complete": False, "message": None}
+
     def _check_phase_completion(self, project: ProjectContext, logger) -> Dict[str, Any]:
         """
         Check if current phase is now complete (maturity >= 100%) and generate
@@ -832,7 +878,13 @@ What would be most helpful for you?"""
         return {"status": "success", "insights": insights}
 
     def _process_response_sync(self, request: Dict) -> Dict:
-        """Process user response and extract insights"""
+        """Process user response and extract insights (Phase 3: Event-driven)
+
+        Phase 3 Changes:
+        - Returns immediately after extracting insights (non-blocking)
+        - Emits response.received event to trigger background analysis
+        - Background handlers process: quality, conflicts, insights async
+        """
         from socratic_system.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
@@ -841,7 +893,7 @@ What would be most helpful for you?"""
         user_response = request.get("response")
         current_user = request.get("current_user")
         pre_extracted_insights = request.get("pre_extracted_insights")
-        is_api_mode = request.get("is_api_mode", False)  # NEW: API mode flag
+        is_api_mode = request.get("is_api_mode", False)
 
         logger.debug(f"Processing user response ({len(user_response)} chars) from {current_user}")
 
@@ -852,7 +904,7 @@ What would be most helpful for you?"""
                 "type": "user",
                 "content": user_response,
                 "phase": project.phase,
-                "author": current_user,  # Track who said what
+                "author": current_user,
             }
         )
         logger.debug(
@@ -860,7 +912,7 @@ What would be most helpful for you?"""
         )
 
         # Get user's auth method for API calls
-        user_auth_method = "api_key"  # default
+        user_auth_method = "api_key"
         if current_user:
             user = self.orchestrator.database.load_user(current_user)
             if user and hasattr(user, "claude_auth_method"):
@@ -879,8 +931,6 @@ What would be most helpful for you?"""
             self._log_extracted_insights(logger, insights)
 
         # Mark the last unanswered question as answered BEFORE conflict detection
-        # This ensures the question is marked answered even if conflicts are found
-        # (conflicts don't prevent progress - they just need to be resolved)
         if project.pending_questions:
             for q in reversed(project.pending_questions):
                 if q.get("status") == "unanswered":
@@ -889,14 +939,28 @@ What would be most helpful for you?"""
                     logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
                     break
 
-        # REAL-TIME CONFLICT DETECTION
-        if insights:
+        # Phase 3: Check for IMMEDIATE conflicts (still real-time, non-blocking)
+        # Conflicts are handled synchronously since they affect response immediately
+        if insights and is_api_mode:
             conflict_result = self._handle_conflict_detection(
-                insights, project, current_user, logger, is_api_mode
+                insights, project, current_user, logger, is_api_mode=True
             )
             if conflict_result.get("has_conflicts"):
-                # Save project even when conflicts detected (question is already marked answered above)
+                # Return immediately with conflicts (client will handle resolution)
                 self.database.save_project(project)
+                logger.info(
+                    f"[PHASE 3] Conflicts detected - returning immediately. "
+                    f"Background analysis will proceed async for project {project.id}"
+                )
+                # Emit response.received event for background processing
+                self.orchestrator.event_emitter.emit(
+                    "response.received",
+                    {
+                        "project_id": project.id,
+                        "insights": insights,
+                        "current_user": current_user,
+                    }
+                )
                 return {
                     "status": "success",
                     "insights": insights,
@@ -904,21 +968,49 @@ What would be most helpful for you?"""
                     "conflicts": conflict_result.get("conflicts", []),
                 }
 
-        # Update context and maturity
-        self._update_project_and_maturity(project, insights, logger, current_user)
+        # Phase 3: Update project context immediately (needed for consistency)
+        logger.info("Updating project context with insights...")
+        self._update_project_context(project, insights)
+        logger.debug("Project context updated successfully")
 
-        # Track question effectiveness for learning
-        self._track_question_effectiveness(project, insights, user_response, current_user, logger)
+        # Save project with updated context and conversation history
+        self.database.save_project(project)
 
-        # Check if phase is now complete and offer advancement option
-        result = {"status": "success", "insights": insights}
-        phase_completion = self._check_phase_completion(project, logger)
+        # Phase 3: Emit response.received event to trigger background analysis
+        # This launches non-blocking background tasks for:
+        # - Quality/maturity assessment
+        # - Conflict detection (if not already done)
+        # - Learning system tracking
+        logger.info(
+            f"[PHASE 3] Response processed. Emitting background analysis event for project {project.id}"
+        )
+        self.orchestrator.event_emitter.emit(
+            "response.received",
+            {
+                "project_id": project.id,
+                "insights": insights,
+                "current_user": current_user,
+                "user_response": user_response,
+            }
+        )
+
+        # Return immediately with insights (don't wait for background analysis)
+        result = {
+            "status": "success",
+            "insights": insights,
+            "phase_complete": False,
+            "_background_processing": True,  # Indicate background tasks are running
+        }
+
+        # Phase 3: Check phase completion immediately (quick check, no blocking calls)
+        phase_completion = self._check_phase_completion_quick(project, logger)
         if phase_completion["is_complete"]:
             result["phase_complete"] = True
             result["phase_completion_message"] = phase_completion["message"]
-
-        # Save project to persist question status updates and conversation history changes
-        self.database.save_project(project)
+            logger.info(
+                f"[PHASE 3] Phase {project.phase} appears complete. "
+                f"Background analysis will confirm maturity."
+            )
 
         return result
 
