@@ -1,7 +1,10 @@
 """
 Quality Controller Agent - Orchestrates maturity tracking and prevents greedy algorithm practices
+
+Phase 2B Migration: Async-first implementation with agent bus support
 """
 
+import asyncio
 import logging
 from dataclasses import asdict
 from datetime import datetime
@@ -29,6 +32,11 @@ class QualityControllerAgent(Agent):
     """
     Quality Control Agent - Orchestrates maturity tracking and prevents greedy algorithm practices.
 
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All blocking operations run in thread pool (non-blocking)
+
     Uses MaturityCalculator for pure calculation logic and focuses on:
     - Orchestrating maturity updates during Q&A sessions
     - Emitting events for real-time maturity updates
@@ -37,7 +45,7 @@ class QualityControllerAgent(Agent):
     """
 
     def __init__(self, orchestrator):
-        super().__init__("QualityController", orchestrator)
+        super().__init__("QualityController", orchestrator, auto_register=True)
         logging.debug("Initializing QualityControllerAgent")
 
         if MaturityCalculator is None:
@@ -73,50 +81,118 @@ class QualityControllerAgent(Agent):
         )
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process quality control requests"""
+        """Process quality control requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+        """
         logging.debug(f"QualityController processing request: {list(request.keys())}")
         action = request.get("action")
         logging.debug(f"Action: {action}")
 
         if action == "calculate_maturity":
-            logging.debug("Routing to _calculate_phase_maturity")
-            return self._calculate_phase_maturity(request)
+            logging.debug("Routing to _calculate_phase_maturity_sync")
+            return self._calculate_phase_maturity_sync(request)
         elif action == "get_phase_maturity":
-            logging.debug("Routing to _calculate_phase_maturity (get_phase_maturity)")
-            return self._calculate_phase_maturity(request)
+            logging.debug("Routing to _calculate_phase_maturity_sync (get_phase_maturity)")
+            return self._calculate_phase_maturity_sync(request)
         elif action == "get_readiness":
-            logging.debug("Routing to _get_phase_readiness")
-            return self._get_phase_readiness(request)
+            logging.debug("Routing to _get_phase_readiness_sync")
+            return self._get_phase_readiness_sync(request)
         elif action == "update_after_response":
-            logging.debug("Routing to _update_maturity_after_response")
-            return self._update_maturity_after_response(request)
+            logging.debug("Routing to _update_maturity_after_response_sync")
+            return self._update_maturity_after_response_sync(request)
         elif action == "get_maturity_summary":
-            logging.debug("Routing to _get_maturity_summary")
-            return self._get_maturity_summary(request)
+            logging.debug("Routing to _get_maturity_summary_sync")
+            return self._get_maturity_summary_sync(request)
         elif action == "verify_advancement":
-            logging.debug("Routing to _verify_advancement")
-            return self._verify_advancement(request)
+            logging.debug("Routing to _verify_advancement_sync")
+            return self._verify_advancement_sync(request)
         elif action == "get_history":
-            logging.debug("Routing to _get_maturity_history")
-            return self._get_maturity_history(request)
+            logging.debug("Routing to _get_maturity_history_sync")
+            return self._get_maturity_history_sync(request)
         # Workflow optimization actions
         elif action == "request_workflow_approval":
-            logging.debug("Routing to _request_workflow_approval")
-            return self._request_workflow_approval(request)
+            logging.debug("Routing to _request_workflow_approval_sync")
+            return self._request_workflow_approval_sync(request)
         elif action == "approve_workflow":
-            logging.debug("Routing to _approve_workflow")
-            return self._approve_workflow(request)
+            logging.debug("Routing to _approve_workflow_sync")
+            return self._approve_workflow_sync(request)
         elif action == "reject_workflow":
-            logging.debug("Routing to _reject_workflow")
-            return self._reject_workflow(request)
+            logging.debug("Routing to _reject_workflow_sync")
+            return self._reject_workflow_sync(request)
         elif action == "get_pending_approvals":
-            logging.debug("Routing to _get_pending_approvals")
-            return self._get_pending_approvals(request)
+            logging.debug("Routing to _get_pending_approvals_sync")
+            return self._get_pending_approvals_sync(request)
 
         logging.error(f"Unknown action: {action}")
         return {"status": "error", "message": f"Unknown action: {action}"}
 
-    def _calculate_phase_maturity(self, request: Dict) -> Dict:
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process quality control requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        logging.debug(f"QualityController processing async request: {list(request.keys())}")
+        action = request.get("action")
+        logging.debug(f"Action: {action}")
+
+        if action == "calculate_maturity":
+            logging.debug("Routing to _calculate_phase_maturity_async")
+            return await self._calculate_phase_maturity_async(request)
+        elif action == "get_phase_maturity":
+            logging.debug("Routing to _calculate_phase_maturity_async (get_phase_maturity)")
+            return await self._calculate_phase_maturity_async(request)
+        elif action == "get_readiness":
+            logging.debug("Routing to _get_phase_readiness_async")
+            return await self._get_phase_readiness_async(request)
+        elif action == "update_after_response":
+            logging.debug("Routing to _update_maturity_after_response_async")
+            return await self._update_maturity_after_response_async(request)
+        elif action == "get_maturity_summary":
+            logging.debug("Routing to _get_maturity_summary_async")
+            return await self._get_maturity_summary_async(request)
+        elif action == "verify_advancement":
+            logging.debug("Routing to _verify_advancement_async")
+            return await self._verify_advancement_async(request)
+        elif action == "get_history":
+            logging.debug("Routing to _get_maturity_history_async")
+            return await self._get_maturity_history_async(request)
+        # Workflow optimization actions
+        elif action == "request_workflow_approval":
+            logging.debug("Routing to _request_workflow_approval_async")
+            return await self._request_workflow_approval_async(request)
+        elif action == "approve_workflow":
+            logging.debug("Routing to _approve_workflow_async")
+            return await self._approve_workflow_async(request)
+        elif action == "reject_workflow":
+            logging.debug("Routing to _reject_workflow_async")
+            return await self._reject_workflow_async(request)
+        elif action == "get_pending_approvals":
+            logging.debug("Routing to _get_pending_approvals_async")
+            return await self._get_pending_approvals_async(request)
+
+        logging.error(f"Unknown action: {action}")
+        return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return [
+            "maturity_tracking",
+            "phase_readiness",
+            "workflow_optimization",
+            "quality_verification",
+            "approval_management",
+        ]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Quality control and maturity tracking for projects",
+            "capabilities_count": 5,
+        }
+
+    def _calculate_phase_maturity_sync(self, request: Dict) -> Dict:
         """
         Calculate maturity for current phase.
 
@@ -196,7 +272,7 @@ class QualityControllerAgent(Agent):
             logging.error(f"Unexpected error in maturity calculation: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _update_maturity_after_response(self, request: Dict) -> Dict:
+    def _update_maturity_after_response_sync(self, request: Dict) -> Dict:
         """Called after each question/response to update maturity
 
         IMPORTANT: Uses incremental scoring instead of full recalculation.
@@ -387,7 +463,7 @@ class QualityControllerAgent(Agent):
             f"Event recorded: {event_type} at {event['timestamp']}, score: {score_before:.1f}% → {score_after:.1f}% (delta: {delta:+.1f}%)"
         )
 
-    def _verify_advancement(self, request: Dict) -> Dict:
+    def _verify_advancement_sync(self, request: Dict) -> Dict:
         """
         Verify phase readiness and generate warnings.
 
@@ -452,7 +528,7 @@ class QualityControllerAgent(Agent):
             },
         }
 
-    def _get_phase_readiness(self, request: Dict) -> Dict:
+    def _get_phase_readiness_sync(self, request: Dict) -> Dict:
         """Get readiness assessment for a specific phase"""
         logging.debug("_get_phase_readiness called")
         project = request.get("project")
@@ -460,9 +536,9 @@ class QualityControllerAgent(Agent):
 
         logging.info(f"Getting readiness assessment for phase: {phase}")
 
-        return self._verify_advancement({"project": project, "from_phase": phase})
+        return self._verify_advancement_sync({"project": project, "from_phase": phase})
 
-    def _get_maturity_summary(self, request: Dict) -> Dict:
+    def _get_maturity_summary_sync(self, request: Dict) -> Dict:
         """Get summary of maturity across all phases"""
         logging.debug("_get_maturity_summary called")
         project = request.get("project")
@@ -483,7 +559,7 @@ class QualityControllerAgent(Agent):
 
         return {"status": "success", "summary": summary}
 
-    def _get_maturity_history(self, request: Dict) -> Dict:
+    def _get_maturity_history_sync(self, request: Dict) -> Dict:
         """Get maturity progression history"""
         logging.debug("_get_maturity_history called")
         project = request.get("project")
@@ -502,7 +578,7 @@ class QualityControllerAgent(Agent):
     # Workflow Approval Methods (Phase 4)
     # ========================================================================
 
-    def _request_workflow_approval(self, request: Dict) -> Dict:
+    def _request_workflow_approval_sync(self, request: Dict) -> Dict:
         """
         Request workflow approval - BLOCKING POINT
 
@@ -581,7 +657,7 @@ class QualityControllerAgent(Agent):
             logging.error(f"Unexpected error in workflow approval request: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _approve_workflow(self, request: Dict) -> Dict:
+    def _approve_workflow_sync(self, request: Dict) -> Dict:
         """
         Approve a workflow path and unblock execution
 
@@ -654,7 +730,7 @@ class QualityControllerAgent(Agent):
             logging.error(f"Unexpected error approving workflow: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _reject_workflow(self, request: Dict) -> Dict:
+    def _reject_workflow_sync(self, request: Dict) -> Dict:
         """
         Reject a workflow and request alternatives
 
@@ -720,7 +796,7 @@ class QualityControllerAgent(Agent):
             logging.error(f"Unexpected error rejecting workflow: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _get_pending_approvals(self, request: Dict) -> Dict:
+    def _get_pending_approvals_sync(self, request: Dict) -> Dict:
         """
         Get list of pending workflow approval requests
 
@@ -760,3 +836,47 @@ class QualityControllerAgent(Agent):
         except Exception as e:
             logging.error(f"Unexpected error retrieving pending approvals: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
+
+    # ========================================================================
+    # Phase 2B Async Wrapper Methods
+    # ========================================================================
+
+    async def _calculate_phase_maturity_async(self, request: Dict) -> Dict:
+        """Calculate phase maturity asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._calculate_phase_maturity_sync, request)
+
+    async def _get_phase_readiness_async(self, request: Dict) -> Dict:
+        """Get phase readiness asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_phase_readiness_sync, request)
+
+    async def _update_maturity_after_response_async(self, request: Dict) -> Dict:
+        """Update maturity after response asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._update_maturity_after_response_sync, request)
+
+    async def _get_maturity_summary_async(self, request: Dict) -> Dict:
+        """Get maturity summary asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_maturity_summary_sync, request)
+
+    async def _verify_advancement_async(self, request: Dict) -> Dict:
+        """Verify advancement asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._verify_advancement_sync, request)
+
+    async def _get_maturity_history_async(self, request: Dict) -> Dict:
+        """Get maturity history asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_maturity_history_sync, request)
+
+    async def _request_workflow_approval_async(self, request: Dict) -> Dict:
+        """Request workflow approval asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._request_workflow_approval_sync, request)
+
+    async def _approve_workflow_async(self, request: Dict) -> Dict:
+        """Approve workflow asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._approve_workflow_sync, request)
+
+    async def _reject_workflow_async(self, request: Dict) -> Dict:
+        """Reject workflow asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._reject_workflow_sync, request)
+
+    async def _get_pending_approvals_async(self, request: Dict) -> Dict:
+        """Get pending approvals asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_pending_approvals_sync, request)

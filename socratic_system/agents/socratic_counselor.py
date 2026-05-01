@@ -1,7 +1,10 @@
 """
 Socratic counselor agent for guided questioning and response processing
+
+Phase 2B Migration: Async-first implementation with agent bus support
 """
 
+import asyncio
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -22,10 +25,16 @@ if TYPE_CHECKING:
 
 
 class SocraticCounselorAgent(Agent):
-    """Core agent that guides users through Socratic questioning about their project"""
+    """Core agent that guides users through Socratic questioning about their project
+
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All blocking operations run in thread pool (non-blocking)
+    """
 
     def __init__(self, orchestrator: "AgentOrchestrator") -> None:
-        super().__init__("SocraticCounselor", orchestrator)
+        super().__init__("SocraticCounselor", orchestrator, auto_register=True)
         self.use_dynamic_questions = True  # Toggle for dynamic vs static questions
         self.max_questions_per_phase = 5
         self.phase_docs_cache = {}  # Cache document context per phase to reduce vector DB calls
@@ -64,38 +73,96 @@ class SocraticCounselorAgent(Agent):
         }
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process Socratic questioning requests"""
+        """Process Socratic questioning requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+        """
         action = request.get("action")
 
         if action == "generate_question":
-            return self._generate_question(request)
+            return self._generate_question_sync(request)
         elif action == "process_response":
-            return self._process_response(request)
+            return self._process_response_sync(request)
         elif action == "extract_insights_only":
-            return self._extract_insights_only(request)
+            return self._extract_insights_only_sync(request)
         elif action == "advance_phase":
-            return self._advance_phase(request)
+            return self._advance_phase_sync(request)
         elif action == "rollback_phase":
-            return self._rollback_phase(request)
+            return self._rollback_phase_sync(request)
         elif action == "explain_document":
-            return self._explain_document(request)
+            return self._explain_document_sync(request)
         elif action == "generate_hint":
-            return self._generate_hint(request)
+            return self._generate_hint_sync(request)
         elif action == "toggle_dynamic_questions":
             self.use_dynamic_questions = not self.use_dynamic_questions
             return {"status": "success", "dynamic_mode": self.use_dynamic_questions}
         elif action == "answer_question":
-            return self._answer_question(request)
+            return self._answer_question_sync(request)
         elif action == "skip_question":
-            return self._skip_question(request)
+            return self._skip_question_sync(request)
         elif action == "reopen_question":
-            return self._reopen_question(request)
+            return self._reopen_question_sync(request)
         elif action == "generate_answer_suggestions":
-            return self._generate_answer_suggestions(request)
+            return self._generate_answer_suggestions_sync(request)
 
         return {"status": "error", "message": "Unknown action"}
 
-    def _generate_question(self, request: Dict) -> Dict:
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process Socratic questioning requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "generate_question":
+            return await self._generate_question_async(request)
+        elif action == "process_response":
+            return await self._process_response_async(request)
+        elif action == "extract_insights_only":
+            return await self._extract_insights_only_async(request)
+        elif action == "advance_phase":
+            return await self._advance_phase_async(request)
+        elif action == "rollback_phase":
+            return await self._rollback_phase_async(request)
+        elif action == "explain_document":
+            return await self._explain_document_async(request)
+        elif action == "generate_hint":
+            return await self._generate_hint_async(request)
+        elif action == "toggle_dynamic_questions":
+            self.use_dynamic_questions = not self.use_dynamic_questions
+            return {"status": "success", "dynamic_mode": self.use_dynamic_questions}
+        elif action == "answer_question":
+            return await self._answer_question_async(request)
+        elif action == "skip_question":
+            return await self._skip_question_async(request)
+        elif action == "reopen_question":
+            return await self._reopen_question_async(request)
+        elif action == "generate_answer_suggestions":
+            return await self._generate_answer_suggestions_async(request)
+
+        return {"status": "error", "message": "Unknown action"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return [
+            "question_generation",
+            "response_processing",
+            "insight_extraction",
+            "phase_advancement",
+            "document_explanation",
+            "hint_generation",
+            "question_answering",
+        ]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Socratic questioning and guided project discussion",
+            "capabilities_count": 7,
+        }
+
+    def _generate_question_sync(self, request: Dict) -> Dict:
         """Generate the next Socratic question with usage tracking and workflow optimization"""
         project = request.get("project")
         current_user = request.get("current_user")  # NEW: Accept current user for role context
@@ -736,7 +803,7 @@ What would be most helpful for you?"""
 
         return grouped
 
-    def _extract_insights_only(self, request: Dict) -> Dict:
+    def _extract_insights_only_sync(self, request: Dict) -> Dict:
         """Extract insights from response without processing (for direct mode confirmation)"""
         from socratic_system.utils.logger import get_logger
 
@@ -764,7 +831,7 @@ What would be most helpful for you?"""
 
         return {"status": "success", "insights": insights}
 
-    def _process_response(self, request: Dict) -> Dict:
+    def _process_response_sync(self, request: Dict) -> Dict:
         """Process user response and extract insights"""
         from socratic_system.utils.logger import get_logger
 
@@ -1132,7 +1199,7 @@ What would be most helpful for you?"""
 
         return True
 
-    def _explain_document(self, request: Dict) -> Dict:
+    def _explain_document_sync(self, request: Dict) -> Dict:
         """
         Provide explanation/summary of imported documents.
 
@@ -1246,7 +1313,7 @@ What would be most helpful for you?"""
 
         return "\n".join(parts)
 
-    def _advance_phase(self, request: Dict) -> Dict:
+    def _advance_phase_sync(self, request: Dict) -> Dict:
         """Advance project to the next phase with maturity verification"""
         from socratic_system.utils.logger import get_logger
 
@@ -1329,7 +1396,7 @@ What would be most helpful for you?"""
 
         return {"status": "success", "new_phase": new_phase}
 
-    def _rollback_phase(self, request: Dict) -> Dict:
+    def _rollback_phase_sync(self, request: Dict) -> Dict:
         """Roll back project to the previous phase"""
         from socratic_system.utils.logger import get_logger
 
@@ -1496,7 +1563,7 @@ What would be most helpful for you?"""
                 insight_list.append(new_value)
             insights[insight_type] = insight_list
 
-    def _generate_hint(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_hint_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a context-aware hint for the user based on project state"""
         from socratic_system.utils.logger import get_logger
 
@@ -1574,7 +1641,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
                 "context": "",
             }
 
-    def _answer_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _answer_question_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Mark a question as answered"""
         import datetime
 
@@ -1596,7 +1663,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
 
         return {"status": "error", "message": "Question not found"}
 
-    def _skip_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _skip_question_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Mark a question as skipped"""
         import datetime
 
@@ -1618,7 +1685,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
 
         return {"status": "error", "message": "Question not found"}
 
-    def _reopen_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _reopen_question_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Reopen a skipped question (mark as unanswered)"""
 
         project = request.get("project")
@@ -1683,7 +1750,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
         logger.debug(f"Using {len(suggestions)} fallback suggestions for {phase} phase")
         return suggestions
 
-    def _generate_answer_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_answer_suggestions_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Generate answer suggestions for the current question"""
         from socratic_system.utils.logger import get_logger
 
@@ -2053,3 +2120,51 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
         except Exception as e:
             logging.error(f"Unexpected error advancing workflow node: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
+
+    # ========================================================================
+    # Phase 2B Async Wrapper Methods
+    # ========================================================================
+
+    async def _generate_question_async(self, request: Dict) -> Dict:
+        """Generate question asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._generate_question_sync, request)
+
+    async def _process_response_async(self, request: Dict) -> Dict:
+        """Process response asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._process_response_sync, request)
+
+    async def _extract_insights_only_async(self, request: Dict) -> Dict:
+        """Extract insights asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._extract_insights_only_sync, request)
+
+    async def _advance_phase_async(self, request: Dict) -> Dict:
+        """Advance phase asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._advance_phase_sync, request)
+
+    async def _rollback_phase_async(self, request: Dict) -> Dict:
+        """Rollback phase asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._rollback_phase_sync, request)
+
+    async def _explain_document_async(self, request: Dict) -> Dict:
+        """Explain document asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._explain_document_sync, request)
+
+    async def _generate_hint_async(self, request: Dict) -> Dict:
+        """Generate hint asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._generate_hint_sync, request)
+
+    async def _answer_question_async(self, request: Dict) -> Dict:
+        """Answer question asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._answer_question_sync, request)
+
+    async def _skip_question_async(self, request: Dict) -> Dict:
+        """Skip question asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._skip_question_sync, request)
+
+    async def _reopen_question_async(self, request: Dict) -> Dict:
+        """Reopen question asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._reopen_question_sync, request)
+
+    async def _generate_answer_suggestions_async(self, request: Dict) -> Dict:
+        """Generate answer suggestions asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._generate_answer_suggestions_sync, request)
