@@ -2,7 +2,7 @@ IMPLEMENTATION SUMMARY: Phases 1-6
 
 PHASE STATUS:
 Phase 1 (Service Layer) ........... COMPLETE ✓ (5/5 services - 100%)
-Phase 2 (Agent Bus) .............. NOT IMPLEMENTED
+Phase 2 (Agent Bus) .............. IN PROGRESS (Foundation Complete - 70/70 tests)
 Phase 3 (Event-Driven) ........... NOT IMPLEMENTED
 Phase 4 (API Adapter Layer) ...... COMPLETE ✓
 Phase 5 (Library Export) ......... COMPLETE ✓
@@ -72,6 +72,53 @@ Services Completed for Phase 1:
 ✓ DocumentService - Document import and chunking
 ✓ InsightService - Insight analysis and recommendations
 
+Phase 2: Agent Bus (IN PROGRESS - Foundation Complete)
+
+Foundation Components:
+- AgentRegistry: Central agent discovery and registration system
+- Enhanced AgentBus: Direct message routing with registry integration
+- Base Agent: Auto-registration and bus message handling
+- Orchestrator: Agent bus initialization and integration
+
+AgentRegistry Features (NEW):
+- Thread-safe agent registration/unregistration
+- Agent metadata management (name, capabilities, status)
+- Capability-based agent lookup and filtering
+- Health checking via heartbeat tracking
+- Atomic operations with RLock protection
+
+AgentBus Enhancements:
+- Direct handler invocation (faster than event-based)
+- Registry integration for agent discovery
+- Broadcast messaging with capability filtering
+- Metrics tracking (70+ test coverage)
+- Backward compatible (existing event system still works)
+
+Base Agent Integration:
+- Auto-registration in __init__ (zero-touch)
+- get_capabilities() and get_metadata() hooks
+- _handle_bus_message() adapter for routing
+- No orchestrator dependency for messaging
+
+Test Coverage:
+✓ AgentRegistry tests: 29/29 PASSED
+  - Registration, discovery, status, capabilities
+  - Heartbeat tracking, metadata management
+✓ Agent Bus integration tests: 13/13 PASSED
+  - Direct invocation, broadcast, metrics
+  - Timeout handling, error propagation
+✓ Existing Phase 2 tests: 28/28 PASSED
+  - Circuit breaker, middleware, retry policy
+  - Cache functionality, message history
+
+Phase 2 Total: 70/70 Tests PASSING
+
+Next Phase 2 Steps:
+- Migrate agents to use agent_bus (Tier 1-4)
+- Implement message queuing for async processing
+- Add event-bus bridge for event-driven patterns
+- Service-to-agent communication via adapter
+
 Phase 4: REST API Endpoints
 - socrates-api/src/socrates_api/routers/agents.py
 - 6 endpoints: list, process, process-async, job status, batch status
@@ -98,10 +145,11 @@ Phase 1: Service Layer (COMPLETE ✓)
 - All 5 core services implemented and tested
 - Optional future services: CodeValidationService, DocumentationService (lower priority)
 
-Phase 2: Agent Bus
-- Agent-to-agent calls still via orchestrator
-- No message routing system
-- No async messaging
+Phase 2: Agent Bus (IN PROGRESS)
+- Foundation complete: Registry, Bus, Auto-registration
+- Remaining: Agent migration, message queuing, event-bus bridge
+- Service-to-agent adapter integration
+- Async message handling with persistence
 
 Phase 3: Event-Driven
 - No background processing
@@ -127,6 +175,8 @@ Socrates repo (mod branch):
 - 49f50ca - Phase 1: QualityService and QualityRepository Implementation
 - ab4657e - Phase 1: ConflictService and ConflictRepository Implementation
 - 9de6815 - Phase 1: DocumentService and DocumentRepository Implementation
+- 0bf8707 - Phase 1: Complete InsightService and finalize Service Layer (105 tests)
+- bc5853d - Phase 2: Agent Bus Implementation (Registry, direct routing, 70 tests)
 
 Socratic-agents repo:
 - bd6ef1b - Phase 5: Add client extra
