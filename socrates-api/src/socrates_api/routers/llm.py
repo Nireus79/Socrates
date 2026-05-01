@@ -41,7 +41,7 @@ async def list_providers(current_user: str = Depends(get_current_user)):
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm", {"action": "list_providers", "user_id": current_user}
         )
         if result.get("status") != "success":
@@ -61,7 +61,7 @@ async def get_config(current_user: str = Depends(get_current_user)):
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm", {"action": "get_provider_config", "user_id": current_user}
         )
         if result.get("status") != "success":
@@ -84,7 +84,7 @@ async def set_default_provider(
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm",
             {"action": "set_default_provider", "user_id": current_user, "provider": request.provider},
         )
@@ -108,7 +108,7 @@ async def set_model(
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm",
             {
                 "action": "set_provider_model",
@@ -137,7 +137,7 @@ async def set_api_key(
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm",
             {
                 "action": "add_api_key",
@@ -166,7 +166,7 @@ async def remove_api_key(provider: str, current_user: str = Depends(get_current_
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm", {"action": "remove_api_key", "user_id": current_user, "provider": provider}
         )
         if result.get("status") != "success":
@@ -193,7 +193,7 @@ async def set_auth_method(
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm",
             {
                 "action": "set_auth_method",
@@ -222,7 +222,7 @@ async def get_models(provider: str, current_user: str = Depends(get_current_user
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm", {"action": "get_provider_models", "provider": provider}
         )
         if result.get("status") != "success":
@@ -243,7 +243,7 @@ async def get_stats(time_period: str = "month", current_user: str = Depends(get_
 
         orchestrator = get_orchestrator()
         days = 30 if time_period == "month" else 7 if time_period == "week" else 1
-        result = orchestrator.agent_bus.send_request_sync(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm", {"action": "get_usage_stats", "user_id": current_user, "days": days}
         )
         if result.get("status") != "success":

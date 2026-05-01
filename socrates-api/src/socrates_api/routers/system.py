@@ -212,7 +212,6 @@ async def get_info(
         logger.info(f"System info requested by user: {current_user}")
 
         # Get database connection
-        db = get_database()
 
         # Get user count
         try:
@@ -516,7 +515,6 @@ async def get_context(
     try:
         logger.info(f"System context requested by user: {current_user}")
 
-        db = get_database()
 
         # Get user information
         user = db.get_user(current_user)

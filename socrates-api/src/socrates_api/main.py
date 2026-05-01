@@ -803,7 +803,7 @@ async def ask_question(project_id: str, request: AskQuestionRequest):
         )
 
     try:
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "question_generator",
             {
                 "action": "generate_question",
@@ -851,7 +851,7 @@ async def process_response(project_id: str, request: ProcessResponseRequest):
         )
 
     try:
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "response_evaluator",
             {
                 "action": "evaluate_response",
@@ -900,7 +900,7 @@ async def generate_code(request: GenerateCodeRequest):
 
     try:
         # Load project
-        project_result = orchestrator.agent_bus.send_request_sync(
+        project_result = orchestrator.agent_bus.send_request(
             "project_manager", {"action": "load_project", "project_id": request.project_id}
         )
 
@@ -910,7 +910,7 @@ async def generate_code(request: GenerateCodeRequest):
         project = project_result["project"]
 
         # Generate code
-        code_result = orchestrator.agent_bus.send_request_sync(
+        code_result = orchestrator.agent_bus.send_request(
             "code_generator",
             {
                 "action": "generate_code",

@@ -245,7 +245,6 @@ async def _handle_chat_message(
         try:
             from socrates_api.main import get_orchestrator
 
-            db = get_database()
 
             project = db.load_project(project_id)
             if not project:
@@ -256,7 +255,7 @@ async def _handle_chat_message(
             logger.info("[_handle_chat_message] Got orchestrator, calling process_request")
 
             # Process message through orchestrator using process_request (standard pattern)
-            result = orchestrator.agent_bus.send_request_sync(
+            result = orchestrator.agent_bus.send_request(
                 "socratic_counselor",
                 {
                     "action": "process_response",
@@ -425,7 +424,6 @@ async def _route_command(
     try:
         from socrates_api.main import get_orchestrator
 
-        db = get_database()
 
         project = db.load_project(project_id)
         if not project:
@@ -443,7 +441,7 @@ async def _route_command(
 
         elif command == "summary":
             # Generate conversation summary
-            result = orchestrator.agent_bus.send_request_sync(
+            result = orchestrator.agent_bus.send_request(
                 "context_analyzer",
                 {
                     "action": "generate_summary",
@@ -1023,7 +1021,7 @@ async def get_chat_summary(
             orchestrator = get_orchestrator()
 
             # Use context_analyzer to generate summary
-            summary_result = orchestrator.agent_bus.send_request_sync(
+            summary_result = orchestrator.agent_bus.send_request(
                 "context_analyzer",
                 {
                     "action": "generate_summary",
@@ -1226,7 +1224,6 @@ async def websocket_collaboration_endpoint(
     """
     connection_id = str(uuid.uuid4())
     connection_manager = get_connection_manager()
-    db = get_database()
 
     try:
         # Note: In production, would extract and verify user from token

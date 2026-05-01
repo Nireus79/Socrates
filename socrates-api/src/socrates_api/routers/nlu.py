@@ -249,7 +249,6 @@ async def interpret_input(
             try:
                 from socrates_api.database import get_database
 
-                db = get_database()
                 project = db.load_project(project_id)
                 if project:
                     # Create note from NLU input
@@ -275,7 +274,6 @@ async def interpret_input(
         if current_user:
             from socrates_api.database import get_database
 
-            db = get_database()
             user_obj = db.load_user(current_user)
             if user_obj and hasattr(user_obj, "claude_auth_method"):
                 user_auth_method = user_obj.claude_auth_method or "api_key"

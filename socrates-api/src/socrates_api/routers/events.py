@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from socrates_api.auth import get_current_user
+from socrates_api.database import get_database
 from socrates_api.models import APIResponse
 from socratic_system.database import ProjectDatabase
 
@@ -26,14 +27,7 @@ _event_queue = deque(maxlen=1000)
 _event_subscribers = []  # List of async queues for streaming clients
 
 
-def get_database() -> ProjectDatabase:
-    """Get database instance."""
-    import os
-    from pathlib import Path
-
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabase(db_path)
+# Note: get_database is imported from socrates_api.database (centralized singleton)
 
 
 def record_event(event_type: str, data: dict = None, user_id: str = None) -> None:

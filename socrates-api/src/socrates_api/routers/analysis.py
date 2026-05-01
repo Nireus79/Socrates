@@ -61,7 +61,6 @@ async def validate_code(
         if project_id:
             logger.info(f"Validating code for project: {project_id}")
             # Load project from database
-            db = get_database()
             project = db.load_project(project_id)
             if not project:
                 raise HTTPException(status_code=404, detail="Project not found")
@@ -78,7 +77,7 @@ async def validate_code(
             project_path = project.repository_url or project_id
 
             # Call code validation agent - same as CLI uses
-            result = orchestrator.agent_bus.send_request_sync(
+            result = orchestrator.agent_bus.send_request(
                 "code_validation",
                 {
                     "action": "validate_project",
@@ -183,7 +182,7 @@ async def assess_maturity(
         orchestrator = get_orchestrator()
 
         # Call quality_controller to calculate maturity - same as CLI does
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "quality_controller",
             {
                 "action": "calculate_maturity",
@@ -279,7 +278,7 @@ async def run_tests(
 
         # Call code_validation agent - same as CLI uses
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "code_validation",
             {
                 "action": "run_tests",
@@ -355,14 +354,13 @@ async def analyze_structure(
         logger.info(f"Analyzing structure for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call context analyzer - same as CLI uses
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "context_analyzer",
             {
                 "action": "analyze_context",
@@ -439,14 +437,13 @@ async def review_code(
         logger.info(f"Getting code statistics for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call context analyzer to get project statistics
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "context_analyzer",
             {
                 "action": "analyze_context",
@@ -529,7 +526,7 @@ async def auto_fix_issues(
 
         # Call code generator to generate improved code
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "code_generator",
             {
                 "action": "generate_script",
@@ -606,14 +603,13 @@ async def get_analysis_report(
         logger.info(f"Generating analysis report for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call context analyzer to generate report/summary
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "context_analyzer",
             {
                 "action": "generate_summary",

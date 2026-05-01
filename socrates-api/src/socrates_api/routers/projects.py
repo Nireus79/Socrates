@@ -231,7 +231,7 @@ async def create_project(
                 logger.info("Orchestrator available, using it...")
                 # Use orchestrator pattern (same as CLI)
                 # Pass description and knowledge_base_content so ProjectManagerAgent can analyze them
-                result = orchestrator.agent_bus.send_request_sync(
+                result = orchestrator.agent_bus.send_request(
                     "project_manager",
                     {
                         "action": "create_project",
@@ -284,10 +284,9 @@ async def create_project(
         # CRITICAL: Validate subscription before creating project in fallback path
         logger.info("Validating subscription for fallback project creation...")
         try:
-            user_object = get_current_user_object(current_user)
-
+            # Use the injected user_object from dependency injection (line 164)
             # Check if user has active subscription
-            if user_object.subscription_status != "active":
+            if not user_object or user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to create project without active subscription"
                 )
@@ -326,8 +325,8 @@ async def create_project(
             owner=current_user,
             description=request.description or "",
             phase="discovery",
-            created_at=datetime.now(timezone.utc).isoformat(),
-            updated_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             is_archived=False,
             conversation_history=[],
             overall_maturity=0.0,
@@ -422,7 +421,7 @@ async def create_project(
                 # Get orchestrator and quality controller
                 orchestrator = _get_orchestrator()
                 # Use quality controller to calculate initial maturity
-                maturity_result = orchestrator.agent_bus.send_request_sync(
+                maturity_result = orchestrator.agent_bus.send_request(
                     "quality_controller",
                     {
                         "action": "calculate_maturity",

@@ -12,12 +12,15 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
+from socrates_api.auth.dependencies import get_current_user_object_optional
+from socrates_api.database import get_database
 from socrates_api.models import (
     APIResponse,
     ErrorResponse,
     GitHubImportRequest,
 )
 from socratic_system.database import ProjectDatabase
+from socratic_system.models import User
 from socrates_api.auth.project_access import check_project_access
 from socratic_system.agents.github_sync_handler import (
     create_github_sync_handler,
@@ -90,11 +93,7 @@ def _chunk_code_content(content: str, chunk_size: int = 300, overlap: int = 30) 
     return chunks if chunks else [content]  # Return at least the full content
 
 
-def get_database() -> ProjectDatabase:
-    """Get database instance."""
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabase(db_path)
+# Note: get_database is imported from socrates_api.database (centralized singleton)
 
 
 @router.post(
@@ -113,6 +112,7 @@ async def import_repository(
     request: GitHubImportRequest,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
+    user_object: Optional[User] = Depends(get_current_user_object_optional),
 ):
     """
     Import a GitHub repository as a new project.
@@ -147,11 +147,9 @@ async def import_repository(
         # CRITICAL: Check subscription limit BEFORE attempting to create project
         logger.info("Checking subscription limits for GitHub import...")
         try:
-            from socrates_api.routers.projects import get_current_user_object
             from socratic_system.performance import SubscriptionChecker
 
-            user_object = get_current_user_object(current_user)
-
+            # Use the injected user_object from dependency injection
             # Determine subscription tier - default to free if user not in DB yet
             subscription_tier = "free"
             if user_object:
@@ -287,9 +285,7 @@ async def import_repository(
                         )
                         if readme_content and len(readme_content.strip()) > 0:
                             # Add README to vector database
-                            from socratic_system.database import VectorDatabase
 
-                            vector_db = VectorDatabase()
                             metadata = {
                                 "source": "README.md",
                                 "project_id": project.project_id,
@@ -342,9 +338,7 @@ async def import_repository(
                         extract_code_files(contents)
 
                         # Process extracted code files with chunking
-                        from socratic_system.database import VectorDatabase
 
-                        vector_db = VectorDatabase()
 
                         for code_file in files_to_process:
                             try:

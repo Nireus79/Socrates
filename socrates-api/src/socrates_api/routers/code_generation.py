@@ -898,7 +898,6 @@ async def generate_documentation(
             )
 
         # Verify project access
-        db = get_database()
         project = db.load_project(project_id)
         if project is None:
             raise HTTPException(

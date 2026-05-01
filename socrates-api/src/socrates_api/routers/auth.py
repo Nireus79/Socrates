@@ -7,7 +7,6 @@ using JWT-based authentication.
 
 import hashlib
 import logging
-import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -832,8 +831,8 @@ async def archive_account(
             raise HTTPException(status_code=404, detail="User not found")
 
         # Archive user
-        user.archived = True
-        user.archived_at = datetime.now(timezone.utc).isoformat()
+        user.is_archived = True
+        user.archived_at = datetime.now(timezone.utc)
         db.save_user(user)
 
         return APIResponse(
@@ -887,11 +886,11 @@ async def restore_account(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        if not getattr(user, "archived", False):
+        if not getattr(user, "is_archived", False):
             raise HTTPException(status_code=400, detail="Account is not archived")
 
         # Restore user
-        user.archived = False
+        user.is_archived = False
         user.archived_at = None
         db.save_user(user)
 

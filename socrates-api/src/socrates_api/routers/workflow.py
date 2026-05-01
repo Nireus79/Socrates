@@ -62,7 +62,7 @@ async def get_pending_approvals(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Get pending approvals from QC
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "quality_controller",
             {
                 "action": "get_pending_approvals",
@@ -144,7 +144,7 @@ async def approve_workflow(
             )
 
         # Approve workflow
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "quality_controller",
             {
                 "action": "approve_workflow",
@@ -242,7 +242,7 @@ async def reject_workflow(
         rejection_reason = reason or "User rejection"
 
         # Reject workflow
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "quality_controller",
             {
                 "action": "reject_workflow",
@@ -328,7 +328,7 @@ async def get_workflow_info(
         orchestrator = get_orchestrator()
 
         # Get pending approvals
-        result = orchestrator.agent_bus.send_request_sync(
+        result = orchestrator.agent_bus.send_request(
             "quality_controller",
             {
                 "action": "get_pending_approvals",

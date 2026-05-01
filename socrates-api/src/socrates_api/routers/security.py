@@ -14,6 +14,7 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
+from socrates_api.database import get_database
 from socrates_api.models import APIResponse, ErrorResponse
 from socratic_system.database import ProjectDatabase
 
@@ -21,11 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/security", tags=["security"])
 
 
-def get_database() -> ProjectDatabase:
-    """Get database instance."""
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabase(db_path)
+# Note: get_database is imported from socrates_api.database (centralized singleton)
 
 
 @router.post(

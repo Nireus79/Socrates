@@ -49,10 +49,14 @@ class PasswordManager:
             True if password matches, False otherwise
         """
         try:
+            # Check for NULL or empty hash (old user records may have NULL hashes)
+            if not password_hash or not isinstance(password_hash, str):
+                return False
+
             # Encode password and hash for comparison
             return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
-        except (ValueError, TypeError):
-            # Hash is invalid or corrupted
+        except (ValueError, TypeError, AttributeError):
+            # Hash is invalid, corrupted, or None
             return False
 
 

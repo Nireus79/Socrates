@@ -124,7 +124,6 @@ async def get_subscription_status(
     try:
         logger.info(f"Getting subscription status for user: {current_user}")
 
-        db = get_database()
 
         # Load user from database to get actual tier and testing_mode flag
         user = db.load_user(current_user)

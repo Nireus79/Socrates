@@ -6,7 +6,29 @@
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/public/server-config.json" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/public/server-config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FIXES_APPLIED.md" beforeDir="false" afterPath="$PROJECT_DIR$/FIXES_APPLIED.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/auth/password.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/auth/password.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/analytics.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/analytics.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/chat_sessions.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/chat_sessions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/code_generation.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/code_generation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/github.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/github.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/llm.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/llm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/llm_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/llm_config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/nlu.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/nlu.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/query.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/query.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/security.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/security.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/subscription.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/subscription.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/system.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/system.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/websocket.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/websocket.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/workflow.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/workflow.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
