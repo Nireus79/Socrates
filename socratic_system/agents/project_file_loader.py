@@ -1,6 +1,6 @@
-"""
+"""Project File Loader - Auto-loads project files into vector DB for chat sessions
+
 Phase 2B Migration: Async-first implementation with agent bus support
-Project File Loader - Auto-loads project files into vector DB for chat sessions
 
 Handles:
 - Checking if project has files to load
@@ -8,7 +8,6 @@ Handles:
 - Filtering duplicates from vector DB
 - Processing files through DocumentProcessor
 """
-Phase 2B Migration: Async-first implementation with agent bus support
 
 import logging
 import asyncio

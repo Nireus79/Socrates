@@ -1,6 +1,6 @@
-"""
+"""Code Validation Agent for Socrates AI
+
 Phase 2B Migration: Async-first implementation with agent bus support
-Code Validation Agent for Socrates AI
 
 Orchestrates comprehensive code validation pipeline:
 1. Syntax validation (all files)
@@ -8,7 +8,6 @@ Orchestrates comprehensive code validation pipeline:
 3. Test execution
 4. Report generation with recommendations
 """
-Phase 2B Migration: Async-first implementation with agent bus support
 
 import logging
 import asyncio
@@ -29,30 +28,71 @@ class CodeValidationAgent(Agent):
     """Orchestrates code validation pipeline"""
 
     def __init__(self, orchestrator):
-        super().__init__("CodeValidation", orchestrator)
+        super().__init__("CodeValidation", orchestrator, auto_register=True)
         self.syntax_validator = SyntaxValidator()
         self.dependency_validator = DependencyValidator()
         self.test_executor = TestExecutor()
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process code validation requests"""
+        """Process code validation requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+
+        Supported actions:
+        - validate_project: Run complete validation pipeline
+        - validate_file: Validate single file
+        - run_tests: Execute tests
+        - check_syntax: Check syntax only
+        - check_dependencies: Check dependencies only
+        """
         action = request.get("action")
 
-        action_handlers = {
-            "validate_project": self._validate_project,
-            "validate_file": self._validate_file,
-            "run_tests": self._run_tests,
-            "check_syntax": self._check_syntax,
-            "check_dependencies": self._check_dependencies,
+        if action == "validate_project":
+            return self._validate_project_sync(request)
+        elif action == "validate_file":
+            return self._validate_file_sync(request)
+        elif action == "run_tests":
+            return self._run_tests_sync(request)
+        elif action == "check_syntax":
+            return self._check_syntax_sync(request)
+        elif action == "check_dependencies":
+            return self._check_dependencies_sync(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process code validation requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "validate_project":
+            return await self._validate_project_async(request)
+        elif action == "validate_file":
+            return await self._validate_file_async(request)
+        elif action == "run_tests":
+            return await self._run_tests_async(request)
+        elif action == "check_syntax":
+            return await self._check_syntax_async(request)
+        elif action == "check_dependencies":
+            return await self._check_dependencies_async(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return ["code_validation", "syntax_checking", "dependency_analysis", "test_execution"]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Code validation and quality analysis",
+            "capabilities_count": 4,
         }
 
-        handler = action_handlers.get(action)
-        if handler:
-            return handler(request)
-
-        return {"status": "error", "message": "Unknown action"}
-
-    def _validate_project(self, request: Dict) -> Dict:
+    def _validate_project_sync(self, request: Dict) -> Dict:
         """
         Run complete validation pipeline on project
 
@@ -144,7 +184,7 @@ class CodeValidationAgent(Agent):
                 },
             }
 
-    def _validate_file(self, request: Dict) -> Dict:
+    def _validate_file_sync(self, request: Dict) -> Dict:
         """Validate single file syntax"""
         file_path = request.get("file_path")
 
@@ -166,7 +206,7 @@ class CodeValidationAgent(Agent):
                 "message": f"File validation failed: {str(e)}",
             }
 
-    def _run_tests(self, request: Dict) -> Dict:
+    def _run_tests_sync(self, request: Dict) -> Dict:
         """Run tests only"""
         project_path = request.get("project_path")
         timeout = request.get("timeout", 300)
@@ -189,7 +229,7 @@ class CodeValidationAgent(Agent):
                 "message": f"Test execution failed: {str(e)}",
             }
 
-    def _check_syntax(self, request: Dict) -> Dict:
+    def _check_syntax_sync(self, request: Dict) -> Dict:
         """Check syntax only"""
         target = request.get("target")
 
@@ -211,7 +251,7 @@ class CodeValidationAgent(Agent):
                 "message": f"Syntax check failed: {str(e)}",
             }
 
-    def _check_dependencies(self, request: Dict) -> Dict:
+    def _check_dependencies_sync(self, request: Dict) -> Dict:
         """Check dependencies only"""
         project_path = request.get("project_path")
 
@@ -383,3 +423,27 @@ class CodeValidationAgent(Agent):
                 details.append(f"Tests: {passed} passed, {failed} failed, {skipped} skipped")
 
         return "; ".join(details) if details else "No validation details available"
+
+    # ========================================================================
+    # Phase 2B Async Wrapper Methods
+    # ========================================================================
+
+    async def _validate_project_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate project asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._validate_project_sync, request)
+
+    async def _validate_file_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate file asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._validate_file_sync, request)
+
+    async def _run_tests_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Run tests asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._run_tests_sync, request)
+
+    async def _check_syntax_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Check syntax asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._check_syntax_sync, request)
+
+    async def _check_dependencies_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Check dependencies asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._check_dependencies_sync, request)

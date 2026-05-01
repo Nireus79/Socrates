@@ -1,6 +1,6 @@
-"""
+"""User Learning Agent - Background learning and personalization.
+
 Phase 2B Migration: Async-first implementation with agent bus support
-User Learning Agent - Background learning and personalization.
 
 This agent orchestrates user behavior learning and question personalization:
 1. Tracks question effectiveness from user responses
@@ -14,7 +14,6 @@ Architecture:
 - LearningEngine handles: Behavior analysis, metrics calculation, personalization
 - Clear separation enables testing without database
 """
-Phase 2B Migration: Async-first implementation with agent bus support
 
 import uuid
 import asyncio
@@ -60,7 +59,7 @@ class UserLearningAgent(Agent):
 
     def __init__(self, orchestrator):
         """Initialize agent with learning engine"""
-        super().__init__("User Learning", orchestrator)
+        super().__init__("User Learning", orchestrator, auto_register=True)
         if LearningEngine is None:
             raise ImportError(
                 "socratic-learning library not installed, required for UserLearningAgent"
@@ -69,40 +68,69 @@ class UserLearningAgent(Agent):
         self.logger.info("UserLearningAgent initialized")
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process learning-related requests.
+        """Process learning-related requests (sync wrapper for backward compatibility).
 
-        Args:
-            request: Dict with 'action' key specifying the operation
+        Phase 2B: Delegates to sync helper methods
 
-        Returns:
-            Dict with 'status' and operation-specific data
+        Supported actions:
+        - track_question_effectiveness: Track question effectiveness
+        - learn_behavior_pattern: Learn behavior patterns
+        - recommend_next_question: Recommend next question
+        - upload_knowledge_document: Upload learning document
+        - get_user_profile: Get user learning profile
         """
         action = request.get("action")
 
-        action_handlers = {
-            "track_question_effectiveness": self._track_question_effectiveness,
-            "learn_behavior_pattern": self._learn_behavior_pattern,
-            "recommend_next_question": self._recommend_next_question,
-            "upload_knowledge_document": self._upload_knowledge_document,
-            "get_user_profile": self._get_user_profile,
+        if action == "track_question_effectiveness":
+            return self._track_question_effectiveness_sync(request)
+        elif action == "learn_behavior_pattern":
+            return self._learn_behavior_pattern_sync(request)
+        elif action == "recommend_next_question":
+            return self._recommend_next_question_sync(request)
+        elif action == "upload_knowledge_document":
+            return self._upload_knowledge_document_sync(request)
+        elif action == "get_user_profile":
+            return self._get_user_profile_sync(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process learning-related requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "track_question_effectiveness":
+            return await self._track_question_effectiveness_async(request)
+        elif action == "learn_behavior_pattern":
+            return await self._learn_behavior_pattern_async(request)
+        elif action == "recommend_next_question":
+            return await self._recommend_next_question_async(request)
+        elif action == "upload_knowledge_document":
+            return await self._upload_knowledge_document_async(request)
+        elif action == "get_user_profile":
+            return await self._get_user_profile_async(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return ["behavior_tracking", "pattern_learning", "recommendation_generation", "document_management", "profile_management"]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "User learning and behavior analysis",
+            "capabilities_count": 5,
         }
-
-        handler = action_handlers.get(action)
-        if handler:
-            try:
-                return handler(request)
-            except Exception as e:
-                self.logger.error(f"Error in {action}: {str(e)}", exc_info=True)
-                return {"status": "error", "message": f"Failed to {action}: {str(e)}"}
-
-        return {"status": "error", "message": f"Unknown action: {action}"}
 
     # ============================================================================
     # Core Actions
     # ============================================================================
 
-    def _track_question_effectiveness(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _track_question_effectiveness_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Track how effective a question was for the user.
 
@@ -241,7 +269,7 @@ class UserLearningAgent(Agent):
             self.logger.error(f"Error tracking effectiveness: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _learn_behavior_pattern(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _learn_behavior_pattern_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Learn or update user behavior pattern.
 
@@ -332,7 +360,7 @@ class UserLearningAgent(Agent):
             self.logger.error(f"Error learning pattern: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _recommend_next_question(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _recommend_next_question_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Recommend next question based on user learning.
 
@@ -417,7 +445,7 @@ class UserLearningAgent(Agent):
             self.logger.error(f"Error recommending question: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _upload_knowledge_document(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _upload_knowledge_document_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Upload and process knowledge base document.
 
@@ -491,7 +519,7 @@ class UserLearningAgent(Agent):
             self.logger.error(f"Error uploading document: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _get_user_profile(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_user_profile_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Get complete user learning profile.
 
@@ -631,3 +659,27 @@ class UserLearningAgent(Agent):
             self.orchestrator.event_emitter.emit(event_type, data)
         except Exception as e:
             self.logger.debug(f"Could not emit event {event_type}: {e}")
+
+    # ========================================================================
+    # Phase 2B Async Wrapper Methods
+    # ========================================================================
+
+    async def _track_question_effectiveness_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Track question effectiveness asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._track_question_effectiveness_sync, request)
+
+    async def _learn_behavior_pattern_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Learn behavior pattern asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._learn_behavior_pattern_sync, request)
+
+    async def _recommend_next_question_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Recommend next question asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._recommend_next_question_sync, request)
+
+    async def _upload_knowledge_document_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Upload knowledge document asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._upload_knowledge_document_sync, request)
+
+    async def _get_user_profile_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get user profile asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_user_profile_sync, request)

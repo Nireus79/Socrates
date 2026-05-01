@@ -1,6 +1,6 @@
-"""
+"""GitHub Sync Edge Case Handler
+
 Phase 2B Migration: Async-first implementation with agent bus support
-GitHub Sync Edge Case Handler
 
 Handles critical edge cases in GitHub synchronization:
 1. Merge conflict resolution
@@ -12,7 +12,6 @@ Handles critical edge cases in GitHub synchronization:
 This module provides robust error handling and recovery mechanisms
 for reliable GitHub sync operations.
 """
-Phase 2B Migration: Async-first implementation with agent bus support
 
 import logging
 import asyncio
