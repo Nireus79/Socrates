@@ -950,13 +950,13 @@ What would be most helpful for you?"""
                 self.database.save_project(project)
                 logger.info(
                     f"[PHASE 3] Conflicts detected - returning immediately. "
-                    f"Background analysis will proceed async for project {project.id}"
+                    f"Background analysis will proceed async for project {project.project_id}"
                 )
                 # Emit response.received event for background processing
                 self.orchestrator.event_emitter.emit(
                     "response.received",
                     {
-                        "project_id": project.id,
+                        "project_id": project.project_id,
                         "insights": insights,
                         "current_user": current_user,
                     }
@@ -982,12 +982,12 @@ What would be most helpful for you?"""
         # - Conflict detection (if not already done)
         # - Learning system tracking
         logger.info(
-            f"[PHASE 3] Response processed. Emitting background analysis event for project {project.id}"
+            f"[PHASE 3] Response processed. Emitting background analysis event for project {project.project_id}"
         )
         self.orchestrator.event_emitter.emit(
             "response.received",
             {
-                "project_id": project.id,
+                "project_id": project.project_id,
                 "insights": insights,
                 "current_user": current_user,
                 "user_response": user_response,
