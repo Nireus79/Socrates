@@ -7,9 +7,11 @@ Services use repositories instead of calling database directly.
 Available Repositories:
 - ProjectRepository: All project database operations
 - QualityRepository: Quality metrics and maturity data access
+- ConflictRepository: Conflict detection and resolution data access
 """
 
 from .base_repository import BaseRepository
+from .conflict_repository import ConflictRepository
 from .project_repository import ProjectRepository
 from .quality_repository import QualityRepository
 
@@ -17,4 +19,5 @@ __all__ = [
     "BaseRepository",
     "ProjectRepository",
     "QualityRepository",
+    "ConflictRepository",
 ]
