@@ -60,6 +60,7 @@ def safe_orchestrator_call(
 
     This is the recommended way to call orchestrator methods throughout the codebase.
     It ensures proper error handling and logging.
+    Uses agent_bus for decoupled agent communication with resilience patterns.
 
     Args:
         orchestrator: The AgentOrchestrator instance
@@ -76,25 +77,26 @@ def safe_orchestrator_call(
         Exception: If orchestrator call fails
     """
     try:
-        logger.debug(f"Executing orchestrator {agent} for {operation_name}")
+        logger.debug(f"Executing agent {agent} for {operation_name}")
 
-        # Call orchestrator (sync or async as appropriate)
+        # Call agent via bus (sync or async as appropriate)
+        # Agent bus provides resilience patterns (circuit breaker, retry)
         if async_mode:
             # For async calls, the caller should use: await result
-            result = orchestrator.process_request_async(agent, request_data)
+            result = orchestrator.agent_bus.send_request(agent, request_data)
         else:
-            result = orchestrator.process_request(agent, request_data)
+            result = orchestrator.agent_bus.send_request_sync(agent, request_data)
 
         # Validate result before returning
         validated = validate_orchestrator_result(result, operation_name)
-        logger.debug(f"Orchestrator {operation_name} completed successfully")
+        logger.debug(f"Agent {operation_name} completed successfully")
         return validated
 
     except ValueError:
         # Re-raise validation errors as-is
         raise
     except Exception as e:
-        error_msg = f"Orchestrator {operation_name} raised exception: {str(e)}"
+        error_msg = f"Agent {operation_name} raised exception: {str(e)}"
         logger.error(error_msg)
         raise
 
