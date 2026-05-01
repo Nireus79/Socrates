@@ -12,7 +12,6 @@ to maintain a single source of truth.
 """
 
 import logging
-from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -20,10 +19,8 @@ from pydantic import BaseModel
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse
+from socratic_system.database import ProjectDatabase
 from socratic_system.subscription.tiers import TIER_LIMITS
-
-if TYPE_CHECKING:
-    from socratic_system.database import ProjectDatabase
 
 
 class SubscriptionPlan(BaseModel):
