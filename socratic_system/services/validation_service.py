@@ -37,7 +37,7 @@ class ValidationService(Service):
         """
         self.logger.info(f"Running tests for project {project_id}")
 
-        result = self.orchestrator.process_request(
+        result = self.orchestrator.agent_bus.send_request_sync(
             "code_validation",
             {
                 "action": "run_tests",
@@ -64,7 +64,7 @@ class ValidationService(Service):
         """
         self.logger.info(f"Validating {language} syntax")
 
-        result = self.orchestrator.process_request(
+        result = self.orchestrator.agent_bus.send_request_sync(
             "code_validation",
             {
                 "action": "validate_code",

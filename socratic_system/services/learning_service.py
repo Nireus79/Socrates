@@ -40,7 +40,7 @@ class LearningService(Service):
         """
         self.logger.debug(f"Tracking question effectiveness for user {user_id}")
 
-        self.orchestrator.process_request(
+        self.orchestrator.agent_bus.send_request_sync(
             "learning",
             {
                 "action": "track_question_effectiveness",
@@ -63,7 +63,7 @@ class LearningService(Service):
         """
         self.logger.debug(f"Getting learning metrics for user {user_id}")
 
-        result = self.orchestrator.process_request(
+        result = self.orchestrator.agent_bus.send_request_sync(
             "learning",
             {
                 "action": "get_metrics",

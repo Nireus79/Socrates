@@ -40,7 +40,7 @@ class CodeService(Service):
         """
         self.logger.info(f"Generating code for project {project.project_id}")
 
-        result = self.orchestrator.process_request(
+        result = self.orchestrator.agent_bus.send_request_sync(
             "code_generator",
             {
                 "action": "generate_script",
@@ -68,7 +68,7 @@ class CodeService(Service):
         """
         self.logger.info(f"Validating code for project {project.project_id}")
 
-        result = self.orchestrator.process_request(
+        result = self.orchestrator.agent_bus.send_request_sync(
             "code_validation",
             {
                 "action": "validate_project",

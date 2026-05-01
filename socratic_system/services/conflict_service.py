@@ -40,7 +40,7 @@ class ConflictService(Service):
         """
         self.logger.info(f"Detecting conflicts for project {project.project_id}")
 
-        result = self.orchestrator.process_request(
+        result = self.orchestrator.agent_bus.send_request_sync(
             "conflict_detector",
             {
                 "action": "detect_conflicts",
@@ -71,7 +71,7 @@ class ConflictService(Service):
         self.logger.info(f"Resolving conflict {conflict_id}")
 
         # Update project with resolution
-        self.orchestrator.process_request(
+        self.orchestrator.agent_bus.send_request_sync(
             "conflict_detector",
             {
                 "action": "resolve_conflict",

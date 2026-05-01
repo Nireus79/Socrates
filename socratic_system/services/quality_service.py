@@ -33,7 +33,7 @@ class QualityService(Service):
         """
         self.logger.info(f"Calculating maturity for project {project.project_id}")
 
-        result = self.orchestrator.process_request(
+        result = self.orchestrator.agent_bus.send_request_sync(
             "quality_controller",
             {
                 "action": "get_phase_maturity",
@@ -57,7 +57,7 @@ class QualityService(Service):
         """
         self.logger.info(f"Calculating post-response maturity for {project.project_id}")
 
-        result = self.orchestrator.process_request(
+        result = self.orchestrator.agent_bus.send_request_sync(
             "quality_controller",
             {
                 "action": "update_after_response",
