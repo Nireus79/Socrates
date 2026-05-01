@@ -246,14 +246,15 @@ class ProjectManagerAgent(Agent):
         if context_to_analyze:
             try:
                 self.log(f"Calculating initial maturity for project '{project_name}'...")
-                # Use quality controller to calculate initial maturity from specs
-                maturity_result = self.orchestrator.process_request(
+                # Use agent bus to communicate with quality controller agent
+                maturity_result = self.orchestrator.agent_bus.send_request_sync(
                     "quality_controller",
                     {
                         "action": "calculate_maturity",
                         "project": project,
                         "current_user": owner,
                     },
+                    orchestrator=self.orchestrator,
                 )
                 if maturity_result and maturity_result.get("overall_maturity") is not None:
                     project.overall_maturity = maturity_result["overall_maturity"]

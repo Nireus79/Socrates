@@ -31,13 +31,25 @@ class AgentBus:
     to communicate without direct coupling through orchestrator.
     """
 
-    def __init__(self, event_emitter):
+    def __init__(
+        self,
+        event_emitter,
+        registry=None,
+        max_concurrent_requests: int = 100,
+        default_timeout: float = 30.0,
+    ):
         """Initialize agent bus.
 
         Args:
             event_emitter: Event emitter for routing messages
+            registry: Optional agent registry for discovery
+            max_concurrent_requests: Max concurrent requests allowed
+            default_timeout: Default timeout for requests in seconds
         """
         self.event_emitter = event_emitter
+        self.registry = registry
+        self.max_concurrent_requests = max_concurrent_requests
+        self.default_timeout = default_timeout
         self.request_queue: Dict[str, asyncio.Future] = {}
         self.response_listeners: Dict[str, List[Callable]] = {}
         self.logger = logging.getLogger(__name__)
@@ -46,7 +58,7 @@ class AgentBus:
         self,
         target_agent: str,
         request: Dict[str, Any],
-        timeout: float = 30.0,
+        timeout: Optional[float] = None,
         fire_and_forget: bool = False,
     ) -> Dict[str, Any]:
         """Send request to another agent.
@@ -56,7 +68,7 @@ class AgentBus:
         Args:
             target_agent: Name of target agent
             request: Request data dict
-            timeout: Timeout in seconds
+            timeout: Timeout in seconds (uses default_timeout if not specified)
             fire_and_forget: If True, don't wait for response
 
         Returns:
@@ -67,6 +79,10 @@ class AgentBus:
             AgentError: If agent encounters an error
         """
         request_id = str(uuid4())
+
+        # Use default timeout if not specified
+        if timeout is None:
+            timeout = self.default_timeout
 
         self.logger.debug(
             f"[AgentBus] Sending request to {target_agent} (id: {request_id})"
@@ -158,6 +174,59 @@ class AgentBus:
         """
         event_name = f"agent.{agent_name}.{event_type}"
         self.event_emitter.emit(event_name, data)
+
+    def send_request_sync(
+        self,
+        target_agent: str,
+        request: Dict[str, Any],
+        timeout: Optional[float] = None,
+        fire_and_forget: bool = False,
+        orchestrator=None,
+    ) -> Dict[str, Any]:
+        """Send request to another agent synchronously.
+
+        Routes through orchestrator if available (backward compatible),
+        otherwise tries async path via asyncio.run().
+
+        Args:
+            target_agent: Name of target agent
+            request: Request data dict
+            timeout: Timeout in seconds (uses default_timeout if not specified)
+            fire_and_forget: If True, don't wait for response
+            orchestrator: Optional orchestrator to use for routing
+
+        Returns:
+            Response dict from agent
+
+        Raises:
+            AgentTimeoutError: If request times out
+            AgentError: If agent encounters an error
+        """
+        # If orchestrator is available, use it for backward compatibility
+        if orchestrator is not None:
+            self.logger.debug(
+                f"[AgentBus] Routing {target_agent} request through orchestrator"
+            )
+            return orchestrator.process_request(target_agent, request)
+
+        # Try to run async send_request
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop, create one
+            return asyncio.run(
+                self.send_request(
+                    target_agent,
+                    request,
+                    timeout=timeout,
+                    fire_and_forget=fire_and_forget,
+                )
+            )
+        else:
+            # Already in async context, shouldn't call sync version
+            raise RuntimeError(
+                "send_request_sync() called from async context. Use send_request() instead."
+            )
 
     def get_stats(self) -> Dict[str, Any]:
         """Get agent bus statistics.
