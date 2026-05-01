@@ -1,8 +1,11 @@
 """
 Document processing for importing files into projects
 Extracts content from PDFs, text files, code files, pasted text, and web pages
+
+Phase 2B Migration: Async-first implementation with agent bus support
 """
 
+import asyncio
 import os
 import re
 from datetime import datetime
@@ -16,30 +19,77 @@ from .base import Agent
 
 
 class DocumentProcessorAgent(Agent):
-    """Handles document import and processing - extracts content and stores in vector database"""
+    """Handles document import and processing - extracts content and stores in vector database.
+
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All blocking operations run in thread pool (non-blocking)
+    """
 
     def __init__(self, orchestrator):
-        super().__init__("DocumentProcessor", orchestrator)
+        super().__init__("DocumentProcessor", orchestrator, auto_register=True)
         self.logger = get_logger("document_processor")
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process document import requests"""
+        """Process document import requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+        """
         action = request.get("action")
 
         if action == "import_file":
-            return self._import_file(request)
+            return self._import_file_sync(request)
         elif action == "import_directory":
-            return self._import_directory(request)
+            return self._import_directory_sync(request)
         elif action == "import_text":
-            return self._import_text(request)
+            return self._import_text_sync(request)
         elif action == "import_url":
-            return self._import_url(request)
+            return self._import_url_sync(request)
         elif action == "list_documents":
-            return self._list_documents(request)
+            return self._list_documents_sync(request)
 
         return {"status": "error", "message": "Unknown action"}
 
-    def _import_file(self, request: Dict) -> Dict:
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process document import requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "import_file":
+            return await self._import_file_async(request)
+        elif action == "import_directory":
+            return await self._import_directory_async(request)
+        elif action == "import_text":
+            return await self._import_text_async(request)
+        elif action == "import_url":
+            return await self._import_url_async(request)
+        elif action == "list_documents":
+            return await self._list_documents_async(request)
+
+        return {"status": "error", "message": "Unknown action"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return [
+            "document_processing",
+            "file_import",
+            "text_import",
+            "url_import",
+            "content_extraction",
+        ]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Document processing and content extraction for knowledge bases",
+            "capabilities_count": 5,
+        }
+
+    def _import_file_sync(self, request: Dict) -> Dict:
         """Import a single file - extract content and store in vector database"""
         file_path = request.get("file_path")
         project_id = request.get("project_id")
@@ -136,7 +186,14 @@ class DocumentProcessorAgent(Agent):
             self.logger.error(f"Error importing file {file_path}: {e}", e)
             return {"status": "error", "message": f"Failed to import file: {str(e)}"}
 
-    def _import_directory(self, request: Dict) -> Dict:
+    async def _import_file_async(self, request: Dict) -> Dict:
+        """Import file asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._import_file_sync, request)
+
+    def _import_directory_sync(self, request: Dict) -> Dict:
         """Import all files from a directory"""
         directory_path = request.get("directory_path")
         project_id = request.get("project_id")
@@ -199,7 +256,14 @@ class DocumentProcessorAgent(Agent):
             "imported": True,
         }
 
-    def _import_text(self, request: Dict) -> Dict:
+    async def _import_directory_async(self, request: Dict) -> Dict:
+        """Import directory asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._import_directory_sync, request)
+
+    def _import_text_sync(self, request: Dict) -> Dict:
         """Import pasted or inline text into the knowledge base"""
         # Support both "content" and "text_content" parameter names for flexibility
         text_content = request.get("text_content") or request.get("content")
@@ -260,7 +324,14 @@ class DocumentProcessorAgent(Agent):
             self.logger.error(f"Error importing pasted text: {e}", e)
             return {"status": "error", "message": f"Failed to import text: {str(e)}"}
 
-    def _import_url(self, request: Dict) -> Dict:
+    async def _import_text_async(self, request: Dict) -> Dict:
+        """Import text asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._import_text_sync, request)
+
+    def _import_url_sync(self, request: Dict) -> Dict:
         """Import content from a web page URL"""
         url = request.get("url")
         project_id = request.get("project_id")
@@ -336,6 +407,13 @@ class DocumentProcessorAgent(Agent):
             self.logger.error(f"Error importing URL {url}: {e}", e)
             return {"status": "error", "message": f"Failed to import URL: {str(e)}"}
 
+    async def _import_url_async(self, request: Dict) -> Dict:
+        """Import URL asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._import_url_sync, request)
+
     def _fetch_url_content(self, url: str) -> Optional[str]:
         """Fetch and extract text content from a URL"""
         try:
@@ -408,7 +486,7 @@ class DocumentProcessorAgent(Agent):
             # Fallback: just remove HTML tags
             return re.sub(r"<[^>]+>", "", html_content)
 
-    def _list_documents(self, request: Dict) -> Dict:
+    def _list_documents_sync(self, request: Dict) -> Dict:
         """List imported documents (from metadata)"""
         project_id = request.get("project_id")
 
@@ -417,6 +495,13 @@ class DocumentProcessorAgent(Agent):
             "project_id": project_id,
             "documents": [],  # Would require metadata tracking
         }
+
+    async def _list_documents_async(self, request: Dict) -> Dict:
+        """List documents asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._list_documents_sync, request)
 
     def _read_file(self, file_path: str) -> str:
         """Read content from various file types"""
