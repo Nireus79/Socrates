@@ -35,6 +35,7 @@ async def validate_code(
     language: Optional[str] = None,
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Validate code for syntax and style issues.

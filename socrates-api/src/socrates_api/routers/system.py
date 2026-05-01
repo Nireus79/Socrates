@@ -191,6 +191,7 @@ async def get_help(
 )
 async def get_info(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get comprehensive system information and statistics.
@@ -496,6 +497,7 @@ async def get_logs(
 )
 async def get_context(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get current system context and user state information.

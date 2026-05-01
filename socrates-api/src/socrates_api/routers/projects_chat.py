@@ -87,6 +87,7 @@ async def create_chat_session(
     project_id: str,
     request: CreateChatSessionRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Create a new chat session for a project.
@@ -159,6 +160,7 @@ async def create_chat_session(
 async def list_chat_sessions(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     List all chat sessions for a project.
@@ -225,6 +227,7 @@ async def get_chat_session(
     project_id: str,
     session_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get details of a specific chat session.
@@ -289,6 +292,7 @@ async def delete_chat_session(
     project_id: str,
     session_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Delete a chat session.
@@ -344,6 +348,7 @@ async def send_chat_message(
     session_id: str,
     request: ChatMessageRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Send a message in a chat session.
@@ -422,6 +427,7 @@ async def get_chat_messages(
     session_id: str,
     limit: Optional[int] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get all messages in a chat session.
@@ -501,6 +507,7 @@ async def get_chat_messages(
 async def get_question(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get the next Socratic question for a project.
@@ -575,6 +582,7 @@ async def send_message(
     project_id: str,
     request: ChatMessageRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Send a chat message and get response.
@@ -859,6 +867,7 @@ async def get_history(
     project_id: str,
     limit: Optional[int] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get conversation history for a project.
@@ -917,6 +926,7 @@ async def switch_mode(
     project_id: str,
     request: ChatModeRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Switch between socratic and direct chat modes.
@@ -969,6 +979,7 @@ async def switch_mode(
 async def get_hint(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get a hint for the current question.
@@ -1037,6 +1048,7 @@ async def get_hint(
 async def clear_history(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Clear conversation history for a project.
@@ -1086,6 +1098,7 @@ async def clear_history(
 async def get_summary(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get AI-generated summary of conversation.
@@ -1153,6 +1166,7 @@ async def search_conversations(
     project_id: str,
     request: SearchRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Search conversation history.
@@ -1202,6 +1216,7 @@ async def search_conversations(
 async def finish_session(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Finish the interactive session and finalize project state.
@@ -1439,6 +1454,7 @@ async def get_questions(
     project_id: str,
     status_filter: Optional[str] = None,  # unanswered, answered, skipped
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get all questions for a project, optionally filtered by status.
@@ -1496,6 +1512,7 @@ async def reopen_question(
     project_id: str,
     question_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Reopen a skipped question (mark as unanswered so user can answer it).
@@ -1616,6 +1633,7 @@ async def skip_question(
 async def get_answer_suggestions(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get answer suggestions for the current question in the chat.

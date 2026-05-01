@@ -1509,6 +1509,7 @@ async def add_knowledge_entry(
 )
 async def debug_get_vector_db_chunks(
     orchestrator=Depends(_get_orchestrator),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Debug endpoint to inspect what's actually stored in the vector database.

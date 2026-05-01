@@ -109,6 +109,7 @@ SUBSCRIPTION_TIERS = _build_subscription_tiers()
 )
 async def get_subscription_status(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get current subscription status for user.

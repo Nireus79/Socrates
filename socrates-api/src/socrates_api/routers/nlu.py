@@ -214,6 +214,7 @@ Respond ONLY with valid JSON."""
 async def interpret_input(
     request: NLUInterpretRequest,
     current_user: Optional[str] = Depends(get_current_user_optional),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Interpret natural language input and return command suggestions using AI.

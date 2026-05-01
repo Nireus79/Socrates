@@ -807,6 +807,7 @@ async def set_testing_mode(
 )
 async def archive_account(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Archive user account (soft delete).
@@ -864,6 +865,7 @@ async def archive_account(
 )
 async def restore_account(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Restore archived user account.

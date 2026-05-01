@@ -125,6 +125,7 @@ async def search_knowledge(
     project_id: Optional[str] = None,
     limit: Optional[int] = 10,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Search across knowledge base and projects.

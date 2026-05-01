@@ -870,6 +870,7 @@ async def generate_documentation(
     format: Optional[str] = "markdown",
     include_examples: Optional[bool] = True,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Generate comprehensive documentation for project code.
