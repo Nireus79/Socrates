@@ -6,10 +6,133 @@ async messaging. Eliminates direct agent coupling and enables resilience pattern
 
 import asyncio
 import logging
+import time
+from enum import Enum
 from typing import Any, Callable, Dict, Optional, List
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
+
+
+class CircuitBreakerState(Enum):
+    """Circuit breaker states."""
+    CLOSED = "closed"
+    OPEN = "open"
+    HALF_OPEN = "half_open"
+
+
+class CircuitBreaker:
+    """Circuit breaker for resilient agent communication.
+
+    Prevents cascading failures by stopping requests to failing agents.
+    States: CLOSED (normal) → OPEN (failing) → HALF_OPEN (testing) → CLOSED
+    """
+
+    def __init__(
+        self,
+        failure_threshold: int = 5,
+        success_threshold: int = 2,
+        timeout_seconds: float = 60.0,
+    ):
+        """Initialize circuit breaker.
+
+        Args:
+            failure_threshold: Failures before opening circuit
+            success_threshold: Successes in HALF_OPEN before closing
+            timeout_seconds: Time before attempting recovery
+        """
+        self.failure_threshold = failure_threshold
+        self.success_threshold = success_threshold
+        self.timeout_seconds = timeout_seconds
+
+        self.state = CircuitBreakerState.CLOSED
+        self.failure_count = 0
+        self.success_count = 0
+        self.last_failure_time = None
+        self.logger = logging.getLogger(__name__)
+
+    def record_success(self) -> None:
+        """Record successful request."""
+        self.failure_count = 0
+
+        if self.state == CircuitBreakerState.HALF_OPEN:
+            self.success_count += 1
+            if self.success_count >= self.success_threshold:
+                self.state = CircuitBreakerState.CLOSED
+                self.logger.info(f"Circuit breaker CLOSED after {self.success_count} successes")
+
+    def record_failure(self) -> None:
+        """Record failed request."""
+        self.failure_count += 1
+        self.last_failure_time = time.time()
+
+        if self.failure_count >= self.failure_threshold:
+            self.state = CircuitBreakerState.OPEN
+            self.logger.warning(f"Circuit breaker OPEN after {self.failure_count} failures")
+
+    def allow_request(self) -> bool:
+        """Check if request should be allowed.
+
+        Returns:
+            True if request should proceed, False if circuit is open
+        """
+        if self.state == CircuitBreakerState.CLOSED:
+            return True
+
+        if self.state == CircuitBreakerState.OPEN:
+            # Try recovery after timeout
+            if time.time() - self.last_failure_time >= self.timeout_seconds:
+                self.state = CircuitBreakerState.HALF_OPEN
+                self.success_count = 0
+                self.logger.info("Circuit breaker HALF_OPEN - testing recovery")
+                return True
+            return False
+
+        # HALF_OPEN: allow test request
+        return True
+
+    def get_state(self) -> str:
+        """Get current state as string."""
+        return self.state.value
+
+
+class RetryPolicy:
+    """Retry policy with exponential backoff."""
+
+    def __init__(
+        self,
+        max_retries: int = 3,
+        initial_delay: float = 0.1,
+        max_delay: float = 10.0,
+        backoff_factor: float = 2.0,
+    ):
+        """Initialize retry policy.
+
+        Args:
+            max_retries: Maximum number of retry attempts
+            initial_delay: Initial delay in seconds
+            max_delay: Maximum delay between retries
+            backoff_factor: Exponential backoff multiplier
+        """
+        self.max_retries = max_retries
+        self.initial_delay = initial_delay
+        self.max_delay = max_delay
+        self.backoff_factor = backoff_factor
+
+    def get_delay(self, attempt: int) -> float:
+        """Calculate delay for retry attempt.
+
+        Args:
+            attempt: Current attempt number (0-indexed)
+
+        Returns:
+            Delay in seconds with exponential backoff
+        """
+        delay = min(
+            self.initial_delay * (self.backoff_factor ** attempt),
+            self.max_delay
+        )
+        return delay
 
 
 class AgentTimeoutError(Exception):
@@ -29,6 +152,7 @@ class AgentBus:
 
     Provides request-response and fire-and-forget patterns for agents
     to communicate without direct coupling through orchestrator.
+    Includes resilience patterns: circuit breaker and retry logic.
     """
 
     def __init__(
@@ -37,6 +161,8 @@ class AgentBus:
         registry=None,
         max_concurrent_requests: int = 100,
         default_timeout: float = 30.0,
+        enable_circuit_breaker: bool = True,
+        enable_retry: bool = True,
     ):
         """Initialize agent bus.
 
@@ -45,14 +171,42 @@ class AgentBus:
             registry: Optional agent registry for discovery
             max_concurrent_requests: Max concurrent requests allowed
             default_timeout: Default timeout for requests in seconds
+            enable_circuit_breaker: Enable circuit breaker pattern
+            enable_retry: Enable retry with exponential backoff
         """
         self.event_emitter = event_emitter
         self.registry = registry
         self.max_concurrent_requests = max_concurrent_requests
         self.default_timeout = default_timeout
+        self.enable_circuit_breaker = enable_circuit_breaker
+        self.enable_retry = enable_retry
         self.request_queue: Dict[str, asyncio.Future] = {}
         self.response_listeners: Dict[str, List[Callable]] = {}
         self.logger = logging.getLogger(__name__)
+
+        # Circuit breakers per agent
+        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
+
+        # Retry policies
+        self.retry_policy = RetryPolicy(
+            max_retries=3,
+            initial_delay=0.1,
+            max_delay=5.0,
+            backoff_factor=2.0,
+        )
+
+    def _get_circuit_breaker(self, agent_name: str) -> CircuitBreaker:
+        """Get or create circuit breaker for agent.
+
+        Args:
+            agent_name: Agent name
+
+        Returns:
+            CircuitBreaker instance
+        """
+        if agent_name not in self.circuit_breakers:
+            self.circuit_breakers[agent_name] = CircuitBreaker()
+        return self.circuit_breakers[agent_name]
 
     async def send_request(
         self,
@@ -61,9 +215,10 @@ class AgentBus:
         timeout: Optional[float] = None,
         fire_and_forget: bool = False,
     ) -> Dict[str, Any]:
-        """Send request to another agent.
+        """Send request to another agent with resilience patterns.
 
         Replaces orchestrator.process_request() calls.
+        Includes circuit breaker and retry logic for resilience.
 
         Args:
             target_agent: Name of target agent
@@ -78,18 +233,24 @@ class AgentBus:
             AgentTimeoutError: If request times out
             AgentError: If agent encounters an error
         """
-        request_id = str(uuid4())
-
         # Use default timeout if not specified
         if timeout is None:
             timeout = self.default_timeout
 
-        self.logger.debug(
-            f"[AgentBus] Sending request to {target_agent} (id: {request_id})"
-        )
+        # Check circuit breaker
+        if self.enable_circuit_breaker:
+            breaker = self._get_circuit_breaker(target_agent)
+            if not breaker.allow_request():
+                self.logger.error(
+                    f"[AgentBus] Circuit breaker OPEN for {target_agent} - rejecting request"
+                )
+                raise AgentError(
+                    f"Agent {target_agent} is unavailable (circuit breaker open)"
+                )
 
+        # Fire-and-forget doesn't use retry
         if fire_and_forget:
-            # Fire and forget - emit event, don't wait
+            request_id = str(uuid4())
             self.event_emitter.emit(
                 f"agent.{target_agent}.request",
                 {
@@ -99,37 +260,87 @@ class AgentBus:
             )
             return {"request_id": request_id, "status": "queued"}
 
-        # Request-response pattern
-        future = asyncio.Future()
-        self.request_queue[request_id] = future
+        # Request-response with retry
+        last_error = None
+        retry_count = 0
+        max_retries = self.retry_policy.max_retries if self.enable_retry else 0
 
-        try:
-            self.event_emitter.emit(
-                f"agent.{target_agent}.request",
-                {
-                    "request_id": request_id,
-                    "payload": request,
-                    "reply_to": "agent_bus",
-                },
-            )
+        while retry_count <= max_retries:
+            request_id = str(uuid4())
 
-            # Wait for response with timeout
-            response = await asyncio.wait_for(future, timeout=timeout)
-            self.logger.debug(f"[AgentBus] Received response for {request_id}")
-            return response
+            try:
+                self.logger.debug(
+                    f"[AgentBus] Sending request to {target_agent} (attempt {retry_count + 1})"
+                )
 
-        except asyncio.TimeoutError:
-            self.logger.error(
-                f"[AgentBus] Request to {target_agent} timed out after {timeout}s"
-            )
+                # Request-response pattern
+                future = asyncio.Future()
+                self.request_queue[request_id] = future
+
+                self.event_emitter.emit(
+                    f"agent.{target_agent}.request",
+                    {
+                        "request_id": request_id,
+                        "payload": request,
+                        "reply_to": "agent_bus",
+                    },
+                )
+
+                # Wait for response with timeout
+                response = await asyncio.wait_for(future, timeout=timeout)
+                self.logger.debug(f"[AgentBus] Received response for {request_id}")
+
+                # Record success in circuit breaker
+                if self.enable_circuit_breaker:
+                    self._get_circuit_breaker(target_agent).record_success()
+
+                return response
+
+            except asyncio.TimeoutError as e:
+                last_error = e
+                self.logger.warning(
+                    f"[AgentBus] Request to {target_agent} timed out after {timeout}s "
+                    f"(attempt {retry_count + 1}/{max_retries + 1})"
+                )
+
+                # Record failure in circuit breaker
+                if self.enable_circuit_breaker:
+                    self._get_circuit_breaker(target_agent).record_failure()
+
+                # Retry with exponential backoff
+                if retry_count < max_retries and self.enable_retry:
+                    delay = self.retry_policy.get_delay(retry_count)
+                    self.logger.info(
+                        f"[AgentBus] Retrying in {delay:.2f}s (attempt {retry_count + 2})"
+                    )
+                    await asyncio.sleep(delay)
+                    retry_count += 1
+                else:
+                    break
+
+            except Exception as e:
+                last_error = e
+                self.logger.error(f"[AgentBus] Error in request to {target_agent}: {e}")
+
+                # Record failure in circuit breaker
+                if self.enable_circuit_breaker:
+                    self._get_circuit_breaker(target_agent).record_failure()
+
+                # Don't retry on non-timeout errors
+                break
+
+            finally:
+                # Clean up
+                if request_id in self.request_queue:
+                    del self.request_queue[request_id]
+
+        # All retries exhausted
+        if isinstance(last_error, asyncio.TimeoutError):
             raise AgentTimeoutError(
-                f"{target_agent} timed out after {timeout}s (request_id: {request_id})"
+                f"{target_agent} timed out after {max_retries + 1} attempts"
             )
-
-        finally:
-            # Clean up
-            if request_id in self.request_queue:
-                del self.request_queue[request_id]
+        else:
+            raise AgentError(f"Agent {target_agent} request failed: {last_error}")
 
     def handle_response(self, request_id: str, response: Dict[str, Any]) -> None:
         """Handle response from agent.
