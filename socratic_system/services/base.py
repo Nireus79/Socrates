@@ -1,51 +1,36 @@
-"""
-Base Service class - Foundation for all services without orchestrator dependency.
+"""Base service class for all services.
 
-Services encapsulate business logic and are injected with their dependencies,
-enabling testability, reusability, and loose coupling.
+Services encapsulate business logic and receive only required dependencies.
+No direct orchestrator dependency - enabling testability and library export.
 """
 
 import logging
-from typing import Optional
+from abc import ABC
+from typing import TYPE_CHECKING
 
-from socratic_system.config import SocratesConfig
+if TYPE_CHECKING:
+    from socratic_system.config import SocratesConfig
 
 
-class Service:
+class Service(ABC):
+    """Base class for all services.
+
+    Services:
+    - Encapsulate business logic
+    - Receive dependencies via DI (no orchestrator coupling)
+    - Are easily testable (mock dependencies)
+    - Can be exported as library components
     """
-    Base class for all services.
 
-    Provides common functionality:
-    - Configuration access
-    - Logging
-    - No orchestrator dependency
-
-    All services should inherit from this class and accept their
-    dependencies via dependency injection.
-    """
-
-    def __init__(self, config: SocratesConfig):
-        """
-        Initialize base service.
+    def __init__(self, config: "SocratesConfig"):
+        """Initialize base service.
 
         Args:
-            config: SocratesConfig instance for configuration access
+            config: Socrates configuration
         """
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def log_debug(self, message: str, **kwargs) -> None:
-        """Log debug message"""
-        self.logger.debug(message, **kwargs)
-
-    def log_info(self, message: str, **kwargs) -> None:
-        """Log info message"""
-        self.logger.info(message, **kwargs)
-
-    def log_warning(self, message: str, **kwargs) -> None:
-        """Log warning message"""
-        self.logger.warning(message, **kwargs)
-
-    def log_error(self, message: str, **kwargs) -> None:
-        """Log error message"""
-        self.logger.error(message, **kwargs)
+    def __repr__(self) -> str:
+        """String representation."""
+        return f"{self.__class__.__name__}()"

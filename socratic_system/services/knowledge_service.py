@@ -1,201 +1,74 @@
-"""
-Knowledge Service - Encapsulates knowledge management and retrieval.
+"""Knowledge service - encapsulates knowledge management and vector search."""
 
-Handles:
-- Knowledge base operations
-- Vector similarity search
-- Knowledge caching
+from typing import TYPE_CHECKING, List, Dict, Any, Optional
 
-No orchestrator dependency - uses dependency injection for all external services.
-"""
+from .base import Service
 
-from typing import List, Optional, Tuple
-
-from socratic_system.config import SocratesConfig
-from socratic_system.models import KnowledgeEntry
-from socratic_system.services.base import Service
-from socratic_system.services.repositories import KnowledgeRepository
+if TYPE_CHECKING:
+    from socratic_system.database import ProjectDatabase, VectorDatabase
 
 
 class KnowledgeService(Service):
-    """
-    Service for knowledge management.
-
-    Manages knowledge base operations including storage, retrieval,
-    and semantic search using vector databases.
-    """
+    """Service for knowledge management and vector search."""
 
     def __init__(
         self,
-        config: SocratesConfig,
-        repository: KnowledgeRepository,
+        config,
+        project_db: "ProjectDatabase",
+        vector_db: "VectorDatabase",
     ):
-        """
-        Initialize knowledge service.
+        """Initialize knowledge service.
 
         Args:
-            config: SocratesConfig instance
-            repository: KnowledgeRepository for knowledge data persistence
+            config: Socrates configuration
+            project_db: Project database
+            vector_db: Vector database for embeddings
         """
         super().__init__(config)
-        self.repository = repository
-
-    def add_knowledge(
-        self,
-        content: str,
-        project_id: str,
-        metadata: Optional[dict] = None,
-    ) -> KnowledgeEntry:
-        """
-        Add knowledge entry to the knowledge base.
-
-        Args:
-            content: The knowledge content
-            project_id: Project this knowledge belongs to
-            metadata: Optional metadata dictionary
-
-        Returns:
-            Created KnowledgeEntry
-        """
-        if not content or not content.strip():
-            raise ValueError("Knowledge content cannot be empty")
-        if not project_id:
-            raise ValueError("Project ID is required")
-
-        self.log_info(f"Adding knowledge to project {project_id}")
-
-        # Create knowledge entry (using external library interface)
-        import uuid
-
-        entry_id = f"know_{str(uuid.uuid4())}"
-        knowledge = KnowledgeEntry(
-            id=entry_id,
-            content=content.strip(),
-            category=metadata.get("category", "general") if metadata else "general"
-        )
-
-        # Save to repository (includes vector embedding)
-        saved_knowledge = self.repository.save(knowledge)
-
-        self.log_info(f"Knowledge added: {saved_knowledge.id}")
-        return saved_knowledge
+        self.project_db = project_db
+        self.vector_db = vector_db
 
     def search_knowledge(
-        self,
-        query: str,
-        project_id: str,
-        top_k: int = 5,
-    ) -> List[Tuple[KnowledgeEntry, float]]:
-        """
-        Search knowledge base using semantic similarity.
+        self, query: str, project_id: str, top_k: int = 5
+    ) -> List[Dict[str, Any]]:
+        """Search knowledge base for similar documents.
 
         Args:
             query: Search query
-            project_id: Project to search within
-            top_k: Maximum number of results
+            project_id: Project identifier
+            top_k: Number of results to return
 
         Returns:
-            List of (KnowledgeEntry, similarity_score) tuples
+            List of matching documents
         """
-        if not query or not query.strip():
-            raise ValueError("Search query cannot be empty")
+        self.logger.debug(f"Searching knowledge for: {query}")
+        return self.vector_db.search_similar(query, top_k, project_id)
 
-        self.log_debug(f"Searching knowledge in {project_id} for: {query}")
-
-        return self.repository.search(query, project_id, top_k)
-
-    def get_knowledge(self, knowledge_id: str) -> Optional[KnowledgeEntry]:
-        """
-        Get knowledge entry by ID.
+    def add_knowledge(self, project_id: str, content: str, metadata: Dict) -> str:
+        """Add knowledge document to vector database.
 
         Args:
-            knowledge_id: The knowledge entry ID
+            project_id: Project identifier
+            content: Document content
+            metadata: Document metadata
 
         Returns:
-            KnowledgeEntry if found, None otherwise
+            Document ID
         """
-        return self.repository.find_by_id(knowledge_id)
+        self.logger.debug(f"Adding knowledge document for project {project_id}")
+        doc_id = self.vector_db.add_document(content, metadata, project_id)
+        return doc_id
 
-    def get_project_knowledge(self, project_id: str) -> List[KnowledgeEntry]:
-        """
-        Get all knowledge entries for a project.
+    def get_project_knowledge(self, project_id: str) -> List[Dict]:
+        """Get all knowledge documents for project.
 
         Args:
-            project_id: The project ID
+            project_id: Project identifier
 
         Returns:
-            List of knowledge entries
+            List of knowledge documents
         """
-        return self.repository.find_by_project(project_id)
-
-    def delete_knowledge(self, knowledge_id: str) -> bool:
-        """
-        Delete knowledge entry.
-
-        Args:
-            knowledge_id: The knowledge entry ID
-
-        Returns:
-            True if deleted successfully, False otherwise
-        """
-        knowledge = self.repository.find_by_id(knowledge_id)
-        if not knowledge:
-            self.log_warning(f"Knowledge not found: {knowledge_id}")
-            return False
-
-        success = self.repository.delete(knowledge_id)
-
-        if success:
-            self.log_info(f"Knowledge deleted: {knowledge_id}")
-
-        return success
-
-    def knowledge_exists(self, knowledge_id: str) -> bool:
-        """
-        Check if knowledge entry exists.
-
-        Args:
-            knowledge_id: The knowledge entry ID
-
-        Returns:
-            True if exists, False otherwise
-        """
-        return self.repository.exists(knowledge_id)
-
-    def bulk_add_knowledge(
-        self,
-        entries: List[Tuple[str, str]],
-        project_id: str,
-    ) -> List[KnowledgeEntry]:
-        """
-        Add multiple knowledge entries efficiently.
-
-        Args:
-            entries: List of (content, title) tuples
-            project_id: Project this knowledge belongs to
-
-        Returns:
-            List of created KnowledgeEntry objects
-        """
-        self.log_info(f"Adding {len(entries)} knowledge entries to {project_id}")
-
-        results = []
-        for content, title in entries:
-            try:
-                knowledge = self.add_knowledge(
-                    content=content,
-                    project_id=project_id,
-                    metadata={"title": title} if title else {},
-                )
-                results.append(knowledge)
-            except Exception as e:
-                self.log_error(f"Failed to add knowledge '{title}': {e}")
-
-        self.log_info(f"Successfully added {len(results)} knowledge entries")
-        return results
-
-    def _get_timestamp(self) -> str:
-        """Get current timestamp."""
-        from datetime import datetime, timezone
-
-        return datetime.now(timezone.utc).isoformat()
+        project = self.project_db.load_project(project_id)
+        if not project:
+            return []
+        return getattr(project, "knowledge_documents", [])

@@ -1,127 +1,107 @@
-"""
-ProjectService - Business logic for project management.
+"""Project service - encapsulates project creation and management logic."""
 
-Phase 1: Service Layer - Extracts project management logic from ProjectManager agent.
-"""
-
-import datetime
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Dict, Any
 
-from socratic_system.models import ProjectContext
-from socratic_system.repositories.project_repository import ProjectRepository
-
-from .base_service import BaseService
+from .base import Service
 
 if TYPE_CHECKING:
-    from socratic_system.config import SocratesConfig
+    from socratic_system.models import ProjectContext
     from socratic_system.database import ProjectDatabase
+    from socratic_system.claude_client import ClaudeClient
+    from socratic_system.events import EventEmitter
 
 
-class ProjectService(BaseService):
-    """Service for project management business logic."""
+class ProjectService(Service):
+    """Service for project-related operations.
 
-    def __init__(self, config: "SocratesConfig", database: "ProjectDatabase"):
-        """Initialize project service."""
-        super().__init__(config)
-        self.repository = ProjectRepository(database)
-        self.logger = logging.getLogger("ProjectService")
+    Encapsulates business logic for project creation, loading, and management.
+    """
 
-    def create_project(
+    def __init__(
         self,
-        name: str,
-        description: str = "",
-        owner: str = "anonymous",
-        **kwargs,
-    ) -> Optional[ProjectContext]:
-        """Create a new project."""
-        self._log_operation("create_project", {"name": name, "owner": owner})
+        config,
+        database: "ProjectDatabase",
+        claude_client: "ClaudeClient",
+        event_emitter: "EventEmitter",
+    ):
+        """Initialize project service.
 
-        try:
-            if not name or not name.strip():
-                self.logger.error("Project name is required")
-                return None
+        Args:
+            config: Socrates configuration
+            database: Project database
+            claude_client: Claude API client
+            event_emitter: Event emitter for notifications
+        """
+        super().__init__(config)
+        self.database = database
+        self.claude_client = claude_client
+        self.event_emitter = event_emitter
 
-            now = datetime.datetime.now()
+    def create_project(self, spec: Dict[str, Any]) -> "ProjectContext":
+        """Create new project with initial specifications.
 
-            project = ProjectContext(
-                project_id=f"proj_{int(now.timestamp())}",
-                name=name.strip(),
-                description=description.strip(),
-                owner=owner,
-                phase="discovery",
-                created_at=now,
-                updated_at=now,
-                **kwargs,
-            )
+        Args:
+            spec: Project specification dict with name, description, etc.
 
-            if self.repository.save_project(project):
-                self.logger.info(f"Created project: {project.project_id} ({name})")
-                return project
-            else:
-                self.logger.error(f"Failed to save project: {name}")
-                return None
+        Returns:
+            Created ProjectContext
+        """
+        if not spec.get("name"):
+            raise ValueError("Project name is required")
 
-        except Exception as e:
-            self.logger.error(f"Error creating project: {e}")
-            return None
+        self.logger.info(f"Creating project: {spec.get('name')}")
 
-    def get_project(self, project_id: str) -> Optional[ProjectContext]:
-        """Get a project by ID."""
-        self._log_operation("get_project", {"project_id": project_id})
+        # Create project context
+        from socratic_system.models import ProjectContext
+        from socratic_system.utils.helpers import generate_id
 
-        if not project_id:
-            self.logger.error("Project ID is required")
-            return None
+        project = ProjectContext(
+            project_id=generate_id(),
+            name=spec["name"],
+            description=spec.get("description", ""),
+            owner_id=spec.get("user_id"),
+            phase="discovery",
+        )
 
-        project = self.repository.load_project(project_id)
-        if project:
-            self.logger.debug(f"Retrieved project: {project_id}")
+        # Save to database
+        self.database.save_project(project)
+        self.logger.info(f"Project created: {project.project_id}")
+
+        # Emit event
+        self.event_emitter.emit(
+            "project.created",
+            {
+                "project_id": project.project_id,
+                "name": project.name,
+                "owner_id": project.owner_id,
+            },
+        )
+
         return project
 
-    def update_project(self, project_id: str, **updates) -> Optional[ProjectContext]:
-        """Update a project."""
-        self._log_operation("update_project", {"project_id": project_id})
+    def load_project(self, project_id: str) -> Optional["ProjectContext"]:
+        """Load project from database.
 
-        try:
-            project = self.repository.load_project(project_id)
-            if not project:
-                self.logger.error(f"Project not found: {project_id}")
-                return None
+        Args:
+            project_id: Project identifier
 
-            for key, value in updates.items():
-                if hasattr(project, key):
-                    setattr(project, key, value)
-                    self.logger.debug(f"Updated {key} for project {project_id}")
+        Returns:
+            ProjectContext if found, None otherwise
+        """
+        return self.database.load_project(project_id)
 
-            project.updated_at = datetime.datetime.now()
+    def save_project(self, project: "ProjectContext") -> None:
+        """Save project to database.
 
-            if self.repository.save_project(project):
-                self.logger.info(f"Updated project: {project_id}")
-                return project
-            else:
-                self.logger.error(f"Failed to save project: {project_id}")
-                return None
+        Args:
+            project: ProjectContext to save
+        """
+        self.database.save_project(project)
+        self.logger.debug(f"Project saved: {project.project_id}")
 
-        except Exception as e:
-            self.logger.error(f"Error updating project: {e}")
-            return None
-
-    def delete_project(self, project_id: str) -> bool:
-        """Delete a project."""
-        self._log_operation("delete_project", {"project_id": project_id})
-
-        if not project_id:
-            self.logger.error("Project ID is required")
-            return False
-
-        if self.repository.delete_project(project_id):
-            self.logger.info(f"Deleted project: {project_id}")
-            return True
-        else:
-            self.logger.error(f"Failed to delete project: {project_id}")
-            return False
-
-    def project_exists(self, project_id: str) -> bool:
-        """Check if a project exists."""
-        return self.repository.project_exists(project_id)
+        # Emit event
+        self.event_emitter.emit(
+            "project.saved",
+            {"project_id": project.project_id},
+        )
