@@ -173,10 +173,13 @@ class SocratesConfig:
             return
 
         # Try to load from file
+        if not isinstance(self.data_dir, Path):
+            self.data_dir = Path(self.data_dir)
+
         key_file = self.data_dir / ".encryption_key"
         if key_file.exists():
             try:
-                with open(key_file, "r") as f:
+                with open(str(key_file), "r") as f:
                     self.encryption_key = f.read().strip()
                 os.environ["SOCRATES_ENCRYPTION_KEY"] = self.encryption_key
                 return
@@ -189,17 +192,27 @@ class SocratesConfig:
 
         # Save to file with restricted permissions
         try:
+            # Ensure data_dir exists and is a Path
+            if not isinstance(key_file.parent, Path):
+                key_file = Path(key_file)
+
             key_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(key_file, "w") as f:
+
+            # Write key to file
+            with open(str(key_file), "w") as f:
                 f.write(self.encryption_key)
+
             # Restrict file permissions to owner only (Unix-like systems)
             try:
-                os.chmod(key_file, 0o600)
-            except Exception:
-                pass  # Windows doesn't support chmod
+                os.chmod(str(key_file), 0o600)
+            except (OSError, NotImplementedError):
+                pass  # Windows doesn't support chmod or file doesn't exist
+
             os.environ["SOCRATES_ENCRYPTION_KEY"] = self.encryption_key
         except Exception as e:
+            import traceback
             print(f"Warning: Failed to save encryption key to file: {e}")
+            traceback.print_exc()
             # Still set it in environment even if file save failed
             os.environ["SOCRATES_ENCRYPTION_KEY"] = self.encryption_key
 
