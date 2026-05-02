@@ -1001,3 +1001,291 @@ Constraints: Personal use only...
 [2026-05-02 09:10:41] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
 [2026-05-02 09:10:41] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
 [2026-05-02 09:10:43] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Since you're building this for personal use, how will you know when your calculator is actually solv...
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: project_manager
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: socratic_counselor
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: context_analyzer
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_generator
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: system_monitor
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: conflict_detector
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: document_agent
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: user_manager
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: note_manager
+[2026-05-02 10:30:31] [WARNING] socratic_rag.orchestrator: Failed to initialize agent knowledge_manager: KnowledgeManagerAgent.__init__() takes 2 positional arguments but 3 were given
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: knowledge_analysis
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: quality_controller
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: learning
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: multi_llm
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: question_queue
+[2026-05-02 10:30:31] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_validation
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Agent initialization complete: 15 agents registered
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-02 10:30:31] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:30:37] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: project_manager
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: socratic_counselor
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: context_analyzer
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_generator
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: system_monitor
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: conflict_detector
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: document_agent
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: user_manager
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: note_manager
+[2026-05-02 10:30:48] [WARNING] socratic_rag.orchestrator: Failed to initialize agent knowledge_manager: KnowledgeManagerAgent.__init__() takes 2 positional arguments but 3 were given
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: knowledge_analysis
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: quality_controller
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: learning
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: multi_llm
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: question_queue
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_validation
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Agent initialization complete: 15 agents registered
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: project_manager
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: socratic_counselor
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: context_analyzer
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_generator
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: system_monitor
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: conflict_detector
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: document_agent
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: user_manager
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: note_manager
+[2026-05-02 10:30:48] [WARNING] socratic_rag.orchestrator: Failed to initialize agent knowledge_manager: KnowledgeManagerAgent.__init__() takes 2 positional arguments but 3 were given
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: knowledge_analysis
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: quality_controller
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: learning
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: multi_llm
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: question_queue
+[2026-05-02 10:30:48] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_validation
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Agent initialization complete: 15 agents registered
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-02 10:30:48] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:30:58] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-02 10:30:58] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: project_manager
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: socratic_counselor
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: context_analyzer
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_generator
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: system_monitor
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: conflict_detector
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: document_agent
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: user_manager
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: note_manager
+[2026-05-02 10:31:14] [WARNING] socratic_rag.orchestrator: Failed to initialize agent knowledge_manager: KnowledgeManagerAgent.__init__() takes 2 positional arguments but 3 were given
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: knowledge_analysis
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: quality_controller
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: learning
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: multi_llm
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: question_queue
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_validation
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Agent initialization complete: 15 agents registered
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: project_manager
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: socratic_counselor
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: context_analyzer
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_generator
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: system_monitor
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: conflict_detector
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: document_agent
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: user_manager
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: note_manager
+[2026-05-02 10:31:14] [WARNING] socratic_rag.orchestrator: Failed to initialize agent knowledge_manager: KnowledgeManagerAgent.__init__() takes 2 positional arguments but 3 were given
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: knowledge_analysis
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: quality_controller
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: learning
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: multi_llm
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: question_queue
+[2026-05-02 10:31:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_validation
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Agent initialization complete: 15 agents registered
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-02 10:31:14] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:31:23] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-02 10:31:24] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-02 10:33:18] [INFO] socratic_rag.document_processor: Processing pasted text: b008658d-e53d-4db5-9323-76ef588abaaf
+[2026-05-02 10:33:18] [DEBUG] socratic_rag.document_processor: Extracted 182 words from pasted text
+[2026-05-02 10:33:18] [INFO] socratic_rag.document_processor: Created 1 chunks from pasted text
+[2026-05-02 10:33:18] [INFO] socratic_rag.document_processor: Stored 1 chunks to vector database from pasted text
+[2026-05-02 10:44:52] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-02 10:44:52] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: project_manager
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: socratic_counselor
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: context_analyzer
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_generator
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: system_monitor
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: conflict_detector
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: document_agent
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: user_manager
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: note_manager
+[2026-05-02 10:44:53] [WARNING] socratic_rag.orchestrator: Failed to initialize agent knowledge_manager: KnowledgeManagerAgent.__init__() takes 2 positional arguments but 3 were given
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: knowledge_analysis
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: quality_controller
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: learning
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: multi_llm
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: question_queue
+[2026-05-02 10:44:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_validation
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: Agent initialization complete: 15 agents registered
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-02 10:44:53] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:44:59] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: project_manager
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: socratic_counselor
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: context_analyzer
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_generator
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: system_monitor
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: conflict_detector
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: document_agent
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: user_manager
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: note_manager
+[2026-05-02 10:45:09] [WARNING] socratic_rag.orchestrator: Failed to initialize agent knowledge_manager: KnowledgeManagerAgent.__init__() takes 2 positional arguments but 3 were given
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: knowledge_analysis
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: quality_controller
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: learning
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: multi_llm
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: question_queue
+[2026-05-02 10:45:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_validation
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Agent initialization complete: 15 agents registered
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-02 10:45:09] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: project_manager
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: socratic_counselor
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: context_analyzer
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_generator
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: system_monitor
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: conflict_detector
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: document_agent
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: user_manager
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: note_manager
+[2026-05-02 10:45:11] [WARNING] socratic_rag.orchestrator: Failed to initialize agent knowledge_manager: KnowledgeManagerAgent.__init__() takes 2 positional arguments but 3 were given
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: knowledge_analysis
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: quality_controller
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: learning
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: multi_llm
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: question_queue
+[2026-05-02 10:45:11] [DEBUG] socratic_rag.orchestrator: Initialized agent: code_validation
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Agent initialization complete: 15 agents registered
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-02 10:45:11] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-02 10:45:23] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-02 10:45:23] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-02 10:46:36] [INFO] socratic_rag.document_processor: Processing pasted text: 40aeafc2-01c3-4c69-8bd3-27b52e78aaed
+[2026-05-02 10:46:36] [DEBUG] socratic_rag.document_processor: Extracted 182 words from pasted text
+[2026-05-02 10:46:36] [INFO] socratic_rag.document_processor: Created 1 chunks from pasted text
+[2026-05-02 10:46:36] [INFO] socratic_rag.document_processor: Stored 1 chunks to vector database from pasted text
+[2026-05-02 10:46:38] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-05-02 10:46:39] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-02 10:46:39] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-02 10:46:39] [DEBUG] socratic_rag.orchestrator: Agents cache cleared

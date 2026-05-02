@@ -132,7 +132,7 @@ class AgentAdapter:
             self.validate_request(agent_name, request_data)
 
             # Route to agent using agent bus
-            response = self.orchestrator.agent_bus.send_request_sync(agent_name, request_data)
+            response = await self.orchestrator.agent_bus.send_request(agent_name, request_data)
 
             # Serialize response
             return self.serialize_response(response)

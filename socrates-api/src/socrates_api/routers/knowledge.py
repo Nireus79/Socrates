@@ -642,7 +642,7 @@ async def import_file(
             try:
                 from socratic_system.events import EventType
 
-                orchestrator.event_emitter.emit(
+                await orchestrator.event_emitter.emit_async(
                     EventType.DOCUMENT_IMPORTED,
                     {
                         "project_id": project_id,
@@ -776,7 +776,7 @@ async def import_url(
         try:
             from socratic_system.events import EventType
 
-            orchestrator.event_emitter.emit(
+            await orchestrator.event_emitter.emit_async(
                 EventType.DOCUMENT_IMPORTED,
                 {
                     "project_id": project_id,
@@ -919,7 +919,7 @@ async def import_text(
         try:
             from socratic_system.events import EventType
 
-            orchestrator.event_emitter.emit(
+            await orchestrator.event_emitter.emit_async(
                 EventType.DOCUMENT_IMPORTED,
                 {
                     "project_id": project_id,

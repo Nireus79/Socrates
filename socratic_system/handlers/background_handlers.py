@@ -156,7 +156,7 @@ class BackgroundHandlers:
                 logger.debug(f"[BACKGROUND] Project maturity updated: overall={project.overall_maturity}%")
 
             # Emit completion event WITH UPDATED VALUES
-            self.orchestrator.event_emitter.emit(
+            await self.orchestrator.event_emitter.emit_async(
                 "quality.analysis.completed",
                 {
                     "project_id": project_id,
@@ -184,7 +184,7 @@ class BackgroundHandlers:
             )
 
             # Emit failure event
-            self.orchestrator.event_emitter.emit(
+            await self.orchestrator.event_emitter.emit_async(
                 "quality.analysis.failed",
                 {
                     "project_id": project_id,
@@ -229,7 +229,7 @@ class BackgroundHandlers:
             self.cache.set(cache_key, conflicts_result)
 
             # Emit completion event
-            self.orchestrator.event_emitter.emit(
+            await self.orchestrator.event_emitter.emit_async(
                 "conflict.analysis.completed",
                 {
                     "project_id": project_id,
@@ -255,7 +255,7 @@ class BackgroundHandlers:
             )
 
             # Emit failure event
-            self.orchestrator.event_emitter.emit(
+            await self.orchestrator.event_emitter.emit_async(
                 "conflict.analysis.failed",
                 {
                     "project_id": project_id,
@@ -300,7 +300,7 @@ class BackgroundHandlers:
             self.cache.set(cache_key, insights_result)
 
             # Emit completion event
-            self.orchestrator.event_emitter.emit(
+            await self.orchestrator.event_emitter.emit_async(
                 "insights.analysis.completed",
                 {
                     "project_id": project_id,
@@ -326,7 +326,7 @@ class BackgroundHandlers:
             )
 
             # Emit failure event
-            self.orchestrator.event_emitter.emit(
+            await self.orchestrator.event_emitter.emit_async(
                 "insights.analysis.failed",
                 {
                     "project_id": project_id,
