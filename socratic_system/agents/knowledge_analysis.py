@@ -142,20 +142,41 @@ class KnowledgeAnalysisAgent(Agent):
                 self.logger.debug("No project_id in document import event, skipping analysis")
                 return
 
+            # Since this is called from event bus (async context), spawn async task
+            # to avoid blocking and to allow proper async/await in regeneration
+            asyncio.create_task(self._handle_document_imported_async({
+                "project_id": project_id,
+                "document_name": document_name,
+                "source_type": source_type,
+                "words_extracted": words_extracted,
+            }))
+            return
+
+    async def _handle_document_imported_async(self, data: Dict[str, Any]) -> None:
+        """
+        Async handler for document import events.
+
+        Args:
+            data: Event data containing document import details
+        """
+        try:
+            project_id = data.get("project_id")
+            document_name = data.get("document_name")
+            source_type = data.get("source_type", "unknown")
+
             # Trigger analysis and question regeneration
-            analysis_result = self._analyze_knowledge_sync(
+            analysis_result = await self._analyze_knowledge_async(
                 {
                     "action": "analyze_knowledge",
                     "project_id": project_id,
                     "document_name": document_name,
                     "source_type": source_type,
-                    "words_extracted": words_extracted,
                 }
             )
 
             if analysis_result.get("status") == "success":
                 # Trigger question regeneration
-                regen_result = self._regenerate_questions_sync(
+                regen_result = await self._regenerate_questions_async(
                     {
                         "action": "regenerate_questions",
                         "project_id": project_id,
@@ -275,21 +296,8 @@ class KnowledgeAnalysisAgent(Agent):
             gaps_filled = knowledge_analysis.get("gaps_filled", [])
 
             # Extract insight from the newly available knowledge
-
-            # Extract insights from the knowledge to inform question generation
-            # Use agent bus instead of direct orchestrator.counselor reference
-            try:
-                insight_result = self.orchestrator.agent_bus.send_request_sync(
-                    "socratic_counselor",
-                    {
-                        "action": "extract_insights_only",
-                        "project": project,
-                        "knowledge_context": knowledge_analysis,
-                    }
-                )
-            except Exception as e:
-                self.logger.debug(f"Error extracting insights from knowledge: {e}")
-                insight_result = {"status": "skipped", "message": "Knowledge insight extraction skipped"}
+            # Skip in sync context - async version handles this differently
+            insight_result = {"status": "skipped", "message": "Knowledge insight extraction skipped in sync context"}
 
             # Log the knowledge-aware question regeneration
             self.logger.info(
