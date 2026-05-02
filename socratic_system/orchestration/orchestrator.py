@@ -56,6 +56,11 @@ class AgentOrchestrator:
         Args:
             api_key_or_config: Either an API key string (old style) or SocratesConfig (new style)
         """
+        # Apply runtime patches to unify encryption before initializing any clients
+        from socratic_system.patches import apply_all_patches
+
+        apply_all_patches()
+
         # Handle both old-style (api_key string) and new-style (SocratesConfig) initialization
         if isinstance(api_key_or_config, str):
             # Old style: create config from API key with defaults
