@@ -996,12 +996,22 @@ What would be most helpful for you?"""
                 }
 
         # Phase 3: Update project context immediately (needed for consistency)
-        logger.info("Updating project context with insights...")
-        self._update_project_context(project, insights)
-        logger.debug("Project context updated successfully")
+        # In debug mode, defer saving until user confirms the specs
+        # In normal mode, auto-save silently
+        from socratic_system.utils.logger import is_debug_mode
 
-        # Save project with updated context and conversation history
-        self.database.save_project(project)
+        if not is_debug_mode():
+            # Non-debug mode: Auto-save silently
+            logger.info("Updating project context with insights...")
+            self._update_project_context(project, insights)
+            logger.debug("Project context updated successfully")
+
+            # Save project with updated context and conversation history
+            self.database.save_project(project)
+        else:
+            # Debug mode: Don't auto-save, wait for user confirmation
+            logger.info("Debug mode enabled - deferring specs update until user confirmation")
+            logger.debug("Specs will be updated after user confirms via save_extracted_specs endpoint")
 
         # Phase 3: Emit response.received event to trigger background analysis
         # This launches non-blocking background tasks for:

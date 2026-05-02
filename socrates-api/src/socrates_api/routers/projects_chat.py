@@ -795,30 +795,34 @@ Provide a helpful, direct answer."""
                     },
                 )
 
-            # In Socratic mode: Specs/insights are automatically saved but NOT shown to user
-            # They are silently extracted and stored in the project without dialogue interference
+            # In Socratic mode: Specs/insights handling depends on debug mode
+            # - Debug OFF: Automatically saved silently without user confirmation
+            # - Debug ON: Shown to user for explicit confirmation before saving
             insights = result.get("insights", {})
-            if insights:
-                logger.debug(
-                    "Insights extracted and saved to project (hidden from Socratic dialogue)"
-                )
 
-            # Check if debug mode is enabled - if so, return insights for debugging
             from socratic_system.utils.logger import is_debug_mode
 
             response_data = {}
 
-            if is_debug_mode() and insights:
-                logger.debug(f"Debug mode enabled - returning insights to frontend: {insights}")
-                response_data["extracted_insights"] = insights
-                response_data["extracted_specs"] = insights
-                response_data["extracted_specs_count"] = len([v for v in insights.values() if v])
-                response_data["debug_message"] = (
-                    f"Extracted {response_data['extracted_specs_count']} insight categories"
-                )
-                logger.debug(
-                    f"Returning {response_data['extracted_specs_count']} insight categories to frontend"
-                )
+            if insights:
+                if is_debug_mode():
+                    # DEBUG MODE: Show specs to user for confirmation (not auto-saved yet)
+                    logger.debug(f"Debug mode enabled - returning insights for user confirmation: {insights}")
+                    response_data["extracted_insights"] = insights
+                    response_data["extracted_specs"] = insights
+                    response_data["extracted_specs_count"] = len([v for v in insights.values() if v])
+                    response_data["requires_confirmation"] = True
+                    response_data["confirmation_message"] = (
+                        f"Extracted {response_data['extracted_specs_count']} insight categories - please confirm to save"
+                    )
+                    logger.debug(
+                        f"Returning {response_data['extracted_specs_count']} insight categories to frontend for user confirmation"
+                    )
+                else:
+                    # NON-DEBUG MODE: Automatically saved silently
+                    logger.debug(
+                        "Insights extracted and automatically saved to project (hidden from Socratic dialogue)"
+                    )
 
             # In Socratic mode, don't return insights as a message to the frontend (unless debug mode)
             # The frontend will proceed directly to generate the next question
