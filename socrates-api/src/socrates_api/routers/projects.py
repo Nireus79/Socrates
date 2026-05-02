@@ -231,7 +231,7 @@ async def create_project(
                 logger.info("Orchestrator available, using it...")
                 # Use orchestrator pattern (same as CLI)
                 # Pass description and knowledge_base_content so ProjectManagerAgent can analyze them
-                result = orchestrator.agent_bus.send_request(
+                result = await orchestrator.agent_bus.send_request(
                     "project_manager",
                     {
                         "action": "create_project",
@@ -359,7 +359,7 @@ async def create_project(
 
                 orchestrator = app_state.get("orchestrator")
                 if orchestrator and hasattr(orchestrator, "claude_client"):
-                    insights = await orchestrator.claude_client.extract_insights(
+                    insights = orchestrator.claude_client.extract_insights(
                         context_to_analyze, project
                     )
 

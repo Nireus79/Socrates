@@ -211,8 +211,7 @@ class KnowledgeAnalysisAgent(Agent):
             search_results = self.orchestrator.vector_db.search_similar(
                 query=f"{document_name} {source_type}",
                 project_id=project_id,
-                limit=1,
-                strategy="full",
+                top_k=1,
             )
 
             # Analyze the knowledge content

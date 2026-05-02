@@ -293,36 +293,50 @@ class QualityControllerAgent(Agent):
         # Capture score BEFORE adding new specs
         score_before = project.phase_maturity_scores.get(project.phase, 0.0)
 
-        # Use calculator to categorize the new insights (pass user_id for API key lookup)
-        logging.debug("Categorizing insights")
-        categorized = self.calculator.categorize_insights(
-            insights, project.phase, user_id=current_user
-        )
-        logging.info(f"Insights categorized into {len(categorized)} specs")
-
-        if not categorized:
-            logging.debug("No specs categorized, returning")
-            return {"status": "success", "message": "No new specs added"}
+        # Insights are already categorized by SocraticCounselor._update_project_context()
+        # Process them directly to calculate answer score
+        logging.debug(f"Processing {len(insights)} insights for maturity calculation")
 
         # Calculate score contribution for THIS answer
         # score = sum(spec_value * confidence) for all specs in this response
-        logging.debug("Calculating answer score from categorized specs")
+        logging.debug("Calculating answer score from insights")
         answer_score = 0.0
-        for spec in categorized:
-            confidence = spec.get("confidence", 0.9)
-            value = spec.get("value", 1.0)
+
+        # Insights can be either a dict or list depending on source
+        specs_to_process = []
+        if isinstance(insights, dict):
+            # If categorized already: {"business_goals": [...], "functional_requirements": [...], ...}
+            for category, specs in insights.items():
+                if isinstance(specs, list):
+                    specs_to_process.extend(specs)
+        elif isinstance(insights, list):
+            specs_to_process = insights
+
+        if not specs_to_process:
+            logging.debug("No specs to process, returning")
+            return {"status": "success", "message": "No new specs added"}
+
+        for spec in specs_to_process:
+            # Handle both spec dict and string formats
+            if isinstance(spec, dict):
+                confidence = spec.get("confidence", 0.9)
+                value = spec.get("value", 1.0)
+            else:
+                # Simple string spec - use default scoring
+                confidence = 0.9
+                value = 1.0
             spec_score = value * confidence
             answer_score += spec_score
             logging.debug(f"Spec score: {value} × {confidence:.2f} = {spec_score:.2f}")
 
-        logging.info(f"Answer score: {answer_score:.2f} (from {len(categorized)} specs)")
+        logging.info(f"Answer score: {answer_score:.2f} (from {len(specs_to_process)} specs)")
 
         # Add to project's categorized specs for reference
         if project.phase not in project.categorized_specs:
             project.categorized_specs[project.phase] = []
-        project.categorized_specs[project.phase].extend(categorized)
+        project.categorized_specs[project.phase].extend(specs_to_process)
 
-        logging.debug(f"Added {len(categorized)} specs to phase {project.phase}")
+        logging.debug(f"Added {len(specs_to_process)} specs to phase {project.phase}")
 
         # Instead of recalculating entire maturity, ADD this answer's score
         # This prevents previous answers' scores from being affected by new specs' confidence
