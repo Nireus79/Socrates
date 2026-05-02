@@ -2039,6 +2039,22 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
                 # No approved workflow - initiate approval (BLOCKING)
                 return self._initiate_workflow_approval(project, current_user)
 
+            # BEFORE GENERATING NEW QUESTION: Check for existing unanswered question
+            # This prevents multiple unanswered questions from accumulating in workflow mode
+            if project.pending_questions:
+                unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
+                if unanswered:
+                    # Return the existing unanswered question instead of generating new
+                    logging.debug(
+                        f"Found existing unanswered question in workflow mode, returning it instead of generating new"
+                    )
+                    return {
+                        "status": "success",
+                        "question": unanswered[0].get("question"),
+                        "existing": True,
+                        "workflow_node": unanswered[0].get("workflow_node"),
+                    }
+
             # Have approved path - select next question from it
             execution = project.active_workflow_execution
             workflow = project.workflow_definitions.get(project.phase)
