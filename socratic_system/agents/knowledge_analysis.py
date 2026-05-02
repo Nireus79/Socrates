@@ -152,6 +152,9 @@ class KnowledgeAnalysisAgent(Agent):
             }))
             return
 
+        except Exception as e:
+            self.logger.error(f"Error in document import event handler: {str(e)}", exc_info=True)
+
     async def _handle_document_imported_async(self, data: Dict[str, Any]) -> None:
         """
         Async handler for document import events.
