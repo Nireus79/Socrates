@@ -190,7 +190,7 @@ class KnowledgeAnalysisAgent(Agent):
                         f"after importing {document_name}"
                     )
                     # Emit event for UI updates
-                    self.emit_event(
+                    await self.orchestrator.event_emitter.emit_async(
                         EventType.QUESTIONS_REGENERATED,
                         {
                             "project_id": project_id,
