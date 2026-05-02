@@ -277,13 +277,19 @@ class KnowledgeAnalysisAgent(Agent):
             # Extract insight from the newly available knowledge
 
             # Extract insights from the knowledge to inform question generation
-            insight_result = self.orchestrator.counselor.process(
-                {
-                    "action": "extract_insights_only",
-                    "project": project,
-                    "knowledge_context": knowledge_analysis,
-                }
-            )
+            # Use agent bus instead of direct orchestrator.counselor reference
+            try:
+                insight_result = self.orchestrator.agent_bus.send_request_sync(
+                    "socratic_counselor",
+                    {
+                        "action": "extract_insights_only",
+                        "project": project,
+                        "knowledge_context": knowledge_analysis,
+                    }
+                )
+            except Exception as e:
+                self.logger.debug(f"Error extracting insights from knowledge: {e}")
+                insight_result = {"status": "skipped", "message": "Knowledge insight extraction skipped"}
 
             # Log the knowledge-aware question regeneration
             self.logger.info(
