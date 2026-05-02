@@ -13,12 +13,15 @@ This document provides a comprehensive technical overview of Socrates AI's archi
 1. [System Overview](#system-overview)
 2. [Core Components](#core-components)
 3. [Multi-Agent Architecture](#multi-agent-architecture)
-4. [Data Management](#data-management)
-5. [Event-Driven System](#event-driven-system)
-6. [Workflow & Data Flow](#workflow--data-flow)
-7. [Design Patterns](#design-patterns)
-8. [Extension Points](#extension-points)
-9. [Performance Considerations](#performance-considerations)
+4. [AgentBus: Message-Based Communication](#agentbus-message-based-communication)
+5. [Data Management](#data-management)
+6. [Event-Driven System](#event-driven-system)
+7. [Async-First Design](#async-first-design)
+8. [Specs Extraction and Confirmation Workflow](#specs-extraction-and-confirmation-workflow)
+9. [Workflow & Data Flow](#workflow--data-flow)
+10. [Design Patterns](#design-patterns)
+11. [Extension Points](#extension-points)
+12. [Performance Considerations](#performance-considerations)
 
 ---
 
@@ -433,6 +436,140 @@ Document → Extract Text → Split into Chunks (500 char, 50 overlap)
 
 ---
 
+## AgentBus: Message-Based Communication
+
+### Overview
+
+**Location**: `orchestration/agent_bus.py`
+
+The AgentBus provides loose coupling between agents through message-based communication, replacing direct property access to agent methods. This enables:
+- Agent discovery and dynamic routing
+- Asynchronous request/response handling
+- Request middleware and validation
+- Scalability for library extraction and multi-process architectures
+
+### Architecture
+
+```python
+class AgentBus:
+    def __init__(self, orchestrator: AgentOrchestrator):
+        self.orchestrator = orchestrator
+        self.registry = AgentRegistry()
+        self._request_handlers = {}
+        self._middleware = []
+
+    # Async request/response
+    async def send_request(self, agent_name: str, request_data: Dict) -> Dict
+    def send_request_sync(self, agent_name: str, request_data: Dict) -> Dict
+
+    # Agent management
+    def register_agent(self, agent_name: str, agent: Agent) -> None
+    def get_agent(self, agent_name: str) -> Optional[Agent]
+    def list_agents(self) -> List[str]
+
+    # Discovery
+    def get_agent_capabilities(self, agent_name: str) -> List[str]
+    def get_agent_metadata(self, agent_name: str) -> Dict
+```
+
+### Request/Response Pattern
+
+**Sending Requests**:
+```python
+# Async request (preferred in async contexts)
+response = await orchestrator.agent_bus.send_request(
+    "socratic_counselor",
+    {
+        "action": "generate_question",
+        "project_id": "proj_abc",
+        "phase": "discovery"
+    }
+)
+
+# Sync request (blocking, for backward compatibility)
+response = orchestrator.agent_bus.send_request_sync(
+    "project_manager",
+    {
+        "action": "create_project",
+        "project_name": "My App"
+    }
+)
+```
+
+**Request Structure**:
+```python
+{
+    "action": str,          # Agent-specific action name
+    "project_id": str,      # Usually required
+    "message_id": str,      # Optional: correlation ID
+    ...additional_fields    # Agent-specific parameters
+}
+```
+
+**Response Structure**:
+```python
+{
+    "status": "success" | "error",
+    "data": Any,            # Action-specific result
+    "message": str,         # Human-readable message (optional)
+    "error": Dict,          # Error details if status="error"
+    "timestamp": str        # ISO 8601 timestamp
+}
+```
+
+### Agent Registration
+
+Agents auto-register on initialization:
+```python
+class MyAgent(Agent):
+    def __init__(self, orchestrator):
+        super().__init__("MyAgent", orchestrator)
+        # Auto-registers with agent bus during init
+        if hasattr(self.orchestrator, 'agent_bus'):
+            self.orchestrator.agent_bus.register_agent("my_agent", self)
+
+    def get_capabilities(self) -> List[str]:
+        """Declare agent capabilities for discovery"""
+        return ["action_1", "action_2", "action_3"]
+
+    def get_metadata(self) -> Dict:
+        """Provide agent metadata"""
+        return {
+            "version": "2.0",
+            "description": "Handles X functionality",
+            "supported_phases": ["discovery", "analysis", "design"]
+        }
+```
+
+### Discovery Pattern
+
+Clients can discover agents and their capabilities:
+
+```python
+# List all agents
+agents = orchestrator.agent_bus.list_agents()
+# ['project_manager', 'socratic_counselor', 'knowledge_manager', ...]
+
+# Get agent capabilities
+capabilities = orchestrator.agent_bus.get_agent_capabilities("socratic_counselor")
+# ['generate_question', 'process_response', 'advance_phase', 'get_hint']
+
+# Get agent metadata
+metadata = orchestrator.agent_bus.get_agent_metadata("socratic_counselor")
+# {'version': '2.0', 'description': '...', 'supported_phases': [...]}
+```
+
+### Benefits
+
+1. **Decoupling**: Agents don't depend on each other's implementations
+2. **Routing**: Central routing enables load balancing and scaling
+3. **Discovery**: Clients learn agent capabilities at runtime
+4. **Async-Friendly**: Supports both sync and async operations
+5. **Testing**: Easy to mock for unit tests
+6. **Library Extraction**: Enables agents to be extracted as independent services
+
+---
+
 ## Data Management
 
 ### SQLite Database (Project Data)
@@ -597,7 +734,7 @@ class KnowledgeEntry:
 
 **Location**: `events/event_emitter.py`
 
-Thread-safe pub/sub system with no external dependencies.
+Thread-safe pub/sub system with both sync and async support.
 
 **Architecture**:
 ```python
@@ -607,6 +744,7 @@ class EventEmitter:
         self._once_listeners: Dict[str, List[Callable]] = {}
         self._lock = threading.RLock()
 
+    # Synchronous event emission
     def on(self, event_type: str, listener: Callable) -> None:
         """Subscribe to event"""
 
@@ -617,10 +755,43 @@ class EventEmitter:
         """Unsubscribe"""
 
     def emit(self, event_type: str, data: Optional[Dict] = None) -> None:
-        """Emit event to all listeners"""
+        """Emit event synchronously to all listeners"""
+
+    # Asynchronous event emission
+    async def emit_async(self, event_type: str, data: Optional[Dict] = None) -> None:
+        """Emit event asynchronously (use in async contexts)"""
 ```
 
-**Usage**:
+**Sync vs Async Emission**:
+
+Use `emit()` in synchronous contexts:
+```python
+# In sync method
+def process_response(self, request):
+    # ... process ...
+    self.orchestrator.emit_event(EventType.RESPONSE_RECEIVED, {"data": ...})
+    return result
+```
+
+Use `await emit_async()` in asynchronous contexts:
+```python
+# In async method
+async def process_response_async(self, request):
+    # ... process ...
+    await self.orchestrator.event_emitter.emit_async(
+        EventType.RESPONSE_RECEIVED,
+        {"data": ...}
+    )
+    return result
+```
+
+**Why Two Methods?**
+- `emit()`: Synchronous listeners execute immediately (blocking)
+- `emit_async()`: Supports both sync and async listeners via asyncio
+- Critical: Calling sync `emit()` from async context causes RuntimeError
+- Critical: Awaiting `emit()` result fails (it returns None)
+
+**Usage Examples**:
 ```python
 # Subscribe
 def on_project_created(data):
@@ -628,8 +799,14 @@ def on_project_created(data):
 
 orchestrator.event_emitter.on(EventType.PROJECT_CREATED, on_project_created)
 
-# Emit
+# Emit synchronously
 orchestrator.emit_event(EventType.PROJECT_CREATED, {
+    "project_id": "proj_123",
+    "owner": "alice"
+})
+
+# Emit asynchronously (in async context)
+await orchestrator.event_emitter.emit_async(EventType.PROJECT_CREATED, {
     "project_id": "proj_123",
     "owner": "alice"
 })
@@ -690,6 +867,370 @@ LOG_DEBUG = "log.debug"
 LOG_INFO = "log.info"
 LOG_WARNING = "log.warning"
 LOG_ERROR = "log.error"
+```
+
+---
+
+## Async-First Design
+
+### Overview
+
+Socrates v1.3.3+ uses async-first design patterns throughout the codebase to support:
+- High concurrency and non-blocking I/O
+- Background processing without blocking user operations
+- Compatible library extraction for independent services
+- Proper resource cleanup and lifecycle management
+
+### Async/Await Patterns
+
+**Async Method Implementation**:
+```python
+# In agents or other components
+async def process_request_async(self, request: Dict) -> Dict:
+    """Process request asynchronously"""
+    # Await all async operations
+    result = await self.orchestrator.agent_bus.send_request(
+        "other_agent",
+        request_data
+    )
+
+    # Emit events asynchronously when in async context
+    await self.orchestrator.event_emitter.emit_async(
+        EventType.PROCESSING_COMPLETE,
+        {"result": result}
+    )
+
+    return {"status": "success", "data": result}
+```
+
+**Thread Pool Execution (Sync in Async)**:
+
+When calling synchronous operations from async context, use `asyncio.to_thread()`:
+```python
+import asyncio
+
+async def process_with_sync_operations(self, request):
+    # Execute sync I/O in thread pool (doesn't block event loop)
+    result = await asyncio.to_thread(
+        self.expensive_sync_operation,
+        request_data
+    )
+    return result
+```
+
+**Background Task Spawning**:
+
+For fire-and-forget async operations, spawn with `asyncio.create_task()`:
+```python
+def on_document_imported(data):
+    """Event handler (sync context) spawning async task"""
+    # Create async task without awaiting
+    asyncio.create_task(self._regenerate_knowledge_async(data))
+
+async def _regenerate_knowledge_async(self, data):
+    """Async task runs in background without blocking handler"""
+    document = data['document']
+    # Long-running operation doesn't block event system
+    await self.knowledge_analyzer.reanalyze(document)
+```
+
+### Async Patterns in Different Contexts
+
+**REST API Routes (FastAPI)**:
+```python
+@router.post("/projects/{project_id}/chat/message")
+async def send_message(
+    project_id: str,
+    message: ChatMessage,
+    orchestrator: AgentOrchestrator = Depends(get_orchestrator)
+):
+    # Always use await with async agent_bus methods
+    response = await orchestrator.agent_bus.send_request(
+        "socratic_counselor",
+        {
+            "action": "process_response",
+            "project_id": project_id,
+            "response": message.content
+        }
+    )
+    return response
+```
+
+**Background Tasks (Event Handlers)**:
+```python
+def background_quality_check(orchestrator):
+    """Event handler in sync context spawning async task"""
+    # Register as event listener
+    def on_project_created(data):
+        # Spawn async background task
+        asyncio.create_task(
+            run_background_analysis(orchestrator, data['project_id'])
+        )
+
+    orchestrator.event_emitter.on(EventType.PROJECT_CREATED, on_project_created)
+
+async def run_background_analysis(orchestrator, project_id):
+    """Background analysis runs without blocking main flow"""
+    result = await orchestrator.agent_bus.send_request(
+        "quality_analyzer",
+        {"action": "analyze", "project_id": project_id}
+    )
+    return result
+```
+
+**Library Usage (Sync Wrapper)**:
+```python
+# When extracting agents as library, provide sync wrapper
+from socratic_system.api.sync_wrapper import SocratesSync
+
+def main():
+    # Sync wrapper handles asyncio event loop internally
+    sync_api = SocratesSync(config)
+
+    # Looks like sync but runs async internally
+    response = sync_api.send_request("agent_name", request_data)
+
+    sync_api.close()
+```
+
+### Common Async Issues and Solutions
+
+**Issue**: "RuntimeError: asyncio.run() cannot be called from a running event loop"
+- **Cause**: Trying to create new event loop in async context
+- **Solution**: Use `await` instead of `asyncio.run()` within async function
+
+**Issue**: "RuntimeError: Event loop is closed"
+- **Cause**: Event loop cleaned up before async operations complete
+- **Solution**: Use `asyncio.create_task()` for background tasks instead of raw coroutines
+
+**Issue**: "'coroutine' object is not subscriptable"
+- **Cause**: Forgot to `await` on async function call
+- **Solution**: Always `await` methods marked `async def`
+
+**Issue**: Event not emitted from async context
+- **Cause**: Used `emit()` instead of `emit_async()`
+- **Solution**: Use `await emit_async()` in async methods
+
+---
+
+## Specs Extraction and Confirmation Workflow
+
+### Overview
+
+The Socratic dialogue system extracts specifications (specs) from user responses and stores them in the project context. Specs include:
+- **Goals**: What problem does the project solve?
+- **Requirements**: What features are needed?
+- **Tech Stack**: What technologies will be used?
+- **Constraints**: What limitations exist?
+
+The system supports two modes for spec confirmation based on debug setting.
+
+### Workflow Diagram
+
+```
+User Response
+    ↓
+SocraticCounselorAgent.process_response()
+    ↓
+Claude extracts insights (goals, requirements, tech_stack, constraints)
+    ↓
+ConflictDetectorAgent detects conflicts
+    ↓
+Check debug mode
+    ├─ Debug OFF (Production)
+    │   ├─ Auto-save specs to ProjectContext
+    │   ├─ Save to database
+    │   └─ Return success response silently
+    │
+    └─ Debug ON (Development)
+        ├─ Return specs to client
+        ├─ Return confirmation_required: true
+        ├─ Wait for client confirmation
+        └─ Save only after user confirms via /save-extracted-specs
+```
+
+### Specs Format
+
+**Extracted Specs**:
+```python
+{
+    "goals": [
+        "Become market leader in X",
+        "Reduce operational costs"
+    ],
+    "requirements": [
+        "Real-time analytics dashboard",
+        "Multi-tenant support",
+        "API rate limiting"
+    ],
+    "tech_stack": [
+        "Node.js 18+",
+        "PostgreSQL 14",
+        "React 18"
+    ],
+    "constraints": [
+        "Budget: $50,000",
+        "Timeline: 6 months",
+        "Team size: 3 engineers"
+    ]
+}
+```
+
+### Implementation
+
+**Phase 1: Response Processing**
+
+```python
+# In socratic_counselor.py - process_response() method
+
+async def process_response_async(self, request):
+    project_id = request['project_id']
+    response_text = request['response']
+
+    # Extract insights from user response
+    insights = await self.claude_client.extract_insights(
+        response_text,
+        self.database.load_project(project_id)
+    )
+    # insights = {"goals": [...], "requirements": [...], ...}
+
+    # Check for conflicts
+    conflicts = await self.orchestrator.agent_bus.send_request(
+        "conflict_detector",
+        {"action": "detect", "insights": insights, "project_id": project_id}
+    )
+
+    # Check debug mode
+    if not is_debug_mode():
+        # Production: Auto-save silently
+        self._update_project_context(project, insights)
+        self.database.save_project(project)
+        logger.info(f"Specs auto-saved for project {project_id}")
+
+        return {
+            "status": "success",
+            "message": "Response processed",
+            "insights_count": len(insights)
+        }
+    else:
+        # Debug: Return specs for confirmation
+        return {
+            "status": "success",
+            "requires_confirmation": True,
+            "confirmation_message": f"Extracted {len(insights)} spec categories - please confirm to save",
+            "extracted_specs": insights,
+            "conflicts": conflicts
+        }
+```
+
+**Phase 2: Confirmation Endpoint** (Debug Mode Only)
+
+```python
+# In socrates-api/routers/projects_chat.py
+# POST /projects/{project_id}/save-extracted-specs
+
+@router.post("/projects/{project_id}/save-extracted-specs")
+async def save_extracted_specs(
+    project_id: str,
+    confirmation: SpecsConfirmation,  # Contains confirmed specs
+    orchestrator = Depends(get_orchestrator)
+):
+    """Save previously extracted specs after user confirmation (debug mode)"""
+
+    project = orchestrator.database.load_project(project_id)
+
+    # Update with confirmed specs
+    project.goals = confirmation.goals
+    project.requirements = confirmation.requirements
+    project.tech_stack = confirmation.tech_stack
+    project.constraints = confirmation.constraints
+
+    # Save to database
+    orchestrator.database.save_project(project)
+
+    # Emit event
+    await orchestrator.event_emitter.emit_async(
+        EventType.SPECS_CONFIRMED,
+        {
+            "project_id": project_id,
+            "specs_count": len(confirmation.goals) + len(confirmation.requirements) + len(confirmation.tech_stack)
+        }
+    )
+
+    return {
+        "status": "success",
+        "message": "Specs saved successfully",
+        "project_id": project_id
+    }
+```
+
+### API Response Examples
+
+**Production Mode (Debug OFF)**:
+```json
+{
+    "status": "success",
+    "message": "Response processed",
+    "insights_count": 4
+}
+```
+
+**Debug Mode (Debug ON)**:
+```json
+{
+    "status": "success",
+    "requires_confirmation": true,
+    "confirmation_message": "Extracted 4 spec categories - please confirm to save",
+    "extracted_specs": {
+        "goals": ["Solve problem X", "Support Y users"],
+        "requirements": ["Feature A", "Feature B", "Feature C"],
+        "tech_stack": ["Python", "PostgreSQL", "Redis"],
+        "constraints": ["Budget $50k", "Timeline 6 months"]
+    },
+    "conflicts": [
+        {
+            "type": "requirements",
+            "message": "Async processing conflicts with sync database requirement"
+        }
+    ]
+}
+```
+
+### Frontend Integration
+
+**Debug Mode Confirmation UI** (Pseudo-code):
+```javascript
+// 1. Receive response with requires_confirmation
+const response = await sendMessage(projectId, userMessage);
+
+if (response.requires_confirmation) {
+    // 2. Show confirmation dialog
+    showSpecsConfirmationDialog({
+        specs: response.extracted_specs,
+        conflicts: response.conflicts
+    });
+
+    // 3. User reviews and optionally edits specs
+    const confirmedSpecs = userReviewsAndConfirms();
+
+    // 4. Send confirmation
+    await saveExtractedSpecs(projectId, confirmedSpecs);
+}
+```
+
+### Configuration
+
+**Debug Mode Setting**:
+```python
+# In config or environment
+import os
+
+def is_debug_mode() -> bool:
+    """Check if debug mode is enabled"""
+    return os.getenv("DEBUG_MODE", "false").lower() == "true"
+
+# Or in config file
+DEBUG_MODE = true  # or false
 ```
 
 ---
@@ -1262,5 +1803,5 @@ orchestrator.event_emitter.on(EventType.TOKEN_USAGE, monitor_token_usage)
 
 ---
 
-**Last Updated**: January 2026
-**Version**: 1.3.0
+**Last Updated**: May 2026
+**Version**: 1.3.3

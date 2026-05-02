@@ -406,6 +406,140 @@ Resolve a specific conflict.
 
 ---
 
+## Chat & Specs Endpoints
+
+### POST /projects/{project_id}/chat/message
+
+Send a message in the Socratic dialogue (Socratic or Direct mode).
+
+**Parameters:**
+- `project_id` (path): Project identifier
+- Request body:
+  - `message` (string): User message/response
+  - `mode` (string, optional): "socratic" or "direct" (default: "socratic")
+
+**Response Format:**
+```json
+{
+    "success": true,
+    "data": {
+        "message": {
+            "id": "msg_...",
+            "role": "assistant",
+            "content": "Assistant response",
+            "timestamp": "2026-05-02T12:00:00Z"
+        },
+        "mode": "socratic",
+        "requires_confirmation": false,
+        "extracted_specs": null,
+        "extracted_specs_count": 0
+    }
+}
+```
+
+**Response with Confirmation Required (Debug Mode):**
+```json
+{
+    "success": true,
+    "data": {
+        "message": {
+            "id": "msg_...",
+            "role": "assistant",
+            "content": "Your response has been analyzed.",
+            "timestamp": "2026-05-02T12:00:00Z"
+        },
+        "mode": "socratic",
+        "requires_confirmation": true,
+        "confirmation_message": "Extracted 3 insight categories - please confirm to save",
+        "extracted_specs": {
+            "goals": ["Become market leader"],
+            "requirements": ["Real-time analytics", "Mobile support"],
+            "tech_stack": ["Node.js", "React"],
+            "constraints": ["Budget $50k", "Timeline 6 months"]
+        },
+        "extracted_specs_count": 3
+    }
+}
+```
+
+**Behavior:**
+- **Debug Mode OFF**: Specs automatically saved silently, no confirmation needed
+- **Debug Mode ON**: Specs returned with `requires_confirmation: true`, waits for user confirmation
+- Specs include extracted goals, requirements, technology stack, and constraints
+- User must call `/save-extracted-specs` endpoint to confirm and save specs in debug mode
+
+**Example (Socratic Mode):**
+```bash
+curl -X POST http://localhost:8000/api/v1/projects/proj_abc123/chat/message \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-token" \
+  -d '{
+    "message": "We are targeting small business owners"
+  }'
+```
+
+**Example (Direct Mode):**
+```bash
+curl -X POST http://localhost:8000/api/v1/projects/proj_abc123/chat/message \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-token" \
+  -d '{
+    "message": "Tell me about project structure",
+    "mode": "direct"
+  }'
+```
+
+### POST /projects/{project_id}/save-extracted-specs
+
+Save extracted specs from dialogue after user confirmation.
+
+**Parameters:**
+- `project_id` (path): Project identifier
+- Request body:
+  - `goals` (string or array): Project goals
+  - `requirements` (array): Functional requirements
+  - `tech_stack` (array): Technology selections
+  - `constraints` (array): Project constraints
+
+**Response:**
+```json
+{
+    "success": true,
+    "data": {
+        "saved_specs": {
+            "goals": ["Become market leader"],
+            "requirements": ["Real-time analytics", "Mobile support"],
+            "tech_stack": ["Node.js", "React"],
+            "constraints": ["Budget $50k"]
+        },
+        "specs_count": 4,
+        "message": "Extracted specs saved successfully"
+    }
+}
+```
+
+**Usage Flow:**
+1. User answers a question in Socratic mode
+2. If debug mode ON: Response includes `requires_confirmation: true` and `extracted_specs`
+3. Frontend displays confirmation dialog with extracted specs
+4. User clicks "Confirm" or auto-save (in non-debug mode)
+5. POST to this endpoint to save specs and update project maturity
+
+**Example:**
+```bash
+curl -X POST http://localhost:8000/api/v1/projects/proj_abc123/save-extracted-specs \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-token" \
+  -d '{
+    "goals": "Become the market leader in our space",
+    "requirements": ["Real-time analytics", "Mobile-first design", "Offline capability"],
+    "tech_stack": ["Node.js", "React", "PostgreSQL"],
+    "constraints": ["Budget: $50,000", "Timeline: 6 months"]
+  }'
+```
+
+---
+
 ## Background Analysis Endpoints (Phase 3)
 
 ### GET /api/v1/background/status
