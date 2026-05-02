@@ -257,7 +257,7 @@ async def _handle_chat_message(
             logger.info("[_handle_chat_message] Got orchestrator, calling process_request")
 
             # Process message through orchestrator using process_request (standard pattern)
-            result = orchestrator.agent_bus.send_request(
+            result = await orchestrator.agent_bus.send_request(
                 "socratic_counselor",
                 {
                     "action": "process_response",
@@ -444,7 +444,7 @@ async def _route_command(
 
         elif command == "summary":
             # Generate conversation summary
-            result = orchestrator.agent_bus.send_request(
+            result = await orchestrator.agent_bus.send_request(
                 "context_analyzer",
                 {
                     "action": "generate_summary",
@@ -1024,7 +1024,7 @@ async def get_chat_summary(
             orchestrator = get_orchestrator()
 
             # Use context_analyzer to generate summary
-            summary_result = orchestrator.agent_bus.send_request(
+            summary_result = await orchestrator.agent_bus.send_request(
                 "context_analyzer",
                 {
                     "action": "generate_summary",

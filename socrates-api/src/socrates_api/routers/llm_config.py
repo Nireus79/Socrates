@@ -39,7 +39,7 @@ async def list_providers(
         logger.info(f"Listing LLM providers for user: {current_user}")
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request("multi_llm", {"action": "list_providers"})
+        result = await orchestrator.agent_bus.send_request("multi_llm", {"action": "list_providers"})
 
         if result["status"] != "success":
             raise HTTPException(
@@ -87,7 +87,7 @@ async def get_config(
         logger.info(f"Getting LLM config for user: {current_user}")
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm", {"action": "get_config", "user_id": current_user}
         )
 
@@ -139,7 +139,7 @@ async def set_default_provider(
         logger.info(f"Setting default provider to {provider} for user: {current_user}")
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm",
             {"action": "set_default_provider", "user_id": current_user, "provider": provider},
         )
@@ -194,7 +194,7 @@ async def set_api_key(
         logger.info(f"Setting API key for {provider} for user: {current_user}")
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm",
             {
                 "action": "add_api_key",
@@ -252,7 +252,7 @@ async def get_usage_stats(
         logger.info(f"Getting usage stats for user: {current_user}")
 
         orchestrator = get_orchestrator()
-        result = orchestrator.agent_bus.send_request(
+        result = await orchestrator.agent_bus.send_request(
             "multi_llm", {"action": "get_usage_stats", "user_id": current_user, "days": days}
         )
 
