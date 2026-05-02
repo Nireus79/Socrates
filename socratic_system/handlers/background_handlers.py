@@ -135,12 +135,34 @@ class BackgroundHandlers:
             cache_key = f"analysis:quality:{project_id}"
             self.cache.set(cache_key, quality_result)
 
-            # Emit completion event
+            # UPDATE PROJECT WITH NEW MATURITY VALUES
+            if quality_result:
+                if "overall_maturity" in quality_result:
+                    project.overall_maturity = quality_result["overall_maturity"]
+
+                if "phase_maturity_scores" in quality_result:
+                    project.phase_maturity_scores = quality_result["phase_maturity_scores"]
+
+                if "category_scores" in quality_result:
+                    project.category_scores = quality_result["category_scores"]
+
+                project.last_assessment = datetime.now().isoformat()
+
+                # SAVE UPDATED PROJECT TO DATABASE
+                await asyncio.to_thread(
+                    self.orchestrator.database.save_project,
+                    project
+                )
+                logger.debug(f"[BACKGROUND] Project maturity updated: overall={project.overall_maturity}%")
+
+            # Emit completion event WITH UPDATED VALUES
             self.orchestrator.event_emitter.emit(
                 "quality.analysis.completed",
                 {
                     "project_id": project_id,
                     "result": quality_result,
+                    "overall_maturity": project.overall_maturity,
+                    "category_scores": project.category_scores,
                     "timestamp": datetime.now().isoformat()
                 }
             )

@@ -37,6 +37,7 @@ class ProjectContext:
     archived_at: Optional[datetime.datetime] = None
     progress: int = 0  # 0-100 percentage
     status: str = "active"  # active, completed, on-hold
+    knowledge_base_content: str = ""  # Imported knowledge base content
     project_type: str = (
         "software"  # Type of project (software, business, creative, research, marketing, educational)
     )

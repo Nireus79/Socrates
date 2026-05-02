@@ -237,6 +237,11 @@ class ProjectManagerAgent(Agent):
                 # Non-fatal: continue with empty specs if extraction fails
                 self.log(f"Warning: Could not analyze project context: {e}", level="warning")
 
+        # STORE KNOWLEDGE BASE CONTENT IN PROJECT
+        if knowledge_base_content and knowledge_base_content.strip():
+            project.knowledge_base_content = knowledge_base_content
+            self.log("Knowledge base stored for future reference")
+
         self.orchestrator.database.save_project(project)
         self.log(f"Created project '{project_name}' (type: {project_type}) with ID {project_id}")
 

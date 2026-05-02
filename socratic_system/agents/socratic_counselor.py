@@ -535,15 +535,42 @@ Opportunities: {', '.join(opportunities[:2]) if opportunities else 'Explore docu
                 q_text = q[:120] + "..." if len(q) > 120 else q
                 previous_questions_section += f"\n{i}. {q_text}"
 
+        # Build categorized specs section
+        categorized_specs_section = ""
+        if project.categorized_specs:
+            categorized_specs_section = "\nCategorized Specifications:"
+            for category, specs in project.categorized_specs.items():
+                if specs:
+                    specs_str = ", ".join(specs) if isinstance(specs, list) else str(specs)
+                    categorized_specs_section += f"\n- {category.replace('_', ' ').title()}: {specs_str}"
+
+        # Build KB context section
+        kb_context = ""
+        if project.knowledge_base_content and project.knowledge_base_content.strip():
+            kb_context = f"\n\nImported Knowledge Base (relevant excerpts):\n{project.knowledge_base_content[:500]}..."
+
+        # Build gap analysis section
+        gap_analysis = ""
+        if project.categorized_specs:
+            missing_categories = []
+            expected_categories = ["business_goals", "functional_requirements", "technology", "constraints"]
+            for cat in expected_categories:
+                if cat not in project.categorized_specs or not project.categorized_specs[cat]:
+                    missing_categories.append(cat.replace('_', ' ').title())
+
+            if missing_categories:
+                gap_analysis = f"\n\nIdentified Specification Gaps (priority areas to explore):\n- {chr(10).join('- ' + cat for cat in missing_categories)}"
+
         return f"""You are a Socratic tutor helping guide someone through their {project.project_type} project.
 
 Project Details:
 - Name: {project.name}
 - Type: {project.project_type.upper() if project.project_type else 'software'}
 - Current Phase: {project.phase} ({phase_descriptions.get(project.phase, '')})
+- Original Description: {project.description if project.description else 'Not provided'}
 - Goals: {project.goals}
 - Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
-- Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
+- Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}{categorized_specs_section}{kb_context}{gap_analysis}
 
 Project Context:
 {context}{role_context}{code_context}{doc_context}
@@ -1552,26 +1579,54 @@ What would be most helpful for you?"""
             return
 
         try:
+            # Initialize categorized_specs if not present
+            if not project.categorized_specs:
+                project.categorized_specs = {}
+
             # Handle goals
             if "goals" in insights and insights["goals"]:
                 goals_list = self._normalize_to_list(insights["goals"])
                 if goals_list:
                     project.goals = " ".join(goals_list)
+                    # Categorize goals under architecture/business category
+                    if "business_goals" not in project.categorized_specs:
+                        project.categorized_specs["business_goals"] = []
+                    for goal in goals_list:
+                        if goal not in project.categorized_specs["business_goals"]:
+                            project.categorized_specs["business_goals"].append(goal)
 
             # Handle requirements
             if "requirements" in insights and insights["requirements"]:
                 req_list = self._normalize_to_list(insights["requirements"])
                 self._update_list_field(project.requirements, req_list)
+                # Categorize requirements
+                if "functional_requirements" not in project.categorized_specs:
+                    project.categorized_specs["functional_requirements"] = []
+                for req in req_list:
+                    if req not in project.categorized_specs["functional_requirements"]:
+                        project.categorized_specs["functional_requirements"].append(req)
 
             # Handle tech_stack
             if "tech_stack" in insights and insights["tech_stack"]:
                 tech_list = self._normalize_to_list(insights["tech_stack"])
                 self._update_list_field(project.tech_stack, tech_list)
+                # Categorize technology choices
+                if "technology" not in project.categorized_specs:
+                    project.categorized_specs["technology"] = []
+                for tech in tech_list:
+                    if tech not in project.categorized_specs["technology"]:
+                        project.categorized_specs["technology"].append(tech)
 
             # Handle constraints
             if "constraints" in insights and insights["constraints"]:
                 constraint_list = self._normalize_to_list(insights["constraints"])
                 self._update_list_field(project.constraints, constraint_list)
+                # Categorize constraints
+                if "constraints" not in project.categorized_specs:
+                    project.categorized_specs["constraints"] = []
+                for constraint in constraint_list:
+                    if constraint not in project.categorized_specs["constraints"]:
+                        project.categorized_specs["constraints"].append(constraint)
 
         except Exception as e:
             print(f"{Fore.YELLOW}Warning: Error updating project context: {e}")
