@@ -24,7 +24,7 @@ import { ProjectCard, CreateProjectModal } from '../../components/project';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
-  const { projects, isLoading, listProjects, createProject } = useProjectStore();
+  const { projects, isLoading, listProjects, createProject, deleteProject } = useProjectStore();
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [isChatLoading, setIsChatLoading] = React.useState(false);
   const [stats, setStats] = React.useState({ questionsAnswered: 0, codeGenerated: 0 });
@@ -41,14 +41,15 @@ export const DashboardPage: React.FC = () => {
       let totalQuestions = 0;
       let totalCode = 0;
 
-      // Fetch stats for all projects
-      for (const project of projects) {
+      // Fetch stats only for active (non-archived) projects
+      const activeProjects = projects.filter((p) => !p.is_archived);
+      for (const project of activeProjects) {
         try {
           const projectStats = await projectsAPI.getProjectStats(project.project_id);
           totalQuestions += projectStats.questions_asked || 0;
           totalCode += projectStats.code_generated || 0;
         } catch (error) {
-          // Continue if individual project fails
+          // Continue if individual project fails (404 from deleted project, etc)
           console.error(`Failed to fetch stats for project ${project.project_id}:`, error);
         }
       }
@@ -97,19 +98,10 @@ export const DashboardPage: React.FC = () => {
 
   const handleArchiveProject = async (projectId: string) => {
     const projectToArchive = projects.find(p => p.project_id === projectId);
-    console.log('Archive clicked for:', projectToArchive?.name);
-
     try {
-      const result = await projectsAPI.deleteProject(projectId);
-      console.log('Delete API response:', result);
+      // Delete via store - updates state immediately and API
+      await deleteProject(projectId);
       showSuccess('Project Archived', `${projectToArchive?.name} has been archived successfully`);
-      console.log('Notification shown');
-
-      setTimeout(async () => {
-        console.log('Refreshing projects list');
-        await listProjects();
-        console.log('Projects refreshed');
-      }, 3000);
     } catch (error) {
       console.error('Failed to archive project:', error);
       showError('Failed to Archive Project', 'Unable to archive the project. Please try again.');
@@ -120,12 +112,11 @@ export const DashboardPage: React.FC = () => {
     if (!window.confirm('Are you sure you want to permanently delete this project? This action cannot be undone.')) {
       return;
     }
+    const projectToDelete = projects.find(p => p.project_id === projectId);
     try {
-      const projectToDelete = projects.find(p => p.project_id === projectId);
-      await projectsAPI.deleteProject(projectId);
+      // Delete via store - updates state immediately and API
+      await deleteProject(projectId);
       showSuccess('Project Deleted', `${projectToDelete?.name} has been permanently deleted`);
-      // Refresh after notification is shown
-      setTimeout(() => listProjects(), 100);
     } catch (error) {
       console.error('Failed to delete project:', error);
       showError('Failed to Delete Project', 'Unable to delete the project. Please try again.');

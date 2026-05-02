@@ -35,6 +35,7 @@ async def validate_code(
     language: Optional[str] = None,
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Validate code for syntax and style issues.
@@ -61,7 +62,6 @@ async def validate_code(
         if project_id:
             logger.info(f"Validating code for project: {project_id}")
             # Load project from database
-            db = get_database()
             project = db.load_project(project_id)
             if not project:
                 raise HTTPException(status_code=404, detail="Project not found")
@@ -78,7 +78,7 @@ async def validate_code(
             project_path = project.repository_url or project_id
 
             # Call code validation agent - same as CLI uses
-            result = orchestrator.process_request(
+            result = await orchestrator.agent_bus.send_request(
                 "code_validation",
                 {
                     "action": "validate_project",
@@ -183,7 +183,7 @@ async def assess_maturity(
         orchestrator = get_orchestrator()
 
         # Call quality_controller to calculate maturity - same as CLI does
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "quality_controller",
             {
                 "action": "calculate_maturity",
@@ -279,7 +279,7 @@ async def run_tests(
 
         # Call code_validation agent - same as CLI uses
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "code_validation",
             {
                 "action": "run_tests",
@@ -355,14 +355,13 @@ async def analyze_structure(
         logger.info(f"Analyzing structure for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call context analyzer - same as CLI uses
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "context_analyzer",
             {
                 "action": "analyze_context",
@@ -439,14 +438,13 @@ async def review_code(
         logger.info(f"Getting code statistics for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call context analyzer to get project statistics
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "context_analyzer",
             {
                 "action": "analyze_context",
@@ -529,7 +527,7 @@ async def auto_fix_issues(
 
         # Call code generator to generate improved code
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "code_generator",
             {
                 "action": "generate_script",
@@ -606,14 +604,13 @@ async def get_analysis_report(
         logger.info(f"Generating analysis report for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call context analyzer to generate report/summary
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "context_analyzer",
             {
                 "action": "generate_summary",
@@ -651,4 +648,358 @@ async def get_analysis_report(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate report: {str(e)}",
+        )
+
+
+# Phase 3: Event-driven background processing polling endpoints
+# Clients poll these endpoints to retrieve cached analysis results
+
+
+@router.get(
+    "/{project_id}/background/status",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get background analysis status",
+    responses={
+        200: {"description": "Status retrieved"},
+        202: {"description": "Analysis still processing"},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_background_analysis_status(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Get the status of background analyses (quality, conflicts, insights).
+
+    Returns status for each analysis type without full results.
+    Use this for polling to check if analysis is complete.
+
+    Args:
+        project_id: Project ID
+        current_user: Authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse with status dict containing:
+        - quality: "pending" | "processing" | "completed" | "failed"
+        - conflicts: "pending" | "processing" | "completed" | "failed"
+        - insights: "pending" | "processing" | "completed" | "failed"
+    """
+    try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"Getting background analysis status for project: {project_id}")
+
+        # Load project to verify it exists
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        orchestrator = get_orchestrator()
+
+        # Get status from cache
+        cache = orchestrator.cache
+        job_tracker = orchestrator.job_tracker
+
+        # Check status of each analysis
+        status_dict = {
+            "quality": "pending",
+            "conflicts": "pending",
+            "insights": "pending",
+        }
+
+        # Get jobs for this project
+        project_jobs = job_tracker.get_project_jobs(project_id)
+
+        # Map job types to analysis names
+        for job in project_jobs:
+            if "quality" in job.job_id:
+                status_dict["quality"] = job.status.value
+            elif "conflict" in job.job_id:
+                status_dict["conflicts"] = job.status.value
+            elif "insight" in job.job_id:
+                status_dict["insights"] = job.status.value
+
+        # Check if any are still processing
+        any_processing = any(s == "processing" for s in status_dict.values())
+        response_status = 202 if any_processing else 200
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Background analysis status retrieved",
+            data=status_dict,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting background analysis status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get background analysis status: {str(e)}",
+        )
+
+
+@router.get(
+    "/{project_id}/background/quality",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get cached quality analysis",
+    responses={
+        200: {"description": "Quality analysis retrieved"},
+        202: {"description": "Analysis still processing"},
+        404: {"description": "Project or analysis not found", "model": ErrorResponse},
+    },
+)
+async def get_cached_quality_analysis(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Get cached quality analysis results for a project.
+
+    Returns HTTP 202 if analysis is still processing.
+    Returns HTTP 200 if analysis is complete.
+    Returns HTTP 404 if project not found or analysis never started.
+
+    Args:
+        project_id: Project ID
+        current_user: Authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse with quality analysis results
+    """
+    try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"Getting cached quality analysis for project: {project_id}")
+
+        # Load project to verify it exists
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        orchestrator = get_orchestrator()
+        cache = orchestrator.cache
+
+        # Try to get cached result
+        cache_key = f"analysis:quality:{project_id}"
+        quality_result = cache.get(cache_key)
+
+        if quality_result is None:
+            # Check if job is still processing
+            project_jobs = orchestrator.job_tracker.get_project_jobs(project_id)
+            quality_job = next((j for j in project_jobs if "quality" in j.job_id), None)
+
+            if quality_job and quality_job.status.value == "processing":
+                return APIResponse(
+                    success=False,
+                    status="processing",
+                    message="Quality analysis still processing",
+                    data={"status": "processing", "progress": quality_job.progress},
+                )
+            else:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Quality analysis not found. No cached results available.",
+                )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Quality analysis retrieved from cache",
+            data=quality_result,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting cached quality analysis: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get quality analysis: {str(e)}",
+        )
+
+
+@router.get(
+    "/{project_id}/background/conflicts",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get cached conflict analysis",
+    responses={
+        200: {"description": "Conflict analysis retrieved"},
+        202: {"description": "Analysis still processing"},
+        404: {"description": "Project or analysis not found", "model": ErrorResponse},
+    },
+)
+async def get_cached_conflict_analysis(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Get cached conflict analysis results for a project.
+
+    Returns HTTP 202 if analysis is still processing.
+    Returns HTTP 200 if analysis is complete.
+    Returns HTTP 404 if project not found or analysis never started.
+
+    Args:
+        project_id: Project ID
+        current_user: Authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse with conflict analysis results
+    """
+    try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"Getting cached conflict analysis for project: {project_id}")
+
+        # Load project to verify it exists
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        orchestrator = get_orchestrator()
+        cache = orchestrator.cache
+
+        # Try to get cached result
+        cache_key = f"analysis:conflicts:{project_id}"
+        conflicts_result = cache.get(cache_key)
+
+        if conflicts_result is None:
+            # Check if job is still processing
+            project_jobs = orchestrator.job_tracker.get_project_jobs(project_id)
+            conflict_job = next((j for j in project_jobs if "conflict" in j.job_id), None)
+
+            if conflict_job and conflict_job.status.value == "processing":
+                return APIResponse(
+                    success=False,
+                    status="processing",
+                    message="Conflict analysis still processing",
+                    data={"status": "processing", "progress": conflict_job.progress},
+                )
+            else:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Conflict analysis not found. No cached results available.",
+                )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Conflict analysis retrieved from cache",
+            data=conflicts_result,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting cached conflict analysis: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get conflict analysis: {str(e)}",
+        )
+
+
+@router.get(
+    "/{project_id}/background/insights",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get cached insight analysis",
+    responses={
+        200: {"description": "Insight analysis retrieved"},
+        202: {"description": "Analysis still processing"},
+        404: {"description": "Project or analysis not found", "model": ErrorResponse},
+    },
+)
+async def get_cached_insight_analysis(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Get cached insight analysis results for a project.
+
+    Returns HTTP 202 if analysis is still processing.
+    Returns HTTP 200 if analysis is complete.
+    Returns HTTP 404 if project not found or analysis never started.
+
+    Args:
+        project_id: Project ID
+        current_user: Authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse with insight analysis results
+    """
+    try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"Getting cached insight analysis for project: {project_id}")
+
+        # Load project to verify it exists
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        orchestrator = get_orchestrator()
+        cache = orchestrator.cache
+
+        # Try to get cached result
+        cache_key = f"analysis:insights:{project_id}"
+        insights_result = cache.get(cache_key)
+
+        if insights_result is None:
+            # Check if job is still processing
+            project_jobs = orchestrator.job_tracker.get_project_jobs(project_id)
+            insight_job = next((j for j in project_jobs if "insight" in j.job_id), None)
+
+            if insight_job and insight_job.status.value == "processing":
+                return APIResponse(
+                    success=False,
+                    status="processing",
+                    message="Insight analysis still processing",
+                    data={"status": "processing", "progress": insight_job.progress},
+                )
+            else:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Insight analysis not found. No cached results available.",
+                )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Insight analysis retrieved from cache",
+            data=insights_result,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting cached insight analysis: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get insight analysis: {str(e)}",
         )

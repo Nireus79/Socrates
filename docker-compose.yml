@@ -1,0 +1,74 @@
+services:
+  # API backend service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: socrates-api
+    environment:
+      # Listen on 0.0.0.0 for Docker networking (required for reverse proxy to reach it)
+      SOCRATES_API_HOST: 0.0.0.0
+      SOCRATES_API_PORT: 8000
+      ENVIRONMENT: production
+      # Redis connection for Docker (use service name on docker network)
+      REDIS_URL: redis://redis:6379
+      # Add your encryption key here or pass via environment
+      # SOCRATES_ENCRYPTION_KEY: your-key-here
+      # ALLOWED_ORIGINS: http://localhost:80
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./socrates-api/.env:/app/socrates-api/.env:ro
+    networks:
+      - socrates-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - redis
+
+  # Redis cache (optional, but API expects it)
+  redis:
+    image: redis:7-alpine
+    container_name: socrates-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - socrates-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - redis_data:/data
+
+  # Frontend builder and reverse proxy
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.reverse-proxy
+    container_name: socrates-web
+    ports:
+      - "80:80"
+    networks:
+      - socrates-network
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  socrates-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local

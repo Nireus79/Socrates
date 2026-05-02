@@ -1,18 +1,29 @@
-"""
-Services module for Socrates AI.
+"""Service layer for Socrates system.
 
-Provides specialized services for document analysis, understanding, processing,
-and orchestrator management for both CLI and web API.
+Decouples business logic from agents through service-oriented architecture.
+Services receive only required dependencies via dependency injection.
 """
 
-from socratic_system.services.document_understanding import DocumentUnderstandingService
-from socratic_system.services.orchestrator_service import (
-    OrchestratorService,
-    get_orchestrator_service,
-)
+from .base import Service
+from .project_service import ProjectService
+from .quality_service import QualityService
+from .knowledge_service import KnowledgeService
+from .insight_service import InsightService
+from .code_service import CodeService
+from .conflict_service import ConflictService
+from .validation_service import ValidationService
+from .learning_service import LearningService
+from .document_understanding import DocumentUnderstandingService
 
 __all__ = [
+    "Service",
+    "ProjectService",
+    "QualityService",
+    "KnowledgeService",
+    "InsightService",
+    "CodeService",
+    "ConflictService",
+    "ValidationService",
+    "LearningService",
     "DocumentUnderstandingService",
-    "OrchestratorService",
-    "get_orchestrator_service",
 ]

@@ -1,0 +1,221 @@
+SOCRATES WORKFLOW MISALIGNMENTS
+Current vs Reference Design Comparison
+
+=============================================================================
+ISSUE 1: KNOWLEDGE BASE HANDLING
+=============================================================================
+
+REFERENCE DESIGN:
+1. User imports KB
+2. KB stored in vector database
+3. KB indexed for semantic search
+4. Questions generated using KB context
+5. Answers validated against KB
+6. KB continuously available throughout project
+
+CURRENT IMPLEMENTATION:
+1. User imports KB
+2. KB analyzed for initial insights
+3. KB DISCARDED after project creation
+4. Questions generated without KB context
+5. Answers processed without KB reference
+6. KB NEVER USED AGAIN
+
+IMPACT: Users upload knowledge but system ignores it
+        Questions are generic instead of KB-informed
+
+
+=============================================================================
+ISSUE 2: SPECS EXTRACTION & USER FEEDBACK
+=============================================================================
+
+REFERENCE DESIGN:
+User: [Answers question]
+System: "I understood these specs from your answer:
+         - Goal: Build mobile app
+         - Platform: iOS and Android
+         - Timeline: 6 months"
+User: [Confirms YES or NO]
+System: [Saves if YES, asks clarifying question if NO]
+
+CURRENT IMPLEMENTATION:
+User: [Answers question]
+System: [silence - specs extracted and saved silently]
+User: [sees nothing changed, confused]
+System: [in debug logs: "Extracted 5 specs from answer"]
+User: "Did the system understand me? I have no idea."
+
+IMPACT: Zero user feedback on what was extracted
+        Specs saved without confirmation
+        User cannot correct misunderstandings
+
+
+=============================================================================
+ISSUE 3: QUESTION QUEUE MANAGEMENT
+=============================================================================
+
+REFERENCE DESIGN:
+Active Question (user is answering THIS):
+  Q1: "What is your primary business goal?" [Active]
+
+Question Queue (next questions):
+  Q2: "What platforms should support the solution?" [Pending]
+  Q3: "What's your timeline?" [Pending]
+  Q4: "Who will use this product?" [Pending]
+
+Clear distinction between active and queued
+Queue maintained at 3-5 questions
+
+CURRENT IMPLEMENTATION:
+pending_questions = [
+  {"id": "q_1", "status": "answered"},     # OLD
+  {"id": "q_2", "status": "answered"},     # OLD
+  {"id": "q_3", "status": "answered"},     # OLD
+  {"id": "q_4", "status": "unanswered"},   # CURRENT (?)
+  {"id": "q_5", "status": "unanswered"},   # QUEUED (?)
+  {"id": "q_6", "status": "unanswered"},   # QUEUED (?)
+]
+
+Append-only list that never shrinks
+Must search in reverse to find "active"
+No clear distinction between active and queued
+Answered questions never cleaned up
+
+IMPACT: Inefficient data structure
+        No clear "active question" tracking
+        List grows infinitely
+        Confusing for users and developers
+
+
+=============================================================================
+ISSUE 4: MATURITY TRACKING & PERSISTENCE
+=============================================================================
+
+REFERENCE DESIGN:
+User answers question
+    ↓
+Specs extracted and confirmed
+    ↓
+Maturity recalculated immediately
+  Overall Maturity: 15% → 22% (shown to user)
+  Architecture: 40%, Performance: 10%, Security: 5%
+    ↓
+Maturity saved to ProjectContext
+    ↓
+User refreshes → sees updated maturity
+
+CURRENT IMPLEMENTATION:
+User answers question
+    ↓
+Background handler triggered (async)
+    ↓
+Quality assessment calculated
+    ↓
+Results CACHED only (not saved to project)
+    ↓
+User refreshes → sees STALE maturity (old value)
+    ↓
+User: "I answered 3 more questions, why didn't maturity change?"
+
+IMPACT: Maturity calculated but not saved
+        Stale values shown to users
+        No visual progress feedback
+        Background results cached but lost
+
+
+=============================================================================
+ISSUE 5: CONTEXT NOT PASSED TO QUESTION GENERATION
+=============================================================================
+
+REFERENCE DESIGN:
+When generating question, system considers:
+✓ Original project description
+✓ Imported knowledge base (via vector search)
+✓ Already-extracted specs
+✓ Spec gaps (underspecified categories)
+✓ Topics already covered (avoid repetition)
+
+Result: "What's your approach to handling real-time data
+         synchronization?" (KB-informed, targeted, specific)
+
+CURRENT IMPLEMENTATION:
+When generating question, system has:
+✓ Current spec values (string concatenation)
+✓ Phase
+✓ Conversation history (unstructured)
+✗ Original description (not passed)
+✗ Knowledge base (discarded after creation)
+✗ Spec gaps (no analysis of underspecified areas)
+
+Result: "Tell us about your project requirements"
+        (generic, no context, might repeat topics)
+
+IMPACT: Questions lack specific context
+        Not informed by imported knowledge
+        Cannot target underspecified areas
+        May repeat topics unnecessarily
+
+
+=============================================================================
+PRIORITY FIXES
+=============================================================================
+
+PRIORITY 1: USER FEEDBACK (CRITICAL - Breaks Socratic Method)
+What: Show extracted specs to user for confirmation before saving
+Where: Answer processing in socratic_counselor.py + projects_chat.py
+Impact: Users can verify system understanding, correct misunderstandings
+
+Implementation:
+1. Extract specs from answer
+2. Format clearly: "I understood these specs..."
+3. Send to frontend for user confirmation
+4. Only save if user confirms YES
+5. Show updated maturity after confirmation
+
+
+PRIORITY 2: KNOWLEDGE BASE INTEGRATION (HIGH - Core Feature)
+What: Store, index, and use knowledge base throughout project
+Where: project_manager.py, socratic_counselor.py, knowledge_manager.py
+Impact: Questions become KB-informed, answers validated against KB
+
+Implementation:
+1. Store KB in vector database at project creation
+2. Retrieve relevant KB sections during question generation
+3. Include KB context in answer analysis
+4. Reference KB when explaining/validating answers
+
+
+PRIORITY 3: PERSISTENCE (HIGH - Data Integrity)
+What: Save background analysis results to project (not just cache)
+Where: background_handlers.py
+Impact: Maturity and other metrics persisted, shown to user
+
+Implementation:
+1. Background handlers update project object with results
+2. Save project to database after analysis
+3. Emit events with new values
+4. Frontend displays updated metrics
+
+
+PRIORITY 4: DATA STRUCTURES (MEDIUM - Architecture)
+What: Implement proper question queue instead of append-only list
+Where: models/project.py, socratic_counselor.py
+Impact: Clear active question, efficient queue management
+
+Implementation:
+1. Define active_question explicitly (not status flag)
+2. Implement question_queue as separate list
+3. Archive answered questions when new becomes active
+4. Maintain 3-5 questions in queue, generate more as needed
+
+
+PRIORITY 5: CONTEXT FLOW (MEDIUM - Completeness)
+What: Pass original context and gaps to question generation
+Where: socratic_counselor.py
+Impact: Targeted, relevant questions that address actual gaps
+
+Implementation:
+1. Analyze which spec categories are underspecified
+2. Generate questions to address gaps
+3. Pass original description and KB context to Claude
+4. Track topics to avoid repetition

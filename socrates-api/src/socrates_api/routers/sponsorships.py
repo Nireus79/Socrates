@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse
+from socratic_system.database import ProjectDatabase
 from socratic_system.sponsorships.webhook import (
     handle_sponsorship_webhook,
     verify_github_signature,
@@ -24,7 +25,7 @@ router = APIRouter(prefix="/sponsorships", tags=["sponsorships"])
 )
 async def github_sponsors_webhook(
     request: Request,
-    db=Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Handle GitHub Sponsors webhook events.
@@ -202,7 +203,7 @@ async def github_sponsors_webhook(
 )
 async def verify_sponsorship(
     current_user: str = Depends(get_current_user),
-    db=Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Check if user has an active GitHub sponsorship.
@@ -285,7 +286,7 @@ async def verify_sponsorship(
 )
 async def get_sponsorship_history(
     current_user: str = Depends(get_current_user),
-    db=Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get user's complete sponsorship history.
@@ -327,7 +328,7 @@ async def get_sponsorship_history(
 )
 async def get_payment_history(
     current_user: str = Depends(get_current_user),
-    db=Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
     limit: int = 50,
 ):
     """
@@ -380,7 +381,7 @@ async def get_payment_history(
 )
 async def get_refund_history(
     current_user: str = Depends(get_current_user),
-    db=Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
     limit: int = 50,
 ):
     """
@@ -432,7 +433,7 @@ async def get_refund_history(
 )
 async def get_tier_change_history(
     current_user: str = Depends(get_current_user),
-    db=Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
     limit: int = 50,
 ):
     """
@@ -482,7 +483,7 @@ async def get_tier_change_history(
 )
 async def get_sponsorship_analytics(
     current_user: str = Depends(get_current_user),
-    db=Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get comprehensive sponsorship analytics for user.
@@ -522,7 +523,7 @@ async def get_sponsorship_analytics(
 )
 async def get_payment_methods(
     current_user: str = Depends(get_current_user),
-    db=Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get user's stored payment methods.
@@ -706,7 +707,7 @@ async def get_sponsorship_info():
 )
 async def get_admin_dashboard(
     current_user: str = Depends(get_current_user),
-    db=Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get comprehensive sponsorship dashboard for repository owner.

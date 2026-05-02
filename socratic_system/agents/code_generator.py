@@ -1,7 +1,10 @@
 """
 Code generation agent for Socrates AI
+
+Phase 2B Migration: Async-first implementation with agent bus support
 """
 
+import asyncio
 from pathlib import Path
 from typing import Any, Dict
 
@@ -26,27 +29,70 @@ from .base import Agent
 
 
 class CodeGeneratorAgent(Agent):
-    """Generates code and documentation based on project context"""
+    """Generates code and documentation based on project context.
+
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All blocking operations run in thread pool (non-blocking)
+    """
 
     def __init__(self, orchestrator):
-        super().__init__("CodeGenerator", orchestrator)
+        super().__init__("code_generator", orchestrator, auto_register=True)
         self.current_user = None
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process artifact generation requests"""
+        """Process artifact generation requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+        """
         action = request.get("action")
 
         if action == "generate_artifact":
-            return self._generate_artifact(request)
+            return self._generate_artifact_sync(request)
         elif action == "generate_documentation":
-            return self._generate_documentation(request)
+            return self._generate_documentation_sync(request)
         # Legacy support
         elif action == "generate_script":
-            return self._generate_artifact(request)
+            return self._generate_artifact_sync(request)
 
         return {"status": "error", "message": "Unknown action"}
 
-    def _generate_artifact(self, request: Dict) -> Dict:
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process artifact generation requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "generate_artifact":
+            return await self._generate_artifact_async(request)
+        elif action == "generate_documentation":
+            return await self._generate_documentation_async(request)
+        # Legacy support
+        elif action == "generate_script":
+            return await self._generate_artifact_async(request)
+
+        return {"status": "error", "message": "Unknown action"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return [
+            "code_generation",
+            "artifact_generation",
+            "documentation_generation",
+            "code_analysis",
+        ]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Code and artifact generation from project context",
+            "capabilities_count": 4,
+        }
+
+    def _generate_artifact_sync(self, request: Dict) -> Dict:
         """Generate project-type-appropriate artifact"""
         project = request.get("project")
         current_user = request.get("current_user")  # Extract current_user from request
@@ -187,7 +233,14 @@ class CodeGeneratorAgent(Agent):
             "is_multi_file": project_root is not None,  # Indicate if multi-file project
         }
 
-    def _generate_documentation(self, request: Dict) -> Dict:
+    async def _generate_artifact_async(self, request: Dict) -> Dict:
+        """Generate artifact asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._generate_artifact_sync, request)
+
+    def _generate_documentation_sync(self, request: Dict) -> Dict:
         """Generate documentation for project artifact"""
         project = request.get("project")
         artifact = request.get("artifact") or request.get("script")  # Support both
@@ -259,6 +312,13 @@ class CodeGeneratorAgent(Agent):
                 "status": "error",
                 "message": f"Documentation generation failed: {str(e)}",
             }
+
+    async def _generate_documentation_async(self, request: Dict) -> Dict:
+        """Generate documentation asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._generate_documentation_sync, request)
 
     def _build_generation_context(self, project: ProjectContext) -> str:
         """Build comprehensive context for code generation"""

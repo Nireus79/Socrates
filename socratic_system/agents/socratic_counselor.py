@@ -1,7 +1,10 @@
 """
 Socratic counselor agent for guided questioning and response processing
+
+Phase 2B Migration: Async-first implementation with agent bus support
 """
 
+import asyncio
 import datetime
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -22,10 +25,16 @@ if TYPE_CHECKING:
 
 
 class SocraticCounselorAgent(Agent):
-    """Core agent that guides users through Socratic questioning about their project"""
+    """Core agent that guides users through Socratic questioning about their project
+
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All blocking operations run in thread pool (non-blocking)
+    """
 
     def __init__(self, orchestrator: "AgentOrchestrator") -> None:
-        super().__init__("SocraticCounselor", orchestrator)
+        super().__init__("socratic_counselor", orchestrator, auto_register=True)
         self.use_dynamic_questions = True  # Toggle for dynamic vs static questions
         self.max_questions_per_phase = 5
         self.phase_docs_cache = {}  # Cache document context per phase to reduce vector DB calls
@@ -64,38 +73,96 @@ class SocraticCounselorAgent(Agent):
         }
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process Socratic questioning requests"""
+        """Process Socratic questioning requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+        """
         action = request.get("action")
 
         if action == "generate_question":
-            return self._generate_question(request)
+            return self._generate_question_sync(request)
         elif action == "process_response":
-            return self._process_response(request)
+            return self._process_response_sync(request)
         elif action == "extract_insights_only":
-            return self._extract_insights_only(request)
+            return self._extract_insights_only_sync(request)
         elif action == "advance_phase":
-            return self._advance_phase(request)
+            return self._advance_phase_sync(request)
         elif action == "rollback_phase":
-            return self._rollback_phase(request)
+            return self._rollback_phase_sync(request)
         elif action == "explain_document":
-            return self._explain_document(request)
+            return self._explain_document_sync(request)
         elif action == "generate_hint":
-            return self._generate_hint(request)
+            return self._generate_hint_sync(request)
         elif action == "toggle_dynamic_questions":
             self.use_dynamic_questions = not self.use_dynamic_questions
             return {"status": "success", "dynamic_mode": self.use_dynamic_questions}
         elif action == "answer_question":
-            return self._answer_question(request)
+            return self._answer_question_sync(request)
         elif action == "skip_question":
-            return self._skip_question(request)
+            return self._skip_question_sync(request)
         elif action == "reopen_question":
-            return self._reopen_question(request)
+            return self._reopen_question_sync(request)
         elif action == "generate_answer_suggestions":
-            return self._generate_answer_suggestions(request)
+            return self._generate_answer_suggestions_sync(request)
 
         return {"status": "error", "message": "Unknown action"}
 
-    def _generate_question(self, request: Dict) -> Dict:
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process Socratic questioning requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "generate_question":
+            return await self._generate_question_async(request)
+        elif action == "process_response":
+            return await self._process_response_async(request)
+        elif action == "extract_insights_only":
+            return await self._extract_insights_only_async(request)
+        elif action == "advance_phase":
+            return await self._advance_phase_async(request)
+        elif action == "rollback_phase":
+            return await self._rollback_phase_async(request)
+        elif action == "explain_document":
+            return await self._explain_document_async(request)
+        elif action == "generate_hint":
+            return await self._generate_hint_async(request)
+        elif action == "toggle_dynamic_questions":
+            self.use_dynamic_questions = not self.use_dynamic_questions
+            return {"status": "success", "dynamic_mode": self.use_dynamic_questions}
+        elif action == "answer_question":
+            return await self._answer_question_async(request)
+        elif action == "skip_question":
+            return await self._skip_question_async(request)
+        elif action == "reopen_question":
+            return await self._reopen_question_async(request)
+        elif action == "generate_answer_suggestions":
+            return await self._generate_answer_suggestions_async(request)
+
+        return {"status": "error", "message": "Unknown action"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return [
+            "question_generation",
+            "response_processing",
+            "insight_extraction",
+            "phase_advancement",
+            "document_explanation",
+            "hint_generation",
+            "question_answering",
+        ]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Socratic questioning and guided project discussion",
+            "capabilities_count": 7,
+        }
+
+    def _generate_question_sync(self, request: Dict) -> Dict:
         """Generate the next Socratic question with usage tracking and workflow optimization"""
         project = request.get("project")
         current_user = request.get("current_user")  # NEW: Accept current user for role context
@@ -468,15 +535,42 @@ Opportunities: {', '.join(opportunities[:2]) if opportunities else 'Explore docu
                 q_text = q[:120] + "..." if len(q) > 120 else q
                 previous_questions_section += f"\n{i}. {q_text}"
 
+        # Build categorized specs section
+        categorized_specs_section = ""
+        if project.categorized_specs:
+            categorized_specs_section = "\nCategorized Specifications:"
+            for category, specs in project.categorized_specs.items():
+                if specs:
+                    specs_str = ", ".join(specs) if isinstance(specs, list) else str(specs)
+                    categorized_specs_section += f"\n- {category.replace('_', ' ').title()}: {specs_str}"
+
+        # Build KB context section
+        kb_context = ""
+        if project.knowledge_base_content and project.knowledge_base_content.strip():
+            kb_context = f"\n\nImported Knowledge Base (relevant excerpts):\n{project.knowledge_base_content[:500]}..."
+
+        # Build gap analysis section
+        gap_analysis = ""
+        if project.categorized_specs:
+            missing_categories = []
+            expected_categories = ["business_goals", "functional_requirements", "technology", "constraints"]
+            for cat in expected_categories:
+                if cat not in project.categorized_specs or not project.categorized_specs[cat]:
+                    missing_categories.append(cat.replace('_', ' ').title())
+
+            if missing_categories:
+                gap_analysis = f"\n\nIdentified Specification Gaps (priority areas to explore):\n- {chr(10).join('- ' + cat for cat in missing_categories)}"
+
         return f"""You are a Socratic tutor helping guide someone through their {project.project_type} project.
 
 Project Details:
 - Name: {project.name}
 - Type: {project.project_type.upper() if project.project_type else 'software'}
 - Current Phase: {project.phase} ({phase_descriptions.get(project.phase, '')})
+- Original Description: {project.description if project.description else 'Not provided'}
 - Goals: {project.goals}
 - Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
-- Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
+- Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}{categorized_specs_section}{kb_context}{gap_analysis}
 
 Project Context:
 {context}{role_context}{code_context}{doc_context}
@@ -558,6 +652,52 @@ Return only the question, no additional text or explanation."""
             if fallbacks:
                 return fallbacks[(question_count - len(questions)) % len(fallbacks)]
             return "What would you like to explore further?"
+
+    def _check_phase_completion_quick(self, project: ProjectContext, logger) -> Dict[str, Any]:
+        """
+        Quick phase completion check without blocking calls (Phase 3).
+
+        This is a heuristic check that doesn't call quality_controller.
+        The actual maturity assessment happens in background via BackgroundHandlers.
+
+        Returns:
+            Dict with is_complete bool (heuristic only, not definitive)
+        """
+        try:
+            # Simple heuristic: check if all questions in current phase are answered
+            if not project.pending_questions:
+                # No pending questions is a positive sign
+                logger.debug("[PHASE 3] No pending questions - phase may be complete")
+                return {
+                    "is_complete": True,
+                    "message": "Phase appears complete (background analysis will confirm maturity)",
+                }
+
+            # Check how many questions are answered
+            answered_count = sum(
+                1 for q in project.pending_questions if q.get("status") == "answered"
+            )
+            total_count = len(project.pending_questions)
+
+            # If all are answered, likely complete (but not 100% sure without maturity check)
+            if answered_count == total_count and total_count > 0:
+                logger.debug(
+                    f"[PHASE 3] All {total_count} questions answered - phase may be complete"
+                )
+                return {"is_complete": True, "message": None}
+
+            # Heuristic: if >80% answered, might be complete
+            completion_ratio = answered_count / total_count if total_count > 0 else 0
+            if completion_ratio >= 0.8:
+                logger.debug(
+                    f"[PHASE 3] {completion_ratio*100:.0f}% of questions answered"
+                )
+
+            return {"is_complete": False, "message": None}
+
+        except Exception as e:
+            logger.debug(f"[PHASE 3] Quick phase completion check failed: {e}")
+            return {"is_complete": False, "message": None}
 
     def _check_phase_completion(self, project: ProjectContext, logger) -> Dict[str, Any]:
         """
@@ -736,7 +876,7 @@ What would be most helpful for you?"""
 
         return grouped
 
-    def _extract_insights_only(self, request: Dict) -> Dict:
+    def _extract_insights_only_sync(self, request: Dict) -> Dict:
         """Extract insights from response without processing (for direct mode confirmation)"""
         from socratic_system.utils.logger import get_logger
 
@@ -764,8 +904,14 @@ What would be most helpful for you?"""
 
         return {"status": "success", "insights": insights}
 
-    def _process_response(self, request: Dict) -> Dict:
-        """Process user response and extract insights"""
+    def _process_response_sync(self, request: Dict) -> Dict:
+        """Process user response and extract insights (Phase 3: Event-driven)
+
+        Phase 3 Changes:
+        - Returns immediately after extracting insights (non-blocking)
+        - Emits response.received event to trigger background analysis
+        - Background handlers process: quality, conflicts, insights async
+        """
         from socratic_system.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
@@ -774,7 +920,7 @@ What would be most helpful for you?"""
         user_response = request.get("response")
         current_user = request.get("current_user")
         pre_extracted_insights = request.get("pre_extracted_insights")
-        is_api_mode = request.get("is_api_mode", False)  # NEW: API mode flag
+        is_api_mode = request.get("is_api_mode", False)
 
         logger.debug(f"Processing user response ({len(user_response)} chars) from {current_user}")
 
@@ -785,7 +931,7 @@ What would be most helpful for you?"""
                 "type": "user",
                 "content": user_response,
                 "phase": project.phase,
-                "author": current_user,  # Track who said what
+                "author": current_user,
             }
         )
         logger.debug(
@@ -793,7 +939,7 @@ What would be most helpful for you?"""
         )
 
         # Get user's auth method for API calls
-        user_auth_method = "api_key"  # default
+        user_auth_method = "api_key"
         if current_user:
             user = self.orchestrator.database.load_user(current_user)
             if user and hasattr(user, "claude_auth_method"):
@@ -812,8 +958,6 @@ What would be most helpful for you?"""
             self._log_extracted_insights(logger, insights)
 
         # Mark the last unanswered question as answered BEFORE conflict detection
-        # This ensures the question is marked answered even if conflicts are found
-        # (conflicts don't prevent progress - they just need to be resolved)
         if project.pending_questions:
             for q in reversed(project.pending_questions):
                 if q.get("status") == "unanswered":
@@ -822,14 +966,28 @@ What would be most helpful for you?"""
                     logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
                     break
 
-        # REAL-TIME CONFLICT DETECTION
-        if insights:
+        # Phase 3: Check for IMMEDIATE conflicts (still real-time, non-blocking)
+        # Conflicts are handled synchronously since they affect response immediately
+        if insights and is_api_mode:
             conflict_result = self._handle_conflict_detection(
-                insights, project, current_user, logger, is_api_mode
+                insights, project, current_user, logger, is_api_mode=True
             )
             if conflict_result.get("has_conflicts"):
-                # Save project even when conflicts detected (question is already marked answered above)
+                # Return immediately with conflicts (client will handle resolution)
                 self.database.save_project(project)
+                logger.info(
+                    f"[PHASE 3] Conflicts detected - returning immediately. "
+                    f"Background analysis will proceed async for project {project.project_id}"
+                )
+                # Emit response.received event for background processing
+                self.orchestrator.event_emitter.emit(
+                    "response.received",
+                    {
+                        "project_id": project.project_id,
+                        "insights": insights,
+                        "current_user": current_user,
+                    }
+                )
                 return {
                     "status": "success",
                     "insights": insights,
@@ -837,21 +995,59 @@ What would be most helpful for you?"""
                     "conflicts": conflict_result.get("conflicts", []),
                 }
 
-        # Update context and maturity
-        self._update_project_and_maturity(project, insights, logger, current_user)
+        # Phase 3: Update project context immediately (needed for consistency)
+        # In debug mode, defer saving until user confirms the specs
+        # In normal mode, auto-save silently
+        from socratic_system.utils.logger import is_debug_mode
 
-        # Track question effectiveness for learning
-        self._track_question_effectiveness(project, insights, user_response, current_user, logger)
+        if not is_debug_mode():
+            # Non-debug mode: Auto-save silently
+            logger.info("Updating project context with insights...")
+            self._update_project_context(project, insights)
+            logger.debug("Project context updated successfully")
 
-        # Check if phase is now complete and offer advancement option
-        result = {"status": "success", "insights": insights}
-        phase_completion = self._check_phase_completion(project, logger)
+            # Save project with updated context and conversation history
+            self.database.save_project(project)
+        else:
+            # Debug mode: Don't auto-save, wait for user confirmation
+            logger.info("Debug mode enabled - deferring specs update until user confirmation")
+            logger.debug("Specs will be updated after user confirms via save_extracted_specs endpoint")
+
+        # Phase 3: Emit response.received event to trigger background analysis
+        # This launches non-blocking background tasks for:
+        # - Quality/maturity assessment
+        # - Conflict detection (if not already done)
+        # - Learning system tracking
+        logger.info(
+            f"[PHASE 3] Response processed. Emitting background analysis event for project {project.project_id}"
+        )
+        self.orchestrator.event_emitter.emit(
+            "response.received",
+            {
+                "project_id": project.project_id,
+                "insights": insights,
+                "current_user": current_user,
+                "user_response": user_response,
+            }
+        )
+
+        # Return immediately with insights (don't wait for background analysis)
+        result = {
+            "status": "success",
+            "insights": insights,
+            "phase_complete": False,
+            "_background_processing": True,  # Indicate background tasks are running
+        }
+
+        # Phase 3: Check phase completion immediately (quick check, no blocking calls)
+        phase_completion = self._check_phase_completion_quick(project, logger)
         if phase_completion["is_complete"]:
             result["phase_complete"] = True
             result["phase_completion_message"] = phase_completion["message"]
-
-        # Save project to persist question status updates and conversation history changes
-        self.database.save_project(project)
+            logger.info(
+                f"[PHASE 3] Phase {project.phase} appears complete. "
+                f"Background analysis will confirm maturity."
+            )
 
         return result
 
@@ -1132,7 +1328,7 @@ What would be most helpful for you?"""
 
         return True
 
-    def _explain_document(self, request: Dict) -> Dict:
+    def _explain_document_sync(self, request: Dict) -> Dict:
         """
         Provide explanation/summary of imported documents.
 
@@ -1246,7 +1442,7 @@ What would be most helpful for you?"""
 
         return "\n".join(parts)
 
-    def _advance_phase(self, request: Dict) -> Dict:
+    def _advance_phase_sync(self, request: Dict) -> Dict:
         """Advance project to the next phase with maturity verification"""
         from socratic_system.utils.logger import get_logger
 
@@ -1329,7 +1525,7 @@ What would be most helpful for you?"""
 
         return {"status": "success", "new_phase": new_phase}
 
-    def _rollback_phase(self, request: Dict) -> Dict:
+    def _rollback_phase_sync(self, request: Dict) -> Dict:
         """Roll back project to the previous phase"""
         from socratic_system.utils.logger import get_logger
 
@@ -1393,26 +1589,54 @@ What would be most helpful for you?"""
             return
 
         try:
+            # Initialize categorized_specs if not present
+            if not project.categorized_specs:
+                project.categorized_specs = {}
+
             # Handle goals
             if "goals" in insights and insights["goals"]:
                 goals_list = self._normalize_to_list(insights["goals"])
                 if goals_list:
                     project.goals = " ".join(goals_list)
+                    # Categorize goals under architecture/business category
+                    if "business_goals" not in project.categorized_specs:
+                        project.categorized_specs["business_goals"] = []
+                    for goal in goals_list:
+                        if goal not in project.categorized_specs["business_goals"]:
+                            project.categorized_specs["business_goals"].append(goal)
 
             # Handle requirements
             if "requirements" in insights and insights["requirements"]:
                 req_list = self._normalize_to_list(insights["requirements"])
                 self._update_list_field(project.requirements, req_list)
+                # Categorize requirements
+                if "functional_requirements" not in project.categorized_specs:
+                    project.categorized_specs["functional_requirements"] = []
+                for req in req_list:
+                    if req not in project.categorized_specs["functional_requirements"]:
+                        project.categorized_specs["functional_requirements"].append(req)
 
             # Handle tech_stack
             if "tech_stack" in insights and insights["tech_stack"]:
                 tech_list = self._normalize_to_list(insights["tech_stack"])
                 self._update_list_field(project.tech_stack, tech_list)
+                # Categorize technology choices
+                if "technology" not in project.categorized_specs:
+                    project.categorized_specs["technology"] = []
+                for tech in tech_list:
+                    if tech not in project.categorized_specs["technology"]:
+                        project.categorized_specs["technology"].append(tech)
 
             # Handle constraints
             if "constraints" in insights and insights["constraints"]:
                 constraint_list = self._normalize_to_list(insights["constraints"])
                 self._update_list_field(project.constraints, constraint_list)
+                # Categorize constraints
+                if "constraints" not in project.categorized_specs:
+                    project.categorized_specs["constraints"] = []
+                for constraint in constraint_list:
+                    if constraint not in project.categorized_specs["constraints"]:
+                        project.categorized_specs["constraints"].append(constraint)
 
         except Exception as e:
             print(f"{Fore.YELLOW}Warning: Error updating project context: {e}")
@@ -1496,7 +1720,7 @@ What would be most helpful for you?"""
                 insight_list.append(new_value)
             insights[insight_type] = insight_list
 
-    def _generate_hint(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_hint_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a context-aware hint for the user based on project state"""
         from socratic_system.utils.logger import get_logger
 
@@ -1574,7 +1798,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
                 "context": "",
             }
 
-    def _answer_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _answer_question_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Mark a question as answered"""
         import datetime
 
@@ -1596,7 +1820,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
 
         return {"status": "error", "message": "Question not found"}
 
-    def _skip_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _skip_question_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Mark a question as skipped"""
         import datetime
 
@@ -1618,7 +1842,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
 
         return {"status": "error", "message": "Question not found"}
 
-    def _reopen_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _reopen_question_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Reopen a skipped question (mark as unanswered)"""
 
         project = request.get("project")
@@ -1683,7 +1907,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
         logger.debug(f"Using {len(suggestions)} fallback suggestions for {phase} phase")
         return suggestions
 
-    def _generate_answer_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_answer_suggestions_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Generate answer suggestions for the current question"""
         from socratic_system.utils.logger import get_logger
 
@@ -1824,6 +2048,22 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
                 )
                 # No approved workflow - initiate approval (BLOCKING)
                 return self._initiate_workflow_approval(project, current_user)
+
+            # BEFORE GENERATING NEW QUESTION: Check for existing unanswered question
+            # This prevents multiple unanswered questions from accumulating in workflow mode
+            if project.pending_questions:
+                unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
+                if unanswered:
+                    # Return the existing unanswered question instead of generating new
+                    logging.debug(
+                        f"Found existing unanswered question in workflow mode, returning it instead of generating new"
+                    )
+                    return {
+                        "status": "success",
+                        "question": unanswered[0].get("question"),
+                        "existing": True,
+                        "workflow_node": unanswered[0].get("workflow_node"),
+                    }
 
             # Have approved path - select next question from it
             execution = project.active_workflow_execution
@@ -2053,3 +2293,51 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
         except Exception as e:
             logging.error(f"Unexpected error advancing workflow node: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
+
+    # ========================================================================
+    # Phase 2B Async Wrapper Methods
+    # ========================================================================
+
+    async def _generate_question_async(self, request: Dict) -> Dict:
+        """Generate question asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._generate_question_sync, request)
+
+    async def _process_response_async(self, request: Dict) -> Dict:
+        """Process response asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._process_response_sync, request)
+
+    async def _extract_insights_only_async(self, request: Dict) -> Dict:
+        """Extract insights asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._extract_insights_only_sync, request)
+
+    async def _advance_phase_async(self, request: Dict) -> Dict:
+        """Advance phase asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._advance_phase_sync, request)
+
+    async def _rollback_phase_async(self, request: Dict) -> Dict:
+        """Rollback phase asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._rollback_phase_sync, request)
+
+    async def _explain_document_async(self, request: Dict) -> Dict:
+        """Explain document asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._explain_document_sync, request)
+
+    async def _generate_hint_async(self, request: Dict) -> Dict:
+        """Generate hint asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._generate_hint_sync, request)
+
+    async def _answer_question_async(self, request: Dict) -> Dict:
+        """Answer question asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._answer_question_sync, request)
+
+    async def _skip_question_async(self, request: Dict) -> Dict:
+        """Skip question asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._skip_question_sync, request)
+
+    async def _reopen_question_async(self, request: Dict) -> Dict:
+        """Reopen question asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._reopen_question_sync, request)
+
+    async def _generate_answer_suggestions_async(self, request: Dict) -> Dict:
+        """Generate answer suggestions asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._generate_answer_suggestions_sync, request)

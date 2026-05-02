@@ -20,7 +20,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from socrates_api.auth import get_current_user_optional
+from socrates_api.database import get_database
 from socrates_api.models import APIResponse
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/nlu", tags=["nlu"])
@@ -214,6 +216,7 @@ Respond ONLY with valid JSON."""
 async def interpret_input(
     request: NLUInterpretRequest,
     current_user: Optional[str] = Depends(get_current_user_optional),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Interpret natural language input and return command suggestions using AI.
@@ -249,7 +252,6 @@ async def interpret_input(
             try:
                 from socrates_api.database import get_database
 
-                db = get_database()
                 project = db.load_project(project_id)
                 if project:
                     # Create note from NLU input
@@ -275,7 +277,6 @@ async def interpret_input(
         if current_user:
             from socrates_api.database import get_database
 
-            db = get_database()
             user_obj = db.load_user(current_user)
             if user_obj and hasattr(user_obj, "claude_auth_method"):
                 user_auth_method = user_obj.claude_auth_method or "api_key"

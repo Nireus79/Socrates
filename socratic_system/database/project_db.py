@@ -967,7 +967,7 @@ class ProjectDatabase:
         try:
             cursor.execute(
                 """
-                SELECT note_id as id, title, content, created_at, created_by
+                SELECT note_id as id, title, content, created_at
                 FROM project_notes
                 WHERE project_id = ?
                 ORDER BY created_at DESC
@@ -982,7 +982,7 @@ class ProjectDatabase:
                     "title": row[1] or "Untitled",
                     "content": row[2] or "",
                     "created_at": row[3],
-                    "created_by": row[4],
+                    "created_by": "unknown",  # Column doesn't exist in DB, use default
                 }
                 notes.append(note)
 

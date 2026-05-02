@@ -1,5 +1,6 @@
-"""
-Multi-LLM Provider Agent - Unified LLM management and routing.
+"""Multi-LLM Provider Agent - Unified LLM management and routing.
+
+Phase 2B Migration: Async-first implementation with agent bus support
 
 Manages connections to multiple LLM providers (Claude, OpenAI, Gemini, Ollama)
 with a unified interface for:
@@ -11,6 +12,7 @@ with a unified interface for:
 """
 
 import uuid
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict
 
@@ -41,41 +43,98 @@ class MultiLLMAgent(Agent):
 
     def __init__(self, orchestrator):
         """Initialize multi-LLM agent"""
-        super().__init__("Multi-LLM Manager", orchestrator)
+        super().__init__("multi_llm", orchestrator, auto_register=True)
         self.logger.info("MultiLLMAgent initialized")
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process multi-LLM requests"""
+        """Process multi-LLM requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+
+        Supported actions:
+        - list_providers: List available LLM providers
+        - get_provider_config: Get provider configuration
+        - set_default_provider: Set default provider
+        - set_provider_model: Set provider model
+        - add_api_key: Add API key for provider
+        - remove_api_key: Remove API key
+        - set_auth_method: Set authentication method
+        - get_usage_stats: Get usage statistics
+        - track_usage: Track LLM usage
+        - get_provider_models: Get available models
+        """
         action = request.get("action")
 
-        action_handlers = {
-            "list_providers": self._list_providers,
-            "get_provider_config": self._get_provider_config,
-            "set_default_provider": self._set_default_provider,
-            "set_provider_model": self._set_provider_model,
-            "add_api_key": self._add_api_key,
-            "remove_api_key": self._remove_api_key,
-            "set_auth_method": self._set_auth_method,
-            "get_usage_stats": self._get_usage_stats,
-            "track_usage": self._track_usage,
-            "get_provider_models": self._get_provider_models,
+        if action == "list_providers":
+            return self._list_providers_sync(request)
+        elif action == "get_provider_config":
+            return self._get_provider_config_sync(request)
+        elif action == "set_default_provider":
+            return self._set_default_provider_sync(request)
+        elif action == "set_provider_model":
+            return self._set_provider_model_sync(request)
+        elif action == "add_api_key":
+            return self._add_api_key_sync(request)
+        elif action == "remove_api_key":
+            return self._remove_api_key_sync(request)
+        elif action == "set_auth_method":
+            return self._set_auth_method_sync(request)
+        elif action == "get_usage_stats":
+            return self._get_usage_stats_sync(request)
+        elif action == "track_usage":
+            return self._track_usage_sync(request)
+        elif action == "get_provider_models":
+            return self._get_provider_models_sync(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process multi-LLM requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "list_providers":
+            return await self._list_providers_async(request)
+        elif action == "get_provider_config":
+            return await self._get_provider_config_async(request)
+        elif action == "set_default_provider":
+            return await self._set_default_provider_async(request)
+        elif action == "set_provider_model":
+            return await self._set_provider_model_async(request)
+        elif action == "add_api_key":
+            return await self._add_api_key_async(request)
+        elif action == "remove_api_key":
+            return await self._remove_api_key_async(request)
+        elif action == "set_auth_method":
+            return await self._set_auth_method_async(request)
+        elif action == "get_usage_stats":
+            return await self._get_usage_stats_async(request)
+        elif action == "track_usage":
+            return await self._track_usage_async(request)
+        elif action == "get_provider_models":
+            return await self._get_provider_models_async(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return ["provider_management", "api_key_management", "auth_configuration", "usage_tracking", "model_selection"]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Multi-LLM provider management and coordination",
+            "capabilities_count": 5,
         }
-
-        handler = action_handlers.get(action)
-        if handler:
-            try:
-                return handler(request)
-            except Exception as e:
-                self.logger.error(f"Error in {action}: {str(e)}", exc_info=True)
-                return {"status": "error", "message": f"Failed to {action}: {str(e)}"}
-
-        return {"status": "error", "message": f"Unknown action: {action}"}
 
     # ============================================================================
     # Provider Information
     # ============================================================================
 
-    def _list_providers(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _list_providers_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         List all available LLM providers with configuration status.
 
@@ -146,7 +205,7 @@ class MultiLLMAgent(Agent):
             self.logger.error(f"Error listing providers: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _get_provider_models(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_provider_models_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Get available models for a specific provider.
 
@@ -192,7 +251,7 @@ class MultiLLMAgent(Agent):
     # Provider Configuration
     # ============================================================================
 
-    def _get_provider_config(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_provider_config_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Get user's provider configuration.
 
@@ -262,7 +321,7 @@ class MultiLLMAgent(Agent):
             self.logger.error(f"Error getting provider config: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _set_default_provider(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _set_default_provider_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Set default provider for a user.
 
@@ -334,7 +393,7 @@ class MultiLLMAgent(Agent):
             self.logger.error(f"Error setting default provider: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _set_provider_model(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _set_provider_model_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Set the model for a specific provider.
 
@@ -421,7 +480,7 @@ class MultiLLMAgent(Agent):
     # API Key Management
     # ============================================================================
 
-    def _add_api_key(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _add_api_key_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Add/update API key for a provider.
 
@@ -471,7 +530,7 @@ class MultiLLMAgent(Agent):
             self.logger.error(f"Error adding API key: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _set_auth_method(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _set_auth_method_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Set authentication method for Anthropic Claude.
 
@@ -526,7 +585,7 @@ class MultiLLMAgent(Agent):
             self.logger.error(f"Error setting auth method: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _remove_api_key(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _remove_api_key_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Remove API key for a provider.
 
@@ -561,7 +620,7 @@ class MultiLLMAgent(Agent):
     # Usage Tracking
     # ============================================================================
 
-    def _track_usage(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _track_usage_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Track LLM usage for monitoring and billing.
 
@@ -656,7 +715,7 @@ class MultiLLMAgent(Agent):
             self.logger.error(f"Error tracking usage: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _get_usage_stats(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_usage_stats_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Get usage statistics for a user.
 
@@ -748,51 +807,13 @@ class MultiLLMAgent(Agent):
         Raises:
             RuntimeError: If encryption fails (SOCRATES_ENCRYPTION_KEY must be set)
         """
-        import base64
-        import os
-
-        from cryptography.fernet import Fernet
-        from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
-        # Require encryption key - fail fast if not set
-        secret = os.getenv("SOCRATES_ENCRYPTION_KEY")
-        if not secret:
-            error_msg = (
-                "SOCRATES_ENCRYPTION_KEY environment variable is required for API key encryption. "
-                'Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
-            )
-            self.logger.error(error_msg)
-            raise RuntimeError(error_msg)
+        from socratic_system.encryption import encrypt_data
 
         try:
-            secret_bytes = secret.encode()
-
-            # Use random salt per encryption for better security
-            salt = os.urandom(16)
-            kdf = PBKDF2HMAC(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=salt,
-                iterations=100000,
-                backend=default_backend(),
-            )
-            derived_key = base64.urlsafe_b64encode(kdf.derive(secret_bytes))
-
-            # Encrypt with Fernet
-            cipher = Fernet(derived_key)
-            encrypted = cipher.encrypt(api_key.encode())
-
-            # Include salt in output for decryption (format: salt:encrypted)
-            salt_b64 = base64.urlsafe_b64encode(salt).decode()
-            encrypted_b64 = encrypted.decode()
-            return f"{salt_b64}:{encrypted_b64}"
-
-        except Exception as e:
-            error_msg = f"Failed to encrypt API key: {e}"
-            self.logger.error(error_msg)
-            raise RuntimeError(error_msg) from e
+            return encrypt_data(api_key)
+        except RuntimeError as e:
+            self.logger.error(str(e))
+            raise
 
     def _decrypt_api_key(self, encrypted_data: str) -> str:
         """
@@ -807,55 +828,60 @@ class MultiLLMAgent(Agent):
         Raises:
             RuntimeError: If decryption fails
         """
-        import base64
-        import os
-
-        from cryptography.fernet import Fernet
-        from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
-        # Require encryption key
-        secret = os.getenv("SOCRATES_ENCRYPTION_KEY")
-        if not secret:
-            raise RuntimeError(
-                "SOCRATES_ENCRYPTION_KEY environment variable is required for API key decryption"
-            )
+        from socratic_system.encryption import decrypt_data
 
         try:
-            # Extract salt and encrypted data
-            if ":" in encrypted_data:
-                salt_b64, encrypted_b64 = encrypted_data.split(":", 1)
-                salt = base64.urlsafe_b64decode(salt_b64)
-            else:
-                # Fallback for old format without salt (not recommended)
-                salt = b"socrates-salt"
-                encrypted_b64 = encrypted_data
-
-            secret_bytes = secret.encode()
-
-            # Derive key using same parameters as encryption
-            kdf = PBKDF2HMAC(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=salt,
-                iterations=100000,
-                backend=default_backend(),
-            )
-            derived_key = base64.urlsafe_b64encode(kdf.derive(secret_bytes))
-
-            # Decrypt
-            cipher = Fernet(derived_key)
-            decrypted = cipher.decrypt(encrypted_b64.encode())
-            return decrypted.decode()
-
-        except Exception as e:
-            error_msg = f"Failed to decrypt API key: {e}"
-            self.logger.error(error_msg)
-            raise RuntimeError(error_msg) from e
+            return decrypt_data(encrypted_data)
+        except RuntimeError as e:
+            self.logger.error(str(e))
+            raise
 
     def _hash_api_key(self, api_key: str) -> str:
         """Hash API key for verification without storing plaintext."""
         import hashlib
 
         return hashlib.sha256(api_key.encode()).hexdigest()
+
+    # ========================================================================
+    # Phase 2B Async Wrapper Methods
+    # ========================================================================
+
+    async def _list_providers_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """List providers asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._list_providers_sync, request)
+
+    async def _get_provider_models_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get provider models asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_provider_models_sync, request)
+
+    async def _get_provider_config_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get provider config asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_provider_config_sync, request)
+
+    async def _set_default_provider_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Set default provider asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._set_default_provider_sync, request)
+
+    async def _set_provider_model_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Set provider model asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._set_provider_model_sync, request)
+
+    async def _add_api_key_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Add API key asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._add_api_key_sync, request)
+
+    async def _set_auth_method_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Set auth method asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._set_auth_method_sync, request)
+
+    async def _remove_api_key_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove API key asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._remove_api_key_sync, request)
+
+    async def _track_usage_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Track usage asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._track_usage_sync, request)
+
+    async def _get_usage_stats_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get usage stats asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_usage_stats_sync, request)

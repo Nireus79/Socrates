@@ -14,13 +14,32 @@ from socratic_nexus.clients import (
     OllamaClient,
 )
 
+# Import Socrates agent client (Phase 4 - API Adapter)
+from socratic_system.clients.socrates_agent_client import (
+    SocratesAgentClient,
+    SocratesAgentClientSync,
+)
+
 # OpenAIClient may not be available in all versions
 try:
     from socratic_nexus.clients import OpenAIClient
 
-    __all__ = ["ClaudeClient", "OpenAIClient", "GoogleClient", "OllamaClient"]
+    __all__ = [
+        "ClaudeClient",
+        "OpenAIClient",
+        "GoogleClient",
+        "OllamaClient",
+        "SocratesAgentClient",
+        "SocratesAgentClientSync",
+    ]
 except ImportError:
-    __all__ = ["ClaudeClient", "GoogleClient", "OllamaClient"]
+    __all__ = [
+        "ClaudeClient",
+        "GoogleClient",
+        "OllamaClient",
+        "SocratesAgentClient",
+        "SocratesAgentClientSync",
+    ]
 
 logger = logging.getLogger("socrates.clients")
 logger.info("Client imports sourced from socratic-nexus library")

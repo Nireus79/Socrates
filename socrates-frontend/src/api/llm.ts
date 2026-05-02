@@ -99,11 +99,9 @@ export const llmAPI = {
    * Set default LLM provider
    */
   async setDefaultProvider(provider: string): Promise<{ provider: string }> {
-    const params = new URLSearchParams();
-    params.append('provider', provider);
     return apiClient.put<{ provider: string }>(
-      `/llm/default-provider?${params.toString()}`,
-      {}
+      `/llm/default-provider`,
+      { provider }
     );
   },
 
@@ -114,12 +112,9 @@ export const llmAPI = {
     provider: string,
     model: string
   ): Promise<{ provider: string; model: string }> {
-    const params = new URLSearchParams();
-    params.append('provider', provider);
-    params.append('model', model);
     return apiClient.put<{ provider: string; model: string }>(
-      `/llm/model?${params.toString()}`,
-      {}
+      `/llm/model`,
+      { provider, model }
     );
   },
 
@@ -157,12 +152,9 @@ export const llmAPI = {
    * Set authentication method for a provider
    */
   async setAuthMethod(provider: string, authMethod: string): Promise<{ provider: string; auth_method: string }> {
-    const params = new URLSearchParams();
-    params.append('provider', provider);
-    params.append('auth_method', authMethod);
     return apiClient.put<{ provider: string; auth_method: string }>(
-      `/llm/auth-method?${params.toString()}`,
-      {}
+      `/llm/auth-method`,
+      { provider, auth_method: authMethod }
     );
   },
 
@@ -170,10 +162,9 @@ export const llmAPI = {
    * Get usage statistics
    */
   async getUsageStats(timePeriod: string = 'month'): Promise<UsageStats> {
-    const params = new URLSearchParams();
-    params.append('time_period', timePeriod);
     return apiClient.get<UsageStats>(
-      `/llm/usage-stats?${params.toString()}`
+      `/llm/usage-stats`,
+      { params: { time_period: timePeriod } }
     );
   },
 };

@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/query", tags=["query"])
@@ -125,6 +126,7 @@ async def search_knowledge(
     project_id: Optional[str] = None,
     limit: Optional[int] = 10,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Search across knowledge base and projects.
@@ -144,7 +146,6 @@ async def search_knowledge(
     try:
         logger.info(f"Searching knowledge base for: {query}")
 
-        db = get_database()
 
         # Search in projects if project_id specified
         results = []

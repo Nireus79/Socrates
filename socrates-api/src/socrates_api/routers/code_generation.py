@@ -9,6 +9,7 @@ Provides:
 """
 
 import logging
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -19,6 +20,7 @@ from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse
 from socratic_system.database import ProjectDatabase
+from socratic_system.models.user import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])
@@ -186,7 +188,7 @@ async def generate_code(
             orchestrator = get_orchestrator()
 
             # Use code generator agent via orchestrator routing (not direct call)
-            result = await orchestrator.process_request_async(
+            result = await orchestrator.agent_bus.send_request(
                 "code_generator",
                 {
                     "action": "generate_artifact",
@@ -242,7 +244,7 @@ async def generate_code(
             # Record event
             from pathlib import Path
 
-            generation_id = f"gen_{int(__import__('time').time() * 1000)}"
+            generation_id = f"gen_{int(time.time() * 1000)}"
 
             # Determine file extension based on language
             ext_map = {
@@ -323,7 +325,7 @@ async def generate_code(
                     token_usage=token_usage,
                     generation_id=generation_id,
                     created_at=datetime.now(timezone.utc).isoformat(),
-                ).dict(),
+                ).model_dump(),
             )
 
         except Exception as e:
@@ -338,9 +340,9 @@ async def generate_code(
                     explanation="Error during generation, returning template",
                     language=language,
                     token_usage=0,
-                    generation_id=f"gen_{int(__import__('time').time() * 1000)}",
+                    generation_id=f"gen_{int(time.time() * 1000)}",
                     created_at=datetime.now(timezone.utc).isoformat(),
-                ).dict(),
+                ).model_dump(),
             )
 
     except HTTPException:
@@ -516,7 +518,7 @@ async def validate_code(
                 suggestions=suggestions,
                 complexity_score=complexity_score,
                 readability_score=readability_score,
-            ).dict(),
+            ).model_dump(),
         )
 
     except HTTPException:
@@ -591,7 +593,7 @@ async def get_code_history(
                 limit=limit,
                 offset=offset,
                 generations=generations,
-            ).dict(),
+            ).model_dump(),
         )
 
     except HTTPException:
@@ -624,7 +626,7 @@ async def get_supported_languages():
         data=SupportedLanguagesData(
             languages=SUPPORTED_LANGUAGES,
             total=len(SUPPORTED_LANGUAGES),
-        ).dict(),
+        ).model_dump(),
     )
 
 
@@ -640,6 +642,7 @@ async def refactor_code(
     language: str = "python",
     refactor_type: str = "optimize",
     current_user: str = Depends(get_current_user),
+    user_object: User = Depends(get_current_user_object),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -665,39 +668,27 @@ async def refactor_code(
     try:
         # CRITICAL: Validate subscription for code refactoring feature
         logger.info(f"Validating subscription for code refactoring by {current_user}")
-        try:
-            user_object = get_current_user_object(current_user)
 
-            # Check if user has active subscription
-            if user_object.subscription_status != "active":
-                logger.warning(
-                    f"User {current_user} attempted to refactor code without active subscription"
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to refactor code",
-                )
-
-            # Check subscription tier - only Professional and Enterprise can refactor code
-            subscription_tier = user_object.subscription_tier.lower()
-            if subscription_tier == "free":
-                logger.warning(f"Free-tier user {current_user} attempted to refactor code")
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Code refactoring feature requires Professional or Enterprise subscription",
-                )
-
-            logger.info(f"Subscription validation passed for code refactoring by {current_user}")
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(
-                f"Error validating subscription for code refactoring: {type(e).__name__}: {e}"
+        # Check if user has active subscription
+        if getattr(user_object, "subscription_status", None) != "active":
+            logger.warning(
+                f"User {current_user} attempted to refactor code without active subscription"
             )
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}",
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Active subscription required to refactor code",
             )
+
+        # Check subscription tier - only Professional and Enterprise can refactor code
+        subscription_tier = getattr(user_object, "subscription_tier", "free").lower()
+        if subscription_tier == "free":
+            logger.warning(f"Free-tier user {current_user} attempted to refactor code")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Code refactoring feature requires Professional or Enterprise subscription",
+            )
+
+        logger.info(f"Subscription validation passed for code refactoring by {current_user}")
 
         # Validate inputs
         if language not in SUPPORTED_LANGUAGES:
@@ -737,7 +728,7 @@ async def refactor_code(
             orchestrator = get_orchestrator()
 
             # Use code generator agent via orchestrator routing for refactoring
-            result = await orchestrator.process_request_async(
+            result = await orchestrator.agent_bus.send_request(
                 "code_generator",
                 {
                     "action": "refactor_code",
@@ -765,7 +756,7 @@ async def refactor_code(
                 changes = []
 
             # Generate ID for this refactoring
-            generation_id = f"ref_{int(__import__('time').time() * 1000)}"
+            generation_id = f"ref_{int(time.time() * 1000)}"
 
             # Determine file extension based on language
             ext_map = {
@@ -848,7 +839,7 @@ async def refactor_code(
                     language=language,
                     refactor_type=refactor_type,
                     changes=changes if changes else ["Code analyzed and refactored"],
-                ).dict(),
+                ).model_dump(),
             )
 
         except Exception as e:
@@ -879,6 +870,7 @@ async def generate_documentation(
     format: Optional[str] = "markdown",
     include_examples: Optional[bool] = True,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Generate comprehensive documentation for project code.
@@ -907,7 +899,6 @@ async def generate_documentation(
             )
 
         # Verify project access
-        db = get_database()
         project = db.load_project(project_id)
         if project is None:
             raise HTTPException(
@@ -1022,7 +1013,7 @@ async def generate_documentation(
             output = documentation
 
         # Save documentation metadata
-        generation_id = f"doc_{int(__import__('time').time() * 1000)}"
+        generation_id = f"doc_{int(time.time() * 1000)}"
         if not hasattr(project, "documentation_history"):
             project.documentation_history = []
         project.documentation_history = getattr(project, "documentation_history", [])
@@ -1057,7 +1048,7 @@ async def generate_documentation(
                 format=format,
                 length=len(output),
                 generation_id=generation_id,
-            ).dict(),
+            ).model_dump(),
         )
 
     except HTTPException:

@@ -87,6 +87,7 @@ async def create_chat_session(
     project_id: str,
     request: CreateChatSessionRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Create a new chat session for a project.
@@ -103,7 +104,6 @@ async def create_chat_session(
         logger.info(f"Creating chat session for project {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -160,6 +160,7 @@ async def create_chat_session(
 async def list_chat_sessions(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     List all chat sessions for a project.
@@ -175,7 +176,6 @@ async def list_chat_sessions(
         logger.info(f"Listing chat sessions for project {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -227,6 +227,7 @@ async def get_chat_session(
     project_id: str,
     session_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get details of a specific chat session.
@@ -243,7 +244,6 @@ async def get_chat_session(
         logger.info(f"Getting chat session {session_id} for project {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -292,6 +292,7 @@ async def delete_chat_session(
     project_id: str,
     session_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Delete a chat session.
@@ -308,7 +309,6 @@ async def delete_chat_session(
         logger.info(f"Deleting chat session {session_id} for project {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -348,6 +348,7 @@ async def send_chat_message(
     session_id: str,
     request: ChatMessageRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Send a message in a chat session.
@@ -365,7 +366,6 @@ async def send_chat_message(
         logger.info(f"Sending message to session {session_id} in project {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -427,6 +427,7 @@ async def get_chat_messages(
     session_id: str,
     limit: Optional[int] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get all messages in a chat session.
@@ -444,7 +445,6 @@ async def get_chat_messages(
         logger.info(f"Getting messages for session {session_id} in project {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -507,6 +507,7 @@ async def get_chat_messages(
 async def get_question(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get the next Socratic question for a project.
@@ -524,7 +525,6 @@ async def get_question(
         logger.info(f"Getting question for project {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -532,7 +532,7 @@ async def get_question(
         # Call socratic_counselor to generate question
         # Question caching happens internally to avoid redundant Claude calls
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
             {
                 "action": "generate_question",
@@ -582,6 +582,7 @@ async def send_message(
     project_id: str,
     request: ChatMessageRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Send a chat message and get response.
@@ -601,7 +602,6 @@ async def send_message(
         logger.info(f"Sending message to project {project_id}: {request.message[:50]}...")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -756,7 +756,7 @@ Provide a helpful, direct answer."""
 
             # Call socratic_counselor to process response
             # Pre-extracted insights caching and async processing happen internally
-            result = orchestrator.process_request(
+            result = await orchestrator.agent_bus.send_request(
                 "socratic_counselor",
                 {
                     "action": "process_response",
@@ -795,30 +795,34 @@ Provide a helpful, direct answer."""
                     },
                 )
 
-            # In Socratic mode: Specs/insights are automatically saved but NOT shown to user
-            # They are silently extracted and stored in the project without dialogue interference
+            # In Socratic mode: Specs/insights handling depends on debug mode
+            # - Debug OFF: Automatically saved silently without user confirmation
+            # - Debug ON: Shown to user for explicit confirmation before saving
             insights = result.get("insights", {})
-            if insights:
-                logger.debug(
-                    "Insights extracted and saved to project (hidden from Socratic dialogue)"
-                )
 
-            # Check if debug mode is enabled - if so, return insights for debugging
             from socratic_system.utils.logger import is_debug_mode
 
             response_data = {}
 
-            if is_debug_mode() and insights:
-                logger.debug(f"Debug mode enabled - returning insights to frontend: {insights}")
-                response_data["extracted_insights"] = insights
-                response_data["extracted_specs"] = insights
-                response_data["extracted_specs_count"] = len([v for v in insights.values() if v])
-                response_data["debug_message"] = (
-                    f"Extracted {response_data['extracted_specs_count']} insight categories"
-                )
-                logger.debug(
-                    f"Returning {response_data['extracted_specs_count']} insight categories to frontend"
-                )
+            if insights:
+                if is_debug_mode():
+                    # DEBUG MODE: Show specs to user for confirmation (not auto-saved yet)
+                    logger.debug(f"Debug mode enabled - returning insights for user confirmation: {insights}")
+                    response_data["extracted_insights"] = insights
+                    response_data["extracted_specs"] = insights
+                    response_data["extracted_specs_count"] = len([v for v in insights.values() if v])
+                    response_data["requires_confirmation"] = True
+                    response_data["confirmation_message"] = (
+                        f"Extracted {response_data['extracted_specs_count']} insight categories - please confirm to save"
+                    )
+                    logger.debug(
+                        f"Returning {response_data['extracted_specs_count']} insight categories to frontend for user confirmation"
+                    )
+                else:
+                    # NON-DEBUG MODE: Automatically saved silently
+                    logger.debug(
+                        "Insights extracted and automatically saved to project (hidden from Socratic dialogue)"
+                    )
 
             # In Socratic mode, don't return insights as a message to the frontend (unless debug mode)
             # The frontend will proceed directly to generate the next question
@@ -834,7 +838,7 @@ Provide a helpful, direct answer."""
                     )
                     response_data["next_phase"] = result.get("next_phase")
                     logger.debug(
-                        f"Phase completion data: {response_data.get('phase_completion_message', '')[:100]}..."
+                        f"Phase completion data: {(response_data.get('phase_completion_message') or '')[:100]}..."
                     )
             except Exception as phase_error:
                 logger.error(f"Error handling phase completion: {str(phase_error)}", exc_info=True)
@@ -867,6 +871,7 @@ async def get_history(
     project_id: str,
     limit: Optional[int] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get conversation history for a project.
@@ -883,7 +888,6 @@ async def get_history(
         logger.info(f"Getting chat history for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -926,6 +930,7 @@ async def switch_mode(
     project_id: str,
     request: ChatModeRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Switch between socratic and direct chat modes.
@@ -945,7 +950,6 @@ async def switch_mode(
             raise HTTPException(status_code=400, detail="Invalid chat mode")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -979,6 +983,7 @@ async def switch_mode(
 async def get_hint(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get a hint for the current question.
@@ -996,14 +1001,13 @@ async def get_hint(
         logger.info(f"Getting hint for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call orchestrator to generate context-aware hint
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
             {
                 "action": "generate_hint",
@@ -1048,6 +1052,7 @@ async def get_hint(
 async def clear_history(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Clear conversation history for a project.
@@ -1063,7 +1068,6 @@ async def clear_history(
         logger.info(f"Clearing chat history for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -1098,6 +1102,7 @@ async def clear_history(
 async def get_summary(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get AI-generated summary of conversation.
@@ -1115,14 +1120,13 @@ async def get_summary(
         logger.info(f"Generating summary for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call context analyzer to generate summary
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "context_analyzer",
             {
                 "action": "generate_summary",
@@ -1166,6 +1170,7 @@ async def search_conversations(
     project_id: str,
     request: SearchRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Search conversation history.
@@ -1182,7 +1187,6 @@ async def search_conversations(
         logger.info(f"Searching conversations for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -1216,6 +1220,7 @@ async def search_conversations(
 async def finish_session(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Finish the interactive session and finalize project state.
@@ -1234,7 +1239,6 @@ async def finish_session(
         logger.info(f"Finishing session for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -1454,6 +1458,7 @@ async def get_questions(
     project_id: str,
     status_filter: Optional[str] = None,  # unanswered, answered, skipped
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get all questions for a project, optionally filtered by status.
@@ -1461,7 +1466,6 @@ async def get_questions(
     try:
         logger.info(f"Getting questions for project {project_id}, filter={status_filter}")
 
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -1512,6 +1516,7 @@ async def reopen_question(
     project_id: str,
     question_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Reopen a skipped question (mark as unanswered so user can answer it).
@@ -1521,13 +1526,12 @@ async def reopen_question(
 
         logger.info(f"Reopening question {question_id} for project {project_id}")
 
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
             {
                 "action": "reopen_question",
@@ -1633,6 +1637,7 @@ async def skip_question(
 async def get_answer_suggestions(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get answer suggestions for the current question in the chat.
@@ -1642,7 +1647,6 @@ async def get_answer_suggestions(
 
         logger.info(f"Getting answer suggestions for project {project_id}")
 
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -1699,7 +1703,7 @@ async def get_answer_suggestions(
             )
 
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
             {
                 "action": "generate_answer_suggestions",
@@ -1897,7 +1901,7 @@ async def save_extracted_specs(
 
             # Only update maturity if specs were actually saved
             if any(specs_saved.values()):
-                maturity_result = orchestrator.process_request(
+                maturity_result = await orchestrator.agent_bus.send_request(
                     "quality_controller",
                     {
                         "action": "update_after_response",

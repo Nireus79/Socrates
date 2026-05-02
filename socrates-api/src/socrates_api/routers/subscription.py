@@ -12,7 +12,6 @@ to maintain a single source of truth.
 """
 
 import logging
-from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -20,10 +19,8 @@ from pydantic import BaseModel
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse
+from socratic_system.database import ProjectDatabase
 from socratic_system.subscription.tiers import TIER_LIMITS
-
-if TYPE_CHECKING:
-    from socratic_system.database import ProjectDatabase
 
 
 class SubscriptionPlan(BaseModel):
@@ -109,6 +106,7 @@ SUBSCRIPTION_TIERS = _build_subscription_tiers()
 )
 async def get_subscription_status(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get current subscription status for user.
@@ -124,7 +122,6 @@ async def get_subscription_status(
     try:
         logger.info(f"Getting subscription status for user: {current_user}")
 
-        db = get_database()
 
         # Load user from database to get actual tier and testing_mode flag
         user = db.load_user(current_user)

@@ -808,6 +808,7 @@ async def set_testing_mode(
 )
 async def archive_account(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Archive user account (soft delete).
@@ -827,13 +828,13 @@ async def archive_account(
         db = get_database()
 
         # Load user
-        user = db.get_user(current_user)
+        user = db.load_user(current_user)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         # Archive user
-        user.archived = True
-        user.archived_at = datetime.now(timezone.utc).isoformat()
+        user.is_archived = True
+        user.archived_at = datetime.now(timezone.utc)
         db.save_user(user)
 
         return APIResponse(
@@ -865,6 +866,7 @@ async def archive_account(
 )
 async def restore_account(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Restore archived user account.
@@ -883,15 +885,15 @@ async def restore_account(
         db = get_database()
 
         # Load user
-        user = db.get_user(current_user)
+        user = db.load_user(current_user)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        if not getattr(user, "archived", False):
+        if not getattr(user, "is_archived", False):
             raise HTTPException(status_code=400, detail="Account is not archived")
 
         # Restore user
-        user.archived = False
+        user.is_archived = False
         user.archived_at = None
         db.save_user(user)
 

@@ -16,6 +16,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socratic_system.database import ProjectDatabase
 from socrates_api.models import (
     ChatMessage,
     ChatMessageRequest,
@@ -40,11 +41,11 @@ async def create_chat_session(
     project_id: str,
     request: CreateChatSessionRequest = Body(...),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """Create a new chat session for a project."""
     logger.debug(f"Creating chat session for project {project_id}")
     try:
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -107,6 +108,7 @@ async def list_chat_sessions(
     limit: Optional[int] = 50,
     offset: Optional[int] = 0,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """List chat sessions for a project with optional filtering and pagination.
 
@@ -117,7 +119,6 @@ async def list_chat_sessions(
     - offset: Number of sessions to skip for pagination (default 0)
     """
     try:
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -191,10 +192,10 @@ async def get_chat_session(
     project_id: str,
     session_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """Get details of a specific chat session."""
     try:
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -247,10 +248,10 @@ async def send_chat_message(
     session_id: str,
     request: ChatMessageRequest = Body(...),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """Send a message in a chat session."""
     try:
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -316,6 +317,7 @@ async def get_chat_messages(
     offset: Optional[int] = 0,
     order: str = "asc",
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """Get messages from a chat session with pagination and ordering.
 
@@ -325,7 +327,6 @@ async def get_chat_messages(
     - order: Sort order 'asc' (oldest first) or 'desc' (newest first) (default asc)
     """
     try:
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -399,10 +400,10 @@ async def update_chat_message(
     message_id: str,
     request: UpdateMessageRequest = Body(...),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """Update a chat message's content and metadata."""
     try:
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -474,10 +475,10 @@ async def delete_chat_message(
     session_id: str,
     message_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """Delete a chat message."""
     try:
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -531,10 +532,10 @@ async def archive_chat_session(
     project_id: str,
     session_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """Archive a chat session."""
     try:
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -587,10 +588,10 @@ async def restore_chat_session(
     project_id: str,
     session_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """Restore an archived chat session."""
     try:
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")

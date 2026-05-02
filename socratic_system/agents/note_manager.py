@@ -1,5 +1,9 @@
-"""Note manager agent for handling project notes"""
+"""Note manager agent for handling project notes
 
+Phase 2B Migration: Async-first implementation with agent bus support
+"""
+
+import asyncio
 from typing import TYPE_CHECKING, Any, Dict
 
 from socratic_system.agents.base import Agent
@@ -10,15 +14,22 @@ if TYPE_CHECKING:
 
 
 class NoteManagerAgent(Agent):
-    """Agent for managing project notes"""
+    """Agent for managing project notes
+
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All blocking operations run in thread pool (non-blocking)
+    """
 
     def __init__(self, orchestrator: "AgentOrchestrator"):
         """Initialize note manager agent"""
-        super().__init__("NoteManager", orchestrator)
+        super().__init__("note_manager", orchestrator, auto_register=True)
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process note-related requests.
+        """Process note-related requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
 
         Supported actions:
         - add_note: Add a new note to a project
@@ -29,17 +40,47 @@ class NoteManagerAgent(Agent):
         action = request.get("action")
 
         if action == "add_note":
-            return self._add_note(request)
+            return self._add_note_sync(request)
         elif action == "list_notes":
-            return self._list_notes(request)
+            return self._list_notes_sync(request)
         elif action == "search_notes":
-            return self._search_notes(request)
+            return self._search_notes_sync(request)
         elif action == "delete_note":
-            return self._delete_note(request)
+            return self._delete_note_sync(request)
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}
 
-    def _add_note(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process note-related requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "add_note":
+            return await self._add_note_async(request)
+        elif action == "list_notes":
+            return await self._list_notes_async(request)
+        elif action == "search_notes":
+            return await self._search_notes_async(request)
+        elif action == "delete_note":
+            return await self._delete_note_async(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return ["note_management", "note_search", "note_persistence"]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Project note management and organization",
+            "capabilities_count": 3,
+        }
+
+    def _add_note_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Add a new note to a project"""
         try:
             project_id = request.get("project_id")
@@ -169,7 +210,7 @@ class NoteManagerAgent(Agent):
             self.log(f"Error adding note: {str(e)}", level="ERROR")
             return {"status": "error", "message": f"Error adding note: {str(e)}"}
 
-    def _list_notes(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _list_notes_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """List notes for a project"""
         try:
             project_id = request.get("project_id")
@@ -203,7 +244,7 @@ class NoteManagerAgent(Agent):
             self.log(f"Error listing notes: {str(e)}", level="ERROR")
             return {"status": "error", "message": f"Error listing notes: {str(e)}"}
 
-    def _search_notes(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _search_notes_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Search notes by content"""
         try:
             project_id = request.get("project_id")
@@ -242,7 +283,7 @@ class NoteManagerAgent(Agent):
             self.log(f"Error searching notes: {str(e)}", level="ERROR")
             return {"status": "error", "message": f"Error searching notes: {str(e)}"}
 
-    def _delete_note(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def _delete_note_sync(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Delete a note by ID"""
         try:
             note_id = request.get("note_id")
@@ -317,3 +358,23 @@ class NoteManagerAgent(Agent):
                 chunks.append(chunk_text)
 
         return chunks if chunks else [content]  # Return at least the full content
+
+    # ========================================================================
+    # Phase 2B Async Wrapper Methods
+    # ========================================================================
+
+    async def _add_note_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Add note asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._add_note_sync, request)
+
+    async def _list_notes_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """List notes asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._list_notes_sync, request)
+
+    async def _search_notes_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Search notes asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._search_notes_sync, request)
+
+    async def _delete_note_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Delete note asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._delete_note_sync, request)

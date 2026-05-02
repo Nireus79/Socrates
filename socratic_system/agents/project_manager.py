@@ -1,7 +1,10 @@
 """
 Project management agent for Socrates AI
+
+Phase 2B Migration: Async-first implementation with agent bus support
 """
 
+import asyncio
 import datetime
 import uuid
 from pathlib import Path
@@ -18,10 +21,16 @@ if TYPE_CHECKING:
 
 
 class ProjectManagerAgent(Agent):
-    """Manages project lifecycle including creation, loading, saving, and collaboration"""
+    """Manages project lifecycle including creation, loading, saving, and collaboration.
+
+    Phase 2B Migration: Async-first CRUD implementation
+    - Supports both sync (process) and async (process_async) interfaces
+    - Registers with agent bus for discovery
+    - All database operations run in thread pool (non-blocking)
+    """
 
     def __init__(self, orchestrator: "AgentOrchestrator") -> None:
-        super().__init__("ProjectManager", orchestrator)
+        super().__init__("project_manager", orchestrator, auto_register=True)
 
     @staticmethod
     def _generate_auto_user_email(username: str) -> str:
@@ -32,23 +41,26 @@ class ProjectManagerAgent(Agent):
         return f"{username}+{uuid_suffix}@{domain}"
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process project management requests"""
+        """Process project management requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+        """
         action = request.get("action")
 
         action_handlers = {
-            "create_project": self._create_project,
-            "create_from_github": self._create_from_github,
-            "load_project": self._load_project,
-            "save_project": self._save_project,
-            "add_collaborator": self._add_collaborator,
-            "update_member_role": self._update_member_role,
-            "list_projects": self._list_projects,
-            "list_collaborators": self._list_collaborators,
-            "remove_collaborator": self._remove_collaborator,
-            "archive_project": self._archive_project,
-            "restore_project": self._restore_project,
-            "delete_project_permanently": self._delete_project_permanently,
-            "get_archived_projects": self._get_archived_projects,
+            "create_project": self._create_project_sync,
+            "create_from_github": self._create_from_github_sync,
+            "load_project": self._load_project_sync,
+            "save_project": self._save_project_sync,
+            "add_collaborator": self._add_collaborator_sync,
+            "update_member_role": self._update_member_role_sync,
+            "list_projects": self._list_projects_sync,
+            "list_collaborators": self._list_collaborators_sync,
+            "remove_collaborator": self._remove_collaborator_sync,
+            "archive_project": self._archive_project_sync,
+            "restore_project": self._restore_project_sync,
+            "delete_project_permanently": self._delete_project_permanently_sync,
+            "get_archived_projects": self._get_archived_projects_sync,
         }
 
         handler = action_handlers.get(action)
@@ -57,8 +69,58 @@ class ProjectManagerAgent(Agent):
 
         return {"status": "error", "message": "Unknown action"}
 
-    def _create_project(self, request: Dict) -> Dict:
-        """Create a new project with quota checking"""
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process project management requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        action_handlers = {
+            "create_project": self._create_project_async,
+            "create_from_github": self._create_from_github_async,
+            "load_project": self._load_project_async,
+            "save_project": self._save_project_async,
+            "add_collaborator": self._add_collaborator_async,
+            "update_member_role": self._update_member_role_async,
+            "list_projects": self._list_projects_async,
+            "list_collaborators": self._list_collaborators_async,
+            "remove_collaborator": self._remove_collaborator_async,
+            "archive_project": self._archive_project_async,
+            "restore_project": self._restore_project_async,
+            "delete_project_permanently": self._delete_project_permanently_async,
+            "get_archived_projects": self._get_archived_projects_async,
+        }
+
+        handler = action_handlers.get(action)
+        if handler:
+            return await handler(request)
+
+        return {"status": "error", "message": "Unknown action"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return [
+            "project_management",
+            "project_creation",
+            "project_import",
+            "team_collaboration",
+            "project_archival",
+        ]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Project lifecycle management including creation, import, and collaboration",
+            "capabilities_count": 5,
+        }
+
+    def _create_project_sync(self, request: Dict) -> Dict:
+        """Create a new project with quota checking (backward compatibility).
+
+        Phase 2B: Legacy sync implementation
+        """
         project_name = request.get("project_name")
         owner = request.get("owner")
         project_type = request.get("project_type", "software")  # Default to software
@@ -175,6 +237,11 @@ class ProjectManagerAgent(Agent):
                 # Non-fatal: continue with empty specs if extraction fails
                 self.log(f"Warning: Could not analyze project context: {e}", level="warning")
 
+        # STORE KNOWLEDGE BASE CONTENT IN PROJECT
+        if knowledge_base_content and knowledge_base_content.strip():
+            project.knowledge_base_content = knowledge_base_content
+            self.log("Knowledge base stored for future reference")
+
         self.orchestrator.database.save_project(project)
         self.log(f"Created project '{project_name}' (type: {project_type}) with ID {project_id}")
 
@@ -184,14 +251,15 @@ class ProjectManagerAgent(Agent):
         if context_to_analyze:
             try:
                 self.log(f"Calculating initial maturity for project '{project_name}'...")
-                # Use quality controller to calculate initial maturity from specs
-                maturity_result = self.orchestrator.process_request(
+                # Use agent bus to communicate with quality controller agent
+                maturity_result = self.orchestrator.agent_bus.send_request_sync(
                     "quality_controller",
                     {
                         "action": "calculate_maturity",
                         "project": project,
                         "current_user": owner,
                     },
+                    orchestrator=self.orchestrator,
                 )
                 if maturity_result and maturity_result.get("overall_maturity") is not None:
                     project.overall_maturity = maturity_result["overall_maturity"]
@@ -205,6 +273,13 @@ class ProjectManagerAgent(Agent):
                 self.log(f"Warning: Could not calculate initial maturity: {e}", level="warning")
 
         return {"status": "success", "project": project}
+
+    async def _create_project_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Create project asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._create_project_sync, request)
 
     def _apply_initial_insights(self, project: ProjectContext, insights: Dict) -> None:
         """Apply extracted insights from description/notes to project context.
@@ -264,7 +339,7 @@ class ProjectManagerAgent(Agent):
             if item and item not in current_list:
                 current_list.append(item)
 
-    def _create_from_github(self, request: Dict) -> Dict:
+    def _create_from_github_sync(self, request: Dict) -> Dict:
         """Create a new project from a GitHub repository"""
         # Validate request parameters
         validation_error = self._validate_github_request(request)
@@ -336,6 +411,13 @@ class ProjectManagerAgent(Agent):
                 "status": "error",
                 "message": f"Failed to import GitHub repository: {str(e)}",
             }
+
+    async def _create_from_github_async(self, request: Dict) -> Dict:
+        """Create from GitHub asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._create_from_github_sync, request)
 
     def _validate_github_request(self, request: Dict) -> Dict:
         """Validate required fields in GitHub request"""
@@ -498,7 +580,7 @@ class ProjectManagerAgent(Agent):
                     continue
         return files_to_save
 
-    def _load_project(self, request: Dict) -> Dict:
+    def _load_project_sync(self, request: Dict) -> Dict:
         """Load a project by ID"""
         project_id = request.get("project_id")
         project = self.orchestrator.database.load_project(project_id)
@@ -509,7 +591,14 @@ class ProjectManagerAgent(Agent):
         else:
             return {"status": "error", "message": "Project not found"}
 
-    def _save_project(self, request: Dict) -> Dict:
+    async def _load_project_async(self, request: Dict) -> Dict:
+        """Load project asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._load_project_sync, request)
+
+    def _save_project_sync(self, request: Dict) -> Dict:
         """Save a project"""
         project = request.get("project")
         project.updated_at = datetime.datetime.now()
@@ -517,7 +606,14 @@ class ProjectManagerAgent(Agent):
         self.log(f"Saved project '{project.name}'")
         return {"status": "success"}
 
-    def _add_collaborator(self, request: Dict) -> Dict:
+    async def _save_project_async(self, request: Dict) -> Dict:
+        """Save project asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._save_project_sync, request)
+
+    def _add_collaborator_sync(self, request: Dict) -> Dict:
         """Add a collaborator to a project with team size checking"""
         project = request.get("project")
         username = request.get("username")
@@ -575,7 +671,14 @@ class ProjectManagerAgent(Agent):
             "member": new_member.to_dict(),
         }
 
-    def _update_member_role(self, request: Dict) -> Dict:
+    async def _add_collaborator_async(self, request: Dict) -> Dict:
+        """Add collaborator asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._add_collaborator_sync, request)
+
+    def _update_member_role_sync(self, request: Dict) -> Dict:
         """Update a team member's role"""
         project = request.get("project")
         username = request.get("username")
@@ -611,7 +714,14 @@ class ProjectManagerAgent(Agent):
             "message": f"Updated {username} role from {old_role} to {new_role}",
         }
 
-    def _list_projects(self, request: Dict) -> Dict:
+    async def _update_member_role_async(self, request: Dict) -> Dict:
+        """Update member role asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._update_member_role_sync, request)
+
+    def _list_projects_sync(self, request: Dict) -> Dict:
         """List projects for a user"""
         username = request.get("username")
         projects = self.orchestrator.database.get_user_projects(username)
@@ -636,7 +746,14 @@ class ProjectManagerAgent(Agent):
 
         return {"status": "success", "projects": projects_dict}
 
-    def _list_collaborators(self, request: Dict) -> Dict:
+    async def _list_projects_async(self, request: Dict) -> Dict:
+        """List projects asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._list_projects_sync, request)
+
+    def _list_collaborators_sync(self, request: Dict) -> Dict:
         """List all team members for a project with their roles"""
         project = request.get("project")
 
@@ -668,7 +785,14 @@ class ProjectManagerAgent(Agent):
             "total_count": len(collaborators_info),
         }
 
-    def _remove_collaborator(self, request: Dict) -> Dict:
+    async def _list_collaborators_async(self, request: Dict) -> Dict:
+        """List collaborators asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._list_collaborators_sync, request)
+
+    def _remove_collaborator_sync(self, request: Dict) -> Dict:
         """Remove a collaborator from project"""
         project = request.get("project")
         username = request.get("username")
@@ -690,7 +814,14 @@ class ProjectManagerAgent(Agent):
         else:
             return {"status": "error", "message": "User is not a collaborator"}
 
-    def _archive_project(self, request: Dict) -> Dict:
+    async def _remove_collaborator_async(self, request: Dict) -> Dict:
+        """Remove collaborator asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._remove_collaborator_sync, request)
+
+    def _archive_project_sync(self, request: Dict) -> Dict:
         """Archive a project"""
         project_id = request.get("project_id")
         requester = request.get("requester")
@@ -711,7 +842,14 @@ class ProjectManagerAgent(Agent):
         else:
             return {"status": "error", "message": "Failed to archive project"}
 
-    def _restore_project(self, request: Dict) -> Dict:
+    async def _archive_project_async(self, request: Dict) -> Dict:
+        """Archive project asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._archive_project_sync, request)
+
+    def _restore_project_sync(self, request: Dict) -> Dict:
         """Restore an archived project"""
         project_id = request.get("project_id")
         requester = request.get("requester")
@@ -732,7 +870,14 @@ class ProjectManagerAgent(Agent):
         else:
             return {"status": "error", "message": "Failed to restore project"}
 
-    def _delete_project_permanently(self, request: Dict) -> Dict:
+    async def _restore_project_async(self, request: Dict) -> Dict:
+        """Restore project asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._restore_project_sync, request)
+
+    def _delete_project_permanently_sync(self, request: Dict) -> Dict:
         """Permanently delete a project"""
         project_id = request.get("project_id")
         requester = request.get("requester")
@@ -761,10 +906,24 @@ class ProjectManagerAgent(Agent):
         else:
             return {"status": "error", "message": "Failed to delete project"}
 
-    def _get_archived_projects(self, request: Dict) -> Dict:
+    async def _delete_project_permanently_async(self, request: Dict) -> Dict:
+        """Delete project permanently asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._delete_project_permanently_sync, request)
+
+    def _get_archived_projects_sync(self, request: Dict) -> Dict:
         """Get archived projects"""
         archived = self.orchestrator.database.get_archived_items("projects")
         return {"status": "success", "archived_projects": archived}
+
+    async def _get_archived_projects_async(self, request: Dict) -> Dict:
+        """Get archived projects asynchronously (Phase 2B).
+
+        Primary implementation - delegates to sync version via thread pool
+        """
+        return await asyncio.to_thread(self._get_archived_projects_sync, request)
 
     def _should_save_file(self, file_path: Path, repo_root: str) -> bool:
         """

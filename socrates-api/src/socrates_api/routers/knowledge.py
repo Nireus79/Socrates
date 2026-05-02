@@ -579,7 +579,7 @@ async def import_file(
 
         try:
             # Process via DocumentProcessorAgent
-            result = orchestrator.process_request(
+            result = await orchestrator.agent_bus.send_request(
                 "document_agent",
                 {
                     "action": "import_file",
@@ -642,7 +642,7 @@ async def import_file(
             try:
                 from socratic_system.events import EventType
 
-                orchestrator.event_emitter.emit(
+                await orchestrator.event_emitter.emit_async(
                     EventType.DOCUMENT_IMPORTED,
                     {
                         "project_id": project_id,
@@ -748,7 +748,7 @@ async def import_url(
         doc_id = str(uuid.uuid4())
 
         # Process via DocumentProcessorAgent
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "document_agent",
             {
                 "action": "import_url",
@@ -776,7 +776,7 @@ async def import_url(
         try:
             from socratic_system.events import EventType
 
-            orchestrator.event_emitter.emit(
+            await orchestrator.event_emitter.emit_async(
                 EventType.DOCUMENT_IMPORTED,
                 {
                     "project_id": project_id,
@@ -888,7 +888,7 @@ async def import_text(
                 )
 
         # Process via DocumentProcessorAgent
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "document_agent",
             {
                 "action": "import_text",
@@ -919,7 +919,7 @@ async def import_text(
         try:
             from socratic_system.events import EventType
 
-            orchestrator.event_emitter.emit(
+            await orchestrator.event_emitter.emit_async(
                 EventType.DOCUMENT_IMPORTED,
                 {
                     "project_id": project_id,
@@ -1254,7 +1254,7 @@ async def bulk_import_documents(
                 try:
                     # Process file
                     doc_id = f"doc_{uuid.uuid4().hex[:12]}"
-                    result = orchestrator.process_request(
+                    result = await orchestrator.agent_bus.send_request(
                         "document_agent",
                         {
                             "action": "import_file",
@@ -1316,7 +1316,7 @@ async def bulk_import_documents(
                 imported_count=success_count,
                 failed_count=failed_count,
                 details=results,
-            ).dict(),
+            ).model_dump(),
         )
 
     except HTTPException:
@@ -1450,7 +1450,7 @@ async def add_knowledge_entry(
             await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Process as text import with category metadata
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "document_agent",
             {
                 "action": "import_text",
@@ -1509,6 +1509,7 @@ async def add_knowledge_entry(
 )
 async def debug_get_vector_db_chunks(
     orchestrator=Depends(_get_orchestrator),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Debug endpoint to inspect what's actually stored in the vector database.

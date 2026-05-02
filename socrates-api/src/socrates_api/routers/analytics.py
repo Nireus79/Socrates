@@ -14,10 +14,12 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 
 from socrates_api.auth import get_current_user, get_current_user_object
+from socrates_api.auth.dependencies import get_current_user_object_optional
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 from socrates_api.services.report_generator import get_report_generator
 from socratic_system.database import ProjectDatabase
+from socratic_system.models import User
 from socratic_maturity import MaturityCalculator
 
 logger = logging.getLogger(__name__)
@@ -31,8 +33,8 @@ def get_phase_readiness_status(project, maturity_calculator: MaturityCalculator)
     Returns information about whether user is ready to advance to next phase.
     """
     phase_maturity_scores = getattr(project, "phase_maturity_scores", {}) or {}
-    all_phases = maturity_calculator.get_all_phases()
-    getattr(project, "current_phase", "discovery") or "discovery"
+    all_phases = list(maturity_calculator.phase_categories.keys())
+    current_phase = getattr(project, "current_phase", "discovery") or "discovery"
 
     readiness_status = {}
     for phase in all_phases:
@@ -69,6 +71,7 @@ async def get_analytics_summary(
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
+    user_object: Optional[User] = Depends(get_current_user_object_optional),
 ):
     """
     Get analytics summary for a project or overall.
@@ -85,10 +88,9 @@ async def get_analytics_summary(
         # CRITICAL: Validate subscription for analytics feature
         logger.info(f"Validating subscription for analytics summary access by {current_user}")
         try:
-            user_object = get_current_user_object(current_user)
-
+            # Use the injected user_object from dependency injection
             # Check if user has active subscription
-            if user_object.subscription_status != "active":
+            if not user_object or user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to access analytics without active subscription"
                 )
@@ -442,11 +444,7 @@ async def get_usage_analytics():
         )
 
 
-def get_database() -> ProjectDatabase:
-    """Get database instance."""
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabase(db_path)
+# Note: get_database is imported from socrates_api.database (centralized singleton)
 
 
 @router.get(
@@ -463,6 +461,8 @@ async def get_trends(
     project_id: str,
     time_period: str = "30d",
     current_user: str = Depends(get_current_user),
+    user_object: Optional[User] = Depends(get_current_user_object_optional),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get historical analytics trends for a project.
@@ -479,10 +479,9 @@ async def get_trends(
         # CRITICAL: Validate subscription for trends feature
         logger.info(f"Validating subscription for trends access by {current_user}")
         try:
-            user_object = get_current_user_object(current_user)
-
+            # Use the injected user_object from dependency injection
             # Check if user has active subscription
-            if user_object.subscription_status != "active":
+            if not user_object or user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to access trends without active subscription"
                 )
@@ -515,15 +514,14 @@ async def get_trends(
 
         logger.info(f"Getting analytics trends for project: {project_id}")
 
-        # Load project
-        db = get_database()
+        # Load project (db already injected as dependency)
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call learning agent via orchestrator to get trends
         orchestrator = get_orchestrator()
-        result = await orchestrator.process_request_async(
+        result = await orchestrator.agent_bus.send_request(
             "learning",
             {
                 "action": "get_trends",
@@ -573,6 +571,8 @@ async def get_trends(
 async def get_recommendations(
     request_data: dict = Body(...),
     current_user: str = Depends(get_current_user),
+    user_object: Optional[User] = Depends(get_current_user_object_optional),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get AI-generated recommendations based on project analytics.
@@ -588,10 +588,9 @@ async def get_recommendations(
         # CRITICAL: Validate subscription for recommendations feature
         logger.info(f"Validating subscription for recommendations access by {current_user}")
         try:
-            user_object = get_current_user_object(current_user)
-
+            # Use the injected user_object from dependency injection
             # Check if user has active subscription
-            if user_object.subscription_status != "active":
+            if not user_object or user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to access recommendations without active subscription"
                 )
@@ -635,15 +634,14 @@ async def get_recommendations(
 
         logger.info(f"Getting recommendations for project: {project_id}")
 
-        # Load project
-        db = get_database()
+        # Load project (db already injected as dependency)
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Call learning agent via orchestrator for recommendations
         orchestrator = get_orchestrator()
-        result = await orchestrator.process_request_async(
+        result = await orchestrator.agent_bus.send_request(
             "learning",
             {
                 "action": "get_recommendations",
@@ -1326,6 +1324,7 @@ async def get_analytics_breakdown(
     project_id: str,
     category: Optional[str] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get detailed breakdown of project analytics by category.
@@ -1344,7 +1343,7 @@ async def get_analytics_breakdown(
     try:
         logger.info(f"Getting analytics breakdown for project: {project_id}")
 
-        db = get_database()
+        # db already injected as dependency
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -1428,6 +1427,7 @@ async def get_analytics_breakdown(
 async def get_analytics_status(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get current analytics status and project health indicators.
@@ -1444,7 +1444,7 @@ async def get_analytics_status(
     try:
         logger.info(f"Getting analytics status for project: {project_id}")
 
-        db = get_database()
+        # db already injected as dependency
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")

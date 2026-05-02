@@ -1,5 +1,6 @@
-"""
-GitHub Sync Edge Case Handler
+"""GitHub Sync Edge Case Handler
+
+Phase 2B Migration: Async-first implementation with agent bus support
 
 Handles critical edge cases in GitHub synchronization:
 1. Merge conflict resolution
@@ -13,7 +14,9 @@ for reliable GitHub sync operations.
 """
 
 import logging
+import asyncio
 import time
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 

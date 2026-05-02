@@ -66,7 +66,7 @@ async def websocket_chat_endpoint(
     connection_id = str(uuid.uuid4())
     connection_manager = get_connection_manager()
     message_handler = get_message_handler()
-    get_database()
+    db = get_database()
 
     try:
         # Verify user (token would be extracted from query params in real implementation)
@@ -127,6 +127,7 @@ async def websocket_chat_endpoint(
                         user_id or "anonymous",
                         project_id,
                         connection_id,
+                        db,
                     )
 
                     if response:
@@ -214,6 +215,7 @@ async def _handle_chat_message(
     user_id: str,
     project_id: str,
     connection_id: str,
+    db: ProjectDatabase,
 ):
     """
     Handle a chat message with AI processing.
@@ -245,7 +247,6 @@ async def _handle_chat_message(
         try:
             from socrates_api.main import get_orchestrator
 
-            db = get_database()
 
             project = db.load_project(project_id)
             if not project:
@@ -256,7 +257,7 @@ async def _handle_chat_message(
             logger.info("[_handle_chat_message] Got orchestrator, calling process_request")
 
             # Process message through orchestrator using process_request (standard pattern)
-            result = orchestrator.process_request(
+            result = await orchestrator.agent_bus.send_request(
                 "socratic_counselor",
                 {
                     "action": "process_response",
@@ -378,7 +379,7 @@ async def _handle_command(
         command_args = parts[1] if len(parts) > 1 else ""
 
         # Route to appropriate command handler
-        result = await _route_command(command_name, command_args, user_id, project_id)
+        result = await _route_command(command_name, command_args, user_id, project_id, db)
 
         response = {
             "type": ResponseType.ASSISTANT_RESPONSE.value,
@@ -409,6 +410,7 @@ async def _route_command(
     args: str,
     user_id: str,
     project_id: str,
+    db: ProjectDatabase,
 ) -> dict:
     """
     Route command to appropriate handler.
@@ -425,7 +427,6 @@ async def _route_command(
     try:
         from socrates_api.main import get_orchestrator
 
-        db = get_database()
 
         project = db.load_project(project_id)
         if not project:
@@ -443,7 +444,7 @@ async def _route_command(
 
         elif command == "summary":
             # Generate conversation summary
-            result = orchestrator.process_request(
+            result = await orchestrator.agent_bus.send_request(
                 "context_analyzer",
                 {
                     "action": "generate_summary",
@@ -482,7 +483,7 @@ async def _route_command(
 
         elif command == "advance":
             # Advance to next phase via orchestrator routing (not direct call)
-            result = await orchestrator.process_request_async(
+            result = await orchestrator.agent_bus.send_request(
                 "socratic_counselor",
                 {
                     "action": "advance_phase",
@@ -588,7 +589,7 @@ async def send_chat_message(
         if not assistant_messages:
             # Generate initial question via orchestrator routing (not direct call)
             try:
-                question_result = await orchestrator.process_request_async(
+                question_result = await orchestrator.agent_bus.send_request(
                     "socratic_counselor",
                     {
                         "action": "generate_question",
@@ -606,7 +607,7 @@ async def send_chat_message(
         # Process user response with orchestrator via routing (not direct call)
         try:
             logger.info("[send_chat_message] Calling orchestrator.process_request_async")
-            response_result = await orchestrator.process_request_async(
+            response_result = await orchestrator.agent_bus.send_request(
                 "socratic_counselor",
                 {
                     "action": "process_response",
@@ -854,7 +855,7 @@ async def request_hint(
 
             try:
                 orchestrator = get_orchestrator()
-                question_result = await orchestrator.process_request_async(
+                question_result = await orchestrator.agent_bus.send_request(
                     "socratic_counselor",
                     {
                         "action": "generate_question",
@@ -1023,7 +1024,7 @@ async def get_chat_summary(
             orchestrator = get_orchestrator()
 
             # Use context_analyzer to generate summary
-            summary_result = orchestrator.process_request(
+            summary_result = await orchestrator.agent_bus.send_request(
                 "context_analyzer",
                 {
                     "action": "generate_summary",

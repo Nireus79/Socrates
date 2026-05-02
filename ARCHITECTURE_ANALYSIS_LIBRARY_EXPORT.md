@@ -1,5 +1,5 @@
 # Socrates Agent Architecture Analysis & Library Export Strategy
-
+# ARCHITECTURE_ANALYSIS_LIBRARY_EXPORT.md
 ## Executive Summary
 
 The Socrates agent system exhibits **moderate-to-high coupling** (Risk Level: 6.5/10) that prevents direct library export without significant refactoring. The primary issue is that agents are directly instantiated and called through the `AgentOrchestrator`, creating Socrates-specific dependencies. This document proposes an **API-first architecture** where agents are accessed via REST/gRPC interfaces rather than direct instantiation, enabling them to be library-exported while maintaining full functionality.

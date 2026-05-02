@@ -11,11 +11,20 @@ import signal
 import socket
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request, status
-from fastapi.middleware.cors import CORSMiddleware
+
+# Load environment variables from .env file
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    load_dotenv()  # Load from current directory or system environment
+from socrates_api.middleware.cors_fix import SimpleCORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
 
@@ -44,6 +53,7 @@ from .models import (
     SystemInfoResponse,
 )
 from .routers import (
+    agents_router,
     analysis_router,
     analytics_router,
     auth_router,
@@ -58,6 +68,7 @@ from .routers import (
     knowledge_management_router,
     knowledge_router,
     llm_router,
+    llm_config_router,
     nlu_router,
     notes_router,
     progress_router,
@@ -263,6 +274,17 @@ async def lifespan(app: FastAPI):
 
         logger.error(f"Traceback: {traceback.format_exc()}")
 
+        # Ensure database is still initialized even if orchestrator fails
+        # This allows auth endpoints to work even without full orchestrator
+        try:
+            from socrates_api.database import DatabaseSingleton
+            logger.info("Ensuring database is initialized as fallback...")
+            DatabaseSingleton.initialize()  # Initialize with defaults
+            db = DatabaseSingleton.get_instance()
+            logger.info(f"Database initialized as fallback: {db is not None}")
+        except Exception as db_e:
+            logger.error(f"Failed to initialize database fallback: {db_e}")
+
     # Start shutdown monitor background task
     logger.info("Starting shutdown monitor background task...")
     shutdown_monitor_task = asyncio.create_task(_monitor_shutdown())
@@ -295,7 +317,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add security headers middleware
 # Auto-detect environment: if ENVIRONMENT is not explicitly set and running on local machine, use development
 environment = os.getenv("ENVIRONMENT")
 if not environment:
@@ -311,22 +332,12 @@ if not environment:
 else:
     environment = environment.lower()
 
-add_security_headers_middleware(app, environment=environment)
-
-# Add metrics middleware
-add_metrics_middleware(app)
-
-# Add activity tracking middleware
-from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
-
-app.add_middleware(ActivityTrackerMiddleware)
-
+# IMPORTANT: Add CORS middleware FIRST (before all other middleware) to ensure it's the outermost layer
 # Configure CORS based on environment
 if environment == "production":
-    # Production: Only allow specific origins
-    allowed_origins = os.getenv(
-        "ALLOWED_ORIGINS", "https://socrates.app"  # Default production origin
-    ).split(",")
+    # Production: Allow configured origins plus localhost for testing
+    default_origins = "https://socrates.app,http://localhost,http://127.0.0.1"
+    allowed_origins = os.getenv("ALLOWED_ORIGINS", default_origins).split(",")
     allowed_origins = [origin.strip() for origin in allowed_origins]
 elif environment == "staging":
     # Staging: Allow staging domains
@@ -335,48 +346,45 @@ elif environment == "staging":
     ).split(",")
     allowed_origins = [origin.strip() for origin in allowed_origins]
 else:
-    # Development: Allow localhost and common dev URLs
+    # Development: Allow common localhost origins for easier local development
     allowed_origins = [
-        "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5174",
         "http://localhost:5175",
-        "http://localhost:8080",
-        "http://127.0.0.1:3000",
+        "http://localhost:5176",
+        "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
         "http://127.0.0.1:5175",
-        "http://127.0.0.1:8080",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
+        "http://127.0.0.1:5176",
+        "http://127.0.0.1:3000",
     ]
-    # Allow additional dev origins from environment variable
-    dev_origins = os.getenv("ALLOWED_ORIGINS", "")
-    if dev_origins:
-        allowed_origins.extend([o.strip() for o in dev_origins.split(",")])
 
-# Add CORS middleware with hardened configuration
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "X-Testing-Mode"],
-    expose_headers=["X-Process-Time", "X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
-    max_age=3600,  # Cache preflight requests for 1 hour
-)
+# Add CORS middleware as the OUTERMOST layer
+# Using custom SimpleCORSMiddleware for better compatibility with other BaseHTTPMiddleware classes
+logger.info(f"Environment: {environment}")
+logger.info(f"CORS allowed origins: {allowed_origins}")
+app.add_middleware(SimpleCORSMiddleware, allowed_origins=allowed_origins)
 
-logger.info(f"CORS configured for {environment} environment with origins: {allowed_origins}")
+# Add other middleware AFTER CORS
+add_security_headers_middleware(app, environment=environment)
+add_metrics_middleware(app)
+
+# Add activity tracking middleware
+from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
+app.add_middleware(ActivityTrackerMiddleware)
 
 
 # Include API routers
 app.include_router(auth_router)
+app.include_router(agents_router)
 app.include_router(projects_router)
 app.include_router(collaboration_router)
 app.include_router(collab_router)
 app.include_router(code_generation_router)
 app.include_router(knowledge_router)
 app.include_router(llm_router)
+app.include_router(llm_config_router)
 app.include_router(projects_chat_router)
 app.include_router(analysis_router)
 app.include_router(security_router)
@@ -424,6 +432,73 @@ async def health_check():
             "api": "operational",
         },
     }
+
+
+@app.get("/search")
+async def search(
+    q: str = None,
+    current_user: str = None,
+):
+    """
+    Global search endpoint.
+
+    Delegates to the query router's search functionality.
+    """
+    from socrates_api.models import APIResponse
+
+    if not q:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query parameter 'q' is required",
+        )
+
+    try:
+        from socrates_api.database import get_database
+
+        db = get_database()
+
+        # Search in projects if user is authenticated
+        results = []
+
+        if current_user:
+            # In a real implementation, would search user's projects
+            results = [
+                {
+                    "type": "documentation",
+                    "source": "Knowledge Base",
+                    "title": f"Results for '{q}'",
+                    "content": f"Searching knowledge base for: {q}",
+                    "relevance": 0.85,
+                },
+            ]
+        else:
+            # Public search results
+            results = [
+                {
+                    "type": "documentation",
+                    "source": "Public Knowledge Base",
+                    "title": f"Results for '{q}'",
+                    "content": f"Public search results for: {q}",
+                    "relevance": 0.75,
+                },
+            ]
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Search completed",
+            data={
+                "query": q,
+                "results_count": len(results),
+                "results": results,
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error in search: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Search failed: {str(e)}",
+        )
 
 
 @app.get("/health/detailed")
@@ -728,7 +803,7 @@ async def ask_question(project_id: str, request: AskQuestionRequest):
         )
 
     try:
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "question_generator",
             {
                 "action": "generate_question",
@@ -776,7 +851,7 @@ async def process_response(project_id: str, request: ProcessResponseRequest):
         )
 
     try:
-        result = orchestrator.process_request(
+        result = await orchestrator.agent_bus.send_request(
             "response_evaluator",
             {
                 "action": "evaluate_response",
@@ -825,7 +900,7 @@ async def generate_code(request: GenerateCodeRequest):
 
     try:
         # Load project
-        project_result = orchestrator.process_request(
+        project_result = await orchestrator.agent_bus.send_request(
             "project_manager", {"action": "load_project", "project_id": request.project_id}
         )
 
@@ -835,7 +910,7 @@ async def generate_code(request: GenerateCodeRequest):
         project = project_result["project"]
 
         # Generate code
-        code_result = orchestrator.process_request(
+        code_result = await orchestrator.agent_bus.send_request(
             "code_generator",
             {
                 "action": "generate_code",

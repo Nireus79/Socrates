@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse
+from socratic_system.database import ProjectDatabase
 from socratic_system.utils.logger import set_debug_mode, is_debug_mode
 
 logger = logging.getLogger(__name__)
@@ -191,6 +192,7 @@ async def get_help(
 )
 async def get_info(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get comprehensive system information and statistics.
@@ -212,7 +214,6 @@ async def get_info(
         logger.info(f"System info requested by user: {current_user}")
 
         # Get database connection
-        db = get_database()
 
         # Get user count
         try:
@@ -497,6 +498,7 @@ async def get_logs(
 )
 async def get_context(
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get current system context and user state information.
@@ -516,7 +518,6 @@ async def get_context(
     try:
         logger.info(f"System context requested by user: {current_user}")
 
-        db = get_database()
 
         # Get user information
         user = db.get_user(current_user)
