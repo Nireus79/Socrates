@@ -1,4 +1,4 @@
-# Socratic Governance Library Extraction Plan
+# Socratic-Morality Library Extraction Plan
 
 **Status**: Blueprint Ready
 **Date**: May 2026
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Extract the Socratic AI Governance framework from Socrates into a reusable, provider-agnostic PyPI library called **`socratic-governor`**.
+Extract the Socratic AI Governance framework from Socrates into a reusable, provider-agnostic PyPI library called **`socratic-morality`** (also known as the "Moral Governor" or "Philosophical Governance Engine").
 
 This library provides:
 - **Constitutional AI framework** for enforcing moral principles
@@ -26,9 +26,9 @@ The library should be **provider-agnostic** (work with any LLM), **framework-agn
 ## Library Architecture
 
 ```
-socratic-governor/
+socratic-morality/
 ├── constitution/         # Constitution loading & validation
-├── governor/            # Main Governor decision engine
+├── governor/            # Moral Governor decision engine
 ├── ethics/              # Multi-framework ethical analysis
 ├── precedent/           # Moral precedent storage & retrieval
 ├── security/            # Sandbox hooks & capability system
@@ -47,7 +47,7 @@ socratic-governor/
 ### Governor Class (Main Interface)
 
 ```python
-from socratic_governor import Governor
+from socratic_morality import Governor
 
 # Initialize
 governor = Governor(
@@ -97,26 +97,26 @@ governor.precedent_engine.store_case(
 
 ```python
 # LangChain
-from socratic_governor.adapters import LangChainAdapter
+from socratic_morality.adapters import LangChainAdapter
 
 adapter = LangChainAdapter(governor)
 governed_agent = adapter.wrap_agent(my_langchain_agent)
 response = await governed_agent.invoke(user_input)
 
 # AutoGen
-from socratic_governor.adapters import AutoGenAdapter
+from socratic_morality.adapters import AutoGenAdapter
 
 adapter = AutoGenAdapter(governor)
 governed_agent = adapter.wrap_agent(my_autogen_agent)
 
 # CrewAI
-from socratic_governor.adapters import CrewAIAdapter
+from socratic_morality.adapters import CrewAIAdapter
 
 adapter = CrewAIAdapter(governor)
 governed_crew = adapter.wrap_crew(my_crew)
 
 # Custom Agents
-from socratic_governor.adapters import CustomAgentAdapter
+from socratic_morality.adapters import CustomAgentAdapter
 
 adapter = CustomAgentAdapter(governor)
 governed_agent = adapter.wrap_agent(
@@ -347,6 +347,7 @@ cd socratic-governor
 
 ### Core Library (Minimal)
 ```toml
+# socratic-morality package
 dependencies = [
     "pydantic>=2.0",          # Configuration & validation
     "pyyaml>=6.0",            # Constitution loading
@@ -428,18 +429,20 @@ optional-dependencies = {
 
 ## Package Name & Identity
 
-### Name Options
-- ✅ **`socratic-governor`** (RECOMMENDED)
-  - Clear, philosophical identity
-  - Not generic "ethical-ai"
-  - Implies governance/authority
-  - Searchable, memorable
+### Name: Socratic-Morality
 
-Alternative names:
-- `constitutional-ai`
-- `moral-governor`
-- `philosophical-governance`
-- `ai-constitution`
+**Selected**: **`socratic-morality`**
+  - Grounded in Socratic principle: "It is better to suffer injustice than to commit it"
+  - Specific philosophical identity (not generic "ethical-ai")
+  - Clear intent: moral self-governance, not just safety
+  - Searchable, memorable
+  - Also known as: "Moral Governor" or "Philosophical Governance Engine"
+
+Alternative names considered:
+- `moral-governor` (too narrow)
+- `constitutional-ai` (less philosophical)
+- `philosophical-governance` (too wordy)
+- `ai-constitution` (ambiguous)
 
 ### Tagline
 > **"Governance without domination. Authority without corruption."**
@@ -524,16 +527,16 @@ Or:
    - [ ] Resource allocation
 
 2. **Setup Phase**
-   - [ ] Create GitHub repository
+   - [ ] Create GitHub repository: `socratic-morality`
    - [ ] Set up CI/CD (GitHub Actions)
    - [ ] Create project board
    - [ ] Establish governance model
 
 3. **Phase 1 Kickoff**
-   - [ ] Create directory structure
+   - [ ] Create directory structure (socratic_morality/ module)
    - [ ] Set up tests framework
    - [ ] Implement Constitution loader
-   - [ ] Build basic Governor
+   - [ ] Build basic Governor with evaluate()
    - [ ] Write initial documentation
 
 ---
