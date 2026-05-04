@@ -7,7 +7,7 @@ from .base import Service
 if TYPE_CHECKING:
     from socratic_system.models import ProjectContext
     from socratic_system.claude_client import ClaudeClient
-    from socratic_system.agents.document_context_analyzer import DocumentContextAnalyzer
+    from socratic_agents import DocumentContextAnalyzer
 
 
 class InsightService(Service):
