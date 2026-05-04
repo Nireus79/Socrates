@@ -1272,3 +1272,23 @@ The proposed **API-first architecture** with **service layer abstraction** and *
 
 **Recommendation:** The codebase is now ready for service layer extraction. Async improvements provide solid foundation for concurrent agent execution and library usage patterns.
 
+- Extract models from socratic_system → socratic_agents
+  - Create service interfaces (DatabaseService, LLMService, etc.)
+  - Refactor agents to use dependency injection
+  - Remove all from socratic_system imports from agents
+  - Replace orchestrator calls with AgentBus
+  - Result: Agents are clean Python services with REST API
+
+  Phase 2: Security Layer (3-4 weeks)
+  - Constitutional Governor validates all requests
+  - Capability tokens issued at API boundary
+  - Sandbox execution for high-risk agents (code_generator)
+  - Zero trust agent-to-agent communication
+  - Audit logging at REST boundaries
+  - Result: Secure agent execution with governance
+
+  Phase 3: Hardening (2-3 weeks)
+  - Ethical deliberation engine
+  - Moral precedent tracking
+  - Advanced threat detection
+  - Result: Full Socratic governance framework
