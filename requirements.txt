@@ -5,7 +5,7 @@
 socratic-nexus>=0.4.0
 
 # Core Socrates AI System
-anthropic>=0.40.0
+anthropic>=0.97.0
 chromadb>=0.5.0
 sentence-transformers>=3.0.0
 pypdf>=4.0.0
