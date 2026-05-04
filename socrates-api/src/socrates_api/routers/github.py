@@ -22,7 +22,7 @@ from socrates_api.models import (
 from socratic_system.database import ProjectDatabase
 from socratic_system.models import User
 from socrates_api.auth.project_access import check_project_access
-from socratic_system.agents.github_sync_handler import (
+from socratic_agents import (
     create_github_sync_handler,
     TokenExpiredError,
     PermissionDeniedError,
