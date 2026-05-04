@@ -2,7 +2,7 @@
 import asyncio
 import pytest
 from unittest.mock import MagicMock
-from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
+from socratic_agents.context_analyzer import ContextAnalyzerAgent
 
 
 class TestContextAnalyzerMigration:

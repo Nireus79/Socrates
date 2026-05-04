@@ -17,7 +17,7 @@ import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from socratic_system.agents.system_monitor import SystemMonitorAgent
+from socratic_agents.system_monitor import SystemMonitorAgent
 from socratic_system.config import SocratesConfig
 from socratic_system.events import EventEmitter
 from socratic_system.messaging.agent_registry import AgentRegistry

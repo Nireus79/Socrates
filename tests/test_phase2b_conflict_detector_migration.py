@@ -15,7 +15,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from socratic_system.agents.conflict_detector import ConflictDetectorAgent
+from socratic_agents.conflict_detector import ConflictDetectorAgent
 
 
 class TestConflictDetectorMigrationSetup:

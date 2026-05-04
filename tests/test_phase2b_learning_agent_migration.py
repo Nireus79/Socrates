@@ -2,7 +2,7 @@
 import asyncio
 import pytest
 from unittest.mock import MagicMock
-from socratic_system.agents.learning_agent import UserLearningAgent
+from socratic_agents.learning_agent import UserLearningAgent
 
 
 class TestLearningAgentMigrationSetup:

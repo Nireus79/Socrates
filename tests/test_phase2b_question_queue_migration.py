@@ -17,7 +17,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from datetime import datetime
 
-from socratic_system.agents.question_queue_agent import QuestionQueueAgent
+from socratic_agents.question_queue_agent import QuestionQueueAgent
 
 
 class TestQuestionQueueMigrationSetup:

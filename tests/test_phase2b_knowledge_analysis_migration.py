@@ -15,7 +15,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
+from socratic_agents.knowledge_analysis import KnowledgeAnalysisAgent
 
 
 class TestKnowledgeAnalysisMigrationSetup:

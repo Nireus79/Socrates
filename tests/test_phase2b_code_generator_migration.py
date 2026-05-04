@@ -15,7 +15,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from socratic_system.agents.code_generator import CodeGeneratorAgent
+from socratic_agents.code_generator import CodeGeneratorAgent
 
 
 class TestCodeGeneratorMigrationSetup:

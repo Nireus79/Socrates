@@ -15,7 +15,7 @@ Validates:
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from socratic_system.agents.user_manager import UserManagerAgent
+from socratic_agents.user_manager import UserManagerAgent
 
 
 class TestUserManagerMigrationSetup:

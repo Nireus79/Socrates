@@ -17,9 +17,9 @@ class TestFullProjectLifecycleWithKnowledge:
         """Test complete end-to-end project workflow"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
-            from socratic_system.agents.code_generator import CodeGeneratorAgent
-            from socratic_system.agents.note_manager import NoteManagerAgent
-            from socratic_system.agents.project_manager import ProjectManagerAgent
+            from socratic_agents.code_generator import CodeGeneratorAgent
+            from socratic_agents.note_manager import NoteManagerAgent
+            from socratic_agents.project_manager import ProjectManagerAgent
 
             proj_mgr = ProjectManagerAgent(orchestrator)
             code_gen = CodeGeneratorAgent(orchestrator)
@@ -78,9 +78,9 @@ class TestMultiAgentCollaboration:
         """Test collaboration pipeline across three agents"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
-            from socratic_system.agents.code_generator import CodeGeneratorAgent
-            from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
-            from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
+            from socratic_agents.code_generator import CodeGeneratorAgent
+            from socratic_agents.context_analyzer import ContextAnalyzerAgent
+            from socratic_agents.socratic_counselor import SocraticCounselorAgent
 
             counselor = SocraticCounselorAgent(orchestrator)
             analyzer = ContextAnalyzerAgent(orchestrator)
@@ -130,7 +130,7 @@ class TestConflictDetectionAndResolution:
         """Test conflict detection integrated with project management"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
-            from socratic_system.agents.project_manager import ProjectManagerAgent
+            from socratic_agents.project_manager import ProjectManagerAgent
             from socratic_system.models import ConflictInfo
 
             proj_mgr = ProjectManagerAgent(orchestrator)
@@ -171,7 +171,7 @@ class TestDocumentProcessingToKnowledge:
         """Test document processing pipeline into knowledge base"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
-            from socratic_system.agents.document_processor import DocumentProcessorAgent
+            from socratic_agents.document_processor import DocumentProcessorAgent
 
             doc_processor = DocumentProcessorAgent(orchestrator)
 
@@ -200,7 +200,7 @@ class TestEventPropagation:
         """Test that events flow from agents through orchestrator"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
-            from socratic_system.agents.project_manager import ProjectManagerAgent
+            from socratic_agents.project_manager import ProjectManagerAgent
 
             proj_mgr = ProjectManagerAgent(orchestrator)
 
@@ -237,7 +237,7 @@ class TestCollaborationAndConflictDetection:
             orchestrator = mock_orchestrator
             # Configure mock to return pro_user who has team collaboration enabled
             orchestrator.database.load_user.return_value = pro_user
-            from socratic_system.agents.project_manager import ProjectManagerAgent
+            from socratic_agents.project_manager import ProjectManagerAgent
 
             proj_mgr = ProjectManagerAgent(orchestrator)
 
@@ -283,9 +283,9 @@ class TestCompleteUserToCodePipeline:
         """Test complete user → project → code generation pipeline"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
-            from socratic_system.agents.code_generator import CodeGeneratorAgent
-            from socratic_system.agents.note_manager import NoteManagerAgent
-            from socratic_system.agents.project_manager import ProjectManagerAgent
+            from socratic_agents.code_generator import CodeGeneratorAgent
+            from socratic_agents.note_manager import NoteManagerAgent
+            from socratic_agents.project_manager import ProjectManagerAgent
 
             proj_mgr = ProjectManagerAgent(orchestrator)
             code_gen = CodeGeneratorAgent(orchestrator)
@@ -348,7 +348,7 @@ class TestErrorRecoveryAcrossLayers:
         """Test system recovery from API failures"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
-            from socratic_system.agents.code_generator import CodeGeneratorAgent
+            from socratic_agents.code_generator import CodeGeneratorAgent
 
             code_gen = CodeGeneratorAgent(orchestrator)
 
@@ -387,7 +387,7 @@ class TestMultiProjectContextIsolation:
         """Test switching between projects maintains isolation"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
-            from socratic_system.agents.project_manager import ProjectManagerAgent
+            from socratic_agents.project_manager import ProjectManagerAgent
 
             proj_mgr = ProjectManagerAgent(orchestrator)
 

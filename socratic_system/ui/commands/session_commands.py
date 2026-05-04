@@ -523,7 +523,7 @@ If you don't have enough information, say so."""
             orchestrator: Orchestrator instance
         """
         try:
-            from socratic_system.agents.project_file_loader import ProjectFileLoader
+            from socratic_agents.project_file_loader import ProjectFileLoader
 
             loader = ProjectFileLoader(orchestrator)
 

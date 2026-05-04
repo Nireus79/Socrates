@@ -1,0 +1,887 @@
+"""Multi-LLM Provider Agent - Unified LLM management and routing.
+
+Phase 2B Migration: Async-first implementation with agent bus support
+
+Manages connections to multiple LLM providers (Claude, OpenAI, Gemini, Ollama)
+with a unified interface for:
+- Provider configuration
+- API key management
+- Usage tracking
+- Cost analysis
+- Provider routing
+"""
+
+import uuid
+import asyncio
+from datetime import datetime, timezone
+from typing import Any, Dict
+
+from socratic_system.agents.base import Agent
+from socratic_system.models import (
+    LLMProviderConfig,
+    LLMUsageRecord,
+    get_provider_metadata,
+    list_available_providers,
+)
+
+
+class MultiLLMAgent(Agent):
+    """
+    Manages multiple LLM providers with unified interface.
+
+    Capabilities:
+    - list_providers: List available LLM providers and their metadata
+    - get_provider_config: Get user's provider configuration
+    - set_default_provider: Set default provider for user
+    - set_provider_model: Set the model to use for a specific provider
+    - add_api_key: Store API key securely for a provider
+    - remove_api_key: Remove API key for a provider
+    - get_usage_stats: Get usage and cost statistics
+    - track_usage: Record LLM usage for billing/monitoring
+    - get_provider_models: Get available models for a provider
+    """
+
+    def __init__(self, orchestrator):
+        """Initialize multi-LLM agent"""
+        super().__init__("multi_llm", orchestrator, auto_register=True)
+        self.logger.info("MultiLLMAgent initialized")
+
+    def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process multi-LLM requests (sync wrapper for backward compatibility).
+
+        Phase 2B: Delegates to sync helper methods
+
+        Supported actions:
+        - list_providers: List available LLM providers
+        - get_provider_config: Get provider configuration
+        - set_default_provider: Set default provider
+        - set_provider_model: Set provider model
+        - add_api_key: Add API key for provider
+        - remove_api_key: Remove API key
+        - set_auth_method: Set authentication method
+        - get_usage_stats: Get usage statistics
+        - track_usage: Track LLM usage
+        - get_provider_models: Get available models
+        """
+        action = request.get("action")
+
+        if action == "list_providers":
+            return self._list_providers_sync(request)
+        elif action == "get_provider_config":
+            return self._get_provider_config_sync(request)
+        elif action == "set_default_provider":
+            return self._set_default_provider_sync(request)
+        elif action == "set_provider_model":
+            return self._set_provider_model_sync(request)
+        elif action == "add_api_key":
+            return self._add_api_key_sync(request)
+        elif action == "remove_api_key":
+            return self._remove_api_key_sync(request)
+        elif action == "set_auth_method":
+            return self._set_auth_method_sync(request)
+        elif action == "get_usage_stats":
+            return self._get_usage_stats_sync(request)
+        elif action == "track_usage":
+            return self._track_usage_sync(request)
+        elif action == "get_provider_models":
+            return self._get_provider_models_sync(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    async def process_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process multi-LLM requests asynchronously (Phase 2B).
+
+        Primary implementation - true async processing with thread pool
+        """
+        action = request.get("action")
+
+        if action == "list_providers":
+            return await self._list_providers_async(request)
+        elif action == "get_provider_config":
+            return await self._get_provider_config_async(request)
+        elif action == "set_default_provider":
+            return await self._set_default_provider_async(request)
+        elif action == "set_provider_model":
+            return await self._set_provider_model_async(request)
+        elif action == "add_api_key":
+            return await self._add_api_key_async(request)
+        elif action == "remove_api_key":
+            return await self._remove_api_key_async(request)
+        elif action == "set_auth_method":
+            return await self._set_auth_method_async(request)
+        elif action == "get_usage_stats":
+            return await self._get_usage_stats_async(request)
+        elif action == "track_usage":
+            return await self._track_usage_async(request)
+        elif action == "get_provider_models":
+            return await self._get_provider_models_async(request)
+        else:
+            return {"status": "error", "message": f"Unknown action: {action}"}
+
+    def get_capabilities(self) -> list:
+        """Declare agent capabilities for bus discovery (Phase 2B)"""
+        return ["provider_management", "api_key_management", "auth_configuration", "usage_tracking", "model_selection"]
+
+    def get_metadata(self) -> Dict[str, Any]:
+        """Get agent metadata for registration (Phase 2B)"""
+        return {
+            "version": "2.0",
+            "description": "Multi-LLM provider management and coordination",
+            "capabilities_count": 5,
+        }
+
+    # ============================================================================
+    # Provider Information
+    # ============================================================================
+
+    def _list_providers_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        List all available LLM providers with configuration status.
+
+        Args:
+            data: {'user_id': str (optional)}
+
+        Returns:
+            {
+                'status': 'success',
+                'providers': [
+                    {
+                        'provider': 'claude',
+                        'display_name': 'Anthropic Claude',
+                        'models': [...],
+                        'requires_api_key': False,
+                        'is_configured': bool,
+                        'cost_per_1k_input_tokens': 0.003,
+                        'available': True,
+                        ...
+                    },
+                    ...
+                ]
+            }
+        """
+        self.logger.debug("Listing available LLM providers")
+        user_id = data.get("user_id")
+
+        try:
+            providers = list_available_providers()
+            provider_dicts = []
+
+            for provider in providers:
+                # Transform backend provider metadata to frontend format
+                provider_dict = {
+                    "name": provider.provider,  # Frontend expects 'name', not 'provider'
+                    "label": provider.display_name,  # Frontend expects 'label', not 'display_name'
+                    "models": provider.models,
+                    "requires_api_key": provider.requires_api_key,
+                    "description": provider.description,
+                    "cost_per_1k_input_tokens": provider.cost_per_1k_input_tokens,
+                    "cost_per_1k_output_tokens": provider.cost_per_1k_output_tokens,
+                    "context_window": provider.context_window,
+                    "supports_streaming": provider.supports_streaming,
+                    "supports_vision": provider.supports_vision,
+                    "available": provider.available,
+                    "auth_methods": provider.auth_methods,
+                }
+
+                # Check if user has configured this provider (has API key)
+                if user_id:
+                    try:
+                        api_key = self.orchestrator.database.get_api_key(user_id, provider.provider)
+                        provider_dict["is_configured"] = api_key is not None
+                    except Exception as e:
+                        self.logger.debug(f"Error checking API key for {provider.provider}: {e}")
+                        provider_dict["is_configured"] = False
+                else:
+                    # If no user_id provided, assume not configured
+                    provider_dict["is_configured"] = False
+
+                provider_dicts.append(provider_dict)
+
+            self.logger.info(f"Listed {len(providers)} LLM providers for user {user_id}")
+
+            return {"status": "success", "providers": provider_dicts, "count": len(providers)}
+
+        except Exception as e:
+            self.logger.error(f"Error listing providers: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _get_provider_models_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get available models for a specific provider.
+
+        Args:
+            data: {'provider': str}
+
+        Returns:
+            {
+                'status': 'success',
+                'provider': str,
+                'models': [str, ...],
+                'default_model': str
+            }
+        """
+        provider = data.get("provider", "").lower()
+
+        if not provider:
+            return {"status": "error", "message": "Provider name required"}
+
+        self.logger.debug(f"Getting models for provider: {provider}")
+
+        try:
+            metadata = get_provider_metadata(provider)
+
+            if not metadata:
+                return {"status": "error", "message": f"Unknown provider: {provider}"}
+
+            return {
+                "status": "success",
+                "provider": provider,
+                "models": metadata.models,
+                "default_model": metadata.models[0] if metadata.models else None,
+                "context_window": metadata.context_window,
+                "supports_streaming": metadata.supports_streaming,
+                "supports_vision": metadata.supports_vision,
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error getting provider models: {e}")
+            return {"status": "error", "message": str(e)}
+
+    # ============================================================================
+    # Provider Configuration
+    # ============================================================================
+
+    def _get_provider_config_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get user's provider configuration.
+
+        Args:
+            data: {'user_id': str}
+
+        Returns:
+            {
+                'status': 'success',
+                'default_provider': str,
+                'providers': [
+                    {
+                        'id': str,
+                        'provider': str,
+                        'is_default': bool,
+                        'enabled': bool,
+                        'settings': {...},
+                        ...
+                    }
+                ]
+            }
+        """
+        user_id = data.get("user_id")
+
+        if not user_id:
+            return {"status": "error", "message": "user_id required"}
+
+        self.logger.debug(f"Getting provider config for user: {user_id}")
+
+        try:
+            # Get user to fetch auth_method
+            user = self.orchestrator.database.load_user(user_id)
+            auth_method = user.claude_auth_method if user else "api_key"
+
+            configs = self.orchestrator.database.get_user_llm_configs(user_id)
+
+            if not configs:
+                # Return defaults (Claude and Haiku)
+                default_config = {
+                    "provider": "claude",
+                    "model": "claude-3-haiku-20240307",  # Default to Haiku
+                    "enabled": True,
+                    "is_default": True,
+                }
+                return {
+                    "status": "success",
+                    "default_provider": "claude",
+                    "providers": [default_config],
+                    "auth_method": auth_method,
+                    "note": "Using default Claude configuration",
+                }
+
+            provider_dicts = [c.to_dict() for c in configs]
+            default_provider = next(
+                (c.provider for c in configs if c.is_default),
+                configs[0].provider if configs else "claude",
+            )
+
+            return {
+                "status": "success",
+                "default_provider": default_provider,
+                "providers": provider_dicts,
+                "auth_method": auth_method,
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error getting provider config: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _set_default_provider_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Set default provider for a user.
+
+        Args:
+            data: {
+                'user_id': str,
+                'provider': str,
+                'settings': dict (optional)
+            }
+
+        Returns:
+            {'status': 'success', 'provider': str, 'config_id': str}
+        """
+        user_id = data.get("user_id")
+        provider = data.get("provider", "").lower()
+        settings = data.get("settings", {})
+
+        if not user_id or not provider:
+            return {"status": "error", "message": "user_id and provider required"}
+
+        self.logger.debug(f"Setting default provider for {user_id}: {provider}")
+
+        try:
+            # Verify provider exists
+            self.logger.debug(f"Verifying provider {provider} exists")
+            metadata = get_provider_metadata(provider)
+            if not metadata:
+                self.logger.warning(f"Unknown provider requested: {provider}")
+                return {"status": "error", "message": f"Unknown provider: {provider}"}
+
+            self.logger.debug(f"Provider {provider} verified, models: {metadata.models}")
+
+            # Get or create config
+            self.logger.debug(f"Checking for existing config: user={user_id}, provider={provider}")
+            existing = self.orchestrator.database.get_user_llm_config(user_id, provider)
+
+            if existing:
+                existing.is_default = True
+                existing.enabled = True
+                existing.settings = settings or existing.settings
+                existing.updated_at = datetime.now(timezone.utc)
+                config = existing
+            else:
+                config = LLMProviderConfig(
+                    id=str(uuid.uuid4()),
+                    provider=provider,
+                    user_id=user_id,
+                    is_default=True,
+                    enabled=True,
+                    settings=settings
+                    or {
+                        "model": metadata.models[0] if metadata.models else provider,
+                        "max_tokens": 4096,
+                        "temperature": 0.7,
+                    },
+                )
+
+            # Unset other defaults
+            self.orchestrator.database.unset_other_default_providers(user_id, provider)
+
+            # Save config
+            self.orchestrator.database.save_llm_config(config)
+
+            self.logger.info(f"Set default provider to {provider} for user {user_id}")
+
+            return {"status": "success", "provider": provider, "config_id": config.id}
+
+        except Exception as e:
+            self.logger.error(f"Error setting default provider: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _set_provider_model_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Set the model for a specific provider.
+
+        Args:
+            data: {
+                'user_id': str,
+                'provider': str,
+                'model': str
+            }
+
+        Returns:
+            {'status': 'success', 'provider': str, 'model': str, 'config_id': str}
+        """
+        user_id = data.get("user_id")
+        provider = data.get("provider", "").lower()
+        model = data.get("model", "").strip()
+
+        if not user_id or not provider or not model:
+            return {"status": "error", "message": "user_id, provider, and model required"}
+
+        self.logger.debug(f"Setting model for {user_id} on provider {provider}: {model}")
+
+        try:
+            # Verify provider exists
+            self.logger.debug(f"Verifying provider {provider} exists")
+            metadata = get_provider_metadata(provider)
+            if not metadata:
+                self.logger.warning(f"Unknown provider requested: {provider}")
+                return {"status": "error", "message": f"Unknown provider: {provider}"}
+
+            # Verify model is available for this provider
+            self.logger.debug(f"Verifying model {model} is available for {provider}")
+            if model not in metadata.models:
+                available = ", ".join(metadata.models)
+                self.logger.warning(
+                    f"Model {model} not available for {provider}. Available: {available}"
+                )
+                return {
+                    "status": "error",
+                    "message": f"Model '{model}' not available for {provider}. Available models: {available}",
+                }
+
+            # Get or create config
+            self.logger.debug(f"Checking for existing config: user={user_id}, provider={provider}")
+            existing = self.orchestrator.database.get_user_llm_config(user_id, provider)
+
+            if existing:
+                existing.settings["model"] = model
+                existing.updated_at = datetime.now(timezone.utc)
+                config = existing
+                self.logger.debug(f"Updated existing config for {provider}")
+            else:
+                config = LLMProviderConfig(
+                    id=str(uuid.uuid4()),
+                    provider=provider,
+                    user_id=user_id,
+                    is_default=False,
+                    enabled=True,
+                    settings={
+                        "model": model,
+                        "max_tokens": 4096,
+                        "temperature": 0.7,
+                    },
+                )
+                self.logger.debug(f"Created new config for {provider}")
+
+            # Save config
+            self.orchestrator.database.save_llm_config(config)
+
+            self.logger.info(f"Set model {model} for provider {provider} for user {user_id}")
+
+            return {
+                "status": "success",
+                "provider": provider,
+                "model": model,
+                "config_id": config.id,
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error setting provider model: {e}")
+            return {"status": "error", "message": str(e)}
+
+    # ============================================================================
+    # API Key Management
+    # ============================================================================
+
+    def _add_api_key_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Add/update API key for a provider.
+
+        Args:
+            data: {
+                'user_id': str,
+                'provider': str,
+                'api_key': str
+            }
+
+        Returns:
+            {'status': 'success', 'key_id': str}
+        """
+        user_id = data.get("user_id")
+        provider = data.get("provider", "").lower()
+        api_key = data.get("api_key")
+
+        if not all([user_id, provider, api_key]):
+            return {"status": "error", "message": "user_id, provider, and api_key required"}
+
+        self.logger.debug(f"Adding API key for {user_id}/{provider}")
+
+        try:
+            # Verify provider exists
+            metadata = get_provider_metadata(provider)
+            if not metadata:
+                return {"status": "error", "message": f"Unknown provider: {provider}"}
+
+            # Allow if requires_api_key OR provider supports api_key auth method
+            if not metadata.requires_api_key and "api_key" not in metadata.auth_methods:
+                return {
+                    "status": "error",
+                    "message": f"Provider {provider} does not support API key authentication",
+                }
+
+            # Encrypt and store
+            encrypted_key = self._encrypt_api_key(api_key)
+            key_hash = self._hash_api_key(api_key)
+
+            self.orchestrator.database.save_api_key(user_id, provider, encrypted_key, key_hash)
+
+            self.logger.info(f"Stored API key for {user_id}/{provider}")
+
+            return {"status": "success", "key_id": str(uuid.uuid4()), "provider": provider}
+
+        except Exception as e:
+            self.logger.error(f"Error adding API key: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _set_auth_method_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Set authentication method for Anthropic Claude.
+
+        Args:
+            data: {
+                'user_id': str,
+                'provider': str,  # Should be 'claude'
+                'auth_method': str  # Only 'api_key' is supported
+            }
+
+        Returns:
+            {'status': 'success', 'auth_method': str}
+        """
+        user_id = data.get("user_id")
+        provider = data.get("provider", "").lower()
+        auth_method = data.get("auth_method", "").lower()
+
+        if not user_id or not provider:
+            return {"status": "error", "message": "user_id and provider required"}
+
+        if provider != "claude":
+            return {"status": "error", "message": "Auth method only applies to Claude provider"}
+
+        # Only api_key is supported (subscription mode is not implemented)
+        if auth_method == "subscription":
+            self.logger.warning(
+                f"Subscription auth method not supported. Using api_key for user {user_id}"
+            )
+            auth_method = "api_key"
+        elif auth_method not in ["api_key"]:
+            return {
+                "status": "error",
+                "message": "Invalid auth method. Only 'api_key' is supported",
+            }
+
+        self.logger.debug(f"Setting auth method for {user_id}/{provider} to {auth_method}")
+
+        try:
+            # Get user and update auth method
+            user = self.orchestrator.database.load_user(user_id)
+            if not user:
+                return {"status": "error", "message": "User not found"}
+
+            user.claude_auth_method = auth_method
+            self.orchestrator.database.save_user(user)
+
+            self.logger.info(f"Set Claude auth method to {auth_method} for user {user_id}")
+
+            return {"status": "success", "auth_method": auth_method}
+
+        except Exception as e:
+            self.logger.error(f"Error setting auth method: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _remove_api_key_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Remove API key for a provider.
+
+        Args:
+            data: {'user_id': str, 'provider': str}
+
+        Returns:
+            {'status': 'success'}
+        """
+        user_id = data.get("user_id")
+        provider = data.get("provider", "").lower()
+
+        if not user_id or not provider:
+            return {"status": "error", "message": "user_id and provider required"}
+
+        self.logger.debug(f"Removing API key for {user_id}/{provider}")
+
+        try:
+            success = self.orchestrator.database.delete_api_key(user_id, provider)
+
+            if success:
+                self.logger.info(f"Removed API key for {user_id}/{provider}")
+                return {"status": "success"}
+            else:
+                return {"status": "error", "message": "API key not found"}
+
+        except Exception as e:
+            self.logger.error(f"Error removing API key: {e}")
+            return {"status": "error", "message": str(e)}
+
+    # ============================================================================
+    # Usage Tracking
+    # ============================================================================
+
+    def _track_usage_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Track LLM usage for monitoring and billing.
+
+        Args:
+            data: {
+                'user_id': str,
+                'provider': str,
+                'model': str,
+                'input_tokens': int,
+                'output_tokens': int,
+                'latency_ms': float,
+                'success': bool (optional),
+                'error_message': str (optional),
+                'request_id': str (optional)
+            }
+
+        Returns:
+            {'status': 'success', 'usage_id': str, 'cost': float}
+        """
+        user_id = data.get("user_id")
+        provider = data.get("provider", "").lower()
+        model = data.get("model")
+        input_tokens = int(data.get("input_tokens", 0))
+        output_tokens = int(data.get("output_tokens", 0))
+        latency_ms = float(data.get("latency_ms", 0.0))
+
+        if not all([user_id, provider, model]):
+            return {"status": "error", "message": "user_id, provider, and model required"}
+
+        self.logger.debug(
+            f"Tracking usage: {user_id}/{provider}/{model}, "
+            f"tokens={input_tokens + output_tokens}"
+        )
+
+        try:
+            metadata = get_provider_metadata(provider)
+            if not metadata:
+                return {"status": "error", "message": f"Unknown provider: {provider}"}
+
+            # Calculate cost
+            input_cost = (input_tokens / 1000.0) * metadata.cost_per_1k_input_tokens
+            output_cost = (output_tokens / 1000.0) * metadata.cost_per_1k_output_tokens
+            total_cost = input_cost + output_cost
+
+            self.logger.debug(
+                f"Cost calculation: input=${input_cost:.6f}, output=${output_cost:.6f}, "
+                f"total=${total_cost:.6f}, input_tokens={input_tokens}, output_tokens={output_tokens}"
+            )
+
+            # Create usage record
+            usage = LLMUsageRecord(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                provider=provider,
+                model=model,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=input_tokens + output_tokens,
+                latency_ms=latency_ms,
+                cost=total_cost,
+                success=data.get("success", True),
+                error_message=data.get("error_message"),
+                request_id=data.get("request_id"),
+            )
+
+            self.logger.debug(
+                f"Usage record created: id={usage.id}, tokens={usage.total_tokens}, "
+                f"latency={latency_ms}ms, success={usage.success}"
+            )
+
+            # Save usage
+            success = self.orchestrator.database.save_usage_record(usage)
+            if success:
+                self.logger.info(
+                    f"Successfully tracked LLM usage: user={user_id}, provider={provider}, "
+                    f"model={model}, tokens={usage.total_tokens}, cost=${total_cost:.4f}, "
+                    f"latency={latency_ms:.0f}ms"
+                )
+            else:
+                self.logger.error(
+                    f"Failed to save usage record: user={user_id}, provider={provider}"
+                )
+
+            return {
+                "status": "success",
+                "usage_id": usage.id,
+                "cost": total_cost,
+                "tokens": usage.total_tokens,
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error tracking usage: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _get_usage_stats_sync(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get usage statistics for a user.
+
+        Args:
+            data: {
+                'user_id': str,
+                'provider': str (optional),
+                'days': int (optional, default 30)
+            }
+
+        Returns:
+            {
+                'status': 'success',
+                'total_tokens': int,
+                'total_cost': float,
+                'by_provider': {...},
+                'daily_average': float
+            }
+        """
+        user_id = data.get("user_id")
+        provider = data.get("provider", "").lower() if data.get("provider") else None
+        days = int(data.get("days", 30))
+
+        if not user_id:
+            return {"status": "error", "message": "user_id required"}
+
+        self.logger.debug(f"Getting usage stats for {user_id}, last {days} days")
+
+        try:
+            usage_records = self.orchestrator.database.get_usage_records(user_id, days, provider)
+
+            if not usage_records:
+                return {
+                    "status": "success",
+                    "total_tokens": 0,
+                    "total_cost": 0.0,
+                    "by_provider": {},
+                    "daily_average": 0.0,
+                }
+
+            # Aggregate stats
+            total_tokens = sum(u.total_tokens for u in usage_records)
+            total_cost = sum(u.cost for u in usage_records)
+            success_count = sum(1 for u in usage_records if u.success)
+            error_count = sum(1 for u in usage_records if not u.success)
+            avg_latency = sum(u.latency_ms for u in usage_records) / len(usage_records)
+
+            # By provider
+            by_provider = {}
+            for record in usage_records:
+                if record.provider not in by_provider:
+                    by_provider[record.provider] = {"tokens": 0, "cost": 0.0, "requests": 0}
+                by_provider[record.provider]["tokens"] += record.total_tokens
+                by_provider[record.provider]["cost"] += record.cost
+                by_provider[record.provider]["requests"] += 1
+
+            self.logger.info(f"Usage stats for {user_id}: {total_tokens} tokens, ${total_cost:.2f}")
+
+            return {
+                "status": "success",
+                "total_tokens": total_tokens,
+                "total_cost": round(total_cost, 4),
+                "by_provider": by_provider,
+                "daily_average": round(total_tokens / days, 2),
+                "success_count": success_count,
+                "error_count": error_count,
+                "avg_latency_ms": round(avg_latency, 2),
+                "period_days": days,
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error getting usage stats: {e}")
+            return {"status": "error", "message": str(e)}
+
+    # ============================================================================
+    # Encryption/Hashing Utilities
+    # ============================================================================
+
+    def _encrypt_api_key(self, api_key: str) -> str:
+        """
+        Encrypt API key using Fernet symmetric encryption with PBKDF2 key derivation.
+
+        Args:
+            api_key: Raw API key string
+
+        Returns:
+            Encrypted API key
+
+        Raises:
+            RuntimeError: If encryption fails (SOCRATES_ENCRYPTION_KEY must be set)
+        """
+        from socratic_system.encryption import encrypt_data
+
+        try:
+            return encrypt_data(api_key)
+        except RuntimeError as e:
+            self.logger.error(str(e))
+            raise
+
+    def _decrypt_api_key(self, encrypted_data: str) -> str:
+        """
+        Decrypt API key using Fernet symmetric encryption.
+
+        Args:
+            encrypted_data: Encrypted API key with salt (format: salt_b64:encrypted_b64)
+
+        Returns:
+            Decrypted API key
+
+        Raises:
+            RuntimeError: If decryption fails
+        """
+        from socratic_system.encryption import decrypt_data
+
+        try:
+            return decrypt_data(encrypted_data)
+        except RuntimeError as e:
+            self.logger.error(str(e))
+            raise
+
+    def _hash_api_key(self, api_key: str) -> str:
+        """Hash API key for verification without storing plaintext."""
+        import hashlib
+
+        return hashlib.sha256(api_key.encode()).hexdigest()
+
+    # ========================================================================
+    # Phase 2B Async Wrapper Methods
+    # ========================================================================
+
+    async def _list_providers_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """List providers asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._list_providers_sync, request)
+
+    async def _get_provider_models_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get provider models asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_provider_models_sync, request)
+
+    async def _get_provider_config_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get provider config asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_provider_config_sync, request)
+
+    async def _set_default_provider_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Set default provider asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._set_default_provider_sync, request)
+
+    async def _set_provider_model_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Set provider model asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._set_provider_model_sync, request)
+
+    async def _add_api_key_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Add API key asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._add_api_key_sync, request)
+
+    async def _set_auth_method_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Set auth method asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._set_auth_method_sync, request)
+
+    async def _remove_api_key_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove API key asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._remove_api_key_sync, request)
+
+    async def _track_usage_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Track usage asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._track_usage_sync, request)
+
+    async def _get_usage_stats_async(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get usage stats asynchronously (Phase 2B)."""
+        return await asyncio.to_thread(self._get_usage_stats_sync, request)

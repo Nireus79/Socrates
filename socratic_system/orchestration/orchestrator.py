@@ -17,24 +17,6 @@ from typing import Any
 
 from socratic_nexus.clients import ClaudeClient
 
-from socratic_system.agents import (
-    CodeGeneratorAgent,
-    CodeValidationAgent,
-    ConflictDetectorAgent,
-    ContextAnalyzerAgent,
-    DocumentProcessorAgent,
-    ProjectManagerAgent,
-    QualityControllerAgent,
-    SocraticCounselorAgent,
-    SystemMonitorAgent,
-    UserManagerAgent,
-)
-from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
-from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
-from socratic_system.agents.learning_agent import UserLearningAgent
-from socratic_system.agents.multi_llm_agent import MultiLLMAgent
-from socratic_system.agents.note_manager import NoteManagerAgent
-from socratic_system.agents.question_queue_agent import QuestionQueueAgent
 from socratic_system.config import SocratesConfig
 from socratic_system.database import VectorDatabase
 from socratic_system.events import EventEmitter, EventType

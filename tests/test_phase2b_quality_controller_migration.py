@@ -15,7 +15,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from socratic_system.agents.quality_controller import QualityControllerAgent
+from socratic_agents.quality_controller import QualityControllerAgent
 
 
 class TestQualityControllerMigrationSetup:

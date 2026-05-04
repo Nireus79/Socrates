@@ -16,7 +16,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from socratic_system.agents.document_processor import DocumentProcessorAgent
+from socratic_agents.document_processor import DocumentProcessorAgent
 
 
 class TestDocumentProcessorMigrationSetup:

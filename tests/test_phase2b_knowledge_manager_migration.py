@@ -15,7 +15,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
+from socratic_agents.knowledge_manager import KnowledgeManagerAgent
 
 
 class TestKnowledgeManagerMigrationSetup:

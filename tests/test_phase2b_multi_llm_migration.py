@@ -2,7 +2,7 @@
 import asyncio
 import pytest
 from unittest.mock import MagicMock
-from socratic_system.agents.multi_llm_agent import MultiLLMAgent
+from socratic_agents.multi_llm_agent import MultiLLMAgent
 
 
 class TestMultiLLMMigrationSetup:

@@ -16,7 +16,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from socratic_system.agents.project_manager import ProjectManagerAgent
+from socratic_agents.project_manager import ProjectManagerAgent
 
 
 class TestProjectManagerMigrationSetup:

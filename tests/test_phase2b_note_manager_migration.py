@@ -2,7 +2,7 @@
 import asyncio
 import pytest
 from unittest.mock import MagicMock
-from socratic_system.agents.note_manager import NoteManagerAgent
+from socratic_agents.note_manager import NoteManagerAgent
 
 
 class TestNoteManagerMigrationSetup:

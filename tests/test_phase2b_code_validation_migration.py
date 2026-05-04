@@ -2,7 +2,7 @@
 import asyncio
 import pytest
 from unittest.mock import MagicMock
-from socratic_system.agents.code_validation_agent import CodeValidationAgent
+from socratic_agents.code_validation_agent import CodeValidationAgent
 
 
 class TestCodeValidationMigrationSetup:

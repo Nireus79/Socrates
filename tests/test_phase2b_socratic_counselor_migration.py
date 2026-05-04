@@ -15,7 +15,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
+from socratic_agents.socratic_counselor import SocraticCounselorAgent
 
 
 class TestSocraticCounselorMigrationSetup:

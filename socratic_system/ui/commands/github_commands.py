@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
-from socratic_system.agents.github_sync_handler import (
+from socratic_agents.github_sync_handler import (
     ConflictResolutionError,
     NetworkSyncFailedError,
     PermissionDeniedError,
