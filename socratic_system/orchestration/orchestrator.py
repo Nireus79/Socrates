@@ -218,12 +218,12 @@ class AgentOrchestrator:
         except Exception as e:
             self.logger.error(f"Error during agent pre-initialization: {e}")
 
-    # Lazy-loaded agent properties
+    # Lazy-loaded agent properties (imported from socratic_agents library)
     @property
     def project_manager(self) -> ProjectManagerAgent:
         """Lazy-load project manager agent"""
         if "project_manager" not in self._agents_cache:
-            from socratic_system.agents.project_manager import ProjectManagerAgent
+            from socratic_agents import ProjectManagerAgent
 
             self._agents_cache["project_manager"] = ProjectManagerAgent(self)
         return self._agents_cache["project_manager"]
@@ -232,7 +232,7 @@ class AgentOrchestrator:
     def socratic_counselor(self) -> SocraticCounselorAgent:
         """Lazy-load socratic counselor agent"""
         if "socratic_counselor" not in self._agents_cache:
-            from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
+            from socratic_agents import SocraticCounselorAgent
 
             self._agents_cache["socratic_counselor"] = SocraticCounselorAgent(self)
         return self._agents_cache["socratic_counselor"]
@@ -241,7 +241,7 @@ class AgentOrchestrator:
     def context_analyzer(self) -> ContextAnalyzerAgent:
         """Lazy-load context analyzer agent"""
         if "context_analyzer" not in self._agents_cache:
-            from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
+            from socratic_agents import ContextAnalyzerAgent
 
             self._agents_cache["context_analyzer"] = ContextAnalyzerAgent(self)
         return self._agents_cache["context_analyzer"]
@@ -250,7 +250,7 @@ class AgentOrchestrator:
     def code_generator(self) -> CodeGeneratorAgent:
         """Lazy-load code generator agent"""
         if "code_generator" not in self._agents_cache:
-            from socratic_system.agents.code_generator import CodeGeneratorAgent
+            from socratic_agents import CodeGeneratorAgent
 
             self._agents_cache["code_generator"] = CodeGeneratorAgent(self)
         return self._agents_cache["code_generator"]
@@ -259,7 +259,7 @@ class AgentOrchestrator:
     def system_monitor(self) -> SystemMonitorAgent:
         """Lazy-load system monitor agent"""
         if "system_monitor" not in self._agents_cache:
-            from socratic_system.agents import SystemMonitorAgent
+            from socratic_agents import SystemMonitorAgent
 
             self._agents_cache["system_monitor"] = SystemMonitorAgent(self)
         return self._agents_cache["system_monitor"]
@@ -268,7 +268,7 @@ class AgentOrchestrator:
     def conflict_detector(self) -> ConflictDetectorAgent:
         """Lazy-load conflict detector agent"""
         if "conflict_detector" not in self._agents_cache:
-            from socratic_system.agents import ConflictDetectorAgent
+            from socratic_agents import ConflictDetectorAgent
 
             self._agents_cache["conflict_detector"] = ConflictDetectorAgent(self)
         return self._agents_cache["conflict_detector"]
@@ -277,7 +277,7 @@ class AgentOrchestrator:
     def document_processor(self) -> DocumentProcessorAgent:
         """Lazy-load document processor agent"""
         if "document_processor" not in self._agents_cache:
-            from socratic_system.agents.document_processor import DocumentProcessorAgent
+            from socratic_agents import DocumentProcessorAgent
 
             self._agents_cache["document_processor"] = DocumentProcessorAgent(self)
         return self._agents_cache["document_processor"]
@@ -286,7 +286,7 @@ class AgentOrchestrator:
     def user_manager(self) -> UserManagerAgent:
         """Lazy-load user manager agent"""
         if "user_manager" not in self._agents_cache:
-            from socratic_system.agents import UserManagerAgent
+            from socratic_agents import UserManagerAgent
 
             self._agents_cache["user_manager"] = UserManagerAgent(self)
         return self._agents_cache["user_manager"]
@@ -295,7 +295,7 @@ class AgentOrchestrator:
     def note_manager(self) -> NoteManagerAgent:
         """Lazy-load note manager agent"""
         if "note_manager" not in self._agents_cache:
-            from socratic_system.agents import NoteManagerAgent
+            from socratic_agents import NoteManagerAgent
 
             self._agents_cache["note_manager"] = NoteManagerAgent(self)
         return self._agents_cache["note_manager"]
@@ -304,7 +304,7 @@ class AgentOrchestrator:
     def knowledge_manager(self) -> KnowledgeManagerAgent:
         """Lazy-load knowledge manager agent"""
         if "knowledge_manager" not in self._agents_cache:
-            from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
+            from socratic_agents import KnowledgeManagerAgent
 
             self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent(
                 "knowledge_manager", self
@@ -315,7 +315,7 @@ class AgentOrchestrator:
     def knowledge_analysis(self) -> KnowledgeAnalysisAgent:
         """Lazy-load knowledge analysis agent"""
         if "knowledge_analysis" not in self._agents_cache:
-            from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
+            from socratic_agents import KnowledgeAnalysisAgent
 
             self._agents_cache["knowledge_analysis"] = KnowledgeAnalysisAgent(self)
         return self._agents_cache["knowledge_analysis"]
@@ -324,7 +324,7 @@ class AgentOrchestrator:
     def quality_controller(self) -> QualityControllerAgent:
         """Lazy-load quality controller agent"""
         if "quality_controller" not in self._agents_cache:
-            from socratic_system.agents import QualityControllerAgent
+            from socratic_agents import QualityControllerAgent
 
             self._agents_cache["quality_controller"] = QualityControllerAgent(self)
         return self._agents_cache["quality_controller"]
@@ -333,7 +333,7 @@ class AgentOrchestrator:
     def learning_agent(self) -> UserLearningAgent:
         """Lazy-load user learning agent"""
         if "learning_agent" not in self._agents_cache:
-            from socratic_system.agents import UserLearningAgent
+            from socratic_agents import UserLearningAgent
 
             self._agents_cache["learning_agent"] = UserLearningAgent(self)
         return self._agents_cache["learning_agent"]
@@ -342,7 +342,7 @@ class AgentOrchestrator:
     def multi_llm_agent(self) -> MultiLLMAgent:
         """Lazy-load multi-LLM agent"""
         if "multi_llm_agent" not in self._agents_cache:
-            from socratic_system.agents import MultiLLMAgent
+            from socratic_agents import MultiLLMAgent
 
             self._agents_cache["multi_llm_agent"] = MultiLLMAgent(self)
         return self._agents_cache["multi_llm_agent"]
@@ -351,7 +351,7 @@ class AgentOrchestrator:
     def question_queue(self) -> QuestionQueueAgent:
         """Lazy-load question queue agent"""
         if "question_queue" not in self._agents_cache:
-            from socratic_system.agents import QuestionQueueAgent
+            from socratic_agents import QuestionQueueAgent
 
             self._agents_cache["question_queue"] = QuestionQueueAgent(self)
         return self._agents_cache["question_queue"]
@@ -360,7 +360,7 @@ class AgentOrchestrator:
     def code_validation_agent(self) -> CodeValidationAgent:
         """Lazy-load code validation agent"""
         if "code_validation_agent" not in self._agents_cache:
-            from socratic_system.agents.code_validation_agent import CodeValidationAgent
+            from socratic_agents import CodeValidationAgent
 
             self._agents_cache["code_validation_agent"] = CodeValidationAgent(self)
         return self._agents_cache["code_validation_agent"]
