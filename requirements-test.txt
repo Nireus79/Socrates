@@ -23,7 +23,7 @@ faker>=15.0.0
 factory-boy>=3.2.0
 
 # Security Testing
-bandit>=1.7.0
+bandit>=1.8.6
 safety>=2.3.0
 
 # Code Quality
