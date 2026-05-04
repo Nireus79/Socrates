@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "1.3.3"
-description = "Production-ready collaborative development platform with GitHub-ready project generation, Socratic AI guidance, multi-agent orchestration, real-time collaboration, and RAG knowledge management"
+version = "2.0.0"
+description = "Production-ready collaborative development platform with Constitutional AI governance, multi-agent orchestration, Socratic AI guidance, and RAG knowledge management - now using socratic-morality and socratic-agents libraries"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -63,6 +63,8 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
+    "socratic-morality>=0.0.3",
+    "socratic-agents>=0.3.1",
     "socratic-nexus>=0.4.0",
     "anthropic>=0.40.0",
     "chromadb>=0.5.0",
