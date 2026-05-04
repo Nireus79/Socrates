@@ -20,7 +20,7 @@ requests-mock>=1.11.0
 
 # Mocking and Fixtures
 faker>=15.0.0
-factory-boy>=3.2.0
+factory-boy>=3.3.3
 
 # Security Testing
 bandit>=1.7.0
