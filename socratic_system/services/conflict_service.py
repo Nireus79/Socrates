@@ -5,22 +5,25 @@ from typing import TYPE_CHECKING, Dict, Any, Optional, List
 from .base import Service
 
 if TYPE_CHECKING:
+    from socratic_agents import SocraticAgentsSystem
     from socratic_system.models import ProjectContext
-    from socratic_system.orchestration import AgentOrchestrator
 
 
 class ConflictService(Service):
-    """Service for detecting and managing conflicts in project specifications."""
+    """Service for detecting and managing conflicts in project specifications.
 
-    def __init__(self, config, orchestrator: "AgentOrchestrator"):
+    Phase 3: Refactored to use SocraticAgentsSystem instead of orchestrator.
+    """
+
+    def __init__(self, config, system: "SocraticAgentsSystem"):
         """Initialize conflict service.
 
         Args:
             config: Socrates configuration
-            orchestrator: Agent orchestrator
+            system: SocraticAgentsSystem instance
         """
         super().__init__(config)
-        self.orchestrator = orchestrator
+        self.system = system
 
     def detect_conflicts(
         self,
@@ -40,7 +43,7 @@ class ConflictService(Service):
         """
         self.logger.info(f"Detecting conflicts for project {project.project_id}")
 
-        result = self.orchestrator.agent_bus.send_request_sync(
+        result = self.system.process_request(
             "conflict_detector",
             {
                 "action": "detect_conflicts",
@@ -71,7 +74,7 @@ class ConflictService(Service):
         self.logger.info(f"Resolving conflict {conflict_id}")
 
         # Update project with resolution
-        self.orchestrator.agent_bus.send_request_sync(
+        self.system.process_request(
             "conflict_detector",
             {
                 "action": "resolve_conflict",

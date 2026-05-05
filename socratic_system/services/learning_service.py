@@ -5,21 +5,24 @@ from typing import TYPE_CHECKING, Dict, Any, Optional
 from .base import Service
 
 if TYPE_CHECKING:
-    from socratic_system.orchestration import AgentOrchestrator
+    from socratic_agents import SocraticAgentsSystem
 
 
 class LearningService(Service):
-    """Service for tracking user learning and effectiveness metrics."""
+    """Service for tracking user learning and effectiveness metrics.
 
-    def __init__(self, config, orchestrator: "AgentOrchestrator"):
+    Phase 3: Refactored to use SocraticAgentsSystem instead of orchestrator.
+    """
+
+    def __init__(self, config, system: "SocraticAgentsSystem"):
         """Initialize learning service.
 
         Args:
             config: Socrates configuration
-            orchestrator: Agent orchestrator
+            system: SocraticAgentsSystem instance
         """
         super().__init__(config)
-        self.orchestrator = orchestrator
+        self.system = system
 
     def track_question_effectiveness(
         self,
@@ -40,7 +43,7 @@ class LearningService(Service):
         """
         self.logger.debug(f"Tracking question effectiveness for user {user_id}")
 
-        self.orchestrator.agent_bus.send_request_sync(
+        self.system.process_request(
             "learning",
             {
                 "action": "track_question_effectiveness",
@@ -63,7 +66,7 @@ class LearningService(Service):
         """
         self.logger.debug(f"Getting learning metrics for user {user_id}")
 
-        result = self.orchestrator.agent_bus.send_request_sync(
+        result = self.system.process_request(
             "learning",
             {
                 "action": "get_metrics",

@@ -5,22 +5,25 @@ from typing import TYPE_CHECKING, Dict, Any, Optional
 from .base import Service
 
 if TYPE_CHECKING:
+    from socratic_agents import SocraticAgentsSystem
     from socratic_system.models import ProjectContext
-    from socratic_system.orchestration import AgentOrchestrator
 
 
 class QualityService(Service):
-    """Service for quality control and phase maturity tracking."""
+    """Service for quality control and phase maturity tracking.
 
-    def __init__(self, config, orchestrator: "AgentOrchestrator"):
+    Phase 3: Refactored to use SocraticAgentsSystem instead of orchestrator.
+    """
+
+    def __init__(self, config, system: "SocraticAgentsSystem"):
         """Initialize quality service.
 
         Args:
             config: Socrates configuration
-            orchestrator: Agent orchestrator (for accessing quality_controller)
+            system: SocraticAgentsSystem instance
         """
         super().__init__(config)
-        self.orchestrator = orchestrator
+        self.system = system
 
     def calculate_maturity(self, project: "ProjectContext") -> Dict[str, Any]:
         """Calculate phase maturity for project.
@@ -33,7 +36,7 @@ class QualityService(Service):
         """
         self.logger.info(f"Calculating maturity for project {project.project_id}")
 
-        result = self.orchestrator.agent_bus.send_request_sync(
+        result = self.system.process_request(
             "quality_controller",
             {
                 "action": "get_phase_maturity",
@@ -57,7 +60,7 @@ class QualityService(Service):
         """
         self.logger.info(f"Calculating post-response maturity for {project.project_id}")
 
-        result = self.orchestrator.agent_bus.send_request_sync(
+        result = self.system.process_request(
             "quality_controller",
             {
                 "action": "update_after_response",

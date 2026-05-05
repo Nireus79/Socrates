@@ -5,22 +5,25 @@ from typing import TYPE_CHECKING, Dict, Any, Optional
 from .base import Service
 
 if TYPE_CHECKING:
+    from socratic_agents import SocraticAgentsSystem
     from socratic_system.models import ProjectContext
-    from socratic_system.orchestration import AgentOrchestrator
 
 
 class CodeService(Service):
-    """Service for code generation and project artifact management."""
+    """Service for code generation and project artifact management.
 
-    def __init__(self, config, orchestrator: "AgentOrchestrator"):
+    Phase 3: Refactored to use SocraticAgentsSystem instead of orchestrator.
+    """
+
+    def __init__(self, config, system: "SocraticAgentsSystem"):
         """Initialize code service.
 
         Args:
             config: Socrates configuration
-            orchestrator: Agent orchestrator
+            system: SocraticAgentsSystem instance
         """
         super().__init__(config)
-        self.orchestrator = orchestrator
+        self.system = system
 
     def generate_code(
         self,
@@ -40,7 +43,7 @@ class CodeService(Service):
         """
         self.logger.info(f"Generating code for project {project.project_id}")
 
-        result = self.orchestrator.agent_bus.send_request_sync(
+        result = self.system.process_request(
             "code_generator",
             {
                 "action": "generate_script",
@@ -68,7 +71,7 @@ class CodeService(Service):
         """
         self.logger.info(f"Validating code for project {project.project_id}")
 
-        result = self.orchestrator.agent_bus.send_request_sync(
+        result = self.system.process_request(
             "code_validation",
             {
                 "action": "validate_project",
