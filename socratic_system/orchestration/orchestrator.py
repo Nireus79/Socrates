@@ -223,13 +223,14 @@ class AgentOrchestrator:
                     snake_case_name = re.sub(r'(?<!^)(?=[A-Z])', '_', snake_case_name).lower()
 
                     # Register agent with the agent registry so it can be discovered
+                    # Note: agent.process() is synchronous, not async
                     self.agent_registry.register(
                         agent_name=snake_case_name,
                         handler=agent.process,
                         capabilities=[],
                         metadata={"agent_class": agent.__class__.__name__},
                         supports_sync=True,
-                        supports_async=True,
+                        supports_async=False,  # agent.process() is synchronous
                     )
                     self.logger.debug(f"Registered agent '{agent.name}' with registry as '{snake_case_name}'")
                 except Exception as e:
