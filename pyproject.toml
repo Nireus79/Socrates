@@ -64,7 +64,7 @@ requires-python = ">=3.8"
 
 dependencies = [
     "socratic-morality>=0.0.3",
-    "socratic-agents>=0.3.4",
+    "socratic-agents>=0.3.5",
     "socratic-nexus>=0.4.0",
     "anthropic>=0.40.0",
     "chromadb>=0.5.0",
