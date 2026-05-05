@@ -7,6 +7,21 @@
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_code_generator_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_code_generator_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_code_validation_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_code_validation_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_conflict_detector_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_conflict_detector_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_document_processor_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_document_processor_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_knowledge_analysis_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_knowledge_analysis_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_knowledge_manager_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_knowledge_manager_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_learning_agent_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_learning_agent_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_multi_llm_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_multi_llm_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_note_manager_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_note_manager_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_project_manager_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_project_manager_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_quality_controller_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_quality_controller_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_question_queue_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_question_queue_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_socratic_counselor_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_socratic_counselor_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_system_monitor_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_system_monitor_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_user_manager_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_user_manager_migration.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

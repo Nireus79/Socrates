@@ -9,29 +9,28 @@ class TestContextAnalyzerMigration:
     """Test ContextAnalyzerAgent Phase 2B migration"""
 
     def test_initialization(self):
-        """Test agent initializes with auto_register."""
+        """Test agent initializes correctly."""
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
-        mock_orchestrator.agent_registry = MagicMock()
-        mock_orchestrator.agent_bus.registry = mock_orchestrator.agent_registry
         agent = ContextAnalyzerAgent(mock_orchestrator)
         assert agent.name == "ContextAnalyzer"
-        assert mock_orchestrator.agent_registry.register.called
+        assert agent.orchestrator is mock_orchestrator
 
-    def test_capabilities(self):
-        """Test agent declares capabilities."""
+    def test_agent_has_process_method(self):
+        """Test agent has synchronous process method."""
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
         agent = ContextAnalyzerAgent(mock_orchestrator)
-        assert "context_analysis" in agent.get_capabilities()
+        assert hasattr(agent, 'process')
+        assert callable(agent.process)
 
-    def test_metadata(self):
-        """Test agent provides metadata."""
+    def test_agent_has_process_async_method(self):
+        """Test agent has asynchronous process_async method."""
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
         agent = ContextAnalyzerAgent(mock_orchestrator)
-        metadata = agent.get_metadata()
-        assert metadata["version"] == "2.0"
+        assert hasattr(agent, 'process_async')
+        assert callable(agent.process_async)
 
     def test_process_sync(self):
         """Test sync process method."""

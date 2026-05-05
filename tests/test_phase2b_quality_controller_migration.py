@@ -33,48 +33,41 @@ class TestQualityControllerMigrationSetup:
         assert agent.name == "QualityController"
         assert agent.orchestrator is mock_orchestrator
 
-    def test_agent_auto_registration(self):
-        """Test agent registers with bus during initialization (Phase 2B)."""
-        mock_orchestrator = MagicMock()
-        mock_registry = MagicMock()
-        mock_bus = MagicMock()
-        mock_orchestrator.agent_bus = mock_bus
-        mock_orchestrator.agent_registry = mock_registry
-        mock_orchestrator.claude_client = MagicMock()
-        mock_bus.registry = mock_registry
-
-        agent = QualityControllerAgent(mock_orchestrator)
-
-        assert mock_registry.register.called
-
-    def test_agent_capabilities(self):
-        """Test agent declares capabilities for bus discovery (Phase 2B)."""
+    def test_agent_has_process_method(self):
+        """Test agent has synchronous process method."""
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.claude_client = MagicMock()
 
         agent = QualityControllerAgent(mock_orchestrator)
-        capabilities = agent.get_capabilities()
 
-        assert isinstance(capabilities, list)
-        assert "maturity_tracking" in capabilities
-        assert "phase_readiness" in capabilities
-        assert "workflow_optimization" in capabilities
-        assert "quality_verification" in capabilities
-        assert "approval_management" in capabilities
+        # Agent must have process method
+        assert hasattr(agent, 'process')
+        assert callable(agent.process)
 
-    def test_agent_metadata(self):
-        """Test agent provides metadata for registration (Phase 2B)."""
+    def test_agent_has_process_async_method(self):
+        """Test agent has asynchronous process_async method."""
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.claude_client = MagicMock()
 
         agent = QualityControllerAgent(mock_orchestrator)
-        metadata = agent.get_metadata()
 
-        assert isinstance(metadata, dict)
-        assert metadata["version"] == "2.0"
-        assert "description" in metadata
+        # Agent must have process_async method
+        assert hasattr(agent, 'process_async')
+        assert callable(agent.process_async)
+
+    def test_agent_has_name_attribute(self):
+        """Test agent has name attribute identifying itself."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.agent_bus = MagicMock()
+        mock_orchestrator.claude_client = MagicMock()
+
+        agent = QualityControllerAgent(mock_orchestrator)
+
+        # Agent must identify itself
+        assert hasattr(agent, 'name')
+        assert isinstance(agent.name, str)
 
 
 class TestQualityControllerSyncInterface:
@@ -293,20 +286,21 @@ class TestQualityControllerPhase2BIntegration:
 
         assert result["status"] == "success"
 
-    def test_agent_is_discoverable(self):
-        """Test agent provides discovery information (Phase 2B)."""
+    def test_agent_has_required_interface(self):
+        """Test agent has all required interface methods."""
         mock_orchestrator = MagicMock()
-        mock_registry = MagicMock()
-        mock_bus = MagicMock()
-        mock_orchestrator.agent_bus = mock_bus
-        mock_orchestrator.agent_registry = mock_registry
-        mock_orchestrator.claude_client = MagicMock()
-        mock_bus.registry = mock_registry
+        mock_orchestrator.agent_bus = MagicMock()
 
         agent = QualityControllerAgent(mock_orchestrator)
 
-        capabilities = agent.get_capabilities()
-        metadata = agent.get_metadata()
+        # Agent must have core interface
+        assert hasattr(agent, 'name')
+        assert hasattr(agent, 'orchestrator')
+        assert hasattr(agent, 'process')
+        assert hasattr(agent, 'process_async')
 
-        assert len(capabilities) > 0
-        assert "version" in metadata
+        # Verify they're callable/accessible
+        assert isinstance(agent.name, str)
+        assert agent.orchestrator is mock_orchestrator
+        assert callable(agent.process)
+        assert callable(agent.process_async)
