@@ -31,8 +31,10 @@ from socratic_system.database import ProjectDatabase
 from socratic_system.models import User
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/projects", tags=["collaboration"])
-collab_router = APIRouter(prefix="/collaboration", tags=["collaboration"])
+# Single unified collaboration router
+# - /projects/{project_id}/collaborators for project-specific collaboration
+# - /collaboration/* for global team and invitation management
+router = APIRouter(prefix="", tags=["collaboration"])
 
 
 # ============================================================================
@@ -1324,8 +1326,8 @@ async def cancel_invitation(
         )
 
 
-@collab_router.post(
-    "/invite",
+@router.post(
+    "/collaboration/invite",
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Invite team member",
@@ -1443,8 +1445,8 @@ async def invite_team_member(
         )
 
 
-@collab_router.get(
-    "/members",
+@router.get(
+    "/collaboration/members",
     response_model=list,
     status_code=status.HTTP_200_OK,
     summary="List team members",
@@ -1481,8 +1483,8 @@ async def list_team_members():
         )
 
 
-@collab_router.put(
-    "/members/{member_id}",
+@router.put(
+    "/collaboration/members/{member_id}",
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Update team member role",
@@ -1527,8 +1529,8 @@ async def update_member_role(
         )
 
 
-@collab_router.delete(
-    "/members/{member_id}",
+@router.delete(
+    "/collaboration/members/{member_id}",
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Remove team member",

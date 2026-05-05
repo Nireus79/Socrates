@@ -59,8 +59,9 @@ from .routers import (
     auth_router,
     chat_sessions_router,
     code_generation_router,
-    collab_router,
     collaboration_router,
+    database_health_router,
+    websocket_polling_router,
     events_router,
     finalization_router,
     free_session_router,
@@ -380,7 +381,6 @@ app.include_router(auth_router)
 app.include_router(agents_router)
 app.include_router(projects_router)
 app.include_router(collaboration_router)
-app.include_router(collab_router)
 app.include_router(code_generation_router)
 app.include_router(knowledge_router)
 app.include_router(llm_router)
@@ -403,6 +403,8 @@ app.include_router(system_router)
 app.include_router(nlu_router)
 app.include_router(free_session_router)
 app.include_router(chat_sessions_router)
+app.include_router(database_health_router)
+app.include_router(websocket_polling_router)
 
 
 @app.get("/")

@@ -1278,6 +1278,33 @@ The proposed **API-first architecture** with **service layer abstraction** and *
   - Remove all from socratic_system imports from agents
   - Replace orchestrator calls with AgentBus
   - Result: Agents are clean Python services with REST API
+  - 
+  -    1. **Extract Models** (~1-2 weeks)
+      - Move ProjectContext, ProjectNote, etc. to socratic_agents/models/
+      - Convert to simple dataclasses or Dict-based
+      - Update all 9 agents with new imports
+
+   2. **Extract Utilities** (~1-2 weeks)
+      - Create socratic_agents/utils/ with:
+        - logger.py - Logger utility
+        - id_generator.py - ProjectIDGenerator
+        - git_manager.py - GitRepositoryManager
+      - Move SubscriptionChecker to AuthService interface implementation
+      - Move safe_orchestrator_call patterns to service implementations
+
+   3. **Extract Core Services** (~2-3 weeks)
+      - Move QuestionSelector to socratic_agents
+      - Move DocumentUnderstandingService interface to services
+      - Move WorkflowBuilder logic
+      - Provide as injectable services or static utilities
+
+   4. **Final Testing** (~1 week)
+      - Remove all socratic_system imports from agents
+      - Verify agents work with only injected services
+      - Create standalone service implementations
+      - Test REST API with no socratic_system imports
+
+
 
   Phase 2: Security Layer (3-4 weeks)
   - Constitutional Governor validates all requests

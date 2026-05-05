@@ -27,30 +27,24 @@ Main Components:
 
 Quick Start:
     >>> import socrates
-    >>> orchestrator = socrates.quick_start(api_key="sk-ant-...")
-    >>> result = orchestrator.process_request('project_manager', {
+    >>> system = socrates.quick_start_system(api_key="sk-ant-...")
+    >>> result = system.process_request('project_manager', {
     ...     'action': 'create_project',
     ...     'project_name': 'My API',
     ...     'owner': 'alice'
     ... })
 
-Full Example (with events):
+Full Example (with configuration):
     >>> import socrates
     >>> config = socrates.SocratesConfig.from_dict({
     ...     "api_key": "sk-ant-...",
     ...     "data_dir": "/path/to/data",
     ...     "log_level": "DEBUG"
     ... })
-    >>> orchestrator = socrates.create_orchestrator(config)
-    >>>
-    >>> # Listen to events
-    >>> def on_code_generated(data):
-    ...     print(f"Generated code: {len(data.get('code', ''))} chars")
-    >>>
-    >>> orchestrator.event_emitter.on(socrates.EventType.CODE_GENERATED, on_code_generated)
+    >>> system = socrates.create_socratic_system(config)
     >>>
     >>> # Process requests
-    >>> result = await orchestrator.process_request_async('code_generator', {...})
+    >>> result = await system.process_request_async('code_generator', {...})
 
 Documentation: https://github.com/socrates-ai/socrates-ai (placeholder)
 GitHub: https://github.com/socrates-ai/socrates-ai (placeholder)
@@ -103,36 +97,6 @@ from .ui import SocraticRAGSystem
 # ============================================================================
 
 
-def create_orchestrator(config: SocratesConfig) -> AgentOrchestrator:
-    """
-    Create and initialize an AgentOrchestrator with a configuration object.
-
-    DEPRECATED: Use create_socratic_system() instead.
-    This function is maintained for backward compatibility only.
-
-    This is the primary way to initialize the Socrates library for programmatic use.
-
-    Args:
-        config: A SocratesConfig object with all settings
-
-    Returns:
-        Initialized AgentOrchestrator ready for use
-
-    Raises:
-        ConfigurationError: If configuration is invalid
-
-    Example:
-        >>> config = SocratesConfig(
-        ...     api_key="sk-ant-...",
-        ...     data_dir="/path/to/data",
-        ...     log_level="INFO"
-        ... )
-        >>> orchestrator = create_orchestrator(config)
-        >>> result = orchestrator.process_request('project_manager', {...})
-    """
-    return AgentOrchestrator(config)
-
-
 def create_socratic_system(config: SocratesConfig) -> SocraticAgentsSystem:
     """
     Create and initialize a SocraticAgentsSystem with a configuration object.
@@ -163,45 +127,6 @@ def create_socratic_system(config: SocratesConfig) -> SocraticAgentsSystem:
         data_dir=str(config.data_dir),
         claude_model=config.claude_model,
     )
-
-
-def quick_start(api_key: str, data_dir: str = None, log_level: str = "INFO") -> AgentOrchestrator:
-    """
-    Quick start with minimal configuration.
-
-    DEPRECATED: Use quick_start_system() instead.
-    Ideal for getting started quickly with sensible defaults. All other settings
-    can be customized via environment variables if needed.
-
-    Args:
-        api_key: Claude API key (or set ANTHROPIC_API_KEY env var)
-        data_dir: Optional custom data directory (defaults to ~/.socrates)
-        log_level: Optional logging level (DEBUG, INFO, WARNING, ERROR)
-
-    Returns:
-        Initialized AgentOrchestrator ready to use
-
-    Example:
-        >>> orchestrator = quick_start("sk-ant-...")
-        >>> result = orchestrator.process_request('project_manager', {
-        ...     'action': 'create_project',
-        ...     'project_name': 'My Project',
-        ...     'owner': 'alice'
-        ... })
-    """
-    from pathlib import Path
-    from typing import Any
-
-    config_dict: dict[str, Any] = {"api_key": api_key}
-
-    if data_dir:
-        config_dict["data_dir"] = Path(data_dir)
-
-    if log_level:
-        config_dict["log_level"] = log_level
-
-    config = SocratesConfig.from_dict(config_dict)
-    return create_orchestrator(config)
 
 
 def quick_start_system(api_key: str, data_dir: str = None, log_level: str = "INFO") -> SocraticAgentsSystem:
@@ -276,11 +201,7 @@ __all__ = [
     "UserNotFoundError",
     "ValidationError",
     "APIError",
-    # Convenience Functions
-    # Deprecated (backward compatibility)
-    "create_orchestrator",
-    "quick_start",
-    # New (Phase 3 migration)
+    # Convenience Functions (Phase 3 migration to SocraticAgentsSystem)
     "create_socratic_system",
     "quick_start_system",
     # Legacy (CLI)
