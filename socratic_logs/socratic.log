@@ -4567,3 +4567,25 @@ ValueError: Test exception
 [2026-05-05 21:15:11] [DEBUG] socratic_rag.socratic_counselor: Full insights: <MagicMock name='mock.claude_client.extract_insights()' id='2335061844448'>
 [2026-05-05 21:15:11] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
 [2026-05-05 21:15:11] [INFO] socratic_rag.socratic_counselor: Generating hint for project <MagicMock name='mock.project_id' id='2335059878944'> in discovery phase
+[2026-05-05 21:17:43] [INFO] socratic_rag.document_processor: Processing file: test.py
+[2026-05-05 21:17:43] [WARNING] socratic_rag.document_processor: File not found: /tmp/test.py
+[2026-05-05 21:41:43] [DEBUG] socratic_rag.socratic_counselor: Processing user response (13 chars) from None
+[2026-05-05 21:41:43] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 0 messages)
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 1 requirement, 1 tech, 1 constraint
+[2026-05-05 21:41:43] [DEBUG] socratic_rag.socratic_counselor: Full insights: <MagicMock name='mock.claude_client.extract_insights()' id='2001113307072'>
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 21:41:43] [DEBUG] socratic_rag.socratic_counselor: Extracting insights only (13 chars)
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response (confirmation mode)...
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 1 requirement, 1 tech, 1 constraint
+[2026-05-05 21:41:43] [DEBUG] socratic_rag.socratic_counselor: Full insights: <MagicMock name='mock.claude_client.extract_insights()' id='2001111114256'>
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Verifying readiness to advance from discovery...
+[2026-05-05 21:41:43] [WARNING] socratic_rag.socratic_counselor: Could not verify advancement readiness: Orchestrator verify readiness to advance phase returned non-dict result: <class 'unittest.mock.MagicMock'>
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Advanced project from discovery to analysis
+[2026-05-05 21:41:43] [DEBUG] socratic_rag.socratic_counselor: Processing user response (8 chars) from None
+[2026-05-05 21:41:43] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 0 messages)
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 1 requirement, 1 tech, 1 constraint
+[2026-05-05 21:41:43] [DEBUG] socratic_rag.socratic_counselor: Full insights: <MagicMock name='mock.claude_client.extract_insights()' id='2001112245616'>
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 21:41:43] [INFO] socratic_rag.socratic_counselor: Generating hint for project <MagicMock name='mock.project_id' id='2001115391584'> in discovery phase

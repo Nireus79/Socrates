@@ -85,7 +85,7 @@ class TestDocumentProcessorSyncInterface:
             "chunks_created": 2,
             "entries_added": 2,
         }
-        agent._import_file_sync = MagicMock(return_value=mock_result)
+        agent._import_file = MagicMock(return_value=mock_result)
 
         request = {
             "action": "import_file",
@@ -96,7 +96,7 @@ class TestDocumentProcessorSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._import_file_sync.assert_called_once_with(request)
+        agent._import_file.assert_called_once_with(request)
 
     def test_process_import_text_success(self):
         """Test sync import text action."""
@@ -112,7 +112,7 @@ class TestDocumentProcessorSyncInterface:
             "chunks_created": 1,
             "entries_added": 1,
         }
-        agent._import_text_sync = MagicMock(return_value=mock_result)
+        agent._import_text = MagicMock(return_value=mock_result)
 
         request = {
             "action": "import_text",
@@ -137,7 +137,7 @@ class TestDocumentProcessorSyncInterface:
             "files_failed": 0,
             "total_words_extracted": 500,
         }
-        agent._import_directory_sync = MagicMock(return_value=mock_result)
+        agent._import_directory = MagicMock(return_value=mock_result)
 
         request = {
             "action": "import_directory",
@@ -162,7 +162,7 @@ class TestDocumentProcessorSyncInterface:
             "words_extracted": 200,
             "chunks_created": 2,
         }
-        agent._import_url_sync = MagicMock(return_value=mock_result)
+        agent._import_url = MagicMock(return_value=mock_result)
 
         request = {
             "action": "import_url",
@@ -216,7 +216,7 @@ class TestDocumentProcessorAsyncInterface:
             "file_name": "test.py",
             "words_extracted": 100,
         }
-        agent._import_file_sync = MagicMock(return_value=mock_result)
+        agent._import_file = MagicMock(return_value=mock_result)
 
         request = {
             "action": "import_file",
@@ -237,7 +237,7 @@ class TestDocumentProcessorAsyncInterface:
         agent = DocumentProcessorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "words_extracted": 50}
-        agent._import_text_sync = MagicMock(return_value=mock_result)
+        agent._import_text = MagicMock(return_value=mock_result)
 
         request = {
             "action": "import_text",
@@ -258,7 +258,7 @@ class TestDocumentProcessorAsyncInterface:
         agent = DocumentProcessorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "files_processed": 5}
-        agent._import_directory_sync = MagicMock(return_value=mock_result)
+        agent._import_directory = MagicMock(return_value=mock_result)
 
         request = {
             "action": "import_directory",
@@ -279,7 +279,7 @@ class TestDocumentProcessorAsyncInterface:
         agent = DocumentProcessorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "url": "https://example.com"}
-        agent._import_url_sync = MagicMock(return_value=mock_result)
+        agent._import_url = MagicMock(return_value=mock_result)
 
         request = {
             "action": "import_url",
