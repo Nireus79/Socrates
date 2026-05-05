@@ -580,7 +580,7 @@ async def import_file(
         try:
             # Process via DocumentProcessorAgent
             result = await orchestrator.agent_bus.send_request(
-                "document_agent",
+                "document_processor",
                 {
                     "action": "import_file",
                     "file_path": str(temp_file),
@@ -749,7 +749,7 @@ async def import_url(
 
         # Process via DocumentProcessorAgent
         result = await orchestrator.agent_bus.send_request(
-            "document_agent",
+            "document_processor",
             {
                 "action": "import_url",
                 "url": url,
@@ -889,7 +889,7 @@ async def import_text(
 
         # Process via DocumentProcessorAgent
         result = await orchestrator.agent_bus.send_request(
-            "document_agent",
+            "document_processor",
             {
                 "action": "import_text",
                 "content": content,
@@ -1255,7 +1255,7 @@ async def bulk_import_documents(
                     # Process file
                     doc_id = f"doc_{uuid.uuid4().hex[:12]}"
                     result = await orchestrator.agent_bus.send_request(
-                        "document_agent",
+                        "document_processor",
                         {
                             "action": "import_file",
                             "file_path": temp_path,
@@ -1451,7 +1451,7 @@ async def add_knowledge_entry(
 
         # Process as text import with category metadata
         result = await orchestrator.agent_bus.send_request(
-            "document_agent",
+            "document_processor",
             {
                 "action": "import_text",
                 "content": content,

@@ -804,7 +804,7 @@ async def ask_question(project_id: str, request: AskQuestionRequest):
 
     try:
         result = await orchestrator.agent_bus.send_request(
-            "question_generator",
+            "question_queue",
             {
                 "action": "generate_question",
                 "project_id": project_id,
@@ -852,9 +852,9 @@ async def process_response(project_id: str, request: ProcessResponseRequest):
 
     try:
         result = await orchestrator.agent_bus.send_request(
-            "response_evaluator",
+            "socratic_counselor",
             {
-                "action": "evaluate_response",
+                "action": "process_response",
                 "project_id": project_id,
                 "question_id": request.question_id,
                 "user_response": request.user_response,

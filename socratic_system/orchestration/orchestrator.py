@@ -210,9 +210,17 @@ class AgentOrchestrator:
                     agent = getattr(self, agent_name)
                     self.logger.debug(f"Initialized agent: {agent.name}")
 
-                    # Convert agent name from CamelCase to snake_case for registry lookup
+                    # Convert agent name to snake_case for registry lookup
                     # e.g., "SocraticCounselor" -> "socratic_counselor"
-                    snake_case_name = re.sub(r'(?<!^)(?=[A-Z])', '_', agent.name).lower()
+                    # e.g., "Multi-LLM Manager" -> "multi_llm_manager"
+                    # e.g., "User Learning" -> "user_learning"
+                    snake_case_name = (
+                        agent.name
+                        .replace("-", "_")  # Replace hyphens with underscores
+                        .replace(" ", "_")  # Replace spaces with underscores
+                    )
+                    # Convert CamelCase to snake_case
+                    snake_case_name = re.sub(r'(?<!^)(?=[A-Z])', '_', snake_case_name).lower()
 
                     # Register agent with the agent registry so it can be discovered
                     self.agent_registry.register(
