@@ -176,10 +176,10 @@ class AgentOrchestrator:
         return self.knowledge_loaded
 
     def _initialize_all_agents(self) -> None:
-        """Pre-initialize all agents so they register with the agent bus.
+        """Pre-initialize all agents and register them with the agent bus.
 
         This ensures handlers are available when endpoints call agent_bus.send_request().
-        Each agent property access triggers __init__ which registers with the bus.
+        Each agent is initialized and then explicitly registered with the agent registry.
         """
         try:
             self.logger.info("Pre-initializing all agents for agent bus registration...")
@@ -208,6 +208,17 @@ class AgentOrchestrator:
                 try:
                     agent = getattr(self, agent_name)
                     self.logger.debug(f"Initialized agent: {agent.name}")
+
+                    # Register agent with the agent registry so it can be discovered
+                    self.agent_registry.register(
+                        agent_name=agent.name.lower(),
+                        handler=agent.process,
+                        capabilities=[],
+                        metadata={"agent_class": agent.__class__.__name__},
+                        supports_sync=True,
+                        supports_async=True,
+                    )
+                    self.logger.debug(f"Registered agent with registry: {agent.name}")
                 except Exception as e:
                     self.logger.warning(f"Failed to initialize agent {agent_name}: {e}")
 
@@ -307,7 +318,7 @@ class AgentOrchestrator:
         if "knowledge_manager" not in self._agents_cache:
             from socratic_agents import KnowledgeManagerAgent
 
-            self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent(self)
+            self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent("KnowledgeManager", self)
         return self._agents_cache["knowledge_manager"]
 
     @property
