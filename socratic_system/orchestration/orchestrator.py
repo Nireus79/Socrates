@@ -12,6 +12,7 @@ Coordinates all agents and manages their interactions, including:
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -209,16 +210,20 @@ class AgentOrchestrator:
                     agent = getattr(self, agent_name)
                     self.logger.debug(f"Initialized agent: {agent.name}")
 
+                    # Convert agent name from CamelCase to snake_case for registry lookup
+                    # e.g., "SocraticCounselor" -> "socratic_counselor"
+                    snake_case_name = re.sub(r'(?<!^)(?=[A-Z])', '_', agent.name).lower()
+
                     # Register agent with the agent registry so it can be discovered
                     self.agent_registry.register(
-                        agent_name=agent.name.lower(),
+                        agent_name=snake_case_name,
                         handler=agent.process,
                         capabilities=[],
                         metadata={"agent_class": agent.__class__.__name__},
                         supports_sync=True,
                         supports_async=True,
                     )
-                    self.logger.debug(f"Registered agent with registry: {agent.name}")
+                    self.logger.debug(f"Registered agent '{agent.name}' with registry as '{snake_case_name}'")
                 except Exception as e:
                     self.logger.warning(f"Failed to initialize agent {agent_name}: {e}")
 
