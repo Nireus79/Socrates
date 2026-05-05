@@ -218,22 +218,15 @@ class AgentOrchestrator:
         except Exception as e:
             self.logger.error(f"Error during agent pre-initialization: {e}")
 
-    # Lazy-loaded agent properties (imported from socratic_agents library)
+    # Lazy-loaded agent properties (imported from socratic_agents library 0.3.5+)
+    # Note: Agents expect orchestrator parameter only (not individual services)
     @property
     def project_manager(self) -> ProjectManagerAgent:
         """Lazy-load project manager agent"""
         if "project_manager" not in self._agents_cache:
             from socratic_agents import ProjectManagerAgent
 
-            self._agents_cache["project_manager"] = ProjectManagerAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["project_manager"] = ProjectManagerAgent(self)
         return self._agents_cache["project_manager"]
 
     @property
@@ -242,15 +235,7 @@ class AgentOrchestrator:
         if "socratic_counselor" not in self._agents_cache:
             from socratic_agents import SocraticCounselorAgent
 
-            self._agents_cache["socratic_counselor"] = SocraticCounselorAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["socratic_counselor"] = SocraticCounselorAgent(self)
         return self._agents_cache["socratic_counselor"]
 
     @property
@@ -259,15 +244,7 @@ class AgentOrchestrator:
         if "context_analyzer" not in self._agents_cache:
             from socratic_agents import ContextAnalyzerAgent
 
-            self._agents_cache["context_analyzer"] = ContextAnalyzerAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["context_analyzer"] = ContextAnalyzerAgent(self)
         return self._agents_cache["context_analyzer"]
 
     @property
@@ -276,15 +253,7 @@ class AgentOrchestrator:
         if "code_generator" not in self._agents_cache:
             from socratic_agents import CodeGeneratorAgent
 
-            self._agents_cache["code_generator"] = CodeGeneratorAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["code_generator"] = CodeGeneratorAgent(self)
         return self._agents_cache["code_generator"]
 
     @property
@@ -293,15 +262,7 @@ class AgentOrchestrator:
         if "system_monitor" not in self._agents_cache:
             from socratic_agents import SystemMonitorAgent
 
-            self._agents_cache["system_monitor"] = SystemMonitorAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["system_monitor"] = SystemMonitorAgent(self)
         return self._agents_cache["system_monitor"]
 
     @property
@@ -310,15 +271,7 @@ class AgentOrchestrator:
         if "conflict_detector" not in self._agents_cache:
             from socratic_agents import ConflictDetectorAgent
 
-            self._agents_cache["conflict_detector"] = ConflictDetectorAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["conflict_detector"] = ConflictDetectorAgent(self)
         return self._agents_cache["conflict_detector"]
 
     @property
@@ -327,15 +280,7 @@ class AgentOrchestrator:
         if "document_processor" not in self._agents_cache:
             from socratic_agents import DocumentProcessorAgent
 
-            self._agents_cache["document_processor"] = DocumentProcessorAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["document_processor"] = DocumentProcessorAgent(self)
         return self._agents_cache["document_processor"]
 
     @property
@@ -344,15 +289,7 @@ class AgentOrchestrator:
         if "user_manager" not in self._agents_cache:
             from socratic_agents import UserManagerAgent
 
-            self._agents_cache["user_manager"] = UserManagerAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["user_manager"] = UserManagerAgent(self)
         return self._agents_cache["user_manager"]
 
     @property
@@ -361,15 +298,7 @@ class AgentOrchestrator:
         if "note_manager" not in self._agents_cache:
             from socratic_agents import NoteManagerAgent
 
-            self._agents_cache["note_manager"] = NoteManagerAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["note_manager"] = NoteManagerAgent(self)
         return self._agents_cache["note_manager"]
 
     @property
@@ -378,15 +307,7 @@ class AgentOrchestrator:
         if "knowledge_manager" not in self._agents_cache:
             from socratic_agents import KnowledgeManagerAgent
 
-            self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent(self)
         return self._agents_cache["knowledge_manager"]
 
     @property
@@ -395,15 +316,7 @@ class AgentOrchestrator:
         if "knowledge_analysis" not in self._agents_cache:
             from socratic_agents import KnowledgeAnalysisAgent
 
-            self._agents_cache["knowledge_analysis"] = KnowledgeAnalysisAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["knowledge_analysis"] = KnowledgeAnalysisAgent(self)
         return self._agents_cache["knowledge_analysis"]
 
     @property
@@ -412,15 +325,7 @@ class AgentOrchestrator:
         if "quality_controller" not in self._agents_cache:
             from socratic_agents import QualityControllerAgent
 
-            self._agents_cache["quality_controller"] = QualityControllerAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["quality_controller"] = QualityControllerAgent(self)
         return self._agents_cache["quality_controller"]
 
     @property
@@ -429,15 +334,7 @@ class AgentOrchestrator:
         if "learning_agent" not in self._agents_cache:
             from socratic_agents import UserLearningAgent
 
-            self._agents_cache["learning_agent"] = UserLearningAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["learning_agent"] = UserLearningAgent(self)
         return self._agents_cache["learning_agent"]
 
     @property
@@ -446,15 +343,7 @@ class AgentOrchestrator:
         if "multi_llm_agent" not in self._agents_cache:
             from socratic_agents import MultiLLMAgent
 
-            self._agents_cache["multi_llm_agent"] = MultiLLMAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["multi_llm_agent"] = MultiLLMAgent(self)
         return self._agents_cache["multi_llm_agent"]
 
     @property
@@ -463,15 +352,7 @@ class AgentOrchestrator:
         if "question_queue" not in self._agents_cache:
             from socratic_agents import QuestionQueueAgent
 
-            self._agents_cache["question_queue"] = QuestionQueueAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["question_queue"] = QuestionQueueAgent(self)
         return self._agents_cache["question_queue"]
 
     @property
@@ -480,15 +361,7 @@ class AgentOrchestrator:
         if "code_validation_agent" not in self._agents_cache:
             from socratic_agents import CodeValidationAgent
 
-            self._agents_cache["code_validation_agent"] = CodeValidationAgent(
-                database_service=self.database,
-                llm_service=self.claude_client,
-                vector_db_service=self.vector_db,
-                file_service=None,
-                auth_service=None,
-                event_emitter_service=self.event_emitter,
-                agent_bus=self.agent_bus,
-            )
+            self._agents_cache["code_validation_agent"] = CodeValidationAgent(self)
         return self._agents_cache["code_validation_agent"]
 
     def _load_knowledge_base(self) -> None:
