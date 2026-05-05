@@ -1,10 +1,12 @@
 """Dependency injection container for managing service lifecycles.
 
 Central registry for creating and managing service instances with all dependencies.
+
+Phase 3: Updated to use SocraticAgentsSystem instead of AgentOrchestrator.
 """
 
 import logging
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Dict, Optional, TypeVar, TYPE_CHECKING
 
 from socratic_system.services import (
     ProjectService,
@@ -22,6 +24,9 @@ from socratic_system.repositories.base_repository import (
     KnowledgeRepository,
 )
 
+if TYPE_CHECKING:
+    from socratic_agents import SocraticAgentsSystem
+
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
@@ -31,9 +36,19 @@ class DIContainer:
 
     Manages service lifecycles and dependencies.
     Provides single point for creating services with all required dependencies.
+
+    Phase 3: Uses SocraticAgentsSystem for agent invocation.
     """
 
-    def __init__(self, config, database, vector_db, claude_client, event_emitter, orchestrator):
+    def __init__(
+        self,
+        config,
+        database,
+        vector_db,
+        claude_client,
+        event_emitter,
+        system: "SocraticAgentsSystem",
+    ):
         """Initialize DI container.
 
         Args:
@@ -42,14 +57,14 @@ class DIContainer:
             vector_db: Vector database connection
             claude_client: Claude API client
             event_emitter: Event emitter
-            orchestrator: Agent orchestrator
+            system: SocraticAgentsSystem instance (Phase 3)
         """
         self.config = config
         self.database = database
         self.vector_db = vector_db
         self.claude_client = claude_client
         self.event_emitter = event_emitter
-        self.orchestrator = orchestrator
+        self.system = system
 
         # Service cache (singleton pattern)
         self._services: Dict[str, Any] = {}
@@ -57,7 +72,7 @@ class DIContainer:
         # Repository cache
         self._repositories: Dict[str, Any] = {}
 
-        logger.info("DIContainer initialized")
+        logger.info("DIContainer initialized (Phase 3: SocraticAgentsSystem)")
 
     # Services
 
@@ -77,7 +92,7 @@ class DIContainer:
         if "quality_service" not in self._services:
             self._services["quality_service"] = QualityService(
                 self.config,
-                self.orchestrator,
+                self.system,
             )
         return self._services["quality_service"]
 
@@ -105,7 +120,7 @@ class DIContainer:
         if "code_service" not in self._services:
             self._services["code_service"] = CodeService(
                 self.config,
-                self.orchestrator,
+                self.system,
             )
         return self._services["code_service"]
 
@@ -114,7 +129,7 @@ class DIContainer:
         if "conflict_service" not in self._services:
             self._services["conflict_service"] = ConflictService(
                 self.config,
-                self.orchestrator,
+                self.system,
             )
         return self._services["conflict_service"]
 
@@ -123,7 +138,7 @@ class DIContainer:
         if "validation_service" not in self._services:
             self._services["validation_service"] = ValidationService(
                 self.config,
-                self.orchestrator,
+                self.system,
             )
         return self._services["validation_service"]
 
@@ -132,7 +147,7 @@ class DIContainer:
         if "learning_service" not in self._services:
             self._services["learning_service"] = LearningService(
                 self.config,
-                self.orchestrator,
+                self.system,
             )
         return self._services["learning_service"]
 

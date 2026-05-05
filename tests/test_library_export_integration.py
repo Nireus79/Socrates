@@ -241,7 +241,7 @@ class TestLibraryExportArchitecture:
                 vector_db=None,
                 claude_client=None,
                 event_emitter=None,
-                orchestrator=None
+                system=None  # Phase 3: SocraticAgentsSystem instead of orchestrator
             )
             assert container is not None
         except Exception as e:
