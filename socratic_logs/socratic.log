@@ -2432,3 +2432,785 @@ rs\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
 [2026-05-05 14:15:33] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
 [2026-05-05 14:15:37] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've designed a configuration-based rule engine that lets you add new validation patterns without ...
 [2026-05-05 14:15:37] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've designed a configuration-based rule engine that lets you add new validation patterns without ...
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:47:09] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:09] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:15] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-05 16:47:15] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:47:28] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-05 16:47:28] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-05 16:47:29] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:47:29] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:47:30] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:30] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:47:40] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-05 16:47:40] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-05 16:47:40] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-05 16:47:40] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-05-05 16:48:28] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-05 16:48:28] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-05 16:48:28] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-05 16:48:28] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.socratic_counselor: Generating suggestions for question: You've designed a configuration-based rule engine ...
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.socratic_counselor: Generating suggestions for question: You've designed a configuration-based rule engine ...
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.socratic_counselor: Project: Calculator, User: Themis
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.socratic_counselor: Project: Calculator, User: Themis
+[2026-05-05 16:48:28] [INFO] socratic_rag.socratic_counselor: Generating answer suggestions for analysis phase
+[2026-05-05 16:48:28] [INFO] socratic_rag.socratic_counselor: Generating answer suggestions for analysis phase
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.socratic_counselor: Calling Claude API with auth_method=api_key, user_id=Themis
+[2026-05-05 16:48:28] [DEBUG] socratic_rag.socratic_counselor: Calling Claude API with auth_method=api_key, user_id=Themis
+[2026-05-05 16:48:33] [DEBUG] socratic_rag.socratic_counselor: Claude response length: 1710 chars
+[2026-05-05 16:48:33] [DEBUG] socratic_rag.socratic_counselor: Claude response length: 1710 chars
+[2026-05-05 16:48:33] [INFO] socratic_rag.socratic_counselor: Successfully generated 5 answer suggestions
+[2026-05-05 16:48:33] [INFO] socratic_rag.socratic_counselor: Successfully generated 5 answer suggestions
+[2026-05-05 16:48:36] [DEBUG] socratic_rag.socratic_counselor: Processing user response (299 chars) from Themis
+[2026-05-05 16:48:36] [DEBUG] socratic_rag.socratic_counselor: Processing user response (299 chars) from Themis
+[2026-05-05 16:48:36] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 24 messages)
+[2026-05-05 16:48:36] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 24 messages)
+[2026-05-05 16:48:36] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:48:36] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:48:36] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 16:48:36] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 16:48:38] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 5 requirement(s), 4 tech(s), 3 constraint(s)
+[2026-05-05 16:48:38] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 5 requirement(s), 4 tech(s), 3 constraint(s)
+[2026-05-05 16:48:38] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Enable dynamic configuration of validation rules without code changes or redeployment', 'requirements': ['Wrap each validation rule in try-catch blocks during execution', 'Flag individual invalid rules', 'Exclude failed rules from validation operation without halting entire calculation', 'Maintain audit log of failed rules and failure reasons', 'Implement graceful degradation approach'], 'tech_stack': ['Python', 'PyCharm', 'JSON', 'YAML'], 'constraints': ['Individual rule failures must not halt entire validation process', 'Rules must be dynamically configurable without code changes', 'Rules must be dynamically configurable without redeployment'], 'team_structure': ''}
+[2026-05-05 16:48:38] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Enable dynamic configuration of validation rules without code changes or redeployment', 'requirements': ['Wrap each validation rule in try-catch blocks during execution', 'Flag individual invalid rules', 'Exclude failed rules from validation operation without halting entire calculation', 'Maintain audit log of failed rules and failure reasons', 'Implement graceful degradation approach'], 'tech_stack': ['Python', 'PyCharm', 'JSON', 'YAML'], 'constraints': ['Individual rule failures must not halt entire validation process', 'Rules must be dynamically configurable without code changes', 'Rules must be dynamically configurable without redeployment'], 'team_structure': ''}
+[2026-05-05 16:48:38] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: You've designed a configuration-based rule engine ...
+[2026-05-05 16:48:38] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: You've designed a configuration-based rule engine ...
+[2026-05-05 16:48:38] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 16:48:38] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 16:48:38] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2026-05-05 16:48:38] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2026-05-05 16:48:38] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2026-05-05 16:48:38] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2026-05-05 16:48:38] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2026-05-05 16:48:38] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2026-05-05 16:48:38] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2026-05-05 16:48:38] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2026-05-05 16:48:40] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 0.0%
+[2026-05-05 16:48:40] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 0.0%
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Tracking question effectiveness: You've designed a configuration-based rule engine 
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Tracking question effectiveness: You've designed a configuration-based rule engine 
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Found 4 previously asked questions in analysis phase
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Found 4 previously asked questions in analysis phase
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Using 'full' document loading strategy
+[2026-05-05 16:48:40] [DEBUG] socratic_rag.socratic_counselor: Using 'full' document loading strategy
+[2026-05-05 16:48:40] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Searching for documents in project proj_ab9244f7-f445-4956-93ab-358c9c169d5e
+[2026-05-05 16:48:40] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Searching for documents in project proj_ab9244f7-f445-4956-93ab-358c9c169d5e
+[2026-05-05 16:48:40] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Query context: Goals: Enable dynamic configuration of validation rules without code changes or redeployment
+Require...
+[2026-05-05 16:48:40] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Query context: Goals: Enable dynamic configuration of validation rules without code changes or redeployment
+Require...
+[2026-05-05 16:48:40] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Strategy: full, top_k: 5
+[2026-05-05 16:48:40] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Strategy: full, top_k: 5
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Search returned 5 results
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Search returned 5 results
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 1: source=unknown, score=1.218637228012085
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 1: source=unknown, score=1.218637228012085
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 2: source=unknown, score=1.2246630191802979
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 2: source=unknown, score=1.2246630191802979
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 3: source=unknown, score=1.230889081954956
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 3: source=unknown, score=1.230889081954956
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.socratic_counselor: Cached document results for analysis phase
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.socratic_counselor: Cached document results for analysis phase
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #5)
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #5)
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2026-05-05 16:48:46] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:48:46] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:48:52] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Now that you've planned for graceful degradation where invalid rules get logged and skipped rather t...
+[2026-05-05 16:48:52] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Now that you've planned for graceful degradation where invalid rules get logged and skipped rather t...
+[2026-05-05 16:48:57] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-05 16:48:57] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-05 16:50:14] [DEBUG] socratic_rag.socratic_counselor: Generating suggestions for question: Now that you've planned for graceful degradation w...
+[2026-05-05 16:50:14] [DEBUG] socratic_rag.socratic_counselor: Generating suggestions for question: Now that you've planned for graceful degradation w...
+[2026-05-05 16:50:14] [DEBUG] socratic_rag.socratic_counselor: Project: Calculator, User: Themis
+[2026-05-05 16:50:14] [DEBUG] socratic_rag.socratic_counselor: Project: Calculator, User: Themis
+[2026-05-05 16:50:14] [INFO] socratic_rag.socratic_counselor: Generating answer suggestions for analysis phase
+[2026-05-05 16:50:14] [INFO] socratic_rag.socratic_counselor: Generating answer suggestions for analysis phase
+[2026-05-05 16:50:14] [DEBUG] socratic_rag.socratic_counselor: Calling Claude API with auth_method=api_key, user_id=Themis
+[2026-05-05 16:50:14] [DEBUG] socratic_rag.socratic_counselor: Calling Claude API with auth_method=api_key, user_id=Themis
+[2026-05-05 16:50:21] [DEBUG] socratic_rag.socratic_counselor: Claude response length: 2065 chars
+[2026-05-05 16:50:21] [DEBUG] socratic_rag.socratic_counselor: Claude response length: 2065 chars
+[2026-05-05 16:50:21] [INFO] socratic_rag.socratic_counselor: Successfully generated 5 answer suggestions
+[2026-05-05 16:50:21] [INFO] socratic_rag.socratic_counselor: Successfully generated 5 answer suggestions
+[2026-05-05 16:50:25] [DEBUG] socratic_rag.socratic_counselor: Processing user response (419 chars) from Themis
+[2026-05-05 16:50:25] [DEBUG] socratic_rag.socratic_counselor: Processing user response (419 chars) from Themis
+[2026-05-05 16:50:25] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 28 messages)
+[2026-05-05 16:50:25] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 28 messages)
+[2026-05-05 16:50:25] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:50:25] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:50:25] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 16:50:25] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 16:50:27] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 5 requirement(s), 2 constraint(s)
+[2026-05-05 16:50:27] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 5 requirement(s), 2 constraint(s)
+[2026-05-05 16:50:27] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Implement a tiered audit approach for validation rule logging that reduces noise while maintaining visibility into rule execution outcomes', 'requirements': ['Log rules that flagged calculations in detail', 'Log rules that failed to execute in detail', 'Summarize successful rule executions by count and category', 'Provide quick understanding of rule execution status by type', 'Capture failure reasons such as misconfiguration'], 'constraints': ['Avoid overwhelming audit history with excessive logging of successful executions', 'Balance detailed logging with performance and storage efficiency']}
+[2026-05-05 16:50:27] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Implement a tiered audit approach for validation rule logging that reduces noise while maintaining visibility into rule execution outcomes', 'requirements': ['Log rules that flagged calculations in detail', 'Log rules that failed to execute in detail', 'Summarize successful rule executions by count and category', 'Provide quick understanding of rule execution status by type', 'Capture failure reasons such as misconfiguration'], 'constraints': ['Avoid overwhelming audit history with excessive logging of successful executions', 'Balance detailed logging with performance and storage efficiency']}
+[2026-05-05 16:50:27] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: Now that you've planned for graceful degradation w...
+[2026-05-05 16:50:27] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: Now that you've planned for graceful degradation w...
+[2026-05-05 16:50:27] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 16:50:27] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 16:50:27] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2026-05-05 16:50:27] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2026-05-05 16:50:27] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2026-05-05 16:50:27] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2026-05-05 16:50:27] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2026-05-05 16:50:27] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2026-05-05 16:50:27] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2026-05-05 16:50:27] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2026-05-05 16:50:29] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 0.0%
+[2026-05-05 16:50:29] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 0.0%
+[2026-05-05 16:50:29] [DEBUG] socratic_rag.socratic_counselor: Tracking question effectiveness: Now that you've planned for graceful degradation w
+[2026-05-05 16:50:29] [DEBUG] socratic_rag.socratic_counselor: Tracking question effectiveness: Now that you've planned for graceful degradation w
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Found 5 previously asked questions in analysis phase
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Found 5 previously asked questions in analysis phase
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Using cached document results for analysis phase
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Using cached document results for analysis phase
+[2026-05-05 16:50:34] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:50:34] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #6)
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #6)
+[2026-05-05 16:50:34] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2026-05-05 16:50:34] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:50:34] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:50:36] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've built a tiered audit system that logs rule failures and flagged calculations in detail while ...
+[2026-05-05 16:50:36] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've built a tiered audit system that logs rule failures and flagged calculations in detail while ...
+[2026-05-05 16:50:53] [DEBUG] socratic_rag.socratic_counselor: Processing user response (32 chars) from Themis
+[2026-05-05 16:50:53] [DEBUG] socratic_rag.socratic_counselor: Processing user response (32 chars) from Themis
+[2026-05-05 16:50:53] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 30 messages)
+[2026-05-05 16:50:53] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 30 messages)
+[2026-05-05 16:50:53] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:50:53] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:50:53] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 16:50:53] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 16:50:55] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 1 tech
+[2026-05-05 16:50:55] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 1 tech
+[2026-05-05 16:50:55] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'tech_stack': ['C#'], 'goals': 'calculator script'}
+[2026-05-05 16:50:55] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'tech_stack': ['C#'], 'goals': 'calculator script'}
+[2026-05-05 16:50:55] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: You've built a tiered audit system that logs rule ...
+[2026-05-05 16:50:55] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: You've built a tiered audit system that logs rule ...
+[2026-05-05 16:50:55] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 16:50:55] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 16:50:55] [WARNING] socratic_rag.socratic_counselor: Detected 1 conflict(s)
+[2026-05-05 16:50:55] [WARNING] socratic_rag.socratic_counselor: Detected 1 conflict(s)
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Found 6 previously asked questions in analysis phase
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Found 6 previously asked questions in analysis phase
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Using cached document results for analysis phase
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Using cached document results for analysis phase
+[2026-05-05 16:51:05] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:51:05] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #7)
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #7)
+[2026-05-05 16:51:05] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2026-05-05 16:51:05] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:51:05] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:51:08] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: I notice you just mentioned wanting the calculator in C#, but your entire project is scoped for Pyth...
+[2026-05-05 16:51:08] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: I notice you just mentioned wanting the calculator in C#, but your entire project is scoped for Pyth...
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Using 'full' document loading strategy
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Using 'full' document loading strategy
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Searching for documents in project proj_c3ae2abb-0805-4921-914a-1d76e036226d
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Searching for documents in project proj_c3ae2abb-0805-4921-914a-1d76e036226d
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Query context: Goals: Testing project creation in Socrates...
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Query context: Goals: Testing project creation in Socrates...
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Strategy: full, top_k: 5
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Strategy: full, top_k: 5
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Search returned 5 results
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Search returned 5 results
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 1: source=unknown, score=1.2086962461471558
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 1: source=unknown, score=1.2086962461471558
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 2: source=unknown, score=1.259291172027588
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 2: source=unknown, score=1.259291172027588
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 3: source=unknown, score=1.2878081798553467
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 3: source=unknown, score=1.2878081798553467
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Cached document results for discovery phase
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Cached document results for discovery phase
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2026-05-05 16:51:18] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:51:18] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:51:20] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: When you say you're "testing project creation in Socrates," what specific behaviors or outcomes woul...
+[2026-05-05 16:51:20] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: When you say you're "testing project creation in Socrates," what specific behaviors or outcomes woul...
+[2026-05-05 16:52:21] [INFO] socratic_rag.document_processor: Processing pasted text: 483e861c-37da-4294-aeee-f87ff646c331
+[2026-05-05 16:52:21] [INFO] socratic_rag.document_processor: Processing pasted text: 483e861c-37da-4294-aeee-f87ff646c331
+[2026-05-05 16:52:21] [DEBUG] socratic_rag.document_processor: Extracted 69 words from pasted text
+[2026-05-05 16:52:21] [DEBUG] socratic_rag.document_processor: Extracted 69 words from pasted text
+[2026-05-05 16:52:21] [INFO] socratic_rag.document_processor: Created 1 chunks from pasted text
+[2026-05-05 16:52:21] [INFO] socratic_rag.document_processor: Created 1 chunks from pasted text
+[2026-05-05 16:52:22] [INFO] socratic_rag.document_processor: Stored 1 chunks to vector database from pasted text
+[2026-05-05 16:52:22] [INFO] socratic_rag.document_processor: Stored 1 chunks to vector database from pasted text
+[2026-05-05 16:52:51] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-05 16:52:51] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-05 16:52:57] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-05 16:52:57] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-05 16:53:00] [DEBUG] socratic_rag.socratic_counselor: Generating suggestions for question: When you say you're "testing project creation in S...
+[2026-05-05 16:53:00] [DEBUG] socratic_rag.socratic_counselor: Generating suggestions for question: When you say you're "testing project creation in S...
+[2026-05-05 16:53:00] [DEBUG] socratic_rag.socratic_counselor: Project: Test, User: Themis
+[2026-05-05 16:53:00] [DEBUG] socratic_rag.socratic_counselor: Project: Test, User: Themis
+[2026-05-05 16:53:00] [INFO] socratic_rag.socratic_counselor: Generating answer suggestions for discovery phase
+[2026-05-05 16:53:00] [INFO] socratic_rag.socratic_counselor: Generating answer suggestions for discovery phase
+[2026-05-05 16:53:00] [DEBUG] socratic_rag.socratic_counselor: Calling Claude API with auth_method=api_key, user_id=Themis
+[2026-05-05 16:53:00] [DEBUG] socratic_rag.socratic_counselor: Calling Claude API with auth_method=api_key, user_id=Themis
+[2026-05-05 16:53:05] [DEBUG] socratic_rag.socratic_counselor: Claude response length: 1504 chars
+[2026-05-05 16:53:05] [DEBUG] socratic_rag.socratic_counselor: Claude response length: 1504 chars
+[2026-05-05 16:53:05] [INFO] socratic_rag.socratic_counselor: Successfully generated 5 answer suggestions
+[2026-05-05 16:53:05] [INFO] socratic_rag.socratic_counselor: Successfully generated 5 answer suggestions
+[2026-05-05 16:53:11] [DEBUG] socratic_rag.socratic_counselor: Processing user response (259 chars) from Themis
+[2026-05-05 16:53:11] [DEBUG] socratic_rag.socratic_counselor: Processing user response (259 chars) from Themis
+[2026-05-05 16:53:11] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 2 messages)
+[2026-05-05 16:53:11] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 2 messages)
+[2026-05-05 16:53:11] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:53:11] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:53:11] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 16:53:11] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-05-05 16:53:13] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 4 requirement(s), 2 constraint(s)
+[2026-05-05 16:53:13] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 4 requirement(s), 2 constraint(s)
+[2026-05-05 16:53:13] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Testing project creation in Socrates with ability to input basic metadata like project name and phase without errors', 'requirements': ['Allow input of basic metadata (project name and phase)', 'Enable saving of project without errors', 'Provide accurate validation error messages that match actual input problems', 'Prevent saving of projects with actual validation issues'], 'constraints': ['Project creation process must handle basic metadata fields', 'Validation errors must be accurate and relevant to actual problems']}
+[2026-05-05 16:53:13] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Testing project creation in Socrates with ability to input basic metadata like project name and phase without errors', 'requirements': ['Allow input of basic metadata (project name and phase)', 'Enable saving of project without errors', 'Provide accurate validation error messages that match actual input problems', 'Prevent saving of projects with actual validation issues'], 'constraints': ['Project creation process must handle basic metadata fields', 'Validation errors must be accurate and relevant to actual problems']}
+[2026-05-05 16:53:13] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: When you say you're "testing project creation in S...
+[2026-05-05 16:53:13] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: When you say you're "testing project creation in S...
+[2026-05-05 16:53:13] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 16:53:13] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-05-05 16:53:13] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2026-05-05 16:53:13] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2026-05-05 16:53:13] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2026-05-05 16:53:13] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2026-05-05 16:53:13] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2026-05-05 16:53:13] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2026-05-05 16:53:13] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2026-05-05 16:53:13] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2026-05-05 16:53:15] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 0.0%
+[2026-05-05 16:53:15] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 0.0%
+[2026-05-05 16:53:15] [DEBUG] socratic_rag.socratic_counselor: Tracking question effectiveness: When you say you're "testing project creation in S
+[2026-05-05 16:53:15] [DEBUG] socratic_rag.socratic_counselor: Tracking question effectiveness: When you say you're "testing project creation in S
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Found 1 previously asked questions in discovery phase
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Found 1 previously asked questions in discovery phase
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Using cached document results for discovery phase
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Using cached document results for discovery phase
+[2026-05-05 16:53:21] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:53:21] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.document_understanding: Cached summary for Unknown
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #2)
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #2)
+[2026-05-05 16:53:21] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2026-05-05 16:53:21] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:53:21] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-05-05 16:53:23] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've described what success looks like from a functional perspective, but who are the actual users...
+[2026-05-05 16:53:23] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've described what success looks like from a functional perspective, but who are the actual users...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized (Phase 2)
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user__learning'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi__l_l_m__manager'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:55:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:55:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-05 16:55:21] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-05 16:55:21] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-05 16:55:22] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-05-05 16:55:22] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added

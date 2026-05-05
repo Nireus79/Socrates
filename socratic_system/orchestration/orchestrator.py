@@ -219,8 +219,9 @@ class AgentOrchestrator:
                         .replace("-", "_")  # Replace hyphens with underscores
                         .replace(" ", "_")  # Replace spaces with underscores
                     )
-                    # Convert CamelCase to snake_case
-                    snake_case_name = re.sub(r'(?<!^)(?=[A-Z])', '_', snake_case_name).lower()
+                    # Convert CamelCase to snake_case, handling acronyms
+                    # Split on transitions from lowercase to uppercase, or from multiple uppercase to lowercase
+                    snake_case_name = re.sub(r'(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])', '_', snake_case_name).lower()
 
                     # Register agent with the agent registry so it can be discovered
                     # Note: agent.process() is synchronous, not async
