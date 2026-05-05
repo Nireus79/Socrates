@@ -90,7 +90,9 @@ from .models import (
     User,
 )
 
-# Core Components
+# Core Components - Phase 3 transition to SocraticAgentsSystem
+# Import both for backward compatibility during migration
+from socratic_agents import SocraticAgentsSystem
 from .orchestration import AgentOrchestrator
 
 # Legacy UI (for CLI)
@@ -104,6 +106,9 @@ from .ui import SocraticRAGSystem
 def create_orchestrator(config: SocratesConfig) -> AgentOrchestrator:
     """
     Create and initialize an AgentOrchestrator with a configuration object.
+
+    DEPRECATED: Use create_socratic_system() instead.
+    This function is maintained for backward compatibility only.
 
     This is the primary way to initialize the Socrates library for programmatic use.
 
@@ -128,10 +133,43 @@ def create_orchestrator(config: SocratesConfig) -> AgentOrchestrator:
     return AgentOrchestrator(config)
 
 
+def create_socratic_system(config: SocratesConfig) -> SocraticAgentsSystem:
+    """
+    Create and initialize a SocraticAgentsSystem with a configuration object.
+
+    This is the new primary way to initialize the Socrates library.
+    Uses the independent socratic-agents library for agent management.
+
+    Args:
+        config: A SocratesConfig object with all settings
+
+    Returns:
+        Initialized SocraticAgentsSystem ready for use
+
+    Raises:
+        ConfigurationError: If configuration is invalid
+
+    Example:
+        >>> config = SocratesConfig(
+        ...     api_key="sk-ant-...",
+        ...     data_dir="/path/to/data",
+        ...     log_level="INFO"
+        ... )
+        >>> system = create_socratic_system(config)
+        >>> result = system.process_request('project_manager', {...})
+    """
+    return SocraticAgentsSystem(
+        api_key=config.api_key,
+        data_dir=str(config.data_dir),
+        claude_model=config.claude_model,
+    )
+
+
 def quick_start(api_key: str, data_dir: str = None, log_level: str = "INFO") -> AgentOrchestrator:
     """
     Quick start with minimal configuration.
 
+    DEPRECATED: Use quick_start_system() instead.
     Ideal for getting started quickly with sensible defaults. All other settings
     can be customized via environment variables if needed.
 
@@ -166,6 +204,43 @@ def quick_start(api_key: str, data_dir: str = None, log_level: str = "INFO") -> 
     return create_orchestrator(config)
 
 
+def quick_start_system(api_key: str, data_dir: str = None, log_level: str = "INFO") -> SocraticAgentsSystem:
+    """
+    Quick start with SocraticAgentsSystem and minimal configuration.
+
+    Ideal for getting started quickly with sensible defaults. All other settings
+    can be customized via environment variables if needed.
+
+    Args:
+        api_key: Claude API key (or set ANTHROPIC_API_KEY env var)
+        data_dir: Optional custom data directory (defaults to ~/.socrates)
+        log_level: Optional logging level (DEBUG, INFO, WARNING, ERROR) [not yet used by system]
+
+    Returns:
+        Initialized SocraticAgentsSystem ready to use
+
+    Example:
+        >>> system = quick_start_system("sk-ant-...")
+        >>> result = system.process_request('project_manager', {
+        ...     'action': 'create_project',
+        ...     'name': 'My Project'
+        ... })
+    """
+    from pathlib import Path
+    from typing import Any
+
+    config_dict: dict[str, Any] = {"api_key": api_key}
+
+    if data_dir:
+        config_dict["data_dir"] = Path(data_dir)
+
+    if log_level:
+        config_dict["log_level"] = log_level
+
+    config = SocratesConfig.from_dict(config_dict)
+    return create_socratic_system(config)
+
+
 # ============================================================================
 # Public API Exports
 # ============================================================================
@@ -179,6 +254,7 @@ __all__ = [
     "SocratesConfig",
     # Core Components
     "AgentOrchestrator",
+    "SocraticAgentsSystem",
     "ClaudeClient",
     # Models
     "User",
@@ -201,8 +277,12 @@ __all__ = [
     "ValidationError",
     "APIError",
     # Convenience Functions
+    # Deprecated (backward compatibility)
     "create_orchestrator",
     "quick_start",
+    # New (Phase 3 migration)
+    "create_socratic_system",
+    "quick_start_system",
     # Legacy (CLI)
     "SocraticRAGSystem",
 ]

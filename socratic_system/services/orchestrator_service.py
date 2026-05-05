@@ -1,16 +1,20 @@
 """
-OrchestratorService - Manages user-scoped orchestrator instances.
+OrchestratorService - Manages user-scoped agent system instances.
 
-This service implements a singleton pattern to provide centralized orchestrator
+This service implements a singleton pattern to provide centralized agent system
 management for both CLI and web API, enabling shared backend services while
 maintaining user isolation and automatic memory management.
 
+Phase 3: Refactored to use SocraticAgentsSystem (independent library)
+instead of AgentOrchestrator (local orchestrator).
+
 Features:
-- User-scoped orchestrator instances (one per user)
+- User-scoped SocraticAgentsSystem instances (one per user)
 - TTL-based cleanup (30 min idle by default)
 - Thread-safe concurrent access
-- Memory management (max 100 orchestrators, LRU eviction)
+- Memory management (max 100 systems, LRU eviction)
 - Automatic initialization with config
+- Backward compatibility: agents access via process_request()
 """
 
 from __future__ import annotations
@@ -22,20 +26,23 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from socratic_agents import SocraticAgentsSystem
 from socratic_system.config import SocratesConfig
 
 if TYPE_CHECKING:
-    from socratic_system.orchestration.orchestrator import AgentOrchestrator
+    pass  # No longer importing AgentOrchestrator
 
 
 class OrchestratorService:
     """
-    Singleton service for managing user-scoped orchestrator instances.
+    Singleton service for managing user-scoped SocraticAgentsSystem instances.
+
+    Phase 3 Migration: Now manages SocraticAgentsSystem instead of AgentOrchestrator.
 
     Ensures that:
-    1. Each user has their own orchestrator with isolated state
-    2. Orchestrators are automatically cleaned up after idle timeout
-    3. Memory usage is bounded (max 100 orchestrators)
+    1. Each user has their own agent system with isolated state
+    2. Agent systems are automatically cleaned up after idle timeout
+    3. Memory usage is bounded (max 100 systems)
     4. Thread-safe access from both sync and async contexts
     """
 
@@ -56,22 +63,22 @@ class OrchestratorService:
         if self._initialized:
             return
 
-        self._orchestrators: dict[str, AgentOrchestrator] = {}
+        self._systems: dict[str, SocraticAgentsSystem] = {}
         self._access_times: dict[str, float] = {}
         self._cleanup_tasks: dict[str, asyncio.TimerHandle] = {}
         self._access_lock = threading.RLock()
-        self._max_orchestrators = 100
+        self._max_systems = 100
         self._idle_timeout_seconds = 30 * 60  # 30 minutes
         self.logger = logging.getLogger(__name__)
 
         self._initialized = True
-        self.logger.info("OrchestratorService initialized as singleton")
+        self.logger.info("OrchestratorService initialized as singleton (Phase 3: SocraticAgentsSystem)")
 
-    def get_or_create(self, user_id: str, api_key: str):
+    def get_or_create(self, user_id: str, api_key: str) -> SocraticAgentsSystem:
         """
-        Get or create an orchestrator for a user.
+        Get or create a SocraticAgentsSystem for a user.
 
-        Thread-safe method that retrieves an existing orchestrator or creates
+        Thread-safe method that retrieves an existing system or creates
         a new one with automatic TTL-based cleanup.
 
         Args:
@@ -79,11 +86,11 @@ class OrchestratorService:
             api_key: Anthropic API key for Claude access
 
         Returns:
-            AgentOrchestrator instance for the user
+            SocraticAgentsSystem instance for the user
 
         Raises:
             ValueError: If api_key is invalid
-            RuntimeError: If orchestrator creation fails
+            RuntimeError: If system creation fails
         """
         if not user_id or not api_key:
             raise ValueError("user_id and api_key are required")
@@ -96,72 +103,65 @@ class OrchestratorService:
             if user_id in self._cleanup_tasks:
                 self._cleanup_tasks[user_id].cancel()
 
-            # Return existing orchestrator
-            if user_id in self._orchestrators:
-                self.logger.debug(f"Returning existing orchestrator for user: {user_id}")
+            # Return existing system
+            if user_id in self._systems:
+                self.logger.debug(f"Returning existing system for user: {user_id}")
                 self._schedule_cleanup(user_id)
-                return self._orchestrators[user_id]
+                return self._systems[user_id]
 
-            # Create new orchestrator
-            self.logger.info(f"Creating new orchestrator for user: {user_id}")
+            # Create new system
+            self.logger.info(f"Creating new SocraticAgentsSystem for user: {user_id}")
 
             try:
-                # Import here to avoid circular import
-                from socratic_system.orchestration.orchestrator import AgentOrchestrator
-
                 # Create user-specific data directory
                 user_data_dir = Path.home() / ".socrates" / "users" / user_id
                 user_data_dir.mkdir(parents=True, exist_ok=True)
 
-                # Create config with user-scoped paths
-                config = SocratesConfig(
+                # Create SocraticAgentsSystem (Phase 3 migration)
+                system = SocraticAgentsSystem(
                     api_key=api_key,
-                    data_dir=user_data_dir,
-                    projects_db_path=user_data_dir / "projects.db",
-                    vector_db_path=user_data_dir / "vector_db",
+                    data_dir=str(user_data_dir),
                 )
 
-                # Create orchestrator
-                orchestrator = AgentOrchestrator(config)
-                self._orchestrators[user_id] = orchestrator
+                self._systems[user_id] = system
 
                 # Check memory limits
-                if len(self._orchestrators) > self._max_orchestrators:
+                if len(self._systems) > self._max_systems:
                     self._evict_lru()
 
                 # Schedule cleanup
                 self._schedule_cleanup(user_id)
 
                 self.logger.info(
-                    f"Orchestrator created for user {user_id}. "
-                    f"Total orchestrators: {len(self._orchestrators)}"
+                    f"SocraticAgentsSystem created for user {user_id}. "
+                    f"Total systems: {len(self._systems)}"
                 )
 
-                return orchestrator
+                return system
 
             except Exception as e:
-                self.logger.error(f"Failed to create orchestrator for user {user_id}: {e}")
-                raise RuntimeError(f"Failed to create orchestrator: {e}") from e
+                self.logger.error(f"Failed to create system for user {user_id}: {e}")
+                raise RuntimeError(f"Failed to create system: {e}") from e
 
-    def get(self, user_id: str) -> AgentOrchestrator | None:
+    def get(self, user_id: str) -> SocraticAgentsSystem | None:
         """
-        Get an orchestrator for a user without creating one.
+        Get a SocraticAgentsSystem for a user without creating one.
 
         Args:
             user_id: User identifier
 
         Returns:
-            AgentOrchestrator if exists, None otherwise
+            SocraticAgentsSystem if exists, None otherwise
         """
         with self._access_lock:
-            if user_id in self._orchestrators:
+            if user_id in self._systems:
                 self._access_times[user_id] = time.time()
-                return self._orchestrators[user_id]
+                return self._systems[user_id]
             return None
 
     def cleanup(self, user_id: str) -> None:
         """
-        Manually cleanup an orchestrator (e.g., on logout).
+        Manually cleanup a system (e.g., on logout).
 
         Args:
             user_id: User identifier
@@ -171,10 +171,15 @@ class OrchestratorService:
                 self._cleanup_tasks[user_id].cancel()
                 del self._cleanup_tasks[user_id]
 
-            if user_id in self._orchestrators:
-                self.logger.info(f"Cleaning up orchestrator for user: {user_id}")
-                # Could add cleanup logic here if needed (e.g., close connections)
-                del self._orchestrators[user_id]
+            if user_id in self._systems:
+                self.logger.info(f"Cleaning up system for user: {user_id}")
+                # Call shutdown if available
+                system = self._systems[user_id]
+                try:
+                    system.shutdown()
+                except Exception as e:
+                    self.logger.warning(f"Error during system shutdown: {e}")
+                del self._systems[user_id]
 
             if user_id in self._access_times:
                 del self._access_times[user_id]
@@ -211,7 +216,7 @@ class OrchestratorService:
 
     def _evict_lru(self) -> None:
         """
-        Evict least recently used orchestrator when memory limit exceeded.
+        Evict least recently used system when memory limit exceeded.
 
         Uses LRU strategy based on last access time.
         """
@@ -222,43 +227,50 @@ class OrchestratorService:
         lru_user = min(self._access_times.items(), key=lambda x: x[1])[0]
 
         self.logger.warning(
-            f"Memory limit ({self._max_orchestrators}) reached. "
-            f"Evicting LRU orchestrator for user: {lru_user}"
+            f"Memory limit ({self._max_systems}) reached. "
+            f"Evicting LRU system for user: {lru_user}"
         )
 
         self.cleanup(lru_user)
 
     def get_stats(self) -> dict:
         """
-        Get statistics about orchestrator pool.
+        Get statistics about system pool.
 
         Returns:
             Dictionary with pool statistics
         """
         with self._access_lock:
             return {
-                "total_orchestrators": len(self._orchestrators),
-                "max_orchestrators": self._max_orchestrators,
-                "active_users": list(self._orchestrators.keys()),
+                "total_systems": len(self._systems),
+                "max_systems": self._max_systems,
+                "active_users": list(self._systems.keys()),
                 "idle_timeout_seconds": self._idle_timeout_seconds,
             }
 
     def shutdown(self) -> None:
         """
-        Shutdown all orchestrators and cleanup resources.
+        Shutdown all systems and cleanup resources.
 
         Should be called on application shutdown.
         """
         with self._access_lock:
-            self.logger.info(f"Shutting down {len(self._orchestrators)} orchestrators")
+            self.logger.info(f"Shutting down {len(self._systems)} systems")
 
             # Cancel all cleanup tasks
             for user_id in list(self._cleanup_tasks.keys()):
                 self._cleanup_tasks[user_id].cancel()
             self._cleanup_tasks.clear()
 
-            # Clear orchestrators
-            self._orchestrators.clear()
+            # Shutdown all systems
+            for user_id, system in self._systems.items():
+                try:
+                    system.shutdown()
+                except Exception as e:
+                    self.logger.warning(f"Error shutting down system for {user_id}: {e}")
+
+            # Clear systems
+            self._systems.clear()
             self._access_times.clear()
 
             self.logger.info("OrchestratorService shutdown complete")
