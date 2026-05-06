@@ -80,7 +80,7 @@ class TestConflictDetectorSyncInterface:
             "status": "success",
             "conflicts": [{"type": "tech_stack", "message": "Conflict detected"}],
         }
-        agent._detect_conflicts_sync = MagicMock(return_value=mock_result)
+        agent._detect_conflicts = MagicMock(return_value=mock_result)
 
         request = {
             "action": "detect_conflicts",
@@ -91,7 +91,7 @@ class TestConflictDetectorSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._detect_conflicts_sync.assert_called_once_with(request)
+        agent._detect_conflicts.assert_called_once_with(request)
 
     def test_process_resolve_conflict_success(self):
         """Test sync resolve conflict action."""
@@ -108,7 +108,7 @@ class TestConflictDetectorSyncInterface:
             "conflict_id": "conflict-123",
             "resolved": True,
         }
-        agent._resolve_conflict_sync = MagicMock(return_value=mock_result)
+        agent._resolve_conflict = MagicMock(return_value=mock_result)
 
         request = {
             "action": "resolve_conflict",
@@ -133,7 +133,7 @@ class TestConflictDetectorSyncInterface:
             "status": "success",
             "suggestions": ["Suggestion 1", "Suggestion 2"],
         }
-        agent._get_conflict_suggestions_sync = MagicMock(return_value=mock_result)
+        agent._get_conflict_suggestions = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_suggestions",
@@ -172,7 +172,7 @@ class TestConflictDetectorAsyncInterface:
             "status": "success",
             "conflicts": [],
         }
-        agent._detect_conflicts_sync = MagicMock(return_value=mock_result)
+        agent._detect_conflicts = MagicMock(return_value=mock_result)
 
         request = {
             "action": "detect_conflicts",
@@ -196,7 +196,7 @@ class TestConflictDetectorAsyncInterface:
         mock_conflict.conflict_id = "conflict-123"
 
         mock_result = {"status": "success", "conflict_id": "conflict-123", "resolved": True}
-        agent._resolve_conflict_sync = MagicMock(return_value=mock_result)
+        agent._resolve_conflict = MagicMock(return_value=mock_result)
 
         request = {
             "action": "resolve_conflict",
@@ -219,7 +219,7 @@ class TestConflictDetectorAsyncInterface:
         mock_conflict.suggestions = []
 
         mock_result = {"status": "success", "suggestions": []}
-        agent._get_conflict_suggestions_sync = MagicMock(return_value=mock_result)
+        agent._get_conflict_suggestions = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_suggestions",

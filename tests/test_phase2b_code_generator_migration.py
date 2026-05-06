@@ -81,7 +81,7 @@ class TestCodeGeneratorSyncInterface:
             "artifact": "def hello(): pass",
             "artifact_type": "code",
         }
-        agent._generate_artifact_sync = MagicMock(return_value=mock_result)
+        agent._generate_artifact = MagicMock(return_value=mock_result)
 
         request = {
             "action": "generate_artifact",
@@ -92,7 +92,7 @@ class TestCodeGeneratorSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._generate_artifact_sync.assert_called_once_with(request)
+        agent._generate_artifact.assert_called_once_with(request)
 
     def test_process_generate_documentation_success(self):
         """Test sync generate documentation action."""
@@ -105,7 +105,7 @@ class TestCodeGeneratorSyncInterface:
             "status": "success",
             "documentation": "# Project Documentation",
         }
-        agent._generate_documentation_sync = MagicMock(return_value=mock_result)
+        agent._generate_documentation = MagicMock(return_value=mock_result)
 
         request = {
             "action": "generate_documentation",
@@ -128,7 +128,7 @@ class TestCodeGeneratorSyncInterface:
             "status": "success",
             "artifact": "def hello(): pass",
         }
-        agent._generate_artifact_sync = MagicMock(return_value=mock_result)
+        agent._generate_artifact = MagicMock(return_value=mock_result)
 
         request = {
             "action": "generate_script",
@@ -138,7 +138,7 @@ class TestCodeGeneratorSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._generate_artifact_sync.assert_called_once()
+        agent._generate_artifact.assert_called_once()
 
     def test_process_unknown_action(self):
         """Test handling unknown action."""
@@ -169,7 +169,7 @@ class TestCodeGeneratorAsyncInterface:
             "artifact": "def hello(): pass",
             "artifact_type": "code",
         }
-        agent._generate_artifact_sync = MagicMock(return_value=mock_result)
+        agent._generate_artifact = MagicMock(return_value=mock_result)
 
         request = {
             "action": "generate_artifact",
@@ -193,7 +193,7 @@ class TestCodeGeneratorAsyncInterface:
             "status": "success",
             "documentation": "# Project Documentation",
         }
-        agent._generate_documentation_sync = MagicMock(return_value=mock_result)
+        agent._generate_documentation = MagicMock(return_value=mock_result)
 
         request = {
             "action": "generate_documentation",
@@ -214,7 +214,7 @@ class TestCodeGeneratorAsyncInterface:
         agent = CodeGeneratorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "artifact": "def hello(): pass"}
-        agent._generate_artifact_sync = MagicMock(return_value=mock_result)
+        agent._generate_artifact = MagicMock(return_value=mock_result)
 
         request = {
             "action": "generate_script",
@@ -249,7 +249,7 @@ class TestCodeGeneratorPhase2BIntegration:
         agent = CodeGeneratorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "documentation": "# Docs"}
-        agent._generate_documentation_sync = MagicMock(return_value=mock_result)
+        agent._generate_documentation = MagicMock(return_value=mock_result)
 
         bus_request = {
             "action": "generate_documentation",

@@ -28,7 +28,7 @@ class TestKnowledgeManagerMigrationSetup:
         mock_orchestrator.agent_registry = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         assert agent.name == "KnowledgeManager"
         assert agent.orchestrator is mock_orchestrator
@@ -39,7 +39,7 @@ class TestKnowledgeManagerMigrationSetup:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         # Agent must have process method
         assert hasattr(agent, 'process')
@@ -51,7 +51,7 @@ class TestKnowledgeManagerMigrationSetup:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         # Agent must have process_async method
         assert hasattr(agent, 'process_async')
@@ -63,7 +63,7 @@ class TestKnowledgeManagerMigrationSetup:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         # Agent must identify itself
         assert hasattr(agent, 'name')
@@ -79,14 +79,14 @@ class TestKnowledgeManagerSyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {
             "status": "success",
             "suggestions": [{"id": "sug-123", "content": "Add caching"}],
             "count": 1,
         }
-        agent._get_suggestions_sync = MagicMock(return_value=mock_result)
+        agent._get_suggestions = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_suggestions",
@@ -96,7 +96,7 @@ class TestKnowledgeManagerSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._get_suggestions_sync.assert_called_once_with(request)
+        agent._get_suggestions.assert_called_once_with(request)
 
     def test_process_approve_suggestion_success(self):
         """Test sync approve suggestion action."""
@@ -104,13 +104,13 @@ class TestKnowledgeManagerSyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {
             "status": "success",
             "message": "Knowledge added: Caching Strategy",
         }
-        agent._approve_suggestion_sync = MagicMock(return_value=mock_result)
+        agent._approve_suggestion = MagicMock(return_value=mock_result)
 
         request = {
             "action": "approve_suggestion",
@@ -121,7 +121,7 @@ class TestKnowledgeManagerSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._approve_suggestion_sync.assert_called_once_with(request)
+        agent._approve_suggestion.assert_called_once_with(request)
 
     def test_process_reject_suggestion_success(self):
         """Test sync reject suggestion action."""
@@ -129,13 +129,13 @@ class TestKnowledgeManagerSyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {
             "status": "success",
             "message": "Suggestion rejected",
         }
-        agent._reject_suggestion_sync = MagicMock(return_value=mock_result)
+        agent._reject_suggestion = MagicMock(return_value=mock_result)
 
         request = {
             "action": "reject_suggestion",
@@ -153,7 +153,7 @@ class TestKnowledgeManagerSyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {
             "status": "success",
@@ -162,7 +162,7 @@ class TestKnowledgeManagerSyncInterface:
             "rejected": 0,
             "total": 3,
         }
-        agent._get_queue_status_sync = MagicMock(return_value=mock_result)
+        agent._get_queue_status = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_queue_status",
@@ -179,13 +179,13 @@ class TestKnowledgeManagerSyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {
             "status": "success",
             "cleared": 2,
         }
-        agent._clear_suggestions_sync = MagicMock(return_value=mock_result)
+        agent._clear_suggestions = MagicMock(return_value=mock_result)
 
         request = {
             "action": "clear_suggestions",
@@ -203,7 +203,7 @@ class TestKnowledgeManagerSyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         result = agent.process({"action": "unknown_action"})
 
@@ -221,14 +221,14 @@ class TestKnowledgeManagerAsyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {
             "status": "success",
             "suggestions": [],
             "count": 0,
         }
-        agent._get_suggestions_sync = MagicMock(return_value=mock_result)
+        agent._get_suggestions = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_suggestions",
@@ -246,10 +246,10 @@ class TestKnowledgeManagerAsyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {"status": "success", "message": "Knowledge added"}
-        agent._approve_suggestion_sync = MagicMock(return_value=mock_result)
+        agent._approve_suggestion = MagicMock(return_value=mock_result)
 
         request = {
             "action": "approve_suggestion",
@@ -268,10 +268,10 @@ class TestKnowledgeManagerAsyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {"status": "success", "message": "Suggestion rejected"}
-        agent._reject_suggestion_sync = MagicMock(return_value=mock_result)
+        agent._reject_suggestion = MagicMock(return_value=mock_result)
 
         request = {
             "action": "reject_suggestion",
@@ -290,7 +290,7 @@ class TestKnowledgeManagerAsyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {
             "status": "success",
@@ -299,7 +299,7 @@ class TestKnowledgeManagerAsyncInterface:
             "rejected": 0,
             "total": 0,
         }
-        agent._get_queue_status_sync = MagicMock(return_value=mock_result)
+        agent._get_queue_status = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_queue_status",
@@ -317,10 +317,10 @@ class TestKnowledgeManagerAsyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         mock_result = {"status": "success", "cleared": 0}
-        agent._clear_suggestions_sync = MagicMock(return_value=mock_result)
+        agent._clear_suggestions = MagicMock(return_value=mock_result)
 
         request = {
             "action": "clear_suggestions",
@@ -338,7 +338,7 @@ class TestKnowledgeManagerAsyncInterface:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         result = await agent.process_async({"action": "unknown"})
 
@@ -354,7 +354,7 @@ class TestKnowledgeManagerPhase2BIntegration:
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.event_emitter = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         bus_request = {
             "action": "get_queue_status",
@@ -371,7 +371,7 @@ class TestKnowledgeManagerPhase2BIntegration:
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
 
-        agent = KnowledgeManagerAgent(mock_orchestrator)
+        agent = KnowledgeManagerAgent("KnowledgeManager", mock_orchestrator)
 
         # Agent must have core interface
         assert hasattr(agent, 'name')

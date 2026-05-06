@@ -69,7 +69,7 @@ class TestMultiLLMSyncInterface:
             "providers": [],
             "count": 0,
         }
-        agent._list_providers_sync = MagicMock(return_value=mock_result)
+        agent._list_providers = MagicMock(return_value=mock_result)
 
         request = {
             "action": "list_providers",
@@ -78,7 +78,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._list_providers_sync.assert_called_once_with(request)
+        agent._list_providers.assert_called_once_with(request)
 
     def test_process_get_provider_config_success(self):
         """Test sync get provider config action."""
@@ -91,7 +91,7 @@ class TestMultiLLMSyncInterface:
             "status": "success",
             "config": {},
         }
-        agent._get_provider_config_sync = MagicMock(return_value=mock_result)
+        agent._get_provider_config = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_provider_config",
@@ -101,7 +101,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._get_provider_config_sync.assert_called_once_with(request)
+        agent._get_provider_config.assert_called_once_with(request)
 
     def test_process_set_default_provider_success(self):
         """Test sync set default provider action."""
@@ -114,7 +114,7 @@ class TestMultiLLMSyncInterface:
             "status": "success",
             "provider": "claude",
         }
-        agent._set_default_provider_sync = MagicMock(return_value=mock_result)
+        agent._set_default_provider = MagicMock(return_value=mock_result)
 
         request = {
             "action": "set_default_provider",
@@ -125,7 +125,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._set_default_provider_sync.assert_called_once_with(request)
+        agent._set_default_provider.assert_called_once_with(request)
 
     def test_process_set_provider_model_success(self):
         """Test sync set provider model action."""
@@ -138,7 +138,7 @@ class TestMultiLLMSyncInterface:
             "status": "success",
             "model": "claude-3-opus",
         }
-        agent._set_provider_model_sync = MagicMock(return_value=mock_result)
+        agent._set_provider_model = MagicMock(return_value=mock_result)
 
         request = {
             "action": "set_provider_model",
@@ -150,7 +150,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._set_provider_model_sync.assert_called_once_with(request)
+        agent._set_provider_model.assert_called_once_with(request)
 
     def test_process_add_api_key_success(self):
         """Test sync add API key action."""
@@ -163,7 +163,7 @@ class TestMultiLLMSyncInterface:
             "status": "success",
             "key_id": "key-1",
         }
-        agent._add_api_key_sync = MagicMock(return_value=mock_result)
+        agent._add_api_key = MagicMock(return_value=mock_result)
 
         request = {
             "action": "add_api_key",
@@ -175,7 +175,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._add_api_key_sync.assert_called_once_with(request)
+        agent._add_api_key.assert_called_once_with(request)
 
     def test_process_remove_api_key_success(self):
         """Test sync remove API key action."""
@@ -187,7 +187,7 @@ class TestMultiLLMSyncInterface:
         mock_result = {
             "status": "success",
         }
-        agent._remove_api_key_sync = MagicMock(return_value=mock_result)
+        agent._remove_api_key = MagicMock(return_value=mock_result)
 
         request = {
             "action": "remove_api_key",
@@ -198,7 +198,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._remove_api_key_sync.assert_called_once_with(request)
+        agent._remove_api_key.assert_called_once_with(request)
 
     def test_process_set_auth_method_success(self):
         """Test sync set auth method action."""
@@ -211,7 +211,7 @@ class TestMultiLLMSyncInterface:
             "status": "success",
             "auth_method": "api_key",
         }
-        agent._set_auth_method_sync = MagicMock(return_value=mock_result)
+        agent._set_auth_method = MagicMock(return_value=mock_result)
 
         request = {
             "action": "set_auth_method",
@@ -223,7 +223,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._set_auth_method_sync.assert_called_once_with(request)
+        agent._set_auth_method.assert_called_once_with(request)
 
     def test_process_track_usage_success(self):
         """Test sync track usage action."""
@@ -236,7 +236,7 @@ class TestMultiLLMSyncInterface:
             "status": "success",
             "tracked": True,
         }
-        agent._track_usage_sync = MagicMock(return_value=mock_result)
+        agent._track_usage = MagicMock(return_value=mock_result)
 
         request = {
             "action": "track_usage",
@@ -248,7 +248,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._track_usage_sync.assert_called_once_with(request)
+        agent._track_usage.assert_called_once_with(request)
 
     def test_process_get_usage_stats_success(self):
         """Test sync get usage stats action."""
@@ -261,7 +261,7 @@ class TestMultiLLMSyncInterface:
             "status": "success",
             "stats": {},
         }
-        agent._get_usage_stats_sync = MagicMock(return_value=mock_result)
+        agent._get_usage_stats = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_usage_stats",
@@ -271,7 +271,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._get_usage_stats_sync.assert_called_once_with(request)
+        agent._get_usage_stats.assert_called_once_with(request)
 
     def test_process_get_provider_models_success(self):
         """Test sync get provider models action."""
@@ -284,7 +284,7 @@ class TestMultiLLMSyncInterface:
             "status": "success",
             "models": [],
         }
-        agent._get_provider_models_sync = MagicMock(return_value=mock_result)
+        agent._get_provider_models = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_provider_models",
@@ -294,7 +294,7 @@ class TestMultiLLMSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._get_provider_models_sync.assert_called_once_with(request)
+        agent._get_provider_models.assert_called_once_with(request)
 
     def test_process_unknown_action(self):
         """Test handling unknown action."""
@@ -321,7 +321,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "providers": []}
-        agent._list_providers_sync = MagicMock(return_value=mock_result)
+        agent._list_providers = MagicMock(return_value=mock_result)
 
         result = await agent.process_async({"action": "list_providers"})
 
@@ -336,7 +336,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "config": {}}
-        agent._get_provider_config_sync = MagicMock(return_value=mock_result)
+        agent._get_provider_config = MagicMock(return_value=mock_result)
 
         result = await agent.process_async(
             {"action": "get_provider_config", "user_id": "user-1"}
@@ -353,7 +353,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "provider": "claude"}
-        agent._set_default_provider_sync = MagicMock(return_value=mock_result)
+        agent._set_default_provider = MagicMock(return_value=mock_result)
 
         result = await agent.process_async(
             {"action": "set_default_provider", "user_id": "user-1", "provider": "claude"}
@@ -370,7 +370,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "model": "claude-3-opus"}
-        agent._set_provider_model_sync = MagicMock(return_value=mock_result)
+        agent._set_provider_model = MagicMock(return_value=mock_result)
 
         result = await agent.process_async(
             {
@@ -392,7 +392,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "key_id": "key-1"}
-        agent._add_api_key_sync = MagicMock(return_value=mock_result)
+        agent._add_api_key = MagicMock(return_value=mock_result)
 
         result = await agent.process_async(
             {
@@ -414,7 +414,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success"}
-        agent._remove_api_key_sync = MagicMock(return_value=mock_result)
+        agent._remove_api_key = MagicMock(return_value=mock_result)
 
         result = await agent.process_async(
             {"action": "remove_api_key", "user_id": "user-1", "provider": "claude"}
@@ -431,7 +431,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "auth_method": "api_key"}
-        agent._set_auth_method_sync = MagicMock(return_value=mock_result)
+        agent._set_auth_method = MagicMock(return_value=mock_result)
 
         result = await agent.process_async(
             {
@@ -453,7 +453,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "tracked": True}
-        agent._track_usage_sync = MagicMock(return_value=mock_result)
+        agent._track_usage = MagicMock(return_value=mock_result)
 
         result = await agent.process_async(
             {
@@ -475,7 +475,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "stats": {}}
-        agent._get_usage_stats_sync = MagicMock(return_value=mock_result)
+        agent._get_usage_stats = MagicMock(return_value=mock_result)
 
         result = await agent.process_async({"action": "get_usage_stats", "user_id": "user-1"})
 
@@ -490,7 +490,7 @@ class TestMultiLLMAsyncInterface:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "models": []}
-        agent._get_provider_models_sync = MagicMock(return_value=mock_result)
+        agent._get_provider_models = MagicMock(return_value=mock_result)
 
         result = await agent.process_async(
             {"action": "get_provider_models", "provider": "claude"}
@@ -522,7 +522,7 @@ class TestMultiLLMPhase2BIntegration:
         agent = MultiLLMAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "providers": []}
-        agent._list_providers_sync = MagicMock(return_value=mock_result)
+        agent._list_providers = MagicMock(return_value=mock_result)
 
         bus_request = {
             "action": "list_providers",

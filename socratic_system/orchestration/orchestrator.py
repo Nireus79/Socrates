@@ -23,6 +23,13 @@ from socratic_system.database import VectorDatabase
 from socratic_system.events import EventEmitter, EventType
 from socratic_system.models import KnowledgeEntry
 
+# Import Socratic-Morality governance framework
+try:
+    from socratic_morality import Governor, Constitution
+except ImportError:
+    Governor = None
+    Constitution = None
+
 
 class AgentOrchestrator:
     """
@@ -62,6 +69,11 @@ class AgentOrchestrator:
         # Initialize event emitter
         self.event_emitter = EventEmitter()
 
+        # Phase 2a: Initialize Governor for ethical governance and constitutional AI
+        # Must be initialized before agent bus so Governor can validate requests
+        self._initialize_governor()
+        self.logger.info("Governor and constitutional framework initialized (Phase 2a)")
+
         # Phase 2: Initialize agent bus and registry for message routing
         from socratic_system.messaging.agent_registry import AgentRegistry
         from socratic_system.messaging.agent_bus import AgentBus
@@ -70,10 +82,12 @@ class AgentOrchestrator:
         self.agent_bus = AgentBus(
             event_emitter=self.event_emitter,
             registry=self.agent_registry,
+            governor=self.governor,
+            logger=self.logger,
             max_concurrent_requests=100,
             default_timeout=30.0,
         )
-        self.logger.info("Agent bus and registry initialized (Phase 2)")
+        self.logger.info("Agent bus and registry initialized with Governor validation (Phase 2)")
 
         # Initialize database components with configured paths
         self.logger.info("Initializing database components...")
@@ -150,6 +164,47 @@ class AgentOrchestrator:
         self.logger.info(f"  Projects DB: {self.config.projects_db_path}")
         self.logger.info(f"  Vector DB: {self.config.vector_db_path}")
         self.logger.info("=" * 70)
+
+    def _initialize_governor(self) -> None:
+        """
+        Initialize the Governor and constitutional framework for ethical governance.
+
+        Loads the constitution.yaml file and initializes the Governor engine
+        for validating agent actions against ethical principles.
+        """
+        if Governor is None or Constitution is None:
+            self.logger.warning("Socratic-Morality not available - Governor initialization skipped")
+            self.governor = None
+            return
+
+        try:
+            # Load constitution.yaml from the project root
+            constitution_path = Path(__file__).parent.parent.parent / "constitution.yaml"
+
+            if not constitution_path.exists():
+                self.logger.warning(
+                    f"Constitution file not found at {constitution_path} - Governor skipped"
+                )
+                self.governor = None
+                return
+
+            self.logger.debug(f"Loading constitution from {constitution_path}")
+
+            # Load constitution from YAML file
+            self.constitution = Constitution.from_yaml_file(str(constitution_path))
+
+            # Initialize Governor with constitution
+            self.governor = Governor(self.constitution, logger=self.logger)
+
+            self.logger.info("Governor initialized successfully with constitutional framework")
+            self.logger.debug(f"  Supreme Principle: {self.constitution.supreme_principle}")
+            self.logger.debug(f"  Axioms: {len(self.constitution.axioms)}")
+            self.logger.debug(f"  Principles: {len(self.constitution.principles)}")
+            self.logger.debug(f"  Capabilities: {len(self.constitution.capabilities)}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to initialize Governor: {e}")
+            self.governor = None
 
     def _load_knowledge_base_safe(self) -> None:
         """Wrapper for knowledge base loading in background thread with error handling"""

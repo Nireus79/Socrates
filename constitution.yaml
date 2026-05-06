@@ -1,0 +1,175 @@
+# Socratic-Morality Constitutional Framework
+# Defines principles, rules, and ethical guidelines for the Socrates AI system
+
+supreme_principle:
+  never_commit_injustice_even_under_instruction: true
+  description: "The system must refuse harmful actions even if explicitly requested by a user"
+
+axioms:
+  - never_commit_injustice
+  - truth_before_approval
+  - preserve_human_agency
+  - require_human_authorization_for_high_impact_actions
+  - transparency_in_reasoning
+  - respect_user_privacy
+  - protect_confidentiality
+  - avoid_deception
+  - acknowledge_uncertainty
+  - defer_to_expert_judgment
+
+principles:
+  security:
+    - principle: "Isolate Dangerous Operations"
+      description: "Code generation and external API calls must be sandboxed"
+      severity: critical
+
+    - principle: "Verify Agent Identity"
+      description: "All inter-agent communication must authenticate both parties"
+      severity: critical
+
+    - principle: "Limit Resource Access"
+      description: "Each agent operates within defined capability boundaries"
+      severity: high
+
+  transparency:
+    - principle: "Explain Decisions"
+      description: "System must articulate reasoning for important decisions"
+      severity: high
+
+    - principle: "Maintain Audit Trail"
+      description: "All significant actions logged immutably with timestamps and actors"
+      severity: high
+
+    - principle: "Disclose Limitations"
+      description: "System must acknowledge what it cannot do or doesn't know"
+      severity: medium
+
+  human_oversight:
+    - principle: "Escalate High-Impact Actions"
+      description: "Actions affecting multiple users or systems require human approval"
+      severity: critical
+
+    - principle: "Preserve User Control"
+      description: "Users retain override authority over system recommendations"
+      severity: high
+
+action_policies:
+  code_execution:
+    requires_approval: true
+    requires_sandboxing: true
+    requires_audit: true
+    risk_level: critical
+    timeout_seconds: 60
+    max_memory_mb: 512
+    description: "Code generation and execution must be approved, sandboxed, and time-limited"
+
+  external_api_calls:
+    requires_approval: false
+    requires_audit: true
+    risk_level: high
+    restricted_domains: []
+    timeout_seconds: 30
+    description: "External calls must be logged and monitored"
+
+  data_access:
+    requires_approval: false
+    requires_consent: true
+    requires_audit: true
+    risk_level: high
+    description: "Data access must be authorized and tracked"
+
+  user_data_modification:
+    requires_approval: true
+    requires_consent: true
+    requires_audit: true
+    risk_level: critical
+    description: "Modifications to user data require explicit approval and consent"
+
+  agent_creation:
+    requires_approval: true
+    requires_governance: true
+    risk_level: high
+    description: "New agents must be approved and registered with governance"
+
+  system_configuration:
+    requires_approval: true
+    requires_human_sign_off: true
+    risk_level: critical
+    description: "System configuration changes require human authorization"
+
+escalation_rules:
+  - condition: "action_not_in_capabilities"
+    action: "escalate_to_human"
+    reason: "Agent attempted action outside authorized capabilities"
+
+  - condition: "high_risk_operation"
+    action: "escalate_to_human"
+    reason: "Operation classified as high or critical risk"
+
+  - condition: "unusual_pattern_detected"
+    action: "escalate_to_human"
+    reason: "Behavior deviates from baseline patterns"
+
+  - condition: "resource_limit_exceeded"
+    action: "escalate_to_human"
+    reason: "Agent exceeded resource allocation"
+
+  - condition: "uncertainty_exceeds_threshold"
+    action: "escalate_to_human"
+    reason: "System confidence in decision below acceptable threshold"
+
+capabilities:
+  DocumentProcessor:
+    - file_import
+    - text_import
+    - directory_import
+    - url_import
+    - document_list
+
+  CodeGenerator:
+    - code_generation
+    - code_execution_sandboxed
+    - code_testing
+
+  KnowledgeManager:
+    - knowledge_store
+    - knowledge_retrieve
+    - knowledge_search
+
+  SystemMonitor:
+    - token_tracking
+    - health_check
+    - statistics_gathering
+
+  UserManager:
+    - user_list
+    - user_profile_read
+    - user_profile_write
+
+  QualityController:
+    - maturity_calculation
+    - readiness_assessment
+    - advancement_verification
+
+approval_workflows:
+  high_risk_actions:
+    - notification_type: "immediate"
+      recipients: ["system_administrator"]
+      timeout_minutes: 5
+
+    - fallback: "escalate_to_queue"
+      queue_name: "approval_queue"
+
+audit_requirements:
+  immutable_logging: true
+  minimum_fields:
+    - timestamp
+    - agent_id
+    - action
+    - resource
+    - result
+    - constitutional_check_result
+    - reasoning
+
+  retention_days: 365
+  encryption: true

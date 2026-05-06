@@ -69,7 +69,7 @@ class TestCodeValidationSyncInterface:
             "overall_status": "passed",
             "issues": [],
         }
-        agent._validate_project_sync = MagicMock(return_value=mock_result)
+        agent._validate_project = MagicMock(return_value=mock_result)
 
         request = {
             "action": "validate_project",
@@ -79,7 +79,7 @@ class TestCodeValidationSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._validate_project_sync.assert_called_once_with(request)
+        agent._validate_project.assert_called_once_with(request)
 
     def test_process_validate_file_success(self):
         """Test sync validate file action."""
@@ -92,7 +92,7 @@ class TestCodeValidationSyncInterface:
             "status": "success",
             "file_valid": True,
         }
-        agent._validate_file_sync = MagicMock(return_value=mock_result)
+        agent._validate_file = MagicMock(return_value=mock_result)
 
         request = {
             "action": "validate_file",
@@ -102,7 +102,7 @@ class TestCodeValidationSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._validate_file_sync.assert_called_once_with(request)
+        agent._validate_file.assert_called_once_with(request)
 
     def test_process_run_tests_success(self):
         """Test sync run tests action."""
@@ -116,7 +116,7 @@ class TestCodeValidationSyncInterface:
             "tests_passed": 10,
             "tests_failed": 0,
         }
-        agent._run_tests_sync = MagicMock(return_value=mock_result)
+        agent._run_tests = MagicMock(return_value=mock_result)
 
         request = {
             "action": "run_tests",
@@ -126,7 +126,7 @@ class TestCodeValidationSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._run_tests_sync.assert_called_once_with(request)
+        agent._run_tests.assert_called_once_with(request)
 
     def test_process_check_syntax_success(self):
         """Test sync check syntax action."""
@@ -139,7 +139,7 @@ class TestCodeValidationSyncInterface:
             "status": "success",
             "syntax_valid": True,
         }
-        agent._check_syntax_sync = MagicMock(return_value=mock_result)
+        agent._check_syntax = MagicMock(return_value=mock_result)
 
         request = {
             "action": "check_syntax",
@@ -149,7 +149,7 @@ class TestCodeValidationSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._check_syntax_sync.assert_called_once_with(request)
+        agent._check_syntax.assert_called_once_with(request)
 
     def test_process_check_dependencies_success(self):
         """Test sync check dependencies action."""
@@ -162,7 +162,7 @@ class TestCodeValidationSyncInterface:
             "status": "success",
             "dependencies_valid": True,
         }
-        agent._check_dependencies_sync = MagicMock(return_value=mock_result)
+        agent._check_dependencies = MagicMock(return_value=mock_result)
 
         request = {
             "action": "check_dependencies",
@@ -172,7 +172,7 @@ class TestCodeValidationSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._check_dependencies_sync.assert_called_once_with(request)
+        agent._check_dependencies.assert_called_once_with(request)
 
     def test_process_unknown_action(self):
         """Test handling unknown action."""
@@ -202,7 +202,7 @@ class TestCodeValidationAsyncInterface:
             "status": "success",
             "overall_status": "passed",
         }
-        agent._validate_project_sync = MagicMock(return_value=mock_result)
+        agent._validate_project = MagicMock(return_value=mock_result)
 
         request = {
             "action": "validate_project",
@@ -225,7 +225,7 @@ class TestCodeValidationAsyncInterface:
             "status": "success",
             "file_valid": True,
         }
-        agent._validate_file_sync = MagicMock(return_value=mock_result)
+        agent._validate_file = MagicMock(return_value=mock_result)
 
         request = {
             "action": "validate_file",
@@ -248,7 +248,7 @@ class TestCodeValidationAsyncInterface:
             "status": "success",
             "tests_passed": 10,
         }
-        agent._run_tests_sync = MagicMock(return_value=mock_result)
+        agent._run_tests = MagicMock(return_value=mock_result)
 
         request = {
             "action": "run_tests",
@@ -271,7 +271,7 @@ class TestCodeValidationAsyncInterface:
             "status": "success",
             "syntax_valid": True,
         }
-        agent._check_syntax_sync = MagicMock(return_value=mock_result)
+        agent._check_syntax = MagicMock(return_value=mock_result)
 
         request = {
             "action": "check_syntax",
@@ -294,7 +294,7 @@ class TestCodeValidationAsyncInterface:
             "status": "success",
             "dependencies_valid": True,
         }
-        agent._check_dependencies_sync = MagicMock(return_value=mock_result)
+        agent._check_dependencies = MagicMock(return_value=mock_result)
 
         request = {
             "action": "check_dependencies",
@@ -332,7 +332,7 @@ class TestCodeValidationPhase2BIntegration:
             "status": "success",
             "syntax_valid": True,
         }
-        agent._check_syntax_sync = MagicMock(return_value=mock_result)
+        agent._check_syntax = MagicMock(return_value=mock_result)
 
         bus_request = {
             "action": "check_syntax",

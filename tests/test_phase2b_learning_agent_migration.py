@@ -68,7 +68,7 @@ class TestLearningAgentSyncInterface:
             "status": "success",
             "effectiveness": 0.85,
         }
-        agent._track_question_effectiveness_sync = MagicMock(return_value=mock_result)
+        agent._track_question_effectiveness = MagicMock(return_value=mock_result)
 
         request = {
             "action": "track_question_effectiveness",
@@ -79,7 +79,7 @@ class TestLearningAgentSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._track_question_effectiveness_sync.assert_called_once_with(request)
+        agent._track_question_effectiveness.assert_called_once_with(request)
 
     def test_process_learn_behavior_pattern_success(self):
         """Test sync learn behavior pattern action."""
@@ -92,7 +92,7 @@ class TestLearningAgentSyncInterface:
             "status": "success",
             "pattern_learned": True,
         }
-        agent._learn_behavior_pattern_sync = MagicMock(return_value=mock_result)
+        agent._learn_behavior_pattern = MagicMock(return_value=mock_result)
 
         request = {
             "action": "learn_behavior_pattern",
@@ -103,7 +103,7 @@ class TestLearningAgentSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._learn_behavior_pattern_sync.assert_called_once_with(request)
+        agent._learn_behavior_pattern.assert_called_once_with(request)
 
     def test_process_recommend_next_question_success(self):
         """Test sync recommend next question action."""
@@ -116,7 +116,7 @@ class TestLearningAgentSyncInterface:
             "status": "success",
             "recommended": True,
         }
-        agent._recommend_next_question_sync = MagicMock(return_value=mock_result)
+        agent._recommend_next_question = MagicMock(return_value=mock_result)
 
         request = {
             "action": "recommend_next_question",
@@ -127,7 +127,7 @@ class TestLearningAgentSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._recommend_next_question_sync.assert_called_once_with(request)
+        agent._recommend_next_question.assert_called_once_with(request)
 
     def test_process_upload_knowledge_document_success(self):
         """Test sync upload knowledge document action."""
@@ -140,7 +140,7 @@ class TestLearningAgentSyncInterface:
             "status": "success",
             "document_uploaded": True,
         }
-        agent._upload_knowledge_document_sync = MagicMock(return_value=mock_result)
+        agent._upload_knowledge_document = MagicMock(return_value=mock_result)
 
         request = {
             "action": "upload_knowledge_document",
@@ -151,7 +151,7 @@ class TestLearningAgentSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._upload_knowledge_document_sync.assert_called_once_with(request)
+        agent._upload_knowledge_document.assert_called_once_with(request)
 
     def test_process_get_user_profile_success(self):
         """Test sync get user profile action."""
@@ -164,7 +164,7 @@ class TestLearningAgentSyncInterface:
             "status": "success",
             "profile": {"user_id": "user-1"},
         }
-        agent._get_user_profile_sync = MagicMock(return_value=mock_result)
+        agent._get_user_profile = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_user_profile",
@@ -174,7 +174,7 @@ class TestLearningAgentSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._get_user_profile_sync.assert_called_once_with(request)
+        agent._get_user_profile.assert_called_once_with(request)
 
     def test_process_unknown_action(self):
         """Test handling unknown action."""
@@ -204,7 +204,7 @@ class TestLearningAgentAsyncInterface:
             "status": "success",
             "effectiveness": 0.85,
         }
-        agent._track_question_effectiveness_sync = MagicMock(return_value=mock_result)
+        agent._track_question_effectiveness = MagicMock(return_value=mock_result)
 
         request = {
             "action": "track_question_effectiveness",
@@ -227,7 +227,7 @@ class TestLearningAgentAsyncInterface:
             "status": "success",
             "pattern_learned": True,
         }
-        agent._learn_behavior_pattern_sync = MagicMock(return_value=mock_result)
+        agent._learn_behavior_pattern = MagicMock(return_value=mock_result)
 
         request = {
             "action": "learn_behavior_pattern",
@@ -250,7 +250,7 @@ class TestLearningAgentAsyncInterface:
             "status": "success",
             "recommended": True,
         }
-        agent._recommend_next_question_sync = MagicMock(return_value=mock_result)
+        agent._recommend_next_question = MagicMock(return_value=mock_result)
 
         request = {
             "action": "recommend_next_question",
@@ -273,7 +273,7 @@ class TestLearningAgentAsyncInterface:
             "status": "success",
             "document_uploaded": True,
         }
-        agent._upload_knowledge_document_sync = MagicMock(return_value=mock_result)
+        agent._upload_knowledge_document = MagicMock(return_value=mock_result)
 
         request = {
             "action": "upload_knowledge_document",
@@ -296,7 +296,7 @@ class TestLearningAgentAsyncInterface:
             "status": "success",
             "profile": {"user_id": "user-1"},
         }
-        agent._get_user_profile_sync = MagicMock(return_value=mock_result)
+        agent._get_user_profile = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_user_profile",
@@ -334,7 +334,7 @@ class TestLearningAgentPhase2BIntegration:
             "status": "success",
             "profile": {"user_id": "user-1"},
         }
-        agent._get_user_profile_sync = MagicMock(return_value=mock_result)
+        agent._get_user_profile = MagicMock(return_value=mock_result)
 
         bus_request = {
             "action": "get_user_profile",

@@ -136,7 +136,7 @@ class TestSystemMonitorSyncInterface:
         assert "warnings" in result
         assert result["recent_usage"] == 0
 
-    def test_process_check_health_sync(self):
+    def test_process_check_health(self):
         """Test sync check_health action."""
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
@@ -328,7 +328,7 @@ class TestSystemMonitorHealthChecks:
 
         agent = SystemMonitorAgent(mock_orchestrator)
 
-        result = agent._check_health_sync({"action": "check_health"})
+        result = agent._check_health({"action": "check_health"})
 
         assert result["status"] == "success"
         assert result["connection"] is True
@@ -343,7 +343,7 @@ class TestSystemMonitorHealthChecks:
 
         agent = SystemMonitorAgent(mock_orchestrator)
 
-        result = agent._check_health_sync({"action": "check_health"})
+        result = agent._check_health({"action": "check_health"})
 
         assert result["status"] == "error"
         assert result["connection"] is False

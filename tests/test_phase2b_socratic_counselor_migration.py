@@ -95,7 +95,7 @@ class TestSocraticCounselorSyncInterface:
             "status": "success",
             "question": "What problem does your project solve?",
         }
-        agent._generate_question_sync = MagicMock(return_value=mock_result)
+        agent._generate_question = MagicMock(return_value=mock_result)
 
         request = {
             "action": "generate_question",
@@ -105,7 +105,7 @@ class TestSocraticCounselorSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._generate_question_sync.assert_called_once_with(request)
+        agent._generate_question.assert_called_once_with(request)
 
     def test_process_process_response_success(self):
         """Test sync process response action."""
@@ -118,7 +118,7 @@ class TestSocraticCounselorSyncInterface:
         agent = SocraticCounselorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "insights": {}}
-        agent._process_response_sync = MagicMock(return_value=mock_result)
+        agent._process_response = MagicMock(return_value=mock_result)
 
         request = {
             "action": "process_response",
@@ -141,7 +141,7 @@ class TestSocraticCounselorSyncInterface:
         agent = SocraticCounselorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "insights": {}}
-        agent._extract_insights_only_sync = MagicMock(return_value=mock_result)
+        agent._extract_insights_only = MagicMock(return_value=mock_result)
 
         request = {
             "action": "extract_insights_only",
@@ -164,7 +164,7 @@ class TestSocraticCounselorSyncInterface:
         agent = SocraticCounselorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "new_phase": "analysis"}
-        agent._advance_phase_sync = MagicMock(return_value=mock_result)
+        agent._advance_phase = MagicMock(return_value=mock_result)
 
         request = {
             "action": "advance_phase",
@@ -224,7 +224,7 @@ class TestSocraticCounselorAsyncInterface:
         agent = SocraticCounselorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "question": "What problem?"}
-        agent._generate_question_sync = MagicMock(return_value=mock_result)
+        agent._generate_question = MagicMock(return_value=mock_result)
 
         request = {
             "action": "generate_question",
@@ -247,7 +247,7 @@ class TestSocraticCounselorAsyncInterface:
         agent = SocraticCounselorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "insights": {}}
-        agent._process_response_sync = MagicMock(return_value=mock_result)
+        agent._process_response = MagicMock(return_value=mock_result)
 
         request = {
             "action": "process_response",
@@ -289,7 +289,7 @@ class TestSocraticCounselorPhase2BIntegration:
         agent = SocraticCounselorAgent(mock_orchestrator)
 
         mock_result = {"status": "success", "hint": "Keep making progress"}
-        agent._generate_hint_sync = MagicMock(return_value=mock_result)
+        agent._generate_hint = MagicMock(return_value=mock_result)
 
         bus_request = {
             "action": "generate_hint",

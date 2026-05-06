@@ -70,7 +70,7 @@ class TestNoteManagerSyncInterface:
             "note": {"note_id": "note-1", "title": "Test Note"},
             "vectorization_result": {"status": "success"},
         }
-        agent._add_note_sync = MagicMock(return_value=mock_result)
+        agent._add_note = MagicMock(return_value=mock_result)
 
         request = {
             "action": "add_note",
@@ -84,7 +84,7 @@ class TestNoteManagerSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._add_note_sync.assert_called_once_with(request)
+        agent._add_note.assert_called_once_with(request)
 
     def test_process_list_notes_success(self):
         """Test sync list notes action."""
@@ -98,7 +98,7 @@ class TestNoteManagerSyncInterface:
             "notes": [],
             "count": 0,
         }
-        agent._list_notes_sync = MagicMock(return_value=mock_result)
+        agent._list_notes = MagicMock(return_value=mock_result)
 
         request = {
             "action": "list_notes",
@@ -108,7 +108,7 @@ class TestNoteManagerSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._list_notes_sync.assert_called_once_with(request)
+        agent._list_notes.assert_called_once_with(request)
 
     def test_process_search_notes_success(self):
         """Test sync search notes action."""
@@ -123,7 +123,7 @@ class TestNoteManagerSyncInterface:
             "count": 0,
             "query": "test",
         }
-        agent._search_notes_sync = MagicMock(return_value=mock_result)
+        agent._search_notes = MagicMock(return_value=mock_result)
 
         request = {
             "action": "search_notes",
@@ -134,7 +134,7 @@ class TestNoteManagerSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._search_notes_sync.assert_called_once_with(request)
+        agent._search_notes.assert_called_once_with(request)
 
     def test_process_delete_note_success(self):
         """Test sync delete note action."""
@@ -147,7 +147,7 @@ class TestNoteManagerSyncInterface:
             "status": "success",
             "message": "Note deleted successfully",
         }
-        agent._delete_note_sync = MagicMock(return_value=mock_result)
+        agent._delete_note = MagicMock(return_value=mock_result)
 
         request = {
             "action": "delete_note",
@@ -157,7 +157,7 @@ class TestNoteManagerSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._delete_note_sync.assert_called_once_with(request)
+        agent._delete_note.assert_called_once_with(request)
 
     def test_process_unknown_action(self):
         """Test handling unknown action."""
@@ -188,7 +188,7 @@ class TestNoteManagerAsyncInterface:
             "message": "Note added successfully",
             "note": {"note_id": "note-1", "title": "Test Note"},
         }
-        agent._add_note_sync = MagicMock(return_value=mock_result)
+        agent._add_note = MagicMock(return_value=mock_result)
 
         request = {
             "action": "add_note",
@@ -216,7 +216,7 @@ class TestNoteManagerAsyncInterface:
             "notes": [],
             "count": 0,
         }
-        agent._list_notes_sync = MagicMock(return_value=mock_result)
+        agent._list_notes = MagicMock(return_value=mock_result)
 
         request = {
             "action": "list_notes",
@@ -240,7 +240,7 @@ class TestNoteManagerAsyncInterface:
             "results": [],
             "count": 0,
         }
-        agent._search_notes_sync = MagicMock(return_value=mock_result)
+        agent._search_notes = MagicMock(return_value=mock_result)
 
         request = {
             "action": "search_notes",
@@ -264,7 +264,7 @@ class TestNoteManagerAsyncInterface:
             "status": "success",
             "message": "Note deleted successfully",
         }
-        agent._delete_note_sync = MagicMock(return_value=mock_result)
+        agent._delete_note = MagicMock(return_value=mock_result)
 
         request = {
             "action": "delete_note",
@@ -303,7 +303,7 @@ class TestNoteManagerPhase2BIntegration:
             "notes": [],
             "count": 0,
         }
-        agent._list_notes_sync = MagicMock(return_value=mock_result)
+        agent._list_notes = MagicMock(return_value=mock_result)
 
         bus_request = {
             "action": "list_notes",

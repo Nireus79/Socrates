@@ -20,6 +20,34 @@ def temp_db_dir(tmp_path):
     return tmp_path / "test_db"
 
 
+@pytest.fixture
+def mock_quality_project():
+    """Create a properly mocked ProjectContext for QualityController tests"""
+    from unittest.mock import MagicMock
+
+    project = MagicMock()
+    project.name = "Test Project"
+    project.project_id = "proj-123"
+    project.phase = "discovery"
+    project.project_type = "software"
+    project.status = "active"
+    project.phase_maturity_scores = {
+        "discovery": 75.0,
+        "analysis": 70.0,
+        "planning": 65.0,
+    }
+    project.categorized_specs = {
+        "discovery": [],
+        "analysis": [],
+        "planning": [],
+    }
+    project.category_scores = {}
+    project.created_at = "2025-01-01T00:00:00"
+    project.notes = []
+
+    return project
+
+
 @pytest.fixture(autouse=True)
 def cleanup_mocks():
     """Cleanup after each test"""

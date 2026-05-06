@@ -38,7 +38,7 @@ class TestContextAnalyzerMigration:
         mock_orchestrator.agent_bus = MagicMock()
         agent = ContextAnalyzerAgent(mock_orchestrator)
 
-        agent._analyze_context_sync = MagicMock(return_value={"status": "success"})
+        agent._analyze_context = MagicMock(return_value={"status": "success"})
         result = agent.process({"action": "analyze_context", "project": MagicMock()})
         assert result["status"] == "success"
 
@@ -49,7 +49,7 @@ class TestContextAnalyzerMigration:
         mock_orchestrator.agent_bus = MagicMock()
         agent = ContextAnalyzerAgent(mock_orchestrator)
 
-        agent._analyze_context_sync = MagicMock(return_value={"status": "success"})
+        agent._analyze_context = MagicMock(return_value={"status": "success"})
         result = await agent.process_async({"action": "analyze_context", "project": MagicMock()})
         assert result["status"] == "success"
 
@@ -59,7 +59,7 @@ class TestContextAnalyzerMigration:
         mock_orchestrator.agent_bus = MagicMock()
         agent = ContextAnalyzerAgent(mock_orchestrator)
 
-        agent._get_statistics_sync = MagicMock(return_value={"status": "success"})
+        agent._get_statistics = MagicMock(return_value={"status": "success"})
         result = asyncio.run(agent.process_async({"action": "get_statistics", "project": MagicMock()}))
         assert result["status"] == "success"
 

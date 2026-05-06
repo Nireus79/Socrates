@@ -159,6 +159,8 @@ class AgentBus:
         self,
         event_emitter,
         registry=None,
+        governor=None,
+        logger=None,
         max_concurrent_requests: int = 100,
         default_timeout: float = 30.0,
         enable_circuit_breaker: bool = True,
@@ -169,6 +171,8 @@ class AgentBus:
         Args:
             event_emitter: Event emitter for routing messages
             registry: Optional agent registry for discovery
+            governor: Optional Governor instance for ethical governance checks
+            logger: Optional logger instance
             max_concurrent_requests: Max concurrent requests allowed
             default_timeout: Default timeout for requests in seconds
             enable_circuit_breaker: Enable circuit breaker pattern
@@ -176,13 +180,14 @@ class AgentBus:
         """
         self.event_emitter = event_emitter
         self.registry = registry
+        self.governor = governor
         self.max_concurrent_requests = max_concurrent_requests
         self.default_timeout = default_timeout
         self.enable_circuit_breaker = enable_circuit_breaker
         self.enable_retry = enable_retry
         self.request_queue: Dict[str, asyncio.Future] = {}
         self.response_listeners: Dict[str, List[Callable]] = {}
-        self.logger = logging.getLogger(__name__)
+        self.logger = logger or logging.getLogger(__name__)
 
         # Circuit breakers per agent
         self.circuit_breakers: Dict[str, CircuitBreaker] = {}
@@ -197,6 +202,50 @@ class AgentBus:
 
         # Set up event routing for agent requests
         self._setup_event_routing()
+
+    def _check_governance(
+        self,
+        agent_name: str,
+        action: str,
+        request_data: Dict[str, Any]
+    ) -> tuple[bool, Optional[str]]:
+        """Check if action is allowed under constitutional governance.
+
+        Args:
+            agent_name: Agent attempting the action
+            action: Action type being requested
+            request_data: Full request data for context
+
+        Returns:
+            Tuple of (allowed: bool, reason: Optional[str])
+        """
+        if self.governor is None:
+            # No governor configured, allow all actions
+            return True, None
+
+        try:
+            # Use Governor to evaluate action against constitution
+            allowed, decision = self.governor.evaluate_action(
+                agent=agent_name,
+                action=action,
+                context=request_data
+            )
+
+            if not allowed:
+                self.logger.warning(
+                    f"[Governor] Action '{action}' by {agent_name} DENIED: {decision}"
+                )
+                return False, f"Action denied by constitutional governance: {decision}"
+
+            self.logger.debug(
+                f"[Governor] Action '{action}' by {agent_name} APPROVED"
+            )
+            return True, None
+
+        except Exception as e:
+            self.logger.error(f"[Governor] Error evaluating action: {e}")
+            # On error, fail-safe: deny the action
+            return False, f"Governor evaluation error: {str(e)}"
 
     def _get_circuit_breaker(self, agent_name: str) -> CircuitBreaker:
         """Get or create circuit breaker for agent.
@@ -301,6 +350,24 @@ class AgentBus:
             self.logger.debug(
                 f"[AgentBus] Routing request to agent '{agent_name}' (id: {request_id})"
             )
+
+            # Check governance before allowing action
+            action = payload.get("action", "unknown")
+            allowed, denial_reason = self._check_governance(agent_name, action, payload)
+
+            if not allowed:
+                self.logger.warning(
+                    f"[AgentBus] Request blocked by governance: {denial_reason}"
+                )
+                self.handle_response(
+                    request_id,
+                    {
+                        "status": "error",
+                        "message": denial_reason,
+                        "code": "governance_denied",
+                    },
+                )
+                return
 
             # Invoke the handler
             response = await handler.invoke(payload)

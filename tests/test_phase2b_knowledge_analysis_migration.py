@@ -92,7 +92,7 @@ class TestKnowledgeAnalysisSyncInterface:
             },
             "message": "Analyzed test.pdf in context of project goals",
         }
-        agent._analyze_knowledge_sync = MagicMock(return_value=mock_result)
+        agent._analyze_knowledge = MagicMock(return_value=mock_result)
 
         request = {
             "action": "analyze_knowledge",
@@ -103,7 +103,7 @@ class TestKnowledgeAnalysisSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._analyze_knowledge_sync.assert_called_once_with(request)
+        agent._analyze_knowledge.assert_called_once_with(request)
 
     def test_process_regenerate_questions_success(self):
         """Test sync regenerate questions action."""
@@ -118,7 +118,7 @@ class TestKnowledgeAnalysisSyncInterface:
             "message": "Questions regenerated for 2 new focus areas",
             "new_focus_areas": ["area1", "area2"],
         }
-        agent._regenerate_questions_sync = MagicMock(return_value=mock_result)
+        agent._regenerate_questions = MagicMock(return_value=mock_result)
 
         request = {
             "action": "regenerate_questions",
@@ -129,7 +129,7 @@ class TestKnowledgeAnalysisSyncInterface:
         result = agent.process(request)
 
         assert result["status"] == "success"
-        agent._regenerate_questions_sync.assert_called_once_with(request)
+        agent._regenerate_questions.assert_called_once_with(request)
 
     def test_process_get_knowledge_gaps_success(self):
         """Test sync get knowledge gaps action."""
@@ -145,7 +145,7 @@ class TestKnowledgeAnalysisSyncInterface:
             "knowledge_gaps": [{"area": "testing", "description": "Testing strategies"}],
             "count": 1,
         }
-        agent._get_knowledge_gaps_sync = MagicMock(return_value=mock_result)
+        agent._get_knowledge_gaps = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_knowledge_gaps",
@@ -189,7 +189,7 @@ class TestKnowledgeAnalysisAsyncInterface:
             "analysis": {},
             "message": "Analyzed successfully",
         }
-        agent._analyze_knowledge_sync = MagicMock(return_value=mock_result)
+        agent._analyze_knowledge = MagicMock(return_value=mock_result)
 
         request = {
             "action": "analyze_knowledge",
@@ -215,7 +215,7 @@ class TestKnowledgeAnalysisAsyncInterface:
             "message": "Questions regenerated",
             "new_focus_areas": [],
         }
-        agent._regenerate_questions_sync = MagicMock(return_value=mock_result)
+        agent._regenerate_questions = MagicMock(return_value=mock_result)
 
         request = {
             "action": "regenerate_questions",
@@ -242,7 +242,7 @@ class TestKnowledgeAnalysisAsyncInterface:
             "knowledge_gaps": [],
             "count": 0,
         }
-        agent._get_knowledge_gaps_sync = MagicMock(return_value=mock_result)
+        agent._get_knowledge_gaps = MagicMock(return_value=mock_result)
 
         request = {
             "action": "get_knowledge_gaps",
