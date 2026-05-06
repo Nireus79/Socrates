@@ -1,12 +1,11 @@
 """
-Patches for library compatibility (deprecated as of socratic-nexus 0.4.1).
+Runtime patches for library compatibility.
 
-All fixes have been integrated directly into the libraries:
-- socratic-nexus 0.4.1: Uses unified PBKDF2-Fernet encryption with random salts
-- socratic-agents: Returns ProviderMetadata objects from list_available_providers()
-- socratic-agents MultiLLMAgent: Uses correct attribute names on ProviderMetadata
+All previously needed patches have been removed as of socratic-agents 0.3.6:
+- list_available_providers() now correctly returns List[ProviderMetadata]
+- MultiLLMAgent._list_providers() now uses correct attribute names
 
-These patches are kept for backward compatibility but are no longer necessary.
+This module is kept for backwards compatibility but contains no-op patches.
 """
 
 import logging
@@ -15,5 +14,5 @@ logger = logging.getLogger(__name__)
 
 
 def apply_all_patches():
-    """No patches needed with socratic-nexus 0.4.1+"""
-    logger.info("No runtime patches needed with current library versions")
+    """No patches needed - all libraries are properly fixed."""
+    logger.info("No runtime patches needed (all libraries properly updated)")
