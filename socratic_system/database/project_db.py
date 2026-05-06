@@ -2410,23 +2410,24 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
-            usage_dict = usage.to_dict() if hasattr(usage, "to_dict") else asdict(usage)
-            usage_json = json.dumps(usage_dict)
             timestamp_str = serialize_datetime(usage.timestamp)
+            input_tokens = getattr(usage, "input_tokens", 0)
+            output_tokens = getattr(usage, "output_tokens", 0)
             cost = getattr(usage, "cost", 0.0)
 
             cursor.execute(
                 """
                 INSERT INTO llm_usage
-                (id, user_id, provider, model, usage_json, timestamp, cost)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (id, user_id, provider, model, input_tokens, output_tokens, timestamp, cost)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     usage.id,
                     usage.user_id,
                     usage.provider,
                     usage.model,
-                    usage_json,
+                    input_tokens,
+                    output_tokens,
                     timestamp_str,
                     cost,
                 ),
@@ -2454,7 +2455,7 @@ class ProjectDatabase:
 
             cursor.execute(
                 """
-                SELECT id, user_id, provider, model, usage_json, timestamp, cost
+                SELECT id, user_id, provider, model, input_tokens, output_tokens, timestamp, cost
                 FROM llm_usage
                 WHERE user_id = ? AND provider = ? AND timestamp >= ?
                 ORDER BY timestamp DESC
@@ -2464,7 +2465,11 @@ class ProjectDatabase:
 
             records = []
             for row in cursor.fetchall():
-                usage_dict = json.loads(row[4])
+                usage_dict = {
+                    "input_tokens": row[4],
+                    "output_tokens": row[5],
+                    "total_tokens": row[4] + row[5],
+                }
                 records.append(
                     {
                         "id": row[0],
@@ -2472,8 +2477,8 @@ class ProjectDatabase:
                         "provider": row[2],
                         "model": row[3],
                         "usage": usage_dict,
-                        "timestamp": row[5],
-                        "cost": row[6],
+                        "timestamp": row[6],
+                        "cost": row[7],
                     }
                 )
 
