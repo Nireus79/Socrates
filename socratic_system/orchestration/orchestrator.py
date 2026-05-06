@@ -232,13 +232,13 @@ class AgentOrchestrator:
             self.constitution = Constitution.load_from_file(str(constitution_path))
 
             # Initialize Governor with constitution
-            self.governor = Governor(self.constitution, logger=self.logger)
+            self.governor = Governor(self.constitution)
 
             self.logger.info("Governor initialized successfully with constitutional framework")
             self.logger.debug(f"  Supreme Principle: {self.constitution.supreme_principle}")
-            self.logger.debug(f"  Axioms: {len(self.constitution.axioms)}")
             self.logger.debug(f"  Principles: {len(self.constitution.principles)}")
-            self.logger.debug(f"  Capabilities: {len(self.constitution.capabilities)}")
+            if hasattr(self.constitution, 'rules'):
+                self.logger.debug(f"  Rules: {len(self.constitution.rules)}")
 
         except Exception as e:
             self.logger.error(f"Failed to initialize Governor: {e}")
