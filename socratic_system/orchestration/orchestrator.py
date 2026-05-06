@@ -278,57 +278,45 @@ class AgentOrchestrator:
         try:
             self.logger.info("Pre-initializing all agents for agent bus registration...")
 
-            # Access each agent property to trigger initialization and registration
-            agent_names = [
-                "project_manager",
-                "socratic_counselor",
-                "context_analyzer",
-                "code_generator",
-                "system_monitor",
-                "conflict_detector",
-                "document_processor",
-                "user_manager",
-                "note_manager",
-                "knowledge_manager",
-                "knowledge_analysis",
-                "quality_controller",
-                "learning_agent",
-                "multi_llm_agent",
-                "question_queue",
-                "code_validation_agent",
-            ]
+            # Mapping of property names to expected registry names
+            # Property names follow snake_case and are used by external APIs
+            agent_name_map = {
+                "project_manager": "project_manager",
+                "socratic_counselor": "socratic_counselor",
+                "context_analyzer": "context_analyzer",
+                "code_generator": "code_generator",
+                "system_monitor": "system_monitor",
+                "conflict_detector": "conflict_detector",
+                "document_processor": "document_processor",
+                "user_manager": "user_manager",
+                "note_manager": "note_manager",
+                "knowledge_manager": "knowledge_manager",
+                "knowledge_analysis": "knowledge_analysis",
+                "quality_controller": "quality_controller",
+                "learning_agent": "learning",  # API calls use "learning", not "learning_agent"
+                "multi_llm_agent": "multi_llm_manager",  # llm_config.py uses "multi_llm_manager"
+                "question_queue": "question_queue",
+                "code_validation_agent": "code_validation",  # API calls use "code_validation"
+            }
 
-            for agent_name in agent_names:
+            for property_name, registry_name in agent_name_map.items():
                 try:
-                    agent = getattr(self, agent_name)
+                    agent = getattr(self, property_name)
                     self.logger.debug(f"Initialized agent: {agent.name}")
-
-                    # Convert agent name to snake_case for registry lookup
-                    # e.g., "SocraticCounselor" -> "socratic_counselor"
-                    # e.g., "Multi-LLM Manager" -> "multi_llm_manager"
-                    # e.g., "User Learning" -> "user_learning"
-                    snake_case_name = (
-                        agent.name
-                        .replace("-", "_")  # Replace hyphens with underscores
-                        .replace(" ", "_")  # Replace spaces with underscores
-                    )
-                    # Convert CamelCase to snake_case, handling acronyms
-                    # Split on transitions from lowercase to uppercase, or from multiple uppercase to lowercase
-                    snake_case_name = re.sub(r'(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])', '_', snake_case_name).lower()
 
                     # Register agent with the agent registry so it can be discovered
                     # Note: agent.process() is synchronous, not async
                     self.agent_registry.register(
-                        agent_name=snake_case_name,
+                        agent_name=registry_name,
                         handler=agent.process,
                         capabilities=[],
                         metadata={"agent_class": agent.__class__.__name__},
                         supports_sync=True,
                         supports_async=False,  # agent.process() is synchronous
                     )
-                    self.logger.debug(f"Registered agent '{agent.name}' with registry as '{snake_case_name}'")
+                    self.logger.debug(f"Registered agent '{agent.name}' with registry as '{registry_name}'")
                 except Exception as e:
-                    self.logger.warning(f"Failed to initialize agent {agent_name}: {e}")
+                    self.logger.warning(f"Failed to initialize agent {property_name}: {e}")
 
             # Verify agents are registered with the bus
             registered_count = self.agent_registry.count()

@@ -42,7 +42,7 @@ async def list_providers(current_user: str = Depends(get_current_user)):
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm", {"action": "list_providers", "user_id": current_user}
+            "multi_llm_manager", {"action": "list_providers", "user_id": current_user}
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
@@ -62,7 +62,7 @@ async def get_config(current_user: str = Depends(get_current_user)):
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm", {"action": "get_provider_config", "user_id": current_user}
+            "multi_llm_manager", {"action": "get_provider_config", "user_id": current_user}
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
@@ -85,7 +85,7 @@ async def set_default_provider(
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm",
+            "multi_llm_manager",
             {"action": "set_default_provider", "user_id": current_user, "provider": request.provider},
         )
         if result.get("status") != "success":
@@ -109,7 +109,7 @@ async def set_model(
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm",
+            "multi_llm_manager",
             {
                 "action": "set_provider_model",
                 "user_id": current_user,
@@ -138,7 +138,7 @@ async def set_api_key(
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm",
+            "multi_llm_manager",
             {
                 "action": "add_api_key",
                 "user_id": current_user,
@@ -167,7 +167,7 @@ async def remove_api_key(provider: str, current_user: str = Depends(get_current_
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm", {"action": "remove_api_key", "user_id": current_user, "provider": provider}
+            "multi_llm_manager", {"action": "remove_api_key", "user_id": current_user, "provider": provider}
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
@@ -194,7 +194,7 @@ async def set_auth_method(
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm",
+            "multi_llm_manager",
             {
                 "action": "set_auth_method",
                 "user_id": current_user,
@@ -223,7 +223,7 @@ async def get_models(provider: str, current_user: str = Depends(get_current_user
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm", {"action": "get_provider_models", "provider": provider}
+            "multi_llm_manager", {"action": "get_provider_models", "provider": provider}
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
@@ -244,7 +244,7 @@ async def get_stats(time_period: str = "month", current_user: str = Depends(get_
         orchestrator = get_orchestrator()
         days = 30 if time_period == "month" else 7 if time_period == "week" else 1
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm", {"action": "get_usage_stats", "user_id": current_user, "days": days}
+            "multi_llm_manager", {"action": "get_usage_stats", "user_id": current_user, "days": days}
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
