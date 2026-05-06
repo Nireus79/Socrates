@@ -1591,7 +1591,7 @@ class ProjectDiffCommand(BaseCommand):
     def _display_issue_changes(self, old_issues: int, new_issues: int) -> None:
         """Display issue count changes"""
         issue_change = new_issues - old_issues
-        print(f"\n  Issues: {old_issues} → {new_issues} ", end="")
+        print(f"\n  Issues: {old_issues} -> {new_issues} ", end="")
         if issue_change < 0:
             print(f"{Fore.GREEN}[{issue_change}] Improved!{Style.RESET_ALL}")
         elif issue_change > 0:
@@ -1602,7 +1602,7 @@ class ProjectDiffCommand(BaseCommand):
     def _display_warning_changes(self, old_warnings: int, new_warnings: int) -> None:
         """Display warning count changes"""
         warning_change = new_warnings - old_warnings
-        print(f"  Warnings: {old_warnings} → {new_warnings} ", end="")
+        print(f"  Warnings: {old_warnings} -> {new_warnings} ", end="")
         if warning_change < 0:
             print(f"{Fore.GREEN}[{warning_change}] Improved!{Style.RESET_ALL}")
         elif warning_change > 0:
@@ -1618,7 +1618,7 @@ class ProjectDiffCommand(BaseCommand):
         new_status = new_summary.get("overall_status", "unknown")
 
         if old_status != new_status:
-            print(f"\n  Status: {old_status} → {new_status}")
+            print(f"\n  Status: {old_status} -> {new_status}")
 
     def _display_first_validation(
         self, new_issues: int, new_warnings: int, new_summary: Dict[str, Any]

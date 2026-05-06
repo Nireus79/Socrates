@@ -311,11 +311,11 @@ class EthicalDeliberation:
 
         # Final conclusion
         if final_conclusion == EthicalConclusion.BLOCKED:
-            parts.append("→ BLOCKED: Action violates ethical principles")
+            parts.append("-> BLOCKED: Action violates ethical principles")
         elif final_conclusion == EthicalConclusion.ALLOWED:
-            parts.append("→ ALLOWED: Action aligned with ethical frameworks")
+            parts.append("-> ALLOWED: Action aligned with ethical frameworks")
         else:
-            parts.append("→ ESCALATE: Requires human review due to complexity")
+            parts.append("-> ESCALATE: Requires human review due to complexity")
 
         return " | ".join(parts)
 

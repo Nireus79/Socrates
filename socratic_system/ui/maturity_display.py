@@ -319,7 +319,7 @@ class MaturityDisplay:
                 )
             elif score >= 20:
                 print(
-                    f"  {Fore.CYAN}→{Style.RESET_ALL} {phase.capitalize():<15} "
+                    f"  {Fore.CYAN}->{Style.RESET_ALL} {phase.capitalize():<15} "
                     f"{Fore.CYAN}{score:.1f}% (Ready){Style.RESET_ALL}"
                 )
             elif score > 0:

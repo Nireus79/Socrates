@@ -201,7 +201,7 @@ class AuditLogger:
         # Log to console
         self.logger.info(
             f"[AUDIT] {event_type}: {actor_id} ({actor_type}) {action} {resource} "
-            f"→ {status}"
+            f"-> {status}"
         )
 
         # Store in database

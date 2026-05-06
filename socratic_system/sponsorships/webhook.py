@@ -78,7 +78,7 @@ def process_sponsorship_event(event_data: Dict) -> Optional[Sponsorship]:
         return None
 
     logger.info(
-        f"Processing GitHub sponsorship: {github_username} → ${monthly_price_dollars}/month → {socrates_tier} tier"
+        f"Processing GitHub sponsorship: {github_username} -> ${monthly_price_dollars}/month -> {socrates_tier} tier"
     )
 
     # Create sponsorship record
@@ -124,7 +124,7 @@ def handle_sponsorship_webhook(event_data: Dict) -> Dict:
 
         return {
             "status": "success",
-            "message": f"Sponsorship processed: {sponsorship.github_username} → {sponsorship.socrates_tier_granted}",
+            "message": f"Sponsorship processed: {sponsorship.github_username} -> {sponsorship.socrates_tier_granted}",
             "sponsorship": {
                 "username": sponsorship.github_username,
                 "tier": sponsorship.socrates_tier_granted,
