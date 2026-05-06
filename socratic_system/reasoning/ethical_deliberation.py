@@ -167,7 +167,10 @@ class EthicalDeliberation:
             all_concerns.extend(analysis.concerns)
 
         # Check if escalation needed
-        escalation_required = confidence < self.escalation_threshold
+        escalation_required = (
+            confidence < self.escalation_threshold or
+            final_conclusion == EthicalConclusion.ESCALATE
+        )
         escalation_reason = None
         if escalation_required and framework_analyses:
             conflicting = [
@@ -182,6 +185,8 @@ class EthicalDeliberation:
                 )
             elif confidence < 0.5:
                 escalation_reason = "Low confidence in conclusion across frameworks"
+            elif final_conclusion == EthicalConclusion.ESCALATE:
+                escalation_reason = "Conclusion marked for escalation due to complexity or uncertainty"
 
         result = DeliberationResult(
             action=action,
