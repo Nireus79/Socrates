@@ -63,7 +63,7 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "socratic-morality>=0.0.3",
+    "socratic-morality>=0.0.4",
     "socratic-agents>=0.3.6",
     "socratic-nexus>=0.4.1",
     "anthropic>=0.40.0",
@@ -136,7 +136,6 @@ packages = [
     "socrates_ai",
     "socratic_system",
     "socratic_system.agents",
-    "socratic_system.analyzer",
     "socratic_system.api",
     "socratic_system.api_adapter",
     "socratic_system.auth",
@@ -149,6 +148,7 @@ packages = [
     "socratic_system.docs",
     "socratic_system.events",
     "socratic_system.exceptions",
+    "socratic_system.governance",
     "socratic_system.handlers",
     "socratic_system.jobs",
     "socratic_system.knowledge",
@@ -160,7 +160,9 @@ packages = [
     "socratic_system.orchestration",
     "socratic_system.parsers",
     "socratic_system.performance",
+    "socratic_system.reasoning",
     "socratic_system.repositories",
+    "socratic_system.security",
     "socratic_system.services",
     "socratic_system.sponsorships",
     "socratic_system.subscription",
