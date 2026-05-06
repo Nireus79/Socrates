@@ -379,11 +379,19 @@ class AgentOrchestrator:
 
     @property
     def code_generator(self) -> CodeGeneratorAgent:
-        """Lazy-load code generator agent"""
+        """Lazy-load code generator agent with sandbox integration"""
         if "code_generator" not in self._agents_cache:
             from socratic_agents import CodeGeneratorAgent
+            from socratic_system.agents.code_generator_sandbox_wrapper import (
+                CodeGeneratorSandboxWrapper,
+            )
 
-            self._agents_cache["code_generator"] = CodeGeneratorAgent(self)
+            base_agent = CodeGeneratorAgent(self)
+            self._agents_cache["code_generator"] = CodeGeneratorSandboxWrapper(
+                base_agent=base_agent,
+                sandbox=self.sandbox,
+                audit_logger=self.audit_logger
+            )
         return self._agents_cache["code_generator"]
 
     @property
