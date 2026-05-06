@@ -52,6 +52,15 @@ from socratic_system.reasoning.moral_precedent_engine import (
     PrecedentAnalysis,
 )
 
+from socratic_system.reasoning.threat_detector import (
+    ThreatDetector,
+    Threat,
+    ThreatAnalysis,
+    ThreatLevel,
+    ThreatType,
+    ThreatProfile,
+)
+
 __all__ = [
     # Frameworks
     "EthicalFramework",
@@ -83,4 +92,11 @@ __all__ = [
     "PrecedentQuery",
     "PrecedentMatch",
     "PrecedentAnalysis",
+    # Threat Detection
+    "ThreatDetector",
+    "Threat",
+    "ThreatAnalysis",
+    "ThreatLevel",
+    "ThreatType",
+    "ThreatProfile",
 ]
