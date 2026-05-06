@@ -36,6 +36,13 @@ from socratic_system.reasoning.ethical_deliberation import (
     DeliberationResult,
 )
 
+from socratic_system.reasoning.contradiction_detector import (
+    ContradictionDetector,
+    Contradiction,
+    ContradictionAnalysis,
+    ContradictionType,
+)
+
 __all__ = [
     # Frameworks
     "EthicalFramework",
@@ -55,4 +62,9 @@ __all__ = [
     # Deliberation
     "EthicalDeliberation",
     "DeliberationResult",
+    # Contradiction Detection
+    "ContradictionDetector",
+    "Contradiction",
+    "ContradictionAnalysis",
+    "ContradictionType",
 ]
