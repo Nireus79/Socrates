@@ -18,40 +18,53 @@ axioms:
   - defer_to_expert_judgment
 
 principles:
-  security:
-    - principle: "Isolate Dangerous Operations"
-      description: "Code generation and external API calls must be sandboxed"
-      severity: critical
+  isolate_dangerous_operations:
+    name: "Isolate Dangerous Operations"
+    category: "security"
+    description: "Code generation and external API calls must be sandboxed"
+    severity: "critical"
 
-    - principle: "Verify Agent Identity"
-      description: "All inter-agent communication must authenticate both parties"
-      severity: critical
+  verify_agent_identity:
+    name: "Verify Agent Identity"
+    category: "security"
+    description: "All inter-agent communication must authenticate both parties"
+    severity: "critical"
 
-    - principle: "Limit Resource Access"
-      description: "Each agent operates within defined capability boundaries"
-      severity: high
+  limit_resource_access:
+    name: "Limit Resource Access"
+    category: "security"
+    description: "Each agent operates within defined capability boundaries"
+    severity: "high"
 
-  transparency:
-    - principle: "Explain Decisions"
-      description: "System must articulate reasoning for important decisions"
-      severity: high
+  explain_decisions:
+    name: "Explain Decisions"
+    category: "transparency"
+    description: "System must articulate reasoning for important decisions"
+    severity: "high"
 
-    - principle: "Maintain Audit Trail"
-      description: "All significant actions logged immutably with timestamps and actors"
-      severity: high
+  maintain_audit_trail:
+    name: "Maintain Audit Trail"
+    category: "transparency"
+    description: "All significant actions logged immutably with timestamps and actors"
+    severity: "high"
 
-    - principle: "Disclose Limitations"
-      description: "System must acknowledge what it cannot do or doesn't know"
-      severity: medium
+  disclose_limitations:
+    name: "Disclose Limitations"
+    category: "transparency"
+    description: "System must acknowledge what it cannot do or doesn't know"
+    severity: "medium"
 
-  human_oversight:
-    - principle: "Escalate High-Impact Actions"
-      description: "Actions affecting multiple users or systems require human approval"
-      severity: critical
+  escalate_high_impact_actions:
+    name: "Escalate High-Impact Actions"
+    category: "human_oversight"
+    description: "Actions affecting multiple users or systems require human approval"
+    severity: "critical"
 
-    - principle: "Preserve User Control"
-      description: "Users retain override authority over system recommendations"
-      severity: high
+  preserve_user_control:
+    name: "Preserve User Control"
+    category: "human_oversight"
+    description: "Users retain override authority over system recommendations"
+    severity: "high"
 
 action_policies:
   code_execution:
