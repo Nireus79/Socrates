@@ -22,6 +22,9 @@ from socratic_system.config import SocratesConfig
 from socratic_system.database import VectorDatabase
 from socratic_system.events import EventEmitter, EventType
 from socratic_system.models import KnowledgeEntry
+from socratic_system.security.audit_logger import AuditLogger
+from socratic_system.security.sandbox import Sandbox, SandboxConfig
+from socratic_system.security.agent_identity import AgentIdentityManager
 
 # Import Socratic-Morality governance framework
 try:
@@ -66,6 +69,17 @@ class AgentOrchestrator:
 
         self.logger = get_debug_logger("orchestrator")
 
+        # Initialize sandbox configuration
+        self._sandbox_config = SandboxConfig(
+            timeout_seconds=60,
+            max_memory_mb=512,
+            max_file_handles=10,
+            project_dir=str(self.config.data_dir),
+            allow_file_write=True,
+            allow_network=False
+        )
+        self._sandbox = None  # Lazy-loaded
+
         # Initialize event emitter
         self.event_emitter = EventEmitter()
 
@@ -73,6 +87,25 @@ class AgentOrchestrator:
         # Must be initialized before agent bus so Governor can validate requests
         self._initialize_governor()
         self.logger.info("Governor and constitutional framework initialized (Phase 2a)")
+
+        # Phase 2b: Initialize audit logging for immutable tracking
+        self.audit_logger = AuditLogger(
+            db_connection=None,  # Will be set after database initialization
+            logger=self.logger,
+            retention_days=730,  # 2 years
+            encrypt_at_rest=True
+        )
+        self.logger.info("Audit logger initialized (Phase 2b)")
+
+        # Phase 2b: Initialize agent identity manager for zero-trust
+        # Use API key as base for signing (in production, use dedicated key)
+        secret_key = self.api_key or "default_secret_key_development_only"
+        self.identity_manager = AgentIdentityManager(
+            secret_key=secret_key,
+            logger=self.logger,
+            token_lifetime_hours=24
+        )
+        self.logger.info("Agent identity manager initialized (Phase 2b)")
 
         # Phase 2: Initialize agent bus and registry for message routing
         from socratic_system.messaging.agent_registry import AgentRegistry
@@ -84,6 +117,7 @@ class AgentOrchestrator:
             registry=self.agent_registry,
             governor=self.governor,
             logger=self.logger,
+            audit_logger=self.audit_logger,
             max_concurrent_requests=100,
             default_timeout=30.0,
         )
@@ -97,6 +131,10 @@ class AgentOrchestrator:
 
         DatabaseSingleton.initialize(str(self.config.projects_db_path))
         self.database = DatabaseSingleton.get_instance()
+
+        # Connect audit logger to database
+        self.audit_logger.db = self.database
+        self.logger.debug("Audit logger connected to database")
 
         self.vector_db = VectorDatabase(
             str(self.config.vector_db_path), embedding_model=self.config.embedding_model
@@ -298,6 +336,17 @@ class AgentOrchestrator:
 
         except Exception as e:
             self.logger.error(f"Error during agent pre-initialization: {e}")
+
+    @property
+    def sandbox(self) -> Sandbox:
+        """Get or create sandbox instance for code execution.
+
+        Returns:
+            Configured Sandbox instance
+        """
+        if self._sandbox is None:
+            self._sandbox = Sandbox(self._sandbox_config, logger=self.logger)
+        return self._sandbox
 
     # Lazy-loaded agent properties (imported from socratic_agents library 0.3.5+)
     # Note: Agents expect orchestrator parameter only (not individual services)

@@ -161,6 +161,7 @@ class AgentBus:
         registry=None,
         governor=None,
         logger=None,
+        audit_logger=None,
         max_concurrent_requests: int = 100,
         default_timeout: float = 30.0,
         enable_circuit_breaker: bool = True,
@@ -173,6 +174,7 @@ class AgentBus:
             registry: Optional agent registry for discovery
             governor: Optional Governor instance for ethical governance checks
             logger: Optional logger instance
+            audit_logger: Optional audit logger for recording actions
             max_concurrent_requests: Max concurrent requests allowed
             default_timeout: Default timeout for requests in seconds
             enable_circuit_breaker: Enable circuit breaker pattern
@@ -181,6 +183,7 @@ class AgentBus:
         self.event_emitter = event_emitter
         self.registry = registry
         self.governor = governor
+        self.audit_logger = audit_logger
         self.max_concurrent_requests = max_concurrent_requests
         self.default_timeout = default_timeout
         self.enable_circuit_breaker = enable_circuit_breaker
@@ -407,6 +410,16 @@ class AgentBus:
                 self.logger.warning(
                     f"[AgentBus] Request blocked by capability check: {capability_reason}"
                 )
+                # Log denied action
+                if self.audit_logger:
+                    self.audit_logger.log_agent_action(
+                        agent_name=agent_name,
+                        action=action,
+                        allowed=False,
+                        denial_reason=f"Capability denied: {capability_reason}",
+                        request_id=request_id,
+                        context={"check_type": "capability"}
+                    )
                 self.handle_response(
                     request_id,
                     {
@@ -424,6 +437,16 @@ class AgentBus:
                 self.logger.warning(
                     f"[AgentBus] Request blocked by governance: {denial_reason}"
                 )
+                # Log denied action
+                if self.audit_logger:
+                    self.audit_logger.log_agent_action(
+                        agent_name=agent_name,
+                        action=action,
+                        allowed=False,
+                        denial_reason=f"Governance denied: {denial_reason}",
+                        request_id=request_id,
+                        context={"check_type": "governance"}
+                    )
                 self.handle_response(
                     request_id,
                     {
@@ -433,6 +456,15 @@ class AgentBus:
                     },
                 )
                 return
+
+            # Log allowed action
+            if self.audit_logger:
+                self.audit_logger.log_agent_action(
+                    agent_name=agent_name,
+                    action=action,
+                    allowed=True,
+                    request_id=request_id
+                )
 
             # Invoke the handler
             response = await handler.invoke(payload)
