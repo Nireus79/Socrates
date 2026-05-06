@@ -120,36 +120,169 @@ escalation_rules:
 
 capabilities:
   DocumentProcessor:
-    - file_import
-    - text_import
-    - directory_import
-    - url_import
-    - document_list
+    actions:
+      - file_import
+      - text_import
+      - directory_import
+      - url_import
+      - document_list
+    resource_access:
+      - file_system:read
+      - external_apis:call
+    resource_limits:
+      max_file_size_mb: 50
+      timeout_seconds: 300
 
   CodeGenerator:
-    - code_generation
-    - code_execution_sandboxed
-    - code_testing
+    actions:
+      - code_generation
+      - code_execution_sandboxed
+      - code_testing
+    resource_access:
+      - code_execution:write
+      - database:read
+    resource_limits:
+      max_execution_time_seconds: 60
+      max_memory_mb: 512
+      max_file_handles: 10
+    requires:
+      - sandboxing: strict
+      - timeout_enforcement: true
+      - resource_limits: true
 
   KnowledgeManager:
-    - knowledge_store
-    - knowledge_retrieve
-    - knowledge_search
+    actions:
+      - knowledge_store
+      - knowledge_retrieve
+      - knowledge_search
+    resource_access:
+      - vector_db:read
+      - vector_db:write
+    resource_limits:
+      max_query_size: 10000
+      timeout_seconds: 30
 
   SystemMonitor:
-    - token_tracking
-    - health_check
-    - statistics_gathering
+    actions:
+      - token_tracking
+      - health_check
+      - statistics_gathering
+    resource_access:
+      - database:read
+      - metrics:write
+    resource_limits:
+      timeout_seconds: 30
+      max_queries_per_minute: 60
 
   UserManager:
-    - user_list
-    - user_profile_read
-    - user_profile_write
+    actions:
+      - user_list
+      - user_profile_read
+      - user_profile_write
+    resource_access:
+      - database:read
+      - database:write
+      - user_data:read
+      - user_data:write
+    resource_limits:
+      requires_audit: true
+      requires_approval: true
+    sensitive_operations:
+      - user_deletion
+      - password_reset
+      - permission_change
 
   QualityController:
-    - maturity_calculation
-    - readiness_assessment
-    - advancement_verification
+    actions:
+      - maturity_calculation
+      - readiness_assessment
+      - advancement_verification
+    resource_access:
+      - database:read
+      - project_context:read
+    resource_limits:
+      timeout_seconds: 60
+      max_calculations_per_minute: 30
+
+  ContextAnalyzer:
+    actions:
+      - analyze_project_context
+      - extract_requirements
+      - identify_conflicts
+    resource_access:
+      - project_context:read
+      - database:read
+    resource_limits:
+      timeout_seconds: 120
+
+  SocraticCounselor:
+    actions:
+      - generate_question
+      - evaluate_response
+      - track_progress
+    resource_access:
+      - user_data:read
+      - user_data:write
+      - conversation_history:write
+    resource_limits:
+      timeout_seconds: 60
+      max_conversation_length: 50000
+
+  LearningAgent:
+    actions:
+      - track_question_effectiveness
+      - learn_behavior_pattern
+      - recommend_next_question
+      - upload_knowledge_document
+    resource_access:
+      - user_data:read
+      - user_data:write
+      - knowledge_base:write
+    resource_limits:
+      timeout_seconds: 90
+      max_patterns_per_user: 1000
+
+  MultiLLMAgent:
+    actions:
+      - list_providers
+      - call_provider
+      - compare_responses
+    resource_access:
+      - external_apis:call
+      - database:write
+    resource_limits:
+      timeout_seconds: 120
+      max_parallel_calls: 3
+
+  NoteManager:
+    actions:
+      - add_note
+      - list_notes
+      - update_note
+      - delete_note
+    resource_access:
+      - database:read
+      - database:write
+      - user_data:write
+    resource_limits:
+      timeout_seconds: 30
+      max_note_size: 100000
+
+  ProjectManager:
+    actions:
+      - create_project
+      - read_project
+      - update_project
+      - delete_project
+      - list_projects
+    resource_access:
+      - database:read
+      - database:write
+      - project_context:read
+      - project_context:write
+    resource_limits:
+      requires_audit: true
+      timeout_seconds: 60
 
 approval_workflows:
   high_risk_actions:

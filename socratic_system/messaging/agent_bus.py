@@ -203,6 +203,53 @@ class AgentBus:
         # Set up event routing for agent requests
         self._setup_event_routing()
 
+    def _check_capability(
+        self,
+        agent_name: str,
+        action: str
+    ) -> tuple[bool, Optional[str]]:
+        """Check if agent has capability to perform action.
+
+        Args:
+            agent_name: Agent attempting the action
+            action: Action type being requested
+
+        Returns:
+            Tuple of (allowed: bool, reason: Optional[str])
+        """
+        if self.governor is None or self.governor.constitution is None:
+            # No constitution, can't check capabilities
+            return True, None
+
+        try:
+            # Get agent capabilities from constitution
+            constitution = self.governor.constitution
+            agent_caps = constitution.capabilities.get(agent_name, {})
+
+            if not agent_caps:
+                self.logger.warning(
+                    f"[Capability] Agent '{agent_name}' not registered in constitution"
+                )
+                return False, f"Agent '{agent_name}' not authorized (not in constitution)"
+
+            # Check if action is in agent's allowed actions
+            allowed_actions = agent_caps.get("actions", [])
+            if action not in allowed_actions:
+                self.logger.warning(
+                    f"[Capability] Action '{action}' not in {agent_name}'s capabilities"
+                )
+                return False, f"Agent '{agent_name}' not authorized for action '{action}'"
+
+            self.logger.debug(
+                f"[Capability] Agent '{agent_name}' has capability for action '{action}'"
+            )
+            return True, None
+
+        except Exception as e:
+            self.logger.error(f"[Capability] Error checking capabilities: {e}")
+            # Fail-safe: deny if we can't verify
+            return False, f"Capability check error: {str(e)}"
+
     def _check_governance(
         self,
         agent_name: str,
@@ -351,8 +398,26 @@ class AgentBus:
                 f"[AgentBus] Routing request to agent '{agent_name}' (id: {request_id})"
             )
 
-            # Check governance before allowing action
+            # Extract action
             action = payload.get("action", "unknown")
+
+            # Check capability first (deny by default if not authorized)
+            capability_ok, capability_reason = self._check_capability(agent_name, action)
+            if not capability_ok:
+                self.logger.warning(
+                    f"[AgentBus] Request blocked by capability check: {capability_reason}"
+                )
+                self.handle_response(
+                    request_id,
+                    {
+                        "status": "error",
+                        "message": capability_reason,
+                        "code": "capability_denied",
+                    },
+                )
+                return
+
+            # Check governance before allowing action
             allowed, denial_reason = self._check_governance(agent_name, action, payload)
 
             if not allowed:
