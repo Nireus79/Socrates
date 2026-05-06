@@ -43,6 +43,15 @@ from socratic_system.reasoning.contradiction_detector import (
     ContradictionType,
 )
 
+from socratic_system.reasoning.moral_precedent_engine import (
+    MoralPrecedentEngine,
+    MoralPrecedent,
+    PrecedentType,
+    PrecedentQuery,
+    PrecedentMatch,
+    PrecedentAnalysis,
+)
+
 __all__ = [
     # Frameworks
     "EthicalFramework",
@@ -67,4 +76,11 @@ __all__ = [
     "Contradiction",
     "ContradictionAnalysis",
     "ContradictionType",
+    # Moral Precedent Engine
+    "MoralPrecedentEngine",
+    "MoralPrecedent",
+    "PrecedentType",
+    "PrecedentQuery",
+    "PrecedentMatch",
+    "PrecedentAnalysis",
 ]
