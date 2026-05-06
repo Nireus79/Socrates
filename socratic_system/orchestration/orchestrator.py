@@ -229,7 +229,7 @@ class AgentOrchestrator:
             self.logger.debug(f"Loading constitution from {constitution_path}")
 
             # Load constitution from YAML file
-            self.constitution = Constitution.from_yaml_file(str(constitution_path))
+            self.constitution = Constitution.load_from_file(str(constitution_path))
 
             # Initialize Governor with constitution
             self.governor = Governor(self.constitution, logger=self.logger)
