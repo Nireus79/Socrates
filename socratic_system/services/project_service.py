@@ -53,15 +53,19 @@ class ProjectService(Service):
         self.logger.info(f"Creating project: {spec.get('name')}")
 
         # Create project context
+        import datetime
+        import uuid
         from socratic_system.models import ProjectContext
-        from socratic_system.utils.helpers import generate_id
 
+        now = datetime.datetime.now()
         project = ProjectContext(
-            project_id=generate_id(),
+            project_id=str(uuid.uuid4()),
             name=spec["name"],
             description=spec.get("description", ""),
-            owner_id=spec.get("user_id"),
+            owner=spec.get("user_id"),
             phase="discovery",
+            created_at=now,
+            updated_at=now,
         )
 
         # Save to database
@@ -74,7 +78,7 @@ class ProjectService(Service):
             {
                 "project_id": project.project_id,
                 "name": project.name,
-                "owner_id": project.owner_id,
+                "owner": project.owner,
             },
         )
 

@@ -35,6 +35,22 @@ class ProjectRepository(BaseRepository):
         """
         super().__init__(database)
 
+    def save(self, entity) -> Any:
+        """Save project entity (delegates to save_project)."""
+        return self.save_project(entity)
+
+    def load(self, entity_id: str) -> Optional[Any]:
+        """Load project entity (delegates to load_project)."""
+        return self.load_project(entity_id)
+
+    def delete(self, entity_id: str) -> bool:
+        """Delete project entity (delegates to delete_project)."""
+        return self.delete_project(entity_id)
+
+    def list_all(self) -> List[Any]:
+        """List all projects (delegates to get_all_projects)."""
+        return self.get_all_projects()
+
     def save_project(self, project: ProjectContext) -> bool:
         """
         Save or update a project.

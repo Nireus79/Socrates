@@ -1,7 +1,7 @@
 """
 Phase 1 Tests: ProjectService
 
-Test suite validating that ProjectService works standalone without orchestrator.
+Test suite validating that ProjectService works with orchestrator dependencies.
 """
 
 import pytest
@@ -17,28 +17,32 @@ class TestProjectServiceInitialization:
     """Test ProjectService initialization"""
 
     def test_project_service_can_be_instantiated(self):
-        """Test that ProjectService can be created without orchestrator"""
+        """Test that ProjectService can be created with orchestrator dependencies"""
         mock_config = Mock()
         mock_database = Mock()
+        mock_claude_client = Mock()
+        mock_event_emitter = Mock()
 
-        service = ProjectService(mock_config, mock_database)
+        service = ProjectService(mock_config, mock_database, mock_claude_client, mock_event_emitter)
 
         assert service is not None
         assert service.config == mock_config
-        assert service.repository is not None
+        assert service.database == mock_database
+        assert service.claude_client == mock_claude_client
+        assert service.event_emitter == mock_event_emitter
 
     def test_project_service_has_required_methods(self):
         """Test that ProjectService has all required methods"""
         mock_config = Mock()
         mock_database = Mock()
+        mock_claude_client = Mock()
+        mock_event_emitter = Mock()
 
-        service = ProjectService(mock_config, mock_database)
+        service = ProjectService(mock_config, mock_database, mock_claude_client, mock_event_emitter)
 
         assert hasattr(service, "create_project")
-        assert hasattr(service, "get_project")
-        assert hasattr(service, "update_project")
-        assert hasattr(service, "delete_project")
-        assert hasattr(service, "project_exists")
+        assert hasattr(service, "load_project")
+        assert hasattr(service, "save_project")
 
 
 class TestProjectServiceOperations:
@@ -48,72 +52,72 @@ class TestProjectServiceOperations:
         """Test creating a project with valid data"""
         mock_config = Mock()
         mock_database = Mock()
+        mock_claude_client = Mock()
+        mock_event_emitter = Mock()
 
-        service = ProjectService(mock_config, mock_database)
-        service.repository.save_project = Mock(return_value=True)
+        service = ProjectService(mock_config, mock_database, mock_claude_client, mock_event_emitter)
 
         project = service.create_project(
-            name="Test Project",
-            description="Test Description",
-            owner="user_123"
+            spec={
+                "name": "Test Project",
+                "description": "Test Description",
+                "user_id": "user_123"
+            }
         )
 
         assert project is not None
         assert project.name == "Test Project"
         assert project.description == "Test Description"
         assert project.owner == "user_123"
+        # Verify event was emitted
+        mock_event_emitter.emit.assert_called()
 
     def test_create_project_with_empty_name(self):
-        """Test that creating project with empty name returns None"""
+        """Test that creating project with empty name raises ValueError"""
         mock_config = Mock()
         mock_database = Mock()
+        mock_claude_client = Mock()
+        mock_event_emitter = Mock()
 
-        service = ProjectService(mock_config, mock_database)
+        service = ProjectService(mock_config, mock_database, mock_claude_client, mock_event_emitter)
 
-        project = service.create_project(name="", owner="user_123")
+        with pytest.raises(ValueError):
+            service.create_project(spec={"name": "", "user_id": "user_123"})
 
-        assert project is None
-
-    def test_get_project_calls_repository(self):
-        """Test that get_project delegates to repository"""
+    def test_load_project_calls_database(self):
+        """Test that load_project delegates to database"""
         mock_config = Mock()
         mock_database = Mock()
+        mock_claude_client = Mock()
+        mock_event_emitter = Mock()
 
-        service = ProjectService(mock_config, mock_database)
+        service = ProjectService(mock_config, mock_database, mock_claude_client, mock_event_emitter)
 
         mock_project = Mock(spec=ProjectContext)
-        service.repository.load_project = Mock(return_value=mock_project)
+        mock_database.load_project = Mock(return_value=mock_project)
 
-        result = service.get_project("proj_123")
+        result = service.load_project("proj_123")
 
-        service.repository.load_project.assert_called_once_with("proj_123")
+        mock_database.load_project.assert_called_once_with("proj_123")
         assert result == mock_project
 
-    def test_project_exists_returns_true_for_existing(self):
-        """Test that project_exists returns correct value"""
+    def test_save_project_calls_database(self):
+        """Test that save_project delegates to database"""
         mock_config = Mock()
         mock_database = Mock()
+        mock_claude_client = Mock()
+        mock_event_emitter = Mock()
 
-        service = ProjectService(mock_config, mock_database)
-        service.repository.project_exists = Mock(return_value=True)
+        service = ProjectService(mock_config, mock_database, mock_claude_client, mock_event_emitter)
 
-        exists = service.project_exists("proj_123")
+        mock_project = Mock(spec=ProjectContext)
+        mock_project.project_id = "proj_123"
 
-        assert exists is True
-        service.repository.project_exists.assert_called_once_with("proj_123")
+        service.save_project(mock_project)
 
-    def test_delete_project_calls_repository(self):
-        """Test that delete_project delegates to repository"""
-        mock_config = Mock()
-        mock_database = Mock()
-
-        service = ProjectService(mock_config, mock_database)
-        service.repository.delete_project = Mock(return_value=True)
-
-        result = service.delete_project("proj_123")
-
-        service.repository.delete_project.assert_called_once_with("proj_123")
-        assert result is True
+        mock_database.save_project.assert_called_once_with(mock_project)
+        # Verify event was emitted
+        mock_event_emitter.emit.assert_called()
 
 
 class TestProjectRepositoryInitialization:
@@ -138,6 +142,7 @@ class TestProjectRepositoryInitialization:
         assert hasattr(repo, "load_project")
         assert hasattr(repo, "delete_project")
         assert hasattr(repo, "project_exists")
+        assert hasattr(repo, "get_all_projects")
 
 
 if __name__ == "__main__":
