@@ -6,7 +6,7 @@ in ethical decisions and learn from historical patterns.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 import logging
@@ -389,7 +389,7 @@ class MoralPrecedentEngine:
     def export_precedents(self, filepath: str) -> None:
         """Export precedents to JSON file."""
         data = {
-            "exported_at": datetime.utcnow().isoformat(),
+            "exported_at": datetime.now(UTC).isoformat(),
             "precedent_count": len(self.precedents),
             "precedents": [
                 {

@@ -135,3 +135,19 @@ class InsightRepository(BaseRepository):
         except Exception as e:
             self.logger.error(f"Failed to clear insights: {e}")
             return False
+
+    def save(self, entity) -> Any:
+        """Save insight entity (no-op for insights)."""
+        return True
+
+    def load(self, entity_id: str) -> Optional[Any]:
+        """Load insight entity (no-op for insights)."""
+        return None
+
+    def delete(self, entity_id: str) -> bool:
+        """Delete insight entity (no-op for insights)."""
+        return False
+
+    def list_all(self) -> List[Any]:
+        """List all insights (no-op for insights)."""
+        return []

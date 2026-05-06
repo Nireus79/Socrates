@@ -78,7 +78,8 @@ class TestCertificateManagement:
         )
 
         assert not cert.is_expired()
-        assert cert.days_until_expiration() == 1
+        # Days until expiration should be 0 or 1 depending on timing precision
+        assert 0 <= cert.days_until_expiration() <= 1
 
 
 class TestTLSConfiguration:

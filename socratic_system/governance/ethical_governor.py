@@ -9,7 +9,7 @@ providing explainable and auditable decisions for all agent actions.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional, Tuple
 import logging
 
@@ -141,7 +141,7 @@ class EthicalGovernor:
         """
         context = context or {}
         self.decision_count += 1
-        decision_id = f"decision_{self.decision_count}_{int(datetime.utcnow().timestamp())}"
+        decision_id = f"decision_{self.decision_count}_{int(datetime.now(UTC).timestamp())}"
 
         decision = EthicalDecision(
             action=action,

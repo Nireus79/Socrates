@@ -6,7 +6,7 @@ and capability-based authorization.
 """
 
 from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Dict, List, Optional, Tuple
 import hashlib
 import hmac
@@ -47,7 +47,7 @@ class AgentIdentity:
         """Check if identity is valid."""
         if not self.is_active:
             return False
-        if self.expires_at and datetime.utcnow() > self.expires_at:
+        if self.expires_at and datetime.now(UTC) > self.expires_at:
             return False
         return True
 
@@ -81,7 +81,7 @@ class CapabilityToken:
         """Check if token is valid and not expired."""
         if not self.is_active or self.is_revoked:
             return False
-        if datetime.utcnow() > self.expires_at:
+        if datetime.now(UTC) > self.expires_at:
             return False
         return True
 
@@ -161,8 +161,8 @@ class AgentIdentityManager:
             agent_name=agent_name,
             agent_id=agent_id,
             public_key=public_key,
-            issued_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(days=365),
+            issued_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=365),
             is_active=True,
             capabilities=capabilities,
             resource_limits=resource_limits
@@ -213,7 +213,7 @@ class AgentIdentityManager:
 
         # Generate token
         token_id = self._generate_token_id(agent_id)
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         expires_at = now + timedelta(hours=self.token_lifetime_hours)
 
         token = CapabilityToken(
@@ -272,7 +272,7 @@ class AgentIdentityManager:
             return False, reason
 
         # Check expiration
-        if datetime.utcnow() > token.expires_at:
+        if datetime.now(UTC) > token.expires_at:
             return False, "Token expired"
 
         return True, None

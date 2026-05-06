@@ -23,7 +23,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 
 @dataclass
@@ -124,7 +124,7 @@ class Sandbox:
         Returns:
             ExecutionResult with output and status
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(UTC)
 
         try:
             # Create temporary file for code
@@ -144,7 +144,7 @@ class Sandbox:
             result = self._run_subprocess(temp_file, agent_name)
 
             # Log execution
-            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            execution_time = (datetime.now(UTC) - start_time).total_seconds()
             self.logger.info(
                 f"[Sandbox] {agent_name} execution completed: "
                 f"success={result.success}, time={execution_time:.2f}s, "
@@ -154,7 +154,7 @@ class Sandbox:
             return result
 
         except SandboxTimeoutError as e:
-            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            execution_time = (datetime.now(UTC) - start_time).total_seconds()
             self.logger.warning(f"[Sandbox] {agent_name} execution TIMEOUT after {execution_time:.2f}s")
             return ExecutionResult(
                 success=False,
@@ -166,7 +166,7 @@ class Sandbox:
                 exit_reason="timeout"
             )
         except SandboxResourceError as e:
-            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            execution_time = (datetime.now(UTC) - start_time).total_seconds()
             self.logger.error(f"[Sandbox] {agent_name} execution RESOURCE EXCEEDED: {e}")
             return ExecutionResult(
                 success=False,
@@ -178,7 +178,7 @@ class Sandbox:
                 exit_reason="resource_limit"
             )
         except Exception as e:
-            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            execution_time = (datetime.now(UTC) - start_time).total_seconds()
             self.logger.error(f"[Sandbox] {agent_name} execution ERROR: {e}")
             return ExecutionResult(
                 success=False,

@@ -6,7 +6,7 @@ Provides TLS-secured server for receiving encrypted requests from other agents.
 
 from typing import Any, Dict, Optional, Callable
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 import json
 
 
@@ -154,7 +154,7 @@ class SecureAgentServer:
                 "action": action,
                 "parameters": parameters,
                 "result": result,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             self.logger.info(

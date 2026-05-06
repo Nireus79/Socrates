@@ -6,7 +6,7 @@ for secure inter-agent communication with mutual authentication.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 import logging
@@ -44,17 +44,17 @@ class CertificateInfo:
     is_valid: bool = True
     file_path: Optional[str] = None
     key_path: Optional[str] = None
-    created_date: datetime = field(default_factory=datetime.utcnow)
+    created_date: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def is_expired(self) -> bool:
         """Check if certificate is expired."""
-        return datetime.utcnow() > self.not_after
+        return datetime.now(UTC) > self.not_after
 
     def days_until_expiration(self) -> int:
         """Days until certificate expires."""
         if self.is_expired():
             return 0
-        delta = self.not_after - datetime.utcnow()
+        delta = self.not_after - datetime.now(UTC)
         return delta.days
 
     def requires_renewal(self, days_threshold: int = 30) -> bool:
@@ -79,7 +79,7 @@ class TLSConfiguration:
     require_client_cert: bool = True
     allow_self_signed: bool = False
     certificate: Optional[CertificateInfo] = None
-    created_date: datetime = field(default_factory=datetime.utcnow)
+    created_date: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def is_valid(self) -> bool:
         """Check if TLS configuration is valid."""
@@ -107,7 +107,7 @@ class MutualTLSPolicy:
     require_certificate_renewal: int = 30  # Days before expiry
     enforce_hostname_verification: bool = True
     allow_certificate_pinning: bool = True
-    created_date: datetime = field(default_factory=datetime.utcnow)
+    created_date: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass
@@ -119,13 +119,13 @@ class TLSSessionInfo:
     tls_version: TLSVersion
     cipher_suite: str
     peer_certificate: Optional[CertificateInfo] = None
-    established_at: datetime = field(default_factory=datetime.utcnow)
-    last_activity: datetime = field(default_factory=datetime.utcnow)
+    established_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_activity: datetime = field(default_factory=lambda: datetime.now(UTC))
     is_active: bool = True
 
     def is_expired(self, timeout_minutes: int = 60) -> bool:
         """Check if session is expired due to inactivity."""
-        age = datetime.utcnow() - self.last_activity
+        age = datetime.now(UTC) - self.last_activity
         return age > timedelta(minutes=timeout_minutes)
 
 
@@ -192,7 +192,7 @@ class MutualTLSManager:
         Returns:
             CertificateInfo for the created certificate
         """
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         not_after = now + timedelta(days=valid_days)
 
         # Generate fingerprint (simplified - in production use actual cert)
@@ -278,7 +278,7 @@ class MutualTLSManager:
             return False, "Certificate marked as invalid"
 
         # Check age
-        age_days = (datetime.utcnow() - cert_info.created_date).days
+        age_days = (datetime.now(UTC) - cert_info.created_date).days
         if age_days > self.policy.max_certificate_age_days:
             return False, f"Certificate age ({age_days} days) exceeds policy maximum"
 
@@ -321,7 +321,7 @@ class MutualTLSManager:
                 return None
 
         # Create session
-        session_id = f"tls_{agent_id}_{peer_agent_id}_{int(datetime.utcnow().timestamp())}"
+        session_id = f"tls_{agent_id}_{peer_agent_id}_{int(datetime.now(UTC).timestamp())}"
 
         session = TLSSessionInfo(
             session_id=session_id,
@@ -517,5 +517,5 @@ class MutualTLSManager:
         """
         import hashlib
 
-        combined = f"{name}_{subject}_{datetime.utcnow().isoformat()}"
+        combined = f"{name}_{subject}_{datetime.now(UTC).isoformat()}"
         return hashlib.sha256(combined.encode()).hexdigest()

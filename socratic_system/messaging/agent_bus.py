@@ -203,6 +203,17 @@ class AgentBus:
             backoff_factor=2.0,
         )
 
+        # Metrics tracking
+        self.metrics = {
+            "total_requests": 0,
+            "successful_requests": 0,
+            "failed_requests": 0,
+            "direct_handler_invocations": 0,
+            "broadcast_messages": 0,
+            "circuit_breaker_rejections": 0,
+            "timeouts": 0,
+        }
+
         # Set up event routing for agent requests
         self._setup_event_routing()
 
@@ -520,6 +531,9 @@ class AgentBus:
         if timeout is None:
             timeout = self.default_timeout
 
+        # Track total requests
+        self.metrics["total_requests"] += 1
+
         # Check circuit breaker
         if self.enable_circuit_breaker:
             breaker = self._get_circuit_breaker(target_agent)
@@ -527,6 +541,7 @@ class AgentBus:
                 self.logger.error(
                     f"[AgentBus] Circuit breaker OPEN for {target_agent} - rejecting request"
                 )
+                self.metrics["circuit_breaker_rejections"] += 1
                 raise AgentError(
                     f"Agent {target_agent} is unavailable (circuit breaker open)"
                 )
@@ -573,14 +588,16 @@ class AgentBus:
                 response = await asyncio.wait_for(future, timeout=timeout)
                 self.logger.debug(f"[AgentBus] Received response for {request_id}")
 
-                # Record success in circuit breaker
+                # Record success in circuit breaker and metrics
                 if self.enable_circuit_breaker:
                     self._get_circuit_breaker(target_agent).record_success()
 
+                self.metrics["successful_requests"] += 1
                 return response
 
             except asyncio.TimeoutError as e:
                 last_error = e
+                self.metrics["timeouts"] += 1
                 self.logger.warning(
                     f"[AgentBus] Request to {target_agent} timed out after {timeout}s "
                     f"(attempt {retry_count + 1}/{max_retries + 1})"
@@ -618,6 +635,7 @@ class AgentBus:
                     del self.request_queue[request_id]
 
         # All retries exhausted
+        self.metrics["failed_requests"] += 1
         if isinstance(last_error, asyncio.TimeoutError):
             raise AgentTimeoutError(
                 f"{target_agent} timed out after {max_retries + 1} attempts"
@@ -733,4 +751,67 @@ class AgentBus:
             "registered_handlers": sum(
                 len(handlers) for handlers in self.response_listeners.values()
             ),
+        }
+
+    def get_metrics(self) -> Dict[str, Any]:
+        """Get agent bus metrics.
+
+        Returns:
+            Metrics dict with request statistics
+        """
+        return {
+            **self.metrics,
+            "pending_requests": len(self.request_queue),
+            "circuit_breakers": {
+                name: breaker.get_state()
+                for name, breaker in self.circuit_breakers.items()
+            },
+        }
+
+    async def broadcast(
+        self,
+        action: str,
+        payload: Optional[Dict[str, Any]] = None,
+        capability_filter: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Broadcast message to multiple agents.
+
+        Args:
+            action: Action to broadcast
+            payload: Optional payload data
+            capability_filter: Optional capability to filter agents
+
+        Returns:
+            Dict with status, count, and agents_notified list
+        """
+        agents_notified = []
+
+        # Get agents from registry if available
+        if self.registry:
+            # Get agents by capability if filter specified, otherwise get all
+            if capability_filter:
+                agents_notified = self.registry.list_agents(capability=capability_filter)
+            else:
+                agents_notified = self.registry.list_agents()
+
+            # Fire-and-forget to all matching agents
+            for agent_name in agents_notified:
+                try:
+                    await self.send_request(
+                        target_agent=agent_name,
+                        request={"action": action, **(payload or {})},
+                        fire_and_forget=True,
+                    )
+                except Exception as e:
+                    self.logger.warning(
+                        f"[AgentBus] Failed to notify {agent_name}: {e}"
+                    )
+
+            self.metrics["broadcast_messages"] += 1
+
+        return {
+            "status": "success",
+            "action": action,
+            "count": len(agents_notified),
+            "agents_notified": agents_notified,
         }

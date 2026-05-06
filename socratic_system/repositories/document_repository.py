@@ -285,3 +285,19 @@ class DocumentRepository(BaseRepository):
         except Exception as e:
             self.logger.error(f"Failed to clear documents for {project_id}: {e}")
             return False
+
+    def save(self, entity) -> Any:
+        """Save document entity (no-op for documents)."""
+        return True
+
+    def load(self, entity_id: str) -> Optional[Any]:
+        """Load document entity (no-op for documents)."""
+        return None
+
+    def delete(self, entity_id: str) -> bool:
+        """Delete document entity (no-op for documents)."""
+        return False
+
+    def list_all(self) -> List[Any]:
+        """List all documents (no-op for documents)."""
+        return []

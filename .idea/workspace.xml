@@ -5,7 +5,28 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/secure_agent_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/secure_agent_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/secure_agent_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/secure_agent_server.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/governance/ethical_governor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/governance/ethical_governor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/messaging/agent_bus.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/messaging/agent_bus.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/reasoning/ethical_framework.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/reasoning/ethical_framework.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/reasoning/moral_precedent_engine.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/reasoning/moral_precedent_engine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/repositories/conflict_repository.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/repositories/conflict_repository.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/repositories/document_repository.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/repositories/document_repository.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/repositories/insight_repository.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/repositories/insight_repository.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/security/agent_certificates.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/security/agent_certificates.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/security/agent_identity.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/security/agent_identity.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/security/audit_logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/security/audit_logger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/security/mutual_tls.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/security/mutual_tls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/security/sandbox.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/security/sandbox.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/services/conflict_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/services/conflict_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/services/insight_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/services/insight_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase1_insight_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase1_insight_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_7_certificates.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_7_certificates.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_8_tls_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_8_tls_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_9_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_9_integration.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

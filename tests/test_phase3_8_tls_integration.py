@@ -6,7 +6,7 @@ encryption, and request handling.
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, UTC
 
 from socratic_system.agents.secure_agent_client import (
     SecureAgentClient,
@@ -27,7 +27,7 @@ class TestSecureRequest:
             target_agent="agent2",
             action="test_action",
             parameters={"key": "value"},
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
         )
 
         assert req.request_id == "req_001"

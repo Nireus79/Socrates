@@ -204,38 +204,33 @@ class TestInsightServiceInitialization:
     """Test InsightService initialization."""
 
     def test_service_initialization(self):
-        """Test service initializes with config and database."""
+        """Test service initializes with config and claude_client."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
 
         assert service.config is mock_config
-        assert service.repository is not None
-        assert isinstance(service.repository, InsightRepository)
+        assert service.claude_client is mock_claude_client
 
     def test_service_has_logger(self):
         """Test service has logging configured."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
 
         assert isinstance(service.logger, logging.Logger)
 
-    def test_service_default_categories(self):
-        """Test service initializes with default categories."""
+    def test_service_with_context_analyzer(self):
+        """Test service initializes with optional context analyzer."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
+        mock_analyzer = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client, mock_analyzer)
 
-        assert "requirement" in service.default_categories
-        assert "architecture" in service.default_categories
-        assert "constraint" in service.default_categories
-        assert "risk" in service.default_categories
-        assert "opportunity" in service.default_categories
-        assert "dependency" in service.default_categories
+        assert service.context_analyzer is mock_analyzer
 
 
 class TestInsightServiceAnalysis:
@@ -244,9 +239,9 @@ class TestInsightServiceAnalysis:
     def test_analyze_insights_success(self):
         """Test analyzing insights with categorization and confidence."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
 
         insights_dict = {
             "requirements": "System must support 10k concurrent users with minimal latency",
@@ -269,9 +264,9 @@ class TestInsightServiceAnalysis:
     def test_analyze_insights_empty(self):
         """Test analyzing empty insights dict."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
         result = service.analyze_insights("test_proj", {})
 
         assert result["status"] == "success"
@@ -281,8 +276,8 @@ class TestInsightServiceAnalysis:
     def test_categorize_insight_requirement(self):
         """Test categorizing requirement insights."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         assert service._categorize_insight("requirements") == "requirement"
         assert service._categorize_insight("feature_spec") == "requirement"
@@ -291,8 +286,8 @@ class TestInsightServiceAnalysis:
     def test_categorize_insight_architecture(self):
         """Test categorizing architecture insights."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         assert service._categorize_insight("architecture") == "architecture"
         assert service._categorize_insight("design_pattern") == "architecture"
@@ -300,8 +295,8 @@ class TestInsightServiceAnalysis:
     def test_categorize_insight_risk(self):
         """Test categorizing risk insights."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         assert service._categorize_insight("risks") == "risk"
         assert service._categorize_insight("issues") == "risk"
@@ -309,8 +304,8 @@ class TestInsightServiceAnalysis:
     def test_calculate_confidence_short_content(self):
         """Test confidence calculation for short content."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         # Short content should have lower confidence
         confidence = service._calculate_confidence("Short")
@@ -319,8 +314,8 @@ class TestInsightServiceAnalysis:
     def test_calculate_confidence_long_content(self):
         """Test confidence calculation for long content."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         # Long content should approach 0.95
         long_content = " ".join(["word"] * 150)
@@ -334,9 +329,9 @@ class TestInsightServiceStorage:
     def test_store_insights_success(self):
         """Test storing analyzed insights."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
         service.repository.add_insight = MagicMock(return_value=True)
 
         insights = [
@@ -364,9 +359,9 @@ class TestInsightServiceStorage:
     def test_store_insights_partial_failure(self):
         """Test storing insights with partial failures."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
         # First call succeeds, second fails
         service.repository.add_insight = MagicMock(side_effect=[True, False])
 
@@ -388,9 +383,9 @@ class TestInsightServiceRetrieval:
     def test_get_project_insights_success(self):
         """Test retrieving project insights with statistics."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
 
         insights_data = [
             {"content": "Req 1", "category": "requirement", "confidence": 0.9},
@@ -415,9 +410,9 @@ class TestInsightServiceRetrieval:
     def test_get_insights_by_category_success(self):
         """Test retrieving insights filtered by category."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
 
         requirements = [
             {"content": "Req 1", "category": "requirement", "confidence": 0.9},
@@ -440,9 +435,9 @@ class TestInsightServiceRecommendations:
     def test_generate_recommendations_success(self):
         """Test generating recommendations from high-confidence insights."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
 
         high_conf_insights = [
             {"content": "Req 1", "category": "requirement", "confidence": 0.95},
@@ -477,8 +472,8 @@ class TestInsightServiceRecommendations:
     def test_calculate_priority_high(self):
         """Test priority calculation for high confidence insights."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         insights = [
             {"confidence": 0.95},
@@ -492,8 +487,8 @@ class TestInsightServiceRecommendations:
     def test_calculate_priority_medium(self):
         """Test priority calculation for medium confidence insights."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         insights = [
             {"confidence": 0.75},
@@ -506,8 +501,8 @@ class TestInsightServiceRecommendations:
     def test_calculate_priority_low(self):
         """Test priority calculation for low confidence insights."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         insights = [
             {"confidence": 0.55},
@@ -520,8 +515,8 @@ class TestInsightServiceRecommendations:
     def test_generate_recommendation_text_requirement(self):
         """Test recommendation text generation for requirements."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         insights = [{"content": "Req 1"}, {"content": "Req 2"}]
         text = service._generate_recommendation_text("requirement", insights)
@@ -532,8 +527,8 @@ class TestInsightServiceRecommendations:
     def test_generate_recommendation_text_risk(self):
         """Test recommendation text generation for risks."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
-        service = InsightService(mock_config, mock_db)
+        mock_claude_client = MagicMock()
+        service = InsightService(mock_config, mock_claude_client)
 
         insights = [{"content": "Risk 1"}]
         text = service._generate_recommendation_text("risk", insights)
@@ -547,19 +542,19 @@ class TestServiceIsolation:
     def test_service_no_orchestrator_dependency(self):
         """Test service has no orchestrator coupling."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
 
-        # Should only have config, logger, and repository
+        # Should have config, logger, claude_client, and repository
         assert hasattr(service, "config")
         assert hasattr(service, "logger")
+        assert hasattr(service, "claude_client")
         assert hasattr(service, "repository")
         assert isinstance(service.repository, InsightRepository)
 
-        # Should not have orchestrator or claude_client
+        # Should not have orchestrator
         assert not hasattr(service, "orchestrator")
-        assert not hasattr(service, "claude_client")
 
     def test_repository_no_service_dependency(self):
         """Test repository has no service coupling."""
@@ -577,9 +572,9 @@ class TestServiceIsolation:
     def test_service_uses_repository_for_data_access(self):
         """Test service delegates all data access to repository."""
         mock_config = MagicMock(spec=SocratesConfig)
-        mock_db = MagicMock()
+        mock_claude_client = MagicMock()
 
-        service = InsightService(mock_config, mock_db)
+        service = InsightService(mock_config, mock_claude_client)
 
         # Mock the repository
         service.repository.add_insight = MagicMock(return_value=True)

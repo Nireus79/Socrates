@@ -6,7 +6,7 @@ for agent authentication and TLS communication.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional, Dict, List, Any
 import logging
 import hashlib
@@ -29,24 +29,24 @@ class AgentCertificate:
     is_revoked: bool = False
     revoked_at: Optional[datetime] = None
     revocation_reason: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def is_valid(self) -> bool:
         """Check if certificate is currently valid."""
         if self.is_revoked:
             return False
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         return self.not_before <= now <= self.not_after
 
     def is_expired(self) -> bool:
         """Check if certificate is expired."""
-        return datetime.utcnow() > self.not_after
+        return datetime.now(UTC) > self.not_after
 
     def days_until_expiration(self) -> int:
         """Days until certificate expires."""
         if self.is_expired():
             return 0
-        delta = self.not_after - datetime.utcnow()
+        delta = self.not_after - datetime.now(UTC)
         return delta.days
 
     def requires_renewal(self, days_threshold: int = 30) -> bool:
@@ -56,7 +56,7 @@ class AgentCertificate:
     def revoke(self, reason: str = "No reason specified") -> None:
         """Revoke this certificate."""
         self.is_revoked = True
-        self.revoked_at = datetime.utcnow()
+        self.revoked_at = datetime.now(UTC)
         self.revocation_reason = reason
 
     def to_dict(self) -> Dict[str, Any]:
@@ -134,7 +134,7 @@ class CertificateAuthority:
         self.serial_counter += 1
         serial_number = f"0x{self.serial_counter:08x}"
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         not_after = now + timedelta(days=valid_days)
 
         # Generate certificate PEM (simplified - in production use cryptography lib)

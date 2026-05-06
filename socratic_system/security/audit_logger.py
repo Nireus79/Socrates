@@ -10,7 +10,7 @@ Retention: 2+ years, immutable, encrypted
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from enum import Enum
 from typing import Any, Dict, Optional
 from dataclasses import dataclass, asdict
@@ -181,7 +181,7 @@ class AuditLogger:
             Unique ID of audit entry
         """
         entry = AuditEntry(
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(UTC).isoformat() + "Z",
             event_type=event_type,
             severity=severity,
             actor_id=actor_id,
@@ -457,7 +457,7 @@ class AuditLogger:
             return 0
 
         try:
-            cutoff_date = datetime.utcnow() - timedelta(days=self.retention_days)
+            cutoff_date = datetime.now(UTC) - timedelta(days=self.retention_days)
 
             if hasattr(self.db, "purge_old_audit_logs"):
                 return self.db.purge_old_audit_logs(cutoff_date)

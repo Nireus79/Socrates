@@ -14,7 +14,7 @@ Tests the complete integration of all Phase 3 modules:
 import pytest
 import json
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from socratic_system.governance.ethical_governor import EthicalGovernor
 from socratic_system.reasoning.ethical_deliberation import EthicalDeliberation
@@ -181,7 +181,7 @@ class TestSecureAgentCommunication:
         self.server.start()
 
         def echo_handler(params):
-            return {"echo": params.get("message"), "timestamp": datetime.utcnow().isoformat()}
+            return {"echo": params.get("message"), "timestamp": datetime.now(UTC).isoformat()}
 
         self.server.register_handler("echo", echo_handler)
 

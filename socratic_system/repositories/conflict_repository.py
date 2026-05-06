@@ -270,3 +270,19 @@ class ConflictRepository(BaseRepository):
         except Exception as e:
             self.logger.error(f"Failed to clear conflicts for {project_id}: {e}")
             return False
+
+    def save(self, entity) -> Any:
+        """Save conflict entity (no-op for conflicts)."""
+        return True
+
+    def load(self, entity_id: str) -> Optional[Any]:
+        """Load conflict entity (no-op for conflicts)."""
+        return None
+
+    def delete(self, entity_id: str) -> bool:
+        """Delete conflict entity (no-op for conflicts)."""
+        return False
+
+    def list_all(self) -> List[Any]:
+        """List all conflicts (no-op for conflicts)."""
+        return []

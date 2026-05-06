@@ -7,7 +7,7 @@ Provides secure TLS-encrypted communication between agents with certificate vali
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 
 
 @dataclass
@@ -33,7 +33,7 @@ class SecureResponse:
 
     def __post_init__(self):
         if self.timestamp is None:
-            self.timestamp = datetime.utcnow()
+            self.timestamp = datetime.now(UTC)
 
 
 class SecureAgentClient:
@@ -139,7 +139,7 @@ class SecureAgentClient:
                 target_agent=target_agent_id,
                 action=action,
                 parameters=parameters,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
 
             # Encrypt request (simplified)

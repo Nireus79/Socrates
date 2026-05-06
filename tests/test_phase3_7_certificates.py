@@ -7,7 +7,7 @@ Tests certificate generation, validation, revocation, and lifecycle management.
 import pytest
 import json
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from socratic_system.security.agent_certificates import (
     AgentCertificate,
@@ -20,7 +20,7 @@ class TestAgentCertificate:
 
     def test_certificate_initialization(self):
         """Certificate initializes with all fields."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         later = now + timedelta(days=365)
 
         cert = AgentCertificate(
@@ -43,7 +43,7 @@ class TestAgentCertificate:
 
     def test_certificate_validity_checking(self):
         """Certificate validity checking works correctly."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         past = now - timedelta(days=1)
         future = now + timedelta(days=365)
 
@@ -83,7 +83,7 @@ class TestAgentCertificate:
 
     def test_certificate_expiration_days(self):
         """Days until expiration calculated correctly."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         future = now + timedelta(days=30)
 
         cert = AgentCertificate(
@@ -104,7 +104,7 @@ class TestAgentCertificate:
 
     def test_certificate_renewal_requirement(self):
         """Renewal requirement detected when near expiration."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         soon = now + timedelta(days=15)  # Less than 30-day threshold
 
         cert = AgentCertificate(
@@ -131,8 +131,8 @@ class TestAgentCertificate:
             issuer_cn="CA",
             subject_cn="CN=test",
             serial_number="0x00000001",
-            not_before=datetime.utcnow(),
-            not_after=datetime.utcnow() + timedelta(days=365),
+            not_before=datetime.now(UTC),
+            not_after=datetime.now(UTC) + timedelta(days=365),
             fingerprint="abc",
             key_size=2048,
         )
@@ -152,8 +152,8 @@ class TestAgentCertificate:
             issuer_cn="CA",
             subject_cn="CN=test",
             serial_number="0x00000001",
-            not_before=datetime.utcnow(),
-            not_after=datetime.utcnow() + timedelta(days=365),
+            not_before=datetime.now(UTC),
+            not_after=datetime.now(UTC) + timedelta(days=365),
             fingerprint="abc123",
             key_size=2048,
         )
