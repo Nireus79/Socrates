@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: Full Pipeline Test-app
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=True
+    volumes:
+      - .:/app
+    command: python main.py
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - Full Pipeline Test-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: Full Pipeline Test-db
+    environment:
+      POSTGRES_DB: Full Pipeline Test_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - Full Pipeline Test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: Full Pipeline Test-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - Full Pipeline Test-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  Full Pipeline Test-network:
+    driver: bridge

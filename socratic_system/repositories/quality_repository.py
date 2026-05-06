@@ -35,6 +35,22 @@ class QualityRepository(BaseRepository):
         """
         super().__init__(database)
 
+    def save(self, entity):
+        """Save quality entity (not used - quality data is saved via projects)."""
+        return entity
+
+    def load(self, entity_id: str) -> Optional[Any]:
+        """Load quality entity (not used - quality data is loaded via projects)."""
+        return None
+
+    def delete(self, entity_id: str) -> bool:
+        """Delete quality entity (not used - quality data is deleted via projects)."""
+        return False
+
+    def list_all(self) -> List[Any]:
+        """List all quality entities (not used - quality data is accessed via projects)."""
+        return []
+
     def get_phase_maturity_scores(self, project_id: str) -> Dict[str, float]:
         """
         Get all phase maturity scores for a project.

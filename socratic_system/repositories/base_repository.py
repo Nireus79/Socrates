@@ -27,6 +27,18 @@ class BaseRepository(ABC, Generic[T]):
         self.database = database
         self.logger = logging.getLogger(self.__class__.__name__)
 
+    def _log_operation(self, operation: str, details: Dict = None) -> None:
+        """Log a repository operation.
+
+        Args:
+            operation: Operation name
+            details: Optional operation details dict
+        """
+        if details:
+            self.logger.debug(f"Repository operation: {operation} - {details}")
+        else:
+            self.logger.debug(f"Repository operation: {operation}")
+
     @abstractmethod
     def save(self, entity: T) -> T:
         """Save entity to database.
