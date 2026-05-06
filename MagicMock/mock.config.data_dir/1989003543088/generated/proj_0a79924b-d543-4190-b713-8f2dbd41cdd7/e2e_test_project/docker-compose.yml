@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: E2E Test Project-app
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=True
+    volumes:
+      - .:/app
+    command: python main.py
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - E2E Test Project-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: E2E Test Project-db
+    environment:
+      POSTGRES_DB: E2E Test Project_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - E2E Test Project-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: E2E Test Project-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - E2E Test Project-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  E2E Test Project-network:
+    driver: bridge

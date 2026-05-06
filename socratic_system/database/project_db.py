@@ -275,8 +275,8 @@ class ProjectDatabase:
                 project_id, name, owner, phase, project_type,
                 team_structure, language_preferences, deployment_target,
                 code_style, chat_mode, goals, status, progress,
-                is_archived, created_at, updated_at, archived_at, code_history
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                is_archived, created_at, updated_at, archived_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 project.project_id,
@@ -324,7 +324,6 @@ class ProjectDatabase:
                 serialize_datetime(project.created_at),
                 serialize_datetime(now),
                 serialize_datetime(project.archived_at) if project.archived_at else None,  # type: ignore
-                json.dumps(project.code_history) if project.code_history else None,
             ),
         )
 

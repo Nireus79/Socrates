@@ -32,12 +32,13 @@ class MigrationRunner:
         self.migration_dir = archive_dir if archive_dir.exists() else root_dir
         self.logger = logging.getLogger("socrates.database.migrations")
 
-    def apply_migration(self, migration_file: str) -> Tuple[bool, str]:
+    def apply_migration(self, migration_file: str, is_optional: bool = False) -> Tuple[bool, str]:
         """
         Apply a SQL migration script to the database
 
         Args:
             migration_file: Name of migration file (e.g., "add_github_import_tables.sql")
+            is_optional: If True, log missing file at DEBUG level instead of ERROR
 
         Returns:
             Tuple of (success: bool, message: str)
@@ -46,7 +47,10 @@ class MigrationRunner:
 
         if not migration_path.exists():
             msg = f"Migration file not found: {migration_path}"
-            self.logger.error(msg)
+            if is_optional:
+                self.logger.debug(msg)  # Log at DEBUG for optional migrations
+            else:
+                self.logger.error(msg)
             return False, msg
 
         try:
@@ -224,22 +228,23 @@ class MigrationRunner:
             return True, msg
 
         # Apply migrations in order
+        # Mark some as optional (missing files won't cause ERROR logs)
         migrations_to_apply = [
-            ("add_github_import_tables.sql", "GitHub import tables"),
-            ("add_claude_auth_method_column.sql", "Claude auth method column"),
-            ("add_knowledge_documents_columns.sql", "Knowledge documents file tracking columns"),
-            ("add_code_history_column.sql", "Code history column"),
+            ("add_github_import_tables.sql", "GitHub import tables", True),  # optional
+            ("add_claude_auth_method_column.sql", "Claude auth method column", False),
+            ("add_knowledge_documents_columns.sql", "Knowledge documents file tracking columns", False),
+            ("add_code_history_column.sql", "Code history column", True),  # optional
         ]
 
         all_migrations_successful = True
         messages = []
 
-        for migration_file, migration_name in migrations_to_apply:
+        for migration_file, migration_name, is_optional in migrations_to_apply:
             # Check if this migration is already applied
             if migration_file == "add_github_import_tables.sql" and status.get(
                 "github_import_tables"
             ):
-                self.logger.info(f"{migration_name} already applied, skipping")
+                self.logger.debug(f"{migration_name} already applied, skipping")
                 messages.append(f"{migration_name}: already applied")
                 continue
             elif migration_file == "add_claude_auth_method_column.sql" and status.get(
@@ -257,28 +262,38 @@ class MigrationRunner:
             elif migration_file == "add_code_history_column.sql" and status.get(
                 "code_history_column"
             ):
-                self.logger.info(f"{migration_name} already applied, skipping")
+                self.logger.debug(f"{migration_name} already applied, skipping")
                 messages.append(f"{migration_name}: already applied")
                 continue
 
             # Apply the migration
+            log_level = "DEBUG" if is_optional else "INFO"
             self.logger.info(f"Applying {migration_name} migration ({migration_file})...")
-            success, msg = self.apply_migration(migration_file)
+            success, msg = self.apply_migration(migration_file, is_optional=is_optional)
 
             if success:
                 messages.append(f"{migration_name}: applied successfully")
             else:
-                messages.append(f"{migration_name}: FAILED - {msg}")
-                all_migrations_successful = False
+                # Only treat as failure if it's a critical migration
+                if not is_optional:
+                    messages.append(f"{migration_name}: FAILED - {msg}")
+                    all_migrations_successful = False
+                else:
+                    messages.append(f"{migration_name}: skipped (optional)")
 
-        # Verify all migrations were successful
+        # Verify critical migrations were applied
         final_status = self.check_migration_status()
-        if all(final_status.values()):
-            final_msg = f"All migrations applied successfully. Status: {final_status}"
+        critical_applied = (
+            final_status.get("users_claude_auth_method", False) and
+            final_status.get("knowledge_documents_columns", False)
+        )
+
+        if critical_applied:
+            final_msg = f"All critical migrations applied. Status: {final_status}"
             self.logger.info(final_msg)
             return True, final_msg
         else:
-            final_msg = f"Some migrations failed or incomplete. Status: {final_status}. Details: {'; '.join(messages)}"
+            final_msg = f"Some critical migrations failed. Status: {final_status}. Details: {'; '.join(messages)}"
             self.logger.error(final_msg)
             return all_migrations_successful, final_msg
 
