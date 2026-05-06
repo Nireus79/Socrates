@@ -267,6 +267,26 @@ capabilities:
       timeout_seconds: 120
       max_parallel_calls: 3
 
+  # Alias for API usage (lowercase snake_case)
+  multi_llm_manager:
+    actions:
+      - list_providers
+      - get_provider_config
+      - set_provider_config
+      - add_api_key
+      - remove_api_key
+      - get_provider_models
+      - get_usage_stats
+      - call_provider
+      - compare_responses
+    resource_access:
+      - external_apis:call
+      - database:read
+      - database:write
+    resource_limits:
+      timeout_seconds: 120
+      max_parallel_calls: 3
+
   NoteManager:
     actions:
       - add_note
