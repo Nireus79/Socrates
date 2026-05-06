@@ -38,3 +38,965 @@
 [2026-05-06 05:49:24] [DEBUG] socratic_rag.socratic_counselor: Full insights: <MagicMock name='mock.claude_client.extract_insights()' id='2529921020128'>
 [2026-05-06 05:49:24] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
 [2026-05-06 05:49:24] [INFO] socratic_rag.socratic_counselor: Generating hint for project <MagicMock name='mock.project_id' id='2529919249024'> in discovery phase
+[2026-05-06 07:17:49] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:17:49] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:17:49] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:17:49] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:17:49] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:17:50] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:17:50] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:17:51] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:17:51] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpj_b1yx9l, log_level=INFO)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpj_b1yx9l, log_level=INFO)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpj_b1yx9l\projects.db
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpj_b1yx9l\projects.db
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpj_b1yx9l\vector_db
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpj_b1yx9l\vector_db
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:17:52] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:17:52] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:17:52] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:17:52] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:17:53] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:17:53] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:17:53] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:17:53] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:17:54] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpvz46jr22, log_level=INFO)
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpvz46jr22, log_level=INFO)
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpvz46jr22\projects.db
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpvz46jr22\projects.db
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpvz46jr22\vector_db
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpvz46jr22\vector_db
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:17:54] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:17:56] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:17:56] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:17:56] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:17:56] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:17:56] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:17:56] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:17:56] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:17:56] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:17:56] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:17:56] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:17:56] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:17:56] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:17:58] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:17:58] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:17:58] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:17:58] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:17:58] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:17:59] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:17:59] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:17:59] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:17:59] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:18:00] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmphbfbuu6s, log_level=INFO)
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmphbfbuu6s, log_level=INFO)
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmphbfbuu6s\projects.db
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmphbfbuu6s\projects.db
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmphbfbuu6s\vector_db
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmphbfbuu6s\vector_db
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:00] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:02] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:18:02] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:18:02] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:18:02] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:18:02] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:18:03] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:18:03] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:18:04] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpxra24w5v, log_level=INFO)
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpxra24w5v, log_level=INFO)
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpxra24w5v\projects.db
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpxra24w5v\projects.db
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpxra24w5v\vector_db
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpxra24w5v\vector_db
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:04] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:10] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:18:10] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:18:10] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:18:10] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:18:10] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:18:12] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:18:12] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:18:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:18:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmp5sdsrd8g, log_level=INFO)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmp5sdsrd8g, log_level=INFO)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmp5sdsrd8g\projects.db
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmp5sdsrd8g\projects.db
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmp5sdsrd8g\vector_db
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmp5sdsrd8g\vector_db
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:18:14] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:18:14] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:18:14] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:18:14] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:18:17] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:18:17] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:18:17] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:18:17] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:18:19] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:18:19] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:18:19] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:18:19] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:18:19] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:18:19] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:18:19] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:18:19] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:18:19] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:18:20] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpr9miqfb_, log_level=INFO)
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpr9miqfb_, log_level=INFO)
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpr9miqfb_\projects.db
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpr9miqfb_\projects.db
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpr9miqfb_\vector_db
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpr9miqfb_\vector_db
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:20] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:18:27] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:18:27] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:18:27] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:18:27] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:18:27] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:18:27] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:18:27] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:22:50] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:22:50] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:22:50] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:22:50] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:22:50] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:22:52] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:22:52] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:22:52] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:22:52] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpiw8csuhd, log_level=INFO)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpiw8csuhd, log_level=INFO)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpiw8csuhd\projects.db
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpiw8csuhd\projects.db
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpiw8csuhd\vector_db
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpiw8csuhd\vector_db
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:22:53] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:22:53] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:22:53] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:22:53] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:22:55] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:22:55] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:22:55] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:22:55] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:22:56] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmp4250uhzh, log_level=INFO)
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmp4250uhzh, log_level=INFO)
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmp4250uhzh\projects.db
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmp4250uhzh\projects.db
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmp4250uhzh\vector_db
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmp4250uhzh\vector_db
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:22:56] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:22:57] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:22:57] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:22:57] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:22:57] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:22:57] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:22:57] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:22:58] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:22:58] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-05-06 07:22:58] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:22:58] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-05-06 07:22:58] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:22:58] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-06 07:23:00] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:23:00] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:23:00] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:23:00] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:23:00] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:23:01] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:23:01] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-05-06 07:23:01] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:23:01] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'user_learning'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:23:02] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpen72lcb7, log_level=INFO)
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpen72lcb7, log_level=INFO)
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpen72lcb7\projects.db
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpen72lcb7\projects.db
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpen72lcb7\vector_db
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpen72lcb7\vector_db
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:23:02] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-05-06 07:23:04] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:23:04] [DEBUG] socratic_rag.orchestrator: Loading constitution from C:\Users\themi\PycharmProjects\Socrates\constitution.yaml
+[2026-05-06 07:23:04] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:23:04] [ERROR] socratic_rag.orchestrator: Failed to initialize Governor: type object 'Constitution' has no attribute 'from_yaml_file'
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-05-06 07:23:04] [INFO] socratic_rag.orchestrator: Initializing database components...
