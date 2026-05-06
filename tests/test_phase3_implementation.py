@@ -285,7 +285,11 @@ class TestBackgroundHandlers(unittest.IsolatedAsyncioTestCase):
         def capture_emit(event_name, data):
             self.events_emitted.append((event_name, data))
 
+        async def capture_emit_async(event_name, data):
+            self.events_emitted.append((event_name, data))
+
         self.orchestrator.event_emitter.emit = capture_emit
+        self.orchestrator.event_emitter.emit_async = capture_emit_async
 
         # Import BackgroundHandlers after mocks are set up
         from socratic_system.handlers import BackgroundHandlers
