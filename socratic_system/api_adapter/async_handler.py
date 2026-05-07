@@ -126,7 +126,7 @@ class AsyncJobHandler:
         self.logger.debug(f"Retrieved status for job {job_id}: {job_result.status}")
 
         # Prepare response
-        response = {
+        response: Dict[str, Any] = {
             "job_id": job_id,
             "status": job_result.status.value,
             "ready": job_result.status.value

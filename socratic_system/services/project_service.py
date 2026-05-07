@@ -62,7 +62,7 @@ class ProjectService(Service):
             project_id=str(uuid.uuid4()),
             name=spec["name"],
             description=spec.get("description", ""),
-            owner=spec.get("user_id"),
+            owner=spec.get("user_id", ""),
             phase="discovery",
             created_at=now,
             updated_at=now,

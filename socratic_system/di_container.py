@@ -92,7 +92,7 @@ class DIContainer:
         if "quality_service" not in self._services:
             self._services["quality_service"] = QualityService(
                 self.config,
-                self.system,
+                self.database,
             )
         return self._services["quality_service"]
 
@@ -129,7 +129,7 @@ class DIContainer:
         if "conflict_service" not in self._services:
             self._services["conflict_service"] = ConflictService(
                 self.config,
-                self.system,
+                self.database,
             )
         return self._services["conflict_service"]
 

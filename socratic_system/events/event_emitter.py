@@ -33,7 +33,7 @@ class EventEmitter:
 
     def __init__(self):
         """Initialize the event emitter"""
-        self._listeners: Dict[EventType, List[Callable]] = {}
+        self._listeners: Dict[Union[EventType, str], List[Callable]] = {}
         self._logger = logging.getLogger("socrates.events")
         self._lock = threading.RLock()
 
@@ -166,12 +166,12 @@ class EventEmitter:
                 return sum(len(listeners) for listeners in self._listeners.values())
             return len(self._listeners.get(event_type, []))
 
-    def get_event_names(self) -> List[EventType]:
+    def get_event_names(self) -> List[Union[EventType, str]]:
         """
         Get all event types that have at least one listener.
 
         Returns:
-            A list of EventTypes with registered listeners
+            A list of EventTypes or strings with registered listeners
         """
         with self._lock:
             return list(self._listeners.keys())

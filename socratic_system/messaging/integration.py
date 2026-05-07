@@ -63,15 +63,11 @@ class OrchestratorAgentBusAdapter:
         Returns:
             Response from agent
         """
-        # Extract action if present
-        action = request.pop("action", "process")
-
         try:
             # Try agent bus first
             return await self.agent_bus.send_request(
                 target_agent=agent_name,
-                action=action,
-                payload=request,
+                request=request,
                 timeout=timeout,
             )
         except Exception as e:
@@ -80,7 +76,9 @@ class OrchestratorAgentBusAdapter:
             # Fallback to legacy handler if available
             if agent_name in self._legacy_handlers:
                 handler = self._legacy_handlers[agent_name]
-                request["action"] = action
+                # Ensure action is present in request for legacy handler
+                if "action" not in request:
+                    request["action"] = "process"
                 return handler(request)
 
             raise

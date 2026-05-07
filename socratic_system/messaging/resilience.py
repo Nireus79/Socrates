@@ -107,7 +107,7 @@ class RetryPolicy:
 
         if last_error is not None:
             raise last_error
-        raise AgentTimeoutError("All retry attempts failed")
+        raise AgentTimeoutError("unknown", self.max_delay)
 
 
 class Fallback:

@@ -584,8 +584,8 @@ class RightsAnalyzer(EthicalFramework):
     ) -> bool:
         """Check if informed consent obtained from affected parties."""
         # Check if consent was explicitly denied or not given
-        consent_given = context.get("consent_obtained")
-        informed = context.get("informed")
+        consent_given = context.get("consent_obtained", False)
+        informed = context.get("informed", False)
 
         if not stakeholders:
             return True
@@ -599,7 +599,7 @@ class RightsAnalyzer(EthicalFramework):
         action = context.get("action", "").lower() if isinstance(context.get("action"), str) else ""
         if any(word in action for word in ["data", "privacy", "personal", "medical", "financial"]):
             # Data-related actions require explicit consent
-            return consent_given and informed
+            return bool(consent_given and informed)
 
         # For general system improvements, assume reasonable consent
         return True

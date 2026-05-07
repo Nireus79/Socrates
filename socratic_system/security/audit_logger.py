@@ -243,7 +243,7 @@ class AuditLogger:
         status = "success" if allowed else "denied"
         result_code = None if allowed else "governance_denied"
 
-        details = {
+        details: Dict[str, Any] = {
             "agent": agent_name,
             "action_requested": action,
         }
@@ -329,7 +329,7 @@ class AuditLogger:
         Returns:
             Audit entry ID
         """
-        details = {
+        details: Dict[str, Any] = {
             "alert_type": alert_type,
             "description": description,
         }
@@ -480,7 +480,7 @@ class AuditLogger:
         """
         events = self.query_events(start_date=start_date, end_date=end_date, limit=10000)
 
-        report = {
+        report: Dict[str, Any] = {
             "period": {
                 "start": start_date.isoformat(),
                 "end": end_date.isoformat(),

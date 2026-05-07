@@ -6,7 +6,7 @@ about proposed actions with detailed reasoning and confidence levels.
 """
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -131,10 +131,11 @@ class EthicalDeliberation:
 
         for framework in self.frameworks:
             try:
+                stakeholders_dicts = [asdict(s) for s in stakeholder_analysis.stakeholders]
                 analysis = framework.analyze(
                     action=action,
                     context=context,
-                    stakeholders=stakeholder_analysis.stakeholders,
+                    stakeholders=stakeholders_dicts,
                     principles=principles,
                     consequences=consequences,
                 )

@@ -221,11 +221,12 @@ class ServiceAgentAdapter:
             Request ID
         """
         # Convert to synchronous call (event is emitted directly)
+        request_dict = {"action": action}
+        request_dict.update(kwargs)
         result = asyncio.run(
             self.agent_bus.send_request(
                 target_agent=target_agent,
-                action=action,
-                payload=kwargs,
+                request=request_dict,
                 fire_and_forget=True,
             )
         )

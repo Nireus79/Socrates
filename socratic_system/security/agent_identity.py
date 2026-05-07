@@ -10,7 +10,7 @@ import hmac
 import json
 import logging
 import secrets
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
@@ -35,16 +35,12 @@ class AgentIdentity:
     issued_at: datetime
     expires_at: Optional[datetime] = None
     is_active: bool = True
-    capabilities: Optional[List[str]] = None
-    resource_limits: Optional[Dict[str, Any]] = None
+    capabilities: List[str] = field(default_factory=list)
+    resource_limits: Dict[str, Any] = field(default_factory=dict)
     signature: Optional[str] = None
 
     def __post_init__(self):
         """Initialize after dataclass creation."""
-        if self.capabilities is None:
-            self.capabilities = []
-        if self.resource_limits is None:
-            self.resource_limits = {}
 
     def is_valid(self) -> bool:
         """Check if identity is valid."""
