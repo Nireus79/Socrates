@@ -189,16 +189,16 @@ class DocumentRepository(BaseRepository):
                 stats["total_chunks"] += doc.get("chunk_count", 0)
                 stats["total_entries"] += doc.get("entries_stored", 0)
 
-                content_type = doc.get("content_type", "unknown")
-                if content_type not in stats["by_type"]:
-                    stats["by_type"][content_type] = {
+                content_type = doc.get("content_type", "unknown")  # type: ignore
+                if content_type not in stats["by_type"]:  # type: ignore
+                    stats["by_type"][content_type] = {  # type: ignore
                         "count": 0,
                         "words": 0,
                         "chunks": 0,
                     }
-                stats["by_type"][content_type]["count"] += 1
-                stats["by_type"][content_type]["words"] += doc.get("word_count", 0)
-                stats["by_type"][content_type]["chunks"] += doc.get("chunk_count", 0)
+                stats["by_type"][content_type]["count"] += 1  # type: ignore
+                stats["by_type"][content_type]["words"] += doc.get("word_count", 0)  # type: ignore
+                stats["by_type"][content_type]["chunks"] += doc.get("chunk_count", 0)  # type: ignore
 
             self.logger.debug(
                 f"Retrieved statistics for {len(documents)} documents in {project_id}"

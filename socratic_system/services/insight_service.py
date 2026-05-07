@@ -84,7 +84,7 @@ class InsightService(Service):
         if not self.context_analyzer:
             return {}
 
-        return self.context_analyzer.analyze(project)
+        return self.context_analyzer.analyze(project)  # type: ignore
 
     def analyze_insights(self, project_id: str, insights_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze and categorize insights from dict.

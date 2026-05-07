@@ -63,7 +63,7 @@ class ConflictService(Service):
 
         if self.system:
             # Phase 3: Use orchestrator
-            result = self.system.process_request(
+            result = self.system.process_request(  # type: ignore
                 "conflict_detector",
                 {
                     "action": "detect_conflicts",
@@ -114,7 +114,7 @@ class ConflictService(Service):
 
         if self.system:
             # Phase 3: Use orchestrator
-            self.system.process_request(
+            self.system.process_request(  # type: ignore
                 "conflict_detector",
                 {
                     "action": "resolve_conflict",

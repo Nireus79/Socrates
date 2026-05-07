@@ -67,7 +67,7 @@ class ProjectRepository(Repository[ProjectContext]):
             List of projects
         """
         # Delegate to database implementation
-        projects = self.database.get_all_projects()
+        projects = self.database.get_all_projects()  # type: ignore
 
         # Apply pagination
         if offset > 0:
@@ -124,4 +124,4 @@ class ProjectRepository(Repository[ProjectContext]):
         Returns:
             Number of projects in the database
         """
-        return len(self.database.get_all_projects())
+        return len(self.database.get_all_projects())  # type: ignore

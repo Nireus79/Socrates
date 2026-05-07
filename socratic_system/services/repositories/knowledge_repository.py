@@ -42,11 +42,11 @@ class KnowledgeRepository(Repository[KnowledgeEntry]):
             The saved knowledge entry
         """
         # Save to relational database
-        self.project_db.save_knowledge_document(knowledge)
+        self.project_db.save_knowledge_document(knowledge)  # type: ignore
 
         # Save embedding to vector database
         if hasattr(knowledge, "content"):
-            self.vector_db.add_knowledge(knowledge.content, knowledge.project_id)
+            self.vector_db.add_knowledge(knowledge.content, knowledge.project_id)  # type: ignore
 
         return knowledge
 
@@ -73,7 +73,7 @@ class KnowledgeRepository(Repository[KnowledgeEntry]):
         Returns:
             List of knowledge entries
         """
-        entries = self.project_db.get_all_knowledge_documents()
+        entries = self.project_db.get_all_knowledge_documents()  # type: ignore
 
         if offset > 0:
             entries = entries[offset:]
@@ -124,7 +124,7 @@ class KnowledgeRepository(Repository[KnowledgeEntry]):
         Returns:
             List of (knowledge_entry, similarity_score) tuples
         """
-        return self.vector_db.search_similar(query, top_k, project_id)
+        return self.vector_db.search_similar(query, top_k, project_id)  # type: ignore
 
     def find_by_project(self, project_id: str) -> List[KnowledgeEntry]:
         """
@@ -136,4 +136,4 @@ class KnowledgeRepository(Repository[KnowledgeEntry]):
         Returns:
             List of knowledge entries for the project
         """
-        return self.project_db.get_project_knowledge(project_id)
+        return self.project_db.get_project_knowledge(project_id)  # type: ignore

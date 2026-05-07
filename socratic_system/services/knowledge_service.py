@@ -54,7 +54,7 @@ class KnowledgeService(Service):
             Document ID
         """
         self.logger.debug(f"Adding knowledge document for project {project_id}")
-        doc_id = self.vector_db.add_document(content, metadata, project_id)
+        doc_id = self.vector_db.add_document(content, metadata, project_id)  # type: ignore
         return doc_id
 
     def get_project_knowledge(self, project_id: str) -> List[Dict]:

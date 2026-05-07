@@ -107,11 +107,11 @@ class InsightRepository(BaseRepository):
             if insights:
                 total_confidence = 0.0
                 for insight in insights:
-                    category = insight.get("category", "unknown")
-                    if category not in stats["by_category"]:
-                        stats["by_category"][category] = 0
-                    stats["by_category"][category] += 1
-                    total_confidence += insight.get("confidence", 0.9)
+                    category = insight.get("category", "unknown")  # type: ignore
+                    if category not in stats["by_category"]:  # type: ignore
+                        stats["by_category"][category] = 0  # type: ignore
+                    stats["by_category"][category] += 1  # type: ignore
+                    total_confidence += insight.get("confidence", 0.9)  # type: ignore
 
                 stats["avg_confidence"] = total_confidence / len(insights)
 

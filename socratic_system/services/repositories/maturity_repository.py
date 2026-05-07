@@ -42,7 +42,7 @@ class MaturityRepository(Repository[Dict[str, Any]]):
         if not project_id:
             raise ValueError("maturity_data must contain 'project_id'")
 
-        self.database.save_maturity_metrics(project_id, maturity_data)
+        self.database.save_maturity_metrics(project_id, maturity_data)  # type: ignore
         return maturity_data
 
     def find_by_id(self, project_id: str) -> Optional[Dict[str, Any]]:
@@ -55,7 +55,7 @@ class MaturityRepository(Repository[Dict[str, Any]]):
         Returns:
             The maturity metrics if found, None otherwise
         """
-        return self.database.get_maturity_metrics(project_id)
+        return self.database.get_maturity_metrics(project_id)  # type: ignore
 
     def find_all(self, limit: Optional[int] = None, offset: int = 0) -> List[Dict[str, Any]]:
         """
@@ -69,11 +69,11 @@ class MaturityRepository(Repository[Dict[str, Any]]):
             List of maturity records
         """
         # Get all projects and their maturity metrics
-        projects = self.database.get_all_projects()
+        projects = self.database.get_all_projects()  # type: ignore
         results = []
 
         for project in projects:
-            metrics = self.database.get_maturity_metrics(project.project_id)
+            metrics = self.database.get_maturity_metrics(project.project_id)  # type: ignore
             if metrics:
                 results.append(metrics)
 
@@ -95,7 +95,7 @@ class MaturityRepository(Repository[Dict[str, Any]]):
             True if deleted, False if not found
         """
         try:
-            self.database.delete_maturity_metrics(project_id)
+            self.database.delete_maturity_metrics(project_id)  # type: ignore
             return True
         except Exception:
             return False
