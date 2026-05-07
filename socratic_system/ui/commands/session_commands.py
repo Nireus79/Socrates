@@ -297,6 +297,9 @@ Focus on the connection between the user's statement and these insights."""
             elif result.get("insights"):
                 self.print_success("Insights captured and integrated!")
 
+            # Mark current question as answered after processing response
+            self._mark_current_question_answered(project)
+
             # Clean up answered questions from pending list (FIFO queue management)
             project.cleanup_pending_questions(max_keep=1)
 
@@ -316,6 +319,22 @@ Focus on the connection between the user's statement and these insights."""
         except ValueError as e:
             self.print_error(str(e))
             return
+
+    def _mark_current_question_answered(self, project) -> None:
+        """
+        Mark the first unanswered question as answered.
+
+        This ensures cleanup_pending_questions() can filter it out on next response.
+        Prevents questions from being repeated or asked multiple times.
+        """
+        if not project.pending_questions:
+            return
+
+        for question in project.pending_questions:
+            if question.get("status") == "unanswered":
+                # Mark first unanswered question as answered
+                question["status"] = "answered"
+                break
 
     def _display_saved_specs(self, project) -> None:
         """Display what specifications were saved to the database"""
@@ -691,7 +710,16 @@ class ModeCommand(BaseCommand):
         if not project or not orchestrator:
             return self.error("Required context not available")
 
+        old_mode = project.chat_mode
         project.chat_mode = args[0]
+
+        # Clear conversation history when switching modes to prevent context confusion
+        # This ensures dialogue from one mode doesn't appear when switching to another mode
+        if old_mode != project.chat_mode:
+            project.conversation_history = []
+            self.logger.debug(
+                f"Cleared conversation history when switching from {old_mode} to {project.chat_mode}"
+            )
 
         # Save to database
         try:
