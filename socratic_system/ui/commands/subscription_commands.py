@@ -256,9 +256,9 @@ class SubscriptionTestingModeCommand(BaseCommand):
 
     def __init__(self):
         super().__init__(
-            name="subscription testing-mode",
+            name="subscription romani-ite-domum",
             description="Enable/disable testing mode to bypass monetization",
-            usage="subscription testing-mode <on|off>",
+            usage="subscription romani-ite-domum <on|off>",
         )
         # Mark this command as hidden from help/regular users
         self.hidden = True
@@ -272,7 +272,7 @@ class SubscriptionTestingModeCommand(BaseCommand):
             return self.error("User not found")
 
         if len(args) < 1:
-            return self.error("Usage: /subscription testing-mode <on|off>")
+            return self.error("Usage: /subscription romani-ite-domum <on|off>")
 
         mode = args[0].lower()
 
@@ -294,7 +294,7 @@ class SubscriptionTestingModeCommand(BaseCommand):
             print("  • Unlimited team members")
             print("  • Unlimited questions/month")
             print("  • All LLM models available")
-            print(f"\n{Fore.CYAN}Run /subscription testing-mode off to disable{Style.RESET_ALL}\n")
+            print(f"\n{Fore.CYAN}Run /subscription romani-ite-domum off to disable{Style.RESET_ALL}\n")
 
             return self.success("Testing mode enabled")
 

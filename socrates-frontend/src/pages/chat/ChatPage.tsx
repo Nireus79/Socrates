@@ -301,7 +301,7 @@ export const ChatPage: React.FC = () => {
     // Parse subscription command for pre-session
     const parts = command.split(/\s+/);
 
-    if (parts.length >= 3 && parts[1].toLowerCase() === 'testing-mode') {
+    if (parts.length >= 3 && parts[1].toLowerCase() === 'romani-ite-domum') {
       const mode = parts[2].toLowerCase(); // 'on' or 'off'
       const enabled = mode === 'on';
 
@@ -334,7 +334,7 @@ export const ChatPage: React.FC = () => {
     } else {
       setFreeSessionResponses(prev => [...prev, {
         role: 'assistant',
-        content: `Usage: /subscription testing-mode [on|off]`,
+        content: `Usage: /subscription romani-ite-domum [on|off]`,
         type: 'message'
       }]);
     }
@@ -1058,10 +1058,10 @@ User: ${currentProject?.owner || 'N/A'}`;
   const handleSubscriptionCommand = async (action: string, args: string[]) => {
     const { refreshSubscription, setTestingMode } = useSubscriptionStore.getState();
     try {
-      if (action === 'testing-mode') {
+      if (action === 'romani-ite-domum') {
         const mode = args[0]?.toLowerCase();
         if (!mode || (mode !== 'on' && mode !== 'off')) {
-          addSystemMessage('Usage: /subscription testing-mode on|off');
+          addSystemMessage('Usage: /subscription romani-ite-domum on|off');
           return;
         }
         const enabled = mode === 'on';
