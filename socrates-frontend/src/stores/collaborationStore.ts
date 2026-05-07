@@ -115,11 +115,15 @@ export const useCollaborationStore = create<CollaborationState>((set, get) => ({
       const response = await collaborationAPI.listCollaborators(projectId);
       set({ collaborators: response.collaborators, isLoading: false });
     } catch (error) {
+      // Handle error gracefully - set error state but don't crash
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load collaborators';
       set({
-        error: error instanceof Error ? error.message : 'Failed to load collaborators',
+        error: errorMessage,
         isLoading: false,
+        collaborators: [], // Clear collaborators on error
       });
-      throw error;
+      // Don't rethrow - let the app continue without collaborators
+      console.error('Failed to load collaborators for project:', projectId, error);
     }
   },
 

@@ -831,7 +831,6 @@ SUBSCRIPTION & GITHUB:
   /subscription upgrade - Upgrade subscription
   /subscription downgrade - Downgrade subscription
   /subscription compare - Compare subscription tiers
-  /subscription testing-mode on|off - Toggle testing mode
   /github import - Import GitHub repository
   /github pull - Pull latest changes
   /github push - Push changes
