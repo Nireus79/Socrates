@@ -199,9 +199,9 @@ class TestAPICodeGenerationEndpoint:
         assert response.status_code in [400, 404, 503]
 
 
-@pytest.mark.unit
+@pytest.mark.integration
 class TestAPIEventEndpoints:
-    """Tests for event streaming endpoints"""
+    """Tests for event streaming endpoints - requires authentication setup"""
 
     def test_event_history_endpoint(self, client):
         """Test event history endpoint"""
