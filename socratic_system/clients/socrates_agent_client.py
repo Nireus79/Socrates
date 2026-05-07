@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 try:
     import httpx
 except ImportError:
-    httpx = None
+    httpx = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -396,7 +396,7 @@ class SocratesAgentClientSync:
     ):
         """Initialize synchronous client wrapper"""
         self._client = SocratesAgentClient(api_url, auth_token, timeout)
-        self._loop = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
 
     def _get_loop(self) -> asyncio.AbstractEventLoop:
         """Get or create event loop"""

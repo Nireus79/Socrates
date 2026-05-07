@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 try:
     import httpx
 except ImportError:
-    httpx = None
+    httpx = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
