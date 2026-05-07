@@ -710,6 +710,17 @@ export const ChatPage: React.FC = () => {
         if (selectedProjectId) handleConversationCommand(selectedProjectId, subCmd, parts.slice(2));
         else addSystemMessage('No project selected');
         break;
+      case '/mode':
+        if (!selectedProjectId) {
+          addSystemMessage('No project selected');
+        } else if (!subCmd) {
+          addSystemMessage('Usage: /mode socratic|direct');
+        } else if (subCmd === 'socratic' || subCmd === 'direct') {
+          handleSwitchMode(subCmd);
+        } else {
+          addSystemMessage('Usage: /mode socratic|direct');
+        }
+        break;
       default:
         addSystemMessage(`Unknown command: ${cmd}. Type /help for available commands.`);
     }
@@ -786,6 +797,7 @@ SYSTEM:
   /debug [on|off] - Toggle debug mode
 
 CHAT & PHASES:
+  /mode socratic|direct - Switch dialogue mode
   /advance - Advance to next project phase
   /phase-back - Roll back to previous project phase
   /done - Finish current session
