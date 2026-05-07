@@ -5780,3 +5780,37 @@ ValueError: Test exception
 [2026-05-07 21:49:32] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
 [2026-05-07 21:49:32] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
 [2026-05-07 21:49:32] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 22:00:55] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 22:00:55] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 22:00:55] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 22:00:55] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 22:00:55] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 22:00:55] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 22:00:55] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 22:00:55] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 22:00:56] [DEBUG] socratic_rag.test: Test debug message
+[2026-05-07 22:00:56] [DEBUG] socratic_rag.test: Test debug message
+[2026-05-07 22:00:56] [INFO] socratic_rag.test: Test info message
+[2026-05-07 22:00:56] [INFO] socratic_rag.test: Test info message
+[2026-05-07 22:00:56] [WARNING] socratic_rag.test: Test warning message
+[2026-05-07 22:00:56] [WARNING] socratic_rag.test: Test warning message
+[2026-05-07 22:00:56] [ERROR] socratic_rag.test: Test error message
+[2026-05-07 22:00:56] [ERROR] socratic_rag.test: Test error message
+[2026-05-07 22:00:56] [ERROR] socratic_rag.test: An error occurred
+Traceback (most recent call last):
+  File "C:\Users\themi\PycharmProjects\Socrates\tests\utils\test_utils.py", line 72, in test_error_logging_with_exception
+    raise ValueError("Test exception")
+ValueError: Test exception
+[2026-05-07 22:00:56] [ERROR] socratic_rag.test: An error occurred
+Traceback (most recent call last):
+  File "C:\Users\themi\PycharmProjects\Socrates\tests\utils\test_utils.py", line 72, in test_error_logging_with_exception
+    raise ValueError("Test exception")
+ValueError: Test exception
+[2026-05-07 22:00:56] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 22:00:56] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 22:00:56] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 22:00:56] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 22:00:56] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 22:00:56] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 22:00:57] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 22:00:57] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
