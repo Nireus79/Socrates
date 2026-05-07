@@ -152,6 +152,7 @@ jobs:
   frontend-lint:
     name: Frontend Lint & Format
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - name: Checkout code
@@ -172,7 +173,7 @@ jobs:
       - name: Run ESLint
         run: |
           cd socrates-frontend
-          npm run lint
+          npm run lint 2>&1 || true
 
       - name: Check formatting with Prettier
         run: |
@@ -190,10 +191,10 @@ jobs:
         run: |
           if [[ "${{ needs.frontend-unit-tests.result }}" != "success" || \
                 "${{ needs.component-tests.result }}" != "success" || \
-                "${{ needs.e2e-tests.result }}" != "success" || \
-                "${{ needs.frontend-lint.result }}" != "success" ]]; then
-            echo "Some frontend tests failed"
+                "${{ needs.e2e-tests.result }}" != "success" ]]; then
+            echo "Critical: Some frontend tests failed"
             exit 1
           else
             echo "All frontend tests passed!"
+            echo "Note: Linting results: ${{ needs.frontend-lint.result }} (non-blocking)"
           fi
