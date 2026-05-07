@@ -37,7 +37,8 @@ class TestServiceAgentBusIntegration:
 
     def test_code_service_uses_agent_bus(self):
         """Test CodeService uses agent_bus instead of orchestrator.process_request()."""
-        code_service = CodeService(config=MagicMock(), orchestrator=self.orchestrator)
+        config = MagicMock()
+        code_service = CodeService(config=config)
 
         # Mock the agent bus response
         mock_response = {
@@ -61,7 +62,8 @@ class TestServiceAgentBusIntegration:
 
     def test_conflict_service_uses_agent_bus(self):
         """Test ConflictService uses agent_bus for conflict detection."""
-        conflict_service = ConflictService(config=MagicMock(), orchestrator=self.orchestrator)
+        config = MagicMock()
+        conflict_service = ConflictService(config=config)
 
         # Mock the agent bus response
         mock_response = {
@@ -84,7 +86,8 @@ class TestServiceAgentBusIntegration:
 
     def test_quality_service_uses_agent_bus(self):
         """Test QualityService uses agent_bus for maturity calculation."""
-        quality_service = QualityService(config=MagicMock(), orchestrator=self.orchestrator)
+        config = MagicMock()
+        quality_service = QualityService(config=config)
 
         # Mock the agent bus response
         mock_response = {
@@ -107,7 +110,8 @@ class TestServiceAgentBusIntegration:
 
     def test_validation_service_uses_agent_bus(self):
         """Test ValidationService uses agent_bus for code validation."""
-        validation_service = ValidationService(config=MagicMock(), orchestrator=self.orchestrator)
+        config = MagicMock()
+        validation_service = ValidationService(config=config)
 
         # Mock the agent bus response
         mock_response = {
@@ -141,9 +145,9 @@ class TestCompleteWorkflowWithAgentBus:
     def test_project_creation_to_validation_workflow(self):
         """Test workflow: create project → validate → check quality."""
         # Initialize services
-        code_service = CodeService(config=MagicMock(), orchestrator=self.orchestrator)
-        validation_service = ValidationService(config=MagicMock(), orchestrator=self.orchestrator)
-        quality_service = QualityService(config=MagicMock(), orchestrator=self.orchestrator)
+        code_service = CodeService(config=MagicMock())
+        validation_service = ValidationService(config=MagicMock())
+        quality_service = QualityService(config=MagicMock())
 
         # Mock project
         project = MagicMock()
@@ -199,7 +203,7 @@ class TestResiliencePatternIntegration:
 
     def test_circuit_breaker_protects_agent_call(self):
         """Test circuit breaker opens after failures."""
-        code_service = CodeService(config=MagicMock(), orchestrator=self.orchestrator)
+        code_service = CodeService(config=MagicMock())
         project = MagicMock()
         project.project_id = "test_proj"
 
@@ -266,7 +270,7 @@ class TestPerformanceCharacteristics:
         """Test agent_bus send_request_sync is fast."""
         import time
 
-        code_service = CodeService(config=MagicMock(), orchestrator=self.orchestrator)
+        code_service = CodeService(config=MagicMock())
 
         # Mock fast response
         mock_response = {"status": "success", "files": []}
@@ -288,9 +292,9 @@ class TestPerformanceCharacteristics:
         """Test multiple services can be called in sequence efficiently."""
         import time
 
-        code_service = CodeService(config=MagicMock(), orchestrator=self.orchestrator)
-        validation_service = ValidationService(config=MagicMock(), orchestrator=self.orchestrator)
-        quality_service = QualityService(config=MagicMock(), orchestrator=self.orchestrator)
+        code_service = CodeService(config=MagicMock())
+        validation_service = ValidationService(config=MagicMock())
+        quality_service = QualityService(config=MagicMock())
 
         project = MagicMock()
         project.project_id = "multi_service_test"
