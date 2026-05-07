@@ -11,7 +11,7 @@ Provides:
 import asyncio
 import logging
 import random
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
 from socratic_system.messaging.exceptions import AgentError, AgentTimeoutError
 
@@ -83,9 +83,12 @@ class RetryPolicy:
 
         Returns:
             Function result
+
+        Raises:
+            AgentTimeoutError: If all retry attempts fail
         """
         logger = logging.getLogger(__name__)
-        last_error = None
+        last_error: Optional[Union[AgentTimeoutError, asyncio.TimeoutError]] = None
 
         for attempt in range(self.max_retries + 1):
             try:
@@ -102,7 +105,9 @@ class RetryPolicy:
                 # Don't retry on agent-specific errors
                 raise
 
-        raise last_error
+        if last_error is not None:
+            raise last_error
+        raise AgentTimeoutError("All retry attempts failed")
 
 
 class Fallback:
