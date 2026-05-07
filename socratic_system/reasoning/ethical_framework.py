@@ -41,7 +41,7 @@ class FrameworkAnalysis:
     reasoning: str
     concerns: List[str]
     affected_principles: List[str]
-    timestamp: datetime = None
+    timestamp: Optional[datetime] = None
 
     def __post_init__(self):
         """Initialize after dataclass creation."""

@@ -10,10 +10,10 @@ Retention: 2+ years, immutable, encrypted
 
 import json
 import logging
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 class AuditEventType(Enum):
@@ -96,7 +96,7 @@ class AuditEntry:
     user_agent: Optional[str] = None
     status: str = "success"  # success, failure, denied
     result_code: Optional[str] = None  # e.g., "governance_denied", "unauthorized"
-    details: Dict[str, Any] = None  # Additional context
+    details: Dict[str, Any] = field(default_factory=dict)  # Additional context
     request_id: Optional[str] = None  # For tracing
     session_id: Optional[str] = None  # For session tracking
 
@@ -271,7 +271,7 @@ class AuditLogger:
         user_id: str,
         resource_type: str,
         resource_id: str,
-        fields_accessed: list,
+        fields_accessed: List[str],
         access_type: str = "read",
         request_id: Optional[str] = None,
         ip_address: Optional[str] = None,
@@ -314,7 +314,7 @@ class AuditLogger:
         alert_type: str,
         severity: str,
         description: str,
-        affected_resources: Optional[list] = None,
+        affected_resources: Optional[List[str]] = None,
         remediation: Optional[str] = None,
     ) -> str:
         """Log security alert.
@@ -466,7 +466,7 @@ class AuditLogger:
             return 0
 
     def generate_compliance_report(
-        self, start_date: datetime, end_date: datetime, include_fields: Optional[list] = None
+        self, start_date: datetime, end_date: datetime, include_fields: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Generate compliance report for date range.
 
