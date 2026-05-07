@@ -60,25 +60,6 @@ export const CollaborationPage: React.FC = () => {
     checkFeature();
   }, [refreshSubscription]);
 
-  // Check if collaboration feature is available
-  if (featureCheckComplete && !hasFeature('collaboration')) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Card className="max-w-md text-center">
-            <h2 className="text-2xl font-bold mb-2">Premium Feature</h2>
-            <p className="text-gray-600 mb-4">
-              Team collaboration is available on Pro and Enterprise plans.
-            </p>
-            <Button variant="primary" onClick={() => window.location.href = '/settings?tab=subscription'}>
-              Upgrade Now
-            </Button>
-          </Card>
-        </div>
-      </MainLayout>
-    );
-  }
-
   // Load projects list on mount
   React.useEffect(() => {
     listProjects();
@@ -125,6 +106,25 @@ export const CollaborationPage: React.FC = () => {
       console.error('Error setting up WebSocket:', error);
     }
   }, [selectedProjectId, hasFeature('collaboration'), fetchActivities]);
+
+  // Check if collaboration feature is available - render early if not
+  if (featureCheckComplete && !hasFeature('collaboration')) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="max-w-md text-center">
+            <h2 className="text-2xl font-bold mb-2">Premium Feature</h2>
+            <p className="text-gray-600 mb-4">
+              Team collaboration is available on Pro and Enterprise plans.
+            </p>
+            <Button variant="primary" onClick={() => window.location.href = '/settings?tab=subscription'}>
+              Upgrade Now
+            </Button>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   // Handle project selection change
   const handleProjectChange = (newProjectId: string) => {
