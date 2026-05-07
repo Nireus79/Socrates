@@ -111,6 +111,9 @@ class UserCreateCommand(BaseCommand):
 
         orchestrator.database.save_user(user)
 
+        # Create default onboarding project for new user
+        self._create_onboarding_project(orchestrator, user)
+
         # Update app context
         app.current_user = user
         app.context_display.set_context(user=user)
@@ -118,6 +121,53 @@ class UserCreateCommand(BaseCommand):
         self.print_success(f"Account created successfully! Welcome, {username}!")
 
         return self.success(data={"user": user})
+
+    def _create_onboarding_project(self, orchestrator, user: User) -> None:
+        """
+        Create a default onboarding project for new user.
+
+        Args:
+            orchestrator: System orchestrator
+            user: Newly created user
+        """
+        try:
+            import uuid
+            from socratic_system.models import ProjectContext
+
+            now = datetime.datetime.now()
+            onboarding_project = ProjectContext(
+                project_id=str(uuid.uuid4()),
+                name="Getting Started - My First Project",
+                description="Customize this template to start your Socratic journey",
+                owner=user.username,
+                phase="discovery",
+                created_at=now,
+                updated_at=now,
+                is_system_project=True,
+                system_project_type="onboarding",
+                requirements=[
+                    "Define what you want to build",
+                    "Identify key features needed",
+                    "List any constraints or dependencies"
+                ],
+                tech_stack=["Python"],
+                goals="Get familiar with Socrates project management"
+            )
+
+            # Save the project
+            orchestrator.database.save_project(onboarding_project)
+
+            # Add project to user's project list
+            if user.projects is None:
+                user.projects = []
+            user.projects.append(onboarding_project.project_id)
+            orchestrator.database.save_user(user)
+
+            self.logger.debug(f"Onboarding project created for user {user.username}")
+
+        except Exception as e:
+            # Log error but don't fail user creation
+            self.logger.error(f"Failed to create onboarding project for {user.username}: {str(e)}")
 
 
 class UserLogoutCommand(BaseCommand):

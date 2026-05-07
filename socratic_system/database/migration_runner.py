@@ -31,6 +31,42 @@ class MigrationRunner:
         root_dir = Path(__file__).parent.parent.parent / "migration_scripts"
         self.migration_dir = archive_dir if archive_dir.exists() else root_dir
         self.logger = logging.getLogger("socrates.database.migrations")
+        self._validate_migration_directory()
+
+    def _validate_migration_directory(self) -> None:
+        """
+        Validate that migration directory exists and log warnings if critical files missing.
+
+        Raises:
+            FileNotFoundError: If critical migration files are missing
+        """
+        if not self.migration_dir.exists():
+            self.logger.warning(
+                f"Migration directory not found: {self.migration_dir}\n"
+                f"Migrations will be skipped. This may cause database schema issues."
+            )
+            return
+
+        # Check for critical migration files
+        critical_migrations = [
+            "add_claude_auth_method_column.sql",
+            "add_knowledge_documents_columns.sql"
+        ]
+
+        missing_critical = []
+        for migration_file in critical_migrations:
+            migration_path = self.migration_dir / migration_file
+            if not migration_path.exists():
+                missing_critical.append(migration_file)
+                self.logger.warning(f"Missing critical migration: {migration_file}")
+
+        if missing_critical:
+            self.logger.error(
+                f"Critical migration files missing: {missing_critical}\n"
+                f"Expected in: {self.migration_dir}\n"
+                f"Without these migrations, database schema will be incomplete.\n"
+                f"New users may experience failures when accessing user or knowledge base features."
+            )
 
     def apply_migration(self, migration_file: str, is_optional: bool = False) -> Tuple[bool, str]:
         """

@@ -385,6 +385,10 @@ class SocraticRAGSystem:
         try:
             # Initialize orchestrator
             print(f"\n{Fore.YELLOW}Initializing system...{Style.RESET_ALL}")
+
+            # Validate API key before initializing orchestrator
+            api_key = self._validate_api_key_or_subscription(api_key)
+
             # In subscription mode, use a placeholder API key - actual auth happens during user login
             if api_key == "subscription_mode":
                 # For subscription mode, we'll use a dummy key initially
@@ -454,6 +458,42 @@ class SocraticRAGSystem:
                 api_key = getpass.getpass("Claude API Key: ")
                 if api_key:
                     os.environ["SOCRATES_SUBSCRIPTION_MODE"] = "0"
+        return api_key
+
+    def _validate_api_key_or_subscription(self, api_key: Optional[str]) -> str:
+        """
+        Validate API key format or subscription mode before initialization.
+
+        Args:
+            api_key: API key string, "subscription_mode", or None
+
+        Returns:
+            Validated API key or "subscription_mode"
+
+        Raises:
+            ValueError: If API key format is invalid
+        """
+        # Subscription mode is always valid
+        if api_key == "subscription_mode":
+            return api_key
+
+        # API key mode requires non-empty string
+        if not api_key:
+            raise ValueError(
+                "No API key provided and not in subscription mode.\n"
+                "Please provide a valid Claude API key or choose subscription mode."
+            )
+
+        # Validate API key format
+        if not isinstance(api_key, str):
+            raise ValueError(f"API key must be a string, got {type(api_key).__name__}")
+
+        if not (api_key.startswith("sk-ant-") or api_key.startswith("sk-")):
+            raise ValueError(
+                f"Invalid API key format. Expected key starting with 'sk-ant-' or 'sk-'\n"
+                f"Got: {api_key[:20]}{'...' if len(api_key) > 20 else ''}"
+            )
+
         return api_key
 
     def _authenticate_user(self) -> bool:
