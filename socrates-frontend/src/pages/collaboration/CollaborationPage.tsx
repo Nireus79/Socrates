@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useCollaborationStore, useProjectStore, useSubscriptionStore, useAuthStore } from '../../stores';
 import { showSuccess, showError, showInfo } from '../../stores/notificationStore';
@@ -27,6 +27,7 @@ import {
 
 export const CollaborationPage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
+  const navigate = useNavigate();
   const { currentProject, projects, getProject, listProjects, isLoading: projectLoading } = useProjectStore();
   const { hasFeature, refreshSubscription } = useSubscriptionStore();
   const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
@@ -252,7 +253,7 @@ export const CollaborationPage: React.FC = () => {
           title={currentProject ? `${currentProject.name} - Collaboration` : 'Collaboration'}
           description="Manage your team and track project activity"
           breadcrumbs={[
-            { label: 'Dashboard', onClick: () => window.location.href = '/dashboard' },
+            { label: 'Dashboard', onClick: () => navigate('/dashboard') },
             { label: 'Collaboration' },
           ]}
           actions={

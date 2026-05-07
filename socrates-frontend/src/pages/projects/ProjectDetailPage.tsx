@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Users, Settings, TrendingUp, MessageSquare, Code, Github, Zap, Download, GitPullRequest } from 'lucide-react';
 import { useProjectStore } from '../../stores';
 import { useCollaborationStore } from '../../stores/collaborationStore';
@@ -25,6 +25,7 @@ import { GitHubPublish } from '../../components/project/GitHubPublish';
 
 export const ProjectDetailPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const { currentProject, isLoading: projectLoading, getProject, updateProject, deleteProject } = useProjectStore();
   const { collaborators, isLoading: collabLoading, loadCollaborators } = useCollaborationStore();
   const [activeTab, setActiveTab] = React.useState('overview');
@@ -318,7 +319,7 @@ export const ProjectDetailPage: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.location.href = `/collaboration`}
+                    onClick={() => navigate('/collaboration')}
                   >
                     Add Member
                   </Button>
