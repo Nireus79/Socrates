@@ -1056,7 +1056,7 @@ User: ${currentProject?.owner || 'N/A'}`;
 
   // SUBSCRIPTION COMMANDS
   const handleSubscriptionCommand = async (action: string, args: string[]) => {
-    const { refreshSubscription } = useSubscriptionStore.getState();
+    const { refreshSubscription, setTestingMode } = useSubscriptionStore.getState();
     try {
       if (action === 'testing-mode') {
         const mode = args[0]?.toLowerCase();
@@ -1064,12 +1064,15 @@ User: ${currentProject?.owner || 'N/A'}`;
           addSystemMessage('Usage: /subscription testing-mode on|off');
           return;
         }
-        await apiClient.put(`/auth/me/testing-mode?enabled=${mode === 'on'}`);
-        // Refresh subscription store to pick up the testing_mode flag
+        const enabled = mode === 'on';
+        await apiClient.put(`/auth/me/testing-mode?enabled=${enabled}`);
+        // Update store immediately to enable/disable features without waiting for refresh
+        setTestingMode(enabled);
+        // Also refresh subscription to ensure consistency
         await refreshSubscription();
         setTestingModeStatus({
-          enabled: mode === 'on',
-          message: mode === 'on'
+          enabled,
+          message: enabled
             ? 'Testing mode enabled - all restrictions bypassed'
             : 'Testing mode disabled - normal restrictions apply',
         });
