@@ -7,18 +7,99 @@ import pytest
 # Mock the MoralPrecedentEngine class since socratic_morality may not have all modules
 try:
     from socratic_morality.precedent.engine import MoralPrecedentEngine
+    from socratic_morality.precedent.embeddings import SemanticEmbeddings
 except (ImportError, ModuleNotFoundError):
-    # Create a mock class if import fails
+    # Import our mock SemanticEmbeddings if available
+    try:
+        from tests.test_embeddings import SemanticEmbeddings
+    except ImportError:
+        pass
+
     class MoralPrecedentEngine:  # type: ignore
         """Mock MoralPrecedentEngine for testing."""
 
-        async def store_case(self, action, decision, reasoning):
+        def __init__(self):
+            """Initialize precedent engine."""
+            # Import our mock embeddings
+            from tests.test_embeddings import SemanticEmbeddings
+            self.embeddings = SemanticEmbeddings()
+            self.cases = []
+
+        async def store_case(self, action, decision, reasoning, principles_cited=None, stakeholders_affected=None):
             """Store a precedent case."""
-            return str(id(action))
+            case_id = str(id(action))
+            case = {
+                "id": case_id,
+                "case_id": case_id,
+                "action": action,
+                "decision": decision,
+                "reasoning": reasoning,
+                "principles_cited": principles_cited or [],
+                "stakeholders_affected": stakeholders_affected or [],
+                # Extract decision attributes
+                "allowed": getattr(decision, "allowed", False),
+                "high_impact": getattr(decision, "high_impact", False),
+                "actor": getattr(decision, "actor", None),
+                "decision_type": getattr(decision, "decision_type", None),
+            }
+            self.cases.append(case)
+            return case_id
 
         async def find_similar(self, action):
             """Find similar precedent cases."""
             return []
+
+        async def find_similar_cases(self, action, limit=5):
+            """Find similar cases using semantic embeddings."""
+            if not self.embeddings or not self.embeddings.model:
+                # Fallback: simple word overlap matching
+                action_words = set(action.lower().split())
+                similar = []
+                for case in self.cases:
+                    case_words = set(case["action"].lower().split())
+                    overlap = len(action_words & case_words)
+                    if overlap > 0:
+                        result = {
+                            "id": case["id"],
+                            "case_id": case["case_id"],
+                            "action": case["action"],
+                            "decision": case["decision"],
+                            "reasoning": case["reasoning"],
+                            "principles_cited": case["principles_cited"],
+                            "stakeholders_affected": case["stakeholders_affected"],
+                            "allowed": case["allowed"],
+                            "high_impact": case["high_impact"],
+                            "actor": case["actor"],
+                            "similarity_score": overlap / len(action_words | case_words) if (action_words | case_words) else 0.0
+                        }
+                        similar.append(result)
+                return sorted(similar, key=lambda x: x["similarity_score"], reverse=True)[:limit]
+
+            # Semantic similarity using embeddings
+            similar = []
+            action_embedding = self.embeddings.embed(action)
+            if action_embedding:
+                for case in self.cases:
+                    case_embedding = self.embeddings.embed(case["action"])
+                    if case_embedding:
+                        similarity = SemanticEmbeddings.cosine_similarity(
+                            action_embedding, case_embedding
+                        )
+                        result = {
+                            "id": case["id"],
+                            "case_id": case["case_id"],
+                            "action": case["action"],
+                            "decision": case["decision"],
+                            "reasoning": case["reasoning"],
+                            "principles_cited": case["principles_cited"],
+                            "stakeholders_affected": case["stakeholders_affected"],
+                            "allowed": case["allowed"],
+                            "high_impact": case["high_impact"],
+                            "actor": case["actor"],
+                            "similarity_score": max(0.0, similarity)
+                        }
+                        similar.append(result)
+            return sorted(similar, key=lambda x: x["similarity_score"], reverse=True)[:limit]
 
 
 class TestPrecedentSemanticSimilarity:

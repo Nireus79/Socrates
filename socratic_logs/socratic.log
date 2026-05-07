@@ -5738,3 +5738,45 @@ ValueError: Test exception
 [2026-05-07 17:24:08] [INFO] socratic_rag.orchestrator: Project database closed
 [2026-05-07 17:24:08] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
 [2026-05-07 17:24:08] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-05-07 21:49:29] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:29] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:30] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:30] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:30] [DEBUG] socratic_rag.test: Test debug message
+[2026-05-07 21:49:30] [DEBUG] socratic_rag.test: Test debug message
+[2026-05-07 21:49:30] [INFO] socratic_rag.test: Test info message
+[2026-05-07 21:49:30] [INFO] socratic_rag.test: Test info message
+[2026-05-07 21:49:30] [WARNING] socratic_rag.test: Test warning message
+[2026-05-07 21:49:30] [WARNING] socratic_rag.test: Test warning message
+[2026-05-07 21:49:30] [ERROR] socratic_rag.test: Test error message
+[2026-05-07 21:49:30] [ERROR] socratic_rag.test: Test error message
+[2026-05-07 21:49:30] [ERROR] socratic_rag.test: An error occurred
+Traceback (most recent call last):
+  File "C:\Users\themi\PycharmProjects\Socrates\tests\utils\test_utils.py", line 72, in test_error_logging_with_exception
+    raise ValueError("Test exception")
+ValueError: Test exception
+[2026-05-07 21:49:30] [ERROR] socratic_rag.test: An error occurred
+Traceback (most recent call last):
+  File "C:\Users\themi\PycharmProjects\Socrates\tests\utils\test_utils.py", line 72, in test_error_logging_with_exception
+    raise ValueError("Test exception")
+ValueError: Test exception
+[2026-05-07 21:49:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:31] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:31] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:31] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:31] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:31] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:31] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:32] [INFO] socratic_rag.integration_test: Test message
+[2026-05-07 21:49:32] [INFO] socratic_rag.integration_test: Test message
+[2026-05-07 21:49:32] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:32] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:32] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:32] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-05-07 21:49:32] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-05-07 21:49:32] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<

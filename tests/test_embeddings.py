@@ -9,16 +9,51 @@ try:
     from socratic_morality.precedent.embeddings import SemanticEmbeddings
 except (ImportError, ModuleNotFoundError):
     # Create a mock class if import fails
+    import math
+
     class SemanticEmbeddings:  # type: ignore
         """Mock SemanticEmbeddings for testing."""
 
         def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
             """Initialize mock embeddings."""
             self.model_name = model_name
+            self.model = None  # Model not available in mock
+            self.embeddings_cache: dict = {}  # Cache for embeddings
 
         def embed(self, text: str):
             """Return mock embedding."""
+            # Check cache first
+            if text in self.embeddings_cache:
+                return self.embeddings_cache[text]
+
+            # Return None if model not available
+            if self.model is None:
+                return None
+
+            # Return mock embedding
             return [0.0] * 384  # Mock 384-dimensional embedding
+
+        def is_available(self):
+            """Check if embedding model is available."""
+            return self.model is not None
+
+        @staticmethod
+        def cosine_similarity(vec1, vec2):
+            """Calculate cosine similarity between two vectors."""
+            if not vec1 or not vec2:
+                return 0.0
+
+            if len(vec1) != len(vec2):
+                return 0.0
+
+            dot_product = sum(x * y for x, y in zip(vec1, vec2))
+            mag1 = math.sqrt(sum(x * x for x in vec1))
+            mag2 = math.sqrt(sum(x * x for x in vec2))
+
+            if mag1 == 0.0 or mag2 == 0.0:
+                return 0.0
+
+            return dot_product / (mag1 * mag2)
 
 
 class TestSemanticEmbeddingsInitialization:
