@@ -137,7 +137,7 @@ packages = [
     "socratic_system",
     "socratic_system.agents",
     "socratic_system.api",
-    "socratic_system.api_adapter",
+    "socratic_system.api.adapters",
     "socratic_system.auth",
     "socratic_system.caching",
     "socratic_system.clients",
