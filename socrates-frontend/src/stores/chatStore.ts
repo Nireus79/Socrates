@@ -282,15 +282,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await chatAPI.switchMode(projectId, mode);
-      // Clear messages immediately when switching modes to prevent stale messages from appearing
-      // Keep isLoading true until loadHistory completes
+      // Clear messages when switching modes
       set({ mode, messages: [], conflicts: null, pendingConflicts: false });
       get().addSystemMessage(`Switched to ${mode} mode`);
-      // Refresh conversation history to ensure UI stays in sync with backend
-      try {
-        await get().loadHistory(projectId);
-      } catch (historyError) {
-        logger.warn(`Failed to refresh history after mode switch: ${historyError}`);
+
+      // If switching to Socratic mode, fetch the last unanswered question from queue
+      if (mode === 'socratic') {
+        try {
+          const questionResponse = await get().getQuestion(projectId);
+          if (questionResponse) {
+            // getQuestion already adds the question to messages via addMessage in its implementation
+            set({ isLoading: false });
+          }
+        } catch (questionError) {
+          logger.warn(`Failed to get question after mode switch: ${questionError}`);
+          set({ isLoading: false });
+        }
+      } else {
+        // For direct mode, just show empty dialogue
+        set({ isLoading: false });
       }
     } catch (error) {
       set({
