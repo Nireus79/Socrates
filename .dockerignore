@@ -120,6 +120,12 @@ docker-compose.override.yml
 .travis.yml
 .github/workflows/
 
+# Test data and mock directories (huge files)
+MagicMock/
+.mock_data/
+test_data/
+__pycache__/
+
 # Keep only essential files
 !.dockerignore
 !.gitignore
