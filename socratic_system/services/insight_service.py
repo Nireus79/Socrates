@@ -293,7 +293,7 @@ class InsightService(Service):
         )
 
         # Group by category
-        by_category = {}
+        by_category: Dict[str, List[Dict[str, Any]]] = {}
         for insight in high_conf_insights:
             cat = insight.get("category", "unknown")
             if cat not in by_category:

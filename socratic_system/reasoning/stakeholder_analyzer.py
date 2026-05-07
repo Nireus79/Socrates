@@ -111,7 +111,7 @@ class StakeholderAnalysis:
 
     def affected_rights_summary(self) -> Dict[str, int]:
         """Summary of affected rights and frequency."""
-        rights_count = {}
+        rights_count: Dict[str, int] = {}
         for stakeholder in self.stakeholders:
             for right in stakeholder.affected_rights:
                 rights_count[right] = rights_count.get(right, 0) + 1

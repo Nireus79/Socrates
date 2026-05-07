@@ -132,7 +132,7 @@ class ContradictionDetector:
 
     def _detect_framework_disagreement(self, result: DeliberationResult) -> List[Contradiction]:
         """Detect when ethical frameworks disagree on conclusion."""
-        contradictions = []
+        contradictions: List[Contradiction] = []
 
         if not result.framework_analyses or len(result.framework_analyses) < 2:
             return contradictions
@@ -187,7 +187,7 @@ class ContradictionDetector:
 
     def _detect_principle_conflicts(self, result: DeliberationResult) -> List[Contradiction]:
         """Detect when action violates some principles but follows others."""
-        contradictions = []
+        contradictions: List[Contradiction] = []
 
         if not result.framework_analyses:
             return contradictions
@@ -239,7 +239,7 @@ class ContradictionDetector:
 
     def _detect_temporal_contradictions(self, result: DeliberationResult) -> List[Contradiction]:
         """Detect contradictions between short-term and long-term consequences."""
-        contradictions = []
+        contradictions: List[Contradiction] = []
 
         # This is a simplified check - in practice we'd have consequence data
 
@@ -287,7 +287,7 @@ class ContradictionDetector:
 
     def _detect_consequence_mismatches(self, result: DeliberationResult) -> List[Contradiction]:
         """Detect mismatches between claimed consequences and framework conclusions."""
-        contradictions = []
+        contradictions: List[Contradiction] = []
 
         util_analysis = result.framework_analyses.get(EthicalFrameworkType.UTILITARIAN)
         if not util_analysis or not util_analysis.reasoning:
@@ -315,7 +315,7 @@ class ContradictionDetector:
 
     def _detect_confidence_inconsistencies(self, result: DeliberationResult) -> List[Contradiction]:
         """Detect inconsistencies between confidence and conclusion uncertainty."""
-        contradictions = []
+        contradictions: List[Contradiction] = []
 
         if result.final_conclusion == EthicalConclusion.ESCALATE and result.confidence > 0.85:
             # High confidence in escalation is contradictory
@@ -335,7 +335,7 @@ class ContradictionDetector:
 
     def _detect_stakeholder_conflicts(self, result: DeliberationResult) -> List[Contradiction]:
         """Detect conflicts in how stakeholders are affected."""
-        contradictions = []
+        contradictions: List[Contradiction] = []
 
         if not result.stakeholder_analysis:
             return contradictions

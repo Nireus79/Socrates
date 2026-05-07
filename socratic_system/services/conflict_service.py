@@ -143,7 +143,7 @@ class ConflictService(Service):
         self.logger.info(f"Getting conflicts for project {project_id}")
 
         conflicts = self.repository.get_project_conflicts(project_id)
-        by_type = {}
+        by_type: Dict[str, List[Dict[str, Any]]] = {}
 
         for conflict in conflicts:
             conflict_type = conflict.get("conflict_type", "unknown")

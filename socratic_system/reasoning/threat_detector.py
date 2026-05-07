@@ -239,7 +239,7 @@ class ThreatDetector:
         contradiction_analysis: Optional[Dict[str, Any]],
     ) -> List[Threat]:
         """Detect internal reasoning inconsistencies."""
-        threats = []
+        threats: List[Threat] = []
 
         if not contradiction_analysis:
             return threats
@@ -265,7 +265,7 @@ class ThreatDetector:
 
     def _detect_framework_manipulation(self, framework_analyses: Dict[str, Any]) -> List[Threat]:
         """Detect signs of framework manipulation or gaming."""
-        threats = []
+        threats: List[Threat] = []
 
         if not framework_analyses:
             return threats
@@ -361,7 +361,7 @@ class ThreatDetector:
 
     def _detect_pattern_anomalies(self, confidence: float, conclusion: str) -> List[Threat]:
         """Detect anomalies in reasoning patterns."""
-        threats = []
+        threats: List[Threat] = []
 
         if len(self.confidence_history) < 5:
             return threats  # Need enough history for patterns
@@ -404,7 +404,7 @@ class ThreatDetector:
         self, confidence: float, framework_analyses: Dict[str, Any]
     ) -> List[Threat]:
         """Detect signs of confidence score manipulation."""
-        threats = []
+        threats: List[Threat] = []
 
         if not framework_analyses:
             return threats
@@ -471,7 +471,7 @@ class ThreatDetector:
         precedent_analysis: Optional[Dict[str, Any]],
     ) -> List[Threat]:
         """Detect deviations from established precedents."""
-        threats = []
+        threats: List[Threat] = []
 
         if not precedent_analysis:
             return threats

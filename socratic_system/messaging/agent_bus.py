@@ -544,7 +544,7 @@ class AgentBus:
                 )
 
                 # Request-response pattern
-                future = asyncio.Future()
+                future: asyncio.Future[Any] = asyncio.Future()
                 self.request_queue[request_id] = future
 
                 self.event_emitter.emit(
