@@ -31,6 +31,7 @@ class ContradictionType(Enum):
 @dataclass
 class Contradiction:
     """Represents a detected contradiction in reasoning."""
+
     contradiction_type: ContradictionType
     severity: float  # 0.0-1.0 (how serious is this contradiction)
     description: str
@@ -40,12 +41,14 @@ class Contradiction:
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def __hash__(self):
+        """Return hash of this object."""
         return hash((self.contradiction_type.value, self.description))
 
 
 @dataclass
 class ContradictionAnalysis:
     """Complete analysis of contradictions in a deliberation result."""
+
     action: str
     contradictions: List[Contradiction] = field(default_factory=list)
     has_major_contradictions: bool = False

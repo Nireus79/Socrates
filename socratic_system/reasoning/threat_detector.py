@@ -37,6 +37,7 @@ class ThreatType(Enum):
 @dataclass
 class Threat:
     """Represents a detected threat in reasoning."""
+
     threat_type: ThreatType
     severity: ThreatLevel
     description: str
@@ -47,12 +48,14 @@ class Threat:
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def __hash__(self):
+        """Return hash of this object."""
         return hash((self.threat_type.value, self.description))
 
 
 @dataclass
 class ThreatProfile:
     """Profile of anomalous behavior."""
+
     baseline_mean: float
     baseline_std_dev: float
     observed_value: float
@@ -64,6 +67,7 @@ class ThreatProfile:
 @dataclass
 class ThreatAnalysis:
     """Complete threat analysis for a reasoning session."""
+
     action: str
     threats: List[Threat] = field(default_factory=list)
     overall_threat_level: ThreatLevel = ThreatLevel.NONE

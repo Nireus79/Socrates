@@ -16,6 +16,7 @@ from typing import Any, Dict, Optional
 @dataclass
 class AgentCertificate:
     """Represents an agent's certificate for TLS communication."""
+
     agent_id: str
     certificate_pem: str  # PEM-encoded certificate
     private_key_pem: str  # PEM-encoded private key

@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 @dataclass
 class SecureRequest:
     """A request sent through secure channel."""
+
     request_id: str
     source_agent: str
     target_agent: str
@@ -24,6 +25,7 @@ class SecureRequest:
 @dataclass
 class SecureResponse:
     """A response from secure communication."""
+
     request_id: str
     source_agent: str
     status_code: int
@@ -32,6 +34,7 @@ class SecureResponse:
     timestamp: datetime = None
 
     def __post_init__(self):
+        """Initialize after dataclass creation."""
         if self.timestamp is None:
             self.timestamp = datetime.now(UTC)
 

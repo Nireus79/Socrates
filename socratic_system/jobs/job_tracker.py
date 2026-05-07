@@ -24,7 +24,7 @@ class JobStatus(Enum):
 
 @dataclass
 class JobResult:
-    """Result of async job execution"""
+    """Result of async job execution."""
 
     job_id: str
     project_id: str

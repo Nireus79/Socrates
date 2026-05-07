@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class CircuitBreakerState(Enum):
     """Circuit breaker states."""
+
     CLOSED = "closed"
     OPEN = "open"
     HALF_OPEN = "half_open"

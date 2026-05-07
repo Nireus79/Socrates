@@ -28,6 +28,7 @@ from typing import Any, Dict, Optional, Tuple
 @dataclass
 class SandboxConfig:
     """Configuration for sandbox execution."""
+
     # Resource limits
     timeout_seconds: int = 60
     max_memory_mb: int = 512
@@ -63,6 +64,7 @@ class SandboxResourceError(SandboxExecutionError):
 @dataclass
 class ExecutionResult:
     """Result of sandboxed code execution."""
+
     success: bool
     output: str  # stdout
     error: str  # stderr

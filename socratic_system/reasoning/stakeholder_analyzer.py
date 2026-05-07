@@ -35,6 +35,7 @@ class ImpactSeverity(Enum):
 @dataclass
 class Impact:
     """Impact on a particular stakeholder."""
+
     affected_party: str
     impact_type: str  # "positive", "negative", "neutral"
     severity: float  # 0.0-1.0
@@ -44,12 +45,14 @@ class Impact:
     affected_rights: List[str] = field(default_factory=list)
 
     def __hash__(self):
+        """Return hash of this object."""
         return hash((self.affected_party, self.impact_type))
 
 
 @dataclass
 class Stakeholder:
     """Representation of a stakeholder affected by an action."""
+
     id: str
     name: str
     stakeholder_type: StakeholderType
@@ -76,6 +79,7 @@ class Stakeholder:
 @dataclass
 class StakeholderAnalysis:
     """Complete analysis of all stakeholders affected by an action."""
+
     action: str
     stakeholders: List[Stakeholder] = field(default_factory=list)
     impacts: List[Impact] = field(default_factory=list)

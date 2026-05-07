@@ -20,21 +20,25 @@ logger = logging.getLogger(__name__)
 
 class SocratesAgentClientError(Exception):
     """Base exception for SocratesAgentClient errors"""
+
     pass
 
 
 class AgentNotFoundError(SocratesAgentClientError):
     """Raised when agent is not found"""
+
     pass
 
 
 class AgentTimeoutError(SocratesAgentClientError):
     """Raised when agent invocation times out"""
+
     pass
 
 
 class JobNotFoundError(SocratesAgentClientError):
     """Raised when job is not found"""
+
     pass
 
 

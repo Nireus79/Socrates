@@ -32,6 +32,7 @@ from socratic_system.security.mutual_tls import (
 @dataclass
 class EthicalDecision:
     """Complete decision with full ethical reasoning trail."""
+
     action: str
     actor: str
     allowed: bool

@@ -81,6 +81,7 @@ class AuditSeverity(Enum):
 @dataclass
 class AuditEntry:
     """Single audit log entry."""
+
     timestamp: str  # ISO 8601 format
     event_type: str
     severity: str

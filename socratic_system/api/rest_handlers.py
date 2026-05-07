@@ -23,6 +23,8 @@ if BaseModel is not object:
         """Agent request model."""
 
         class Config:
+            """Pydantic configuration for agent request."""
+
             extra = "allow"
 
     class AgentResponse(BaseModel):
@@ -31,6 +33,11 @@ if BaseModel is not object:
         status: str
         data: Dict[str, Any]
         timestamp: str
+
+        class Config:
+            """Pydantic configuration for agent response."""
+
+            pass
 
     def create_agent_router(orchestrator):
         """Create FastAPI router for agent endpoints.

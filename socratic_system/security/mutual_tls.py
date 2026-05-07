@@ -32,6 +32,7 @@ class TLSVersion(Enum):
 @dataclass
 class CertificateInfo:
     """Information about a TLS certificate."""
+
     name: str
     cert_type: CertificateType
     subject: str  # Certificate subject/CN
@@ -64,6 +65,7 @@ class CertificateInfo:
 @dataclass
 class TLSConfiguration:
     """TLS configuration for an agent or service."""
+
     agent_id: str
     cert_path: str
     key_path: str
@@ -94,6 +96,7 @@ class TLSConfiguration:
 @dataclass
 class MutualTLSPolicy:
     """Policy for mutual TLS enforcement."""
+
     min_tls_version: TLSVersion = TLSVersion.TLS_1_3
     require_mutual_auth: bool = True
     certificate_validation_required: bool = True

@@ -35,7 +35,7 @@ class MessageStatus(Enum):
 
 @dataclass
 class AgentMessage:
-    """Base message for agent communication"""
+    """Base message for agent communication."""
 
     message_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     message_type: MessageType = MessageType.REQUEST
@@ -62,7 +62,7 @@ class AgentMessage:
 
 @dataclass
 class RequestMessage(AgentMessage):
-    """Request message sent from one agent to another"""
+    """Request message sent from one agent to another."""
 
     target_agent: str = ""
     action: str = ""
@@ -72,6 +72,7 @@ class RequestMessage(AgentMessage):
     fire_and_forget: bool = False
 
     def __post_init__(self):
+        """Initialize after dataclass creation."""
         self.message_type = MessageType.REQUEST
 
     def to_dict(self) -> Dict[str, Any]:
@@ -83,7 +84,7 @@ class RequestMessage(AgentMessage):
 
 @dataclass
 class ResponseMessage(AgentMessage):
-    """Response message from agent"""
+    """Response message from agent."""
 
     request_id: str = ""
     status: MessageStatus = MessageStatus.SUCCESS
@@ -91,6 +92,7 @@ class ResponseMessage(AgentMessage):
     error_message: Optional[str] = None
 
     def __post_init__(self):
+        """Initialize after dataclass creation."""
         self.message_type = MessageType.RESPONSE
 
     def to_dict(self) -> Dict[str, Any]:
@@ -137,7 +139,7 @@ class ResponseMessage(AgentMessage):
 
 @dataclass
 class ErrorMessage(AgentMessage):
-    """Error message"""
+    """Error message."""
 
     request_id: str = ""
     error_code: str = ""
@@ -145,6 +147,7 @@ class ErrorMessage(AgentMessage):
     details: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
+        """Initialize after dataclass creation."""
         self.message_type = MessageType.ERROR
 
     def to_dict(self) -> Dict[str, Any]:

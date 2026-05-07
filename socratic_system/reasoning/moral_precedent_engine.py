@@ -24,6 +24,7 @@ class PrecedentType(Enum):
 @dataclass
 class MoralPrecedent:
     """Represents a stored moral precedent."""
+
     id: str
     action_description: str
     conclusion: PrecedentType
@@ -37,6 +38,7 @@ class MoralPrecedent:
     related_precedents: List[str] = field(default_factory=list)
 
     def __hash__(self):
+        """Return hash of this object."""
         return hash((self.id, self.action_description))
 
     def similarity_to(self, action: str, threshold: float = 0.5) -> float:
@@ -70,6 +72,7 @@ class MoralPrecedent:
 @dataclass
 class PrecedentQuery:
     """Query parameters for finding similar precedents."""
+
     action: str
     similarity_threshold: float = 0.5
     max_results: int = 5
@@ -80,6 +83,7 @@ class PrecedentQuery:
 @dataclass
 class PrecedentMatch:
     """Result of querying for similar precedents."""
+
     precedent: MoralPrecedent
     similarity_score: float
     relevance_score: float  # Combination of similarity and other factors
@@ -89,6 +93,7 @@ class PrecedentMatch:
 @dataclass
 class PrecedentAnalysis:
     """Analysis of precedents related to a deliberation."""
+
     action: str
     matching_precedents: List[PrecedentMatch] = field(default_factory=list)
     precedent_consistency: bool = True  # Are precedents consistent with each other?

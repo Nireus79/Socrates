@@ -27,6 +27,7 @@ class TokenStatus(Enum):
 @dataclass
 class AgentIdentity:
     """Cryptographic identity for an agent."""
+
     agent_name: str
     agent_id: str
     public_key: str
@@ -38,6 +39,7 @@ class AgentIdentity:
     signature: Optional[str] = None
 
     def __post_init__(self):
+        """Initialize after dataclass creation."""
         if self.capabilities is None:
             self.capabilities = []
         if self.resource_limits is None:
@@ -63,6 +65,7 @@ class AgentIdentity:
 @dataclass
 class CapabilityToken:
     """Token granting capabilities to an agent."""
+
     token_id: str
     agent_id: str
     agent_name: str

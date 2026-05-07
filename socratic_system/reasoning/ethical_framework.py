@@ -32,6 +32,7 @@ class EthicalConclusion(Enum):
 @dataclass
 class FrameworkAnalysis:
     """Result of analyzing action through one ethical framework."""
+
     framework: EthicalFrameworkType
     conclusion: EthicalConclusion
     confidence: float  # 0.0-1.0
@@ -41,6 +42,7 @@ class FrameworkAnalysis:
     timestamp: datetime = None
 
     def __post_init__(self):
+        """Initialize after dataclass creation."""
         if self.timestamp is None:
             self.timestamp = datetime.now(UTC)
 

@@ -29,6 +29,7 @@ from socratic_system.reasoning.stakeholder_analyzer import (
 @dataclass
 class DeliberationResult:
     """Result of ethical deliberation on an action."""
+
     action: str
     final_conclusion: EthicalConclusion
     confidence: float  # 0.0-1.0
@@ -42,6 +43,7 @@ class DeliberationResult:
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def __hash__(self):
+        """Return hash of this object."""
         return hash((self.action, self.final_conclusion.value))
 
 
