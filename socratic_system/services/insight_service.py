@@ -62,8 +62,10 @@ class InsightService(Service):
             user_id=user_id,
         )
 
-        self.logger.debug(f"Extracted insights: {len(insights)} keys")
-        return insights
+        # Validate insights before returning
+        validated_insights = self._validate_insights(insights)
+        self.logger.debug(f"Extracted insights: {len(validated_insights)} keys (validated)")
+        return validated_insights
 
     def analyze_context(self, project: "ProjectContext") -> Dict[str, Any]:
         """Analyze project context for insights.
@@ -158,6 +160,42 @@ class InsightService(Service):
             return 0.85
         else:
             return min(0.95, 0.7 + (length / 200))
+
+    def _validate_insights(self, insights: Any) -> Dict[str, Any]:
+        """Validate extracted insights, filtering out null/empty values.
+
+        Args:
+            insights: Extracted insights from Claude client
+
+        Returns:
+            Validated insights dict with null/empty values removed
+        """
+        # Handle None or non-dict returns
+        if not insights or not isinstance(insights, dict):
+            self.logger.warning(f"Invalid insights returned: {type(insights)}")
+            return {}
+
+        validated = {}
+        for key, value in insights.items():
+            # Skip None values
+            if value is None:
+                self.logger.debug(f"Skipping null insight: {key}")
+                continue
+
+            # Skip empty strings
+            if isinstance(value, str) and not value.strip():
+                self.logger.debug(f"Skipping empty insight: {key}")
+                continue
+
+            # Skip empty lists
+            if isinstance(value, list) and len(value) == 0:
+                self.logger.debug(f"Skipping empty list insight: {key}")
+                continue
+
+            # Keep non-empty values
+            validated[key] = value
+
+        return validated
 
     def store_insights(self, project_id: str, insights: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Store analyzed insights to repository.
