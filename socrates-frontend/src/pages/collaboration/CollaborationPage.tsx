@@ -28,8 +28,9 @@ import {
 export const CollaborationPage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
   const { currentProject, projects, getProject, listProjects, isLoading: projectLoading } = useProjectStore();
-  const { hasFeature } = useSubscriptionStore();
+  const { hasFeature, refreshSubscription } = useSubscriptionStore();
   const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
+  const [featureCheckComplete, setFeatureCheckComplete] = React.useState(false);
   const {
     collaborators,
     invitations,
@@ -42,8 +43,17 @@ export const CollaborationPage: React.FC = () => {
     clearError,
   } = useCollaborationStore();
 
+  // Refresh subscription status on page load to check testing mode
+  React.useEffect(() => {
+    const checkFeature = async () => {
+      await refreshSubscription();
+      setFeatureCheckComplete(true);
+    };
+    checkFeature();
+  }, [refreshSubscription]);
+
   // Check if collaboration feature is available
-  if (!hasFeature('collaboration')) {
+  if (featureCheckComplete && !hasFeature('collaboration')) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
