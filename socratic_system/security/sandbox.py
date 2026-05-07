@@ -14,16 +14,15 @@ Features:
 - Error recovery
 """
 
-import subprocess
-import tempfile
-import os
-import signal
 import json
 import logging
+import os
+import subprocess
+import tempfile
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
-from dataclasses import dataclass
-from datetime import datetime, timedelta, UTC
 
 
 @dataclass
@@ -153,9 +152,11 @@ class Sandbox:
 
             return result
 
-        except SandboxTimeoutError as e:
+        except SandboxTimeoutError:
             execution_time = (datetime.now(UTC) - start_time).total_seconds()
-            self.logger.warning(f"[Sandbox] {agent_name} execution TIMEOUT after {execution_time:.2f}s")
+            self.logger.warning(
+                f"[Sandbox] {agent_name} execution TIMEOUT after {execution_time:.2f}s"
+            )
             return ExecutionResult(
                 success=False,
                 output="",

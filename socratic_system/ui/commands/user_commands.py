@@ -10,7 +10,6 @@ from colorama import Fore, Style
 # Import password verification from foundational auth module
 # This ensures CLI and API use identical password hashing (bcrypt)
 from socratic_system.auth import hash_password, verify_password
-
 from socratic_system.models import User
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
@@ -132,6 +131,7 @@ class UserCreateCommand(BaseCommand):
         """
         try:
             import uuid
+
             from socratic_system.models import ProjectContext
 
             now = datetime.datetime.now()

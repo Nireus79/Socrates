@@ -5,12 +5,12 @@ Handles certificate generation, storage, validation, and lifecycle management
 for agent authentication and TLS communication.
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
-from typing import Optional, Dict, List, Any
-import logging
 import hashlib
 import json
+import logging
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from typing import Any, Dict, Optional
 
 
 @dataclass
@@ -268,7 +268,7 @@ class CertificateAuthority:
     def import_certificates(self, filepath: str) -> bool:
         """Import certificates from JSON file."""
         try:
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             for agent_id, cert_data in data.items():

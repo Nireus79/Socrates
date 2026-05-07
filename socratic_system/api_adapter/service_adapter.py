@@ -5,11 +5,10 @@ Maps HTTP requests to service method calls with validation and error handling.
 """
 
 import asyncio
-import logging
-from typing import Any, Dict, Optional
 from inspect import iscoroutinefunction
+from typing import Any, Dict, Optional
 
-from .base_adapter import BaseAdapter, AdapterError, AdapterValidationError
+from .base_adapter import AdapterError, AdapterValidationError, BaseAdapter
 from .service_registry import ServiceRegistry, get_service_registry
 
 

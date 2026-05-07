@@ -27,7 +27,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from socratic_agents import SocraticAgentsSystem
-from socratic_system.config import SocratesConfig
 
 if TYPE_CHECKING:
     pass  # No longer importing AgentOrchestrator

@@ -4,11 +4,11 @@ Implements result caching with TTL support to enable non-blocking
 response processing in SocraticCounselor.
 """
 
-import time
 import logging
+import time
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any
 from threading import Lock
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

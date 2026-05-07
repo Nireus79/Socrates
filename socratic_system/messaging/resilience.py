@@ -13,7 +13,7 @@ import logging
 import random
 from typing import Any, Callable, Dict, Optional, TypeVar
 
-from socratic_system.messaging.exceptions import AgentTimeoutError, AgentError
+from socratic_system.messaging.exceptions import AgentError, AgentTimeoutError
 
 T = TypeVar("T")
 
@@ -100,7 +100,7 @@ class RetryPolicy:
                     await asyncio.sleep(delay)
                 else:
                     logger.error(f"All {self.max_retries + 1} attempts failed")
-            except AgentError as e:
+            except AgentError:
                 # Don't retry on agent-specific errors
                 raise
 

@@ -9,22 +9,22 @@ for Phase 4 refactoring to use extracted libraries.
 # Import all agents from socratic-agents library
 from socratic_agents import (
     Agent,
-    ProjectManagerAgent,
-    UserManagerAgent,
-    SocraticCounselorAgent,
-    ContextAnalyzerAgent,
     CodeGeneratorAgent,
     CodeValidationAgent,
-    SystemMonitorAgent,
     ConflictDetectorAgent,
+    ContextAnalyzerAgent,
     DocumentProcessorAgent,
-    NoteManagerAgent,
-    QualityControllerAgent,
     KnowledgeAnalysisAgent,
     KnowledgeManagerAgent,
-    UserLearningAgent,
     MultiLLMAgent,
+    NoteManagerAgent,
+    ProjectManagerAgent,
+    QualityControllerAgent,
     QuestionQueueAgent,
+    SocraticCounselorAgent,
+    SystemMonitorAgent,
+    UserLearningAgent,
+    UserManagerAgent,
 )
 
 __all__ = [

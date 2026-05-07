@@ -1,14 +1,16 @@
 """Insight service - encapsulates insight extraction and analysis."""
 
-from typing import TYPE_CHECKING, Dict, Any, Optional, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from .base import Service
 from socratic_system.repositories.insight_repository import InsightRepository
 
+from .base import Service
+
 if TYPE_CHECKING:
-    from socratic_system.models import ProjectContext
-    from socratic_system.claude_client import ClaudeClient
     from socratic_agents import DocumentContextAnalyzer
+
+    from socratic_system.claude_client import ClaudeClient
+    from socratic_system.models import ProjectContext
 
 
 class InsightService(Service):
@@ -280,7 +282,6 @@ class InsightService(Service):
         """
         self.logger.info(f"Generating recommendations for project {project_id}")
 
-        all_insights = self.repository.get_project_insights(project_id)
         high_conf_insights = self.repository.get_high_confidence_insights(project_id, min_confidence=0.8)
 
         # Group by category

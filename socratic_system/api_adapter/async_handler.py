@@ -11,10 +11,9 @@ from typing import Any, Dict, Optional
 
 from socratic_system.events.job_queue import JobQueue
 from socratic_system.events.result_cache import ResultCache
-from socratic_system.events.result_poller import ResultPoller
 
-from .service_adapter import ServiceAdapter
 from .base_adapter import AdapterError
+from .service_adapter import ServiceAdapter
 
 
 class AsyncJobHandler:

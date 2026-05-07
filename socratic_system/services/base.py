@@ -5,14 +5,13 @@ No direct orchestrator dependency - enabling testability and library export.
 """
 
 import logging
-from abc import ABC
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from socratic_system.config import SocratesConfig
 
 
-class Service(ABC):
+class Service:
     """Base class for all services.
 
     Services:

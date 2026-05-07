@@ -3,7 +3,7 @@
 Provides async job tracking infrastructure for background analysis operations.
 """
 
-from .job_tracker import JobTracker, JobResult, JobStatus
+from .job_tracker import JobResult, JobStatus, JobTracker
 
 __all__ = [
     "JobTracker",

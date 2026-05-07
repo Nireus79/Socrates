@@ -55,6 +55,10 @@ __author__ = "Socrates AI Contributors"
 __license__ = "MIT"
 
 # Core Configuration API
+# Core Components - Phase 3 transition to SocraticAgentsSystem
+# Import both for backward compatibility during migration
+from socratic_agents import SocraticAgentsSystem
+
 from .clients import ClaudeClient
 from .config import SocratesConfig
 
@@ -83,10 +87,6 @@ from .models import (
     TokenUsage,
     User,
 )
-
-# Core Components - Phase 3 transition to SocraticAgentsSystem
-# Import both for backward compatibility during migration
-from socratic_agents import SocraticAgentsSystem
 from .orchestration import AgentOrchestrator
 
 # Legacy UI (for CLI)

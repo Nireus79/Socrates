@@ -5,14 +5,13 @@ Manages certificate generation, storage, validation, and TLS configuration
 for secure inter-agent communication with mutual authentication.
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, UTC
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
-import logging
-import os
 import json
+import logging
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from enum import Enum
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class CertificateType(Enum):
@@ -479,7 +478,7 @@ class MutualTLSManager:
             TLSConfiguration if successful, None otherwise
         """
         try:
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             agent_id = data["agent_id"]

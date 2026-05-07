@@ -1,6 +1,6 @@
 """Validation service - encapsulates code and project validation."""
 
-from typing import TYPE_CHECKING, Dict, Any, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from .base import Service
 

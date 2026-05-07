@@ -7,7 +7,6 @@ Used by DocumentService instead of direct database calls.
 This is the single point of change for document schema updates.
 """
 
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from .base_repository import BaseRepository

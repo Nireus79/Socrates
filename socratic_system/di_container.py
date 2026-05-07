@@ -6,22 +6,22 @@ Phase 3: Updated to use SocraticAgentsSystem instead of AgentOrchestrator.
 """
 
 import logging
-from typing import Any, Callable, Dict, Optional, TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, TypeVar
 
-from socratic_system.services import (
-    ProjectService,
-    QualityService,
-    KnowledgeService,
-    InsightService,
-    CodeService,
-    ConflictService,
-    ValidationService,
-    LearningService,
-)
 from socratic_system.repositories.base_repository import (
+    KnowledgeRepository,
     ProjectRepository,
     UserRepository,
-    KnowledgeRepository,
+)
+from socratic_system.services import (
+    CodeService,
+    ConflictService,
+    InsightService,
+    KnowledgeService,
+    LearningService,
+    ProjectService,
+    QualityService,
+    ValidationService,
 )
 
 if TYPE_CHECKING:

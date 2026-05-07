@@ -5,12 +5,12 @@ Stores, retrieves, and analyzes moral precedents to ensure consistency
 in ethical decisions and learn from historical patterns.
 """
 
+import json
+import logging
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
-import logging
-import json
 
 
 class PrecedentType(Enum):
@@ -415,7 +415,7 @@ class MoralPrecedentEngine:
     def import_precedents(self, filepath: str) -> None:
         """Import precedents from JSON file."""
         try:
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
 
             for prec_data in data.get("precedents", []):

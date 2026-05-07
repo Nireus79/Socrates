@@ -1,13 +1,14 @@
 """Conflict service - encapsulates conflict detection."""
 
-from typing import TYPE_CHECKING, Dict, Any, Optional, List
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from .base import Service
 from socratic_system.repositories.conflict_repository import ConflictRepository
 
+from .base import Service
+
 if TYPE_CHECKING:
-    from socratic_system.models import ProjectContext
     from socratic_system.database import ProjectDatabase
+    from socratic_system.models import ProjectContext
 
 
 class ConflictService(Service):
@@ -75,7 +76,7 @@ class ConflictService(Service):
         detected = []
         if insights:
             # Example: detect conflicting requirements
-            for key, value in insights.items():
+            for _key, value in insights.items():
                 if isinstance(value, str) and "conflict" in value.lower():
                     detected.append({
                         "type": "requirement",

@@ -5,24 +5,24 @@ Orchestrates multi-framework ethical reasoning to arrive at decisions
 about proposed actions with detailed reasoning and confidence levels.
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-import logging
 
 from socratic_system.reasoning.ethical_framework import (
+    EthicalConclusion,
     EthicalFramework,
     EthicalFrameworkType,
-    EthicalConclusion,
     FrameworkAnalysis,
     KantianAnalyzer,
+    RightsAnalyzer,
     UtilitarianAnalyzer,
     VirtueAnalyzer,
-    RightsAnalyzer,
 )
 from socratic_system.reasoning.stakeholder_analyzer import (
-    StakeholderAnalyzer,
     StakeholderAnalysis,
+    StakeholderAnalyzer,
 )
 
 
@@ -235,7 +235,6 @@ class EthicalDeliberation:
 
         total = len(conclusions)
         allow_pct = allow_count / total if total > 0 else 0
-        block_pct = block_count / total if total > 0 else 0
 
         # Decision logic
         if block_count > total * 0.5:  # Majority says block
@@ -325,8 +324,6 @@ class EthicalDeliberation:
         stakeholder_analysis: StakeholderAnalysis
     ) -> Dict[str, Any]:
         """Infer consequences from action description and stakeholder analysis."""
-        action_lower = action.lower()
-
         consequences = {
             "short_term": {
                 "benefit": 0.0,

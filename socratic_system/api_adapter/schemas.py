@@ -4,9 +4,10 @@ Request/Response schemas for API adapter layer.
 Provides standardized DTOs for service communication.
 """
 
-from typing import Any, Dict, Optional
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RequestDTO(BaseModel):

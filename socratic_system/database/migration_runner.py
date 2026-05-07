@@ -303,7 +303,6 @@ class MigrationRunner:
                 continue
 
             # Apply the migration
-            log_level = "DEBUG" if is_optional else "INFO"
             self.logger.info(f"Applying {migration_name} migration ({migration_file})...")
             success, msg = self.apply_migration(migration_file, is_optional=is_optional)
 

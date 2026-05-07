@@ -7,7 +7,6 @@ Used by ProjectService instead of direct database calls.
 This is the single point of change for project schema updates.
 """
 
-import logging
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from socratic_system.models import ProjectContext

@@ -5,12 +5,12 @@ Detects anomalies, suspicious patterns, and potential threats
 in ethical decision-making processes.
 """
 
+import logging
+import statistics
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
-import logging
-import statistics
+from typing import Any, Dict, List, Optional
 
 
 class ThreatLevel(Enum):
@@ -183,7 +183,6 @@ class ThreatDetector:
 
         # Calculate overall threat level
         if threats:
-            threat_levels = [t.severity for t in threats]
             max_severity = max(
                 [ThreatLevel.NONE, ThreatLevel.LOW, ThreatLevel.MEDIUM,
                  ThreatLevel.HIGH, ThreatLevel.CRITICAL],
@@ -305,7 +304,6 @@ class ThreatDetector:
         # Check for blocked conclusions with allowed result
         for framework_name, analysis in framework_analyses.items():
             conclusion = str(analysis.get("conclusion", ""))
-            reasoning = str(analysis.get("reasoning", "")).lower()
 
             # Detect when analysis cites concerns but conclusion is allowed
             concerns = analysis.get("concerns", [])
@@ -353,7 +351,7 @@ class ThreatDetector:
                     threat = Threat(
                         threat_type=ThreatType.STAKEHOLDER_HARM,
                         severity=ThreatLevel.HIGH,
-                        description=f"Action may harm stakeholders but is allowed",
+                        description="Action may harm stakeholders but is allowed",
                         risk_score=0.8,
                         evidence={"framework": framework_name},
                         recommendations=[

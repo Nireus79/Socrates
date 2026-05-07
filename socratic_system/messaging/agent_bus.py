@@ -8,7 +8,7 @@ import asyncio
 import logging
 import time
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, List
+from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -381,13 +381,13 @@ class AgentBus:
         payload = request_data.get("payload", {})
 
         if not request_id:
-            self.logger.error(f"[AgentBus] Request missing request_id")
+            self.logger.error("[AgentBus] Request missing request_id")
             return
 
         try:
             # Look up the handler from the registry
             if not self.registry:
-                self.logger.error(f"[AgentBus] No registry available for request routing")
+                self.logger.error("[AgentBus] No registry available for request routing")
                 self.handle_response(
                     request_id,
                     {"status": "error", "message": "Agent bus registry not configured"},
@@ -723,7 +723,7 @@ class AgentBus:
 
         # Try to run async send_request
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
         except RuntimeError:
             # No running loop, create one
             return asyncio.run(

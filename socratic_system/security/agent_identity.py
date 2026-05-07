@@ -5,15 +5,15 @@ Implements zero-trust architecture with cryptographic verification of agent iden
 and capability-based authorization.
 """
 
-from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta, UTC
-from typing import Dict, List, Optional, Tuple
 import hashlib
 import hmac
 import json
 import logging
 import secrets
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
 from enum import Enum
+from typing import Dict, List, Optional, Tuple
 
 
 class TokenStatus(Enum):

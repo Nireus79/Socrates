@@ -8,7 +8,7 @@ in a Socrates API instance.
 import asyncio
 import logging
 import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 try:
     import httpx
@@ -316,7 +316,7 @@ class SocratesAgentClient:
                 raise SocratesAgentClientError(f"Job failed: {error}")
 
             if status == "timeout":
-                raise AgentTimeoutError(f"Job execution timed out")
+                raise AgentTimeoutError("Job execution timed out")
 
             # Still pending, wait before checking again
             await asyncio.sleep(min(poll_interval, timeout - elapsed))

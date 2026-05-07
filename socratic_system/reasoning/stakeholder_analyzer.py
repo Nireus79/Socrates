@@ -5,11 +5,11 @@ Identifies and analyzes stakeholders affected by proposed actions,
 including assessment of impact, vulnerability, and affected rights.
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-import logging
 
 
 class StakeholderType(Enum):

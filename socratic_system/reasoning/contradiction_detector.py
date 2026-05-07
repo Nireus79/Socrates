@@ -5,18 +5,17 @@ Identifies logical inconsistencies, principle conflicts, and temporal
 consequence contradictions in ethical deliberation results.
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
-import logging
+from typing import Any, Dict, List, Optional
 
+from socratic_system.reasoning.ethical_deliberation import DeliberationResult
 from socratic_system.reasoning.ethical_framework import (
     EthicalConclusion,
-    FrameworkAnalysis,
     EthicalFrameworkType,
 )
-from socratic_system.reasoning.ethical_deliberation import DeliberationResult
 
 
 class ContradictionType(Enum):
@@ -154,9 +153,6 @@ class ContradictionDetector:
 
         # Severity increases with disagreement balance (closer to 50-50 = more severe)
         max_conflict = max(blocked_count, allowed_count, escalate_count)
-        min_conflict = min(
-            c for c in [blocked_count, allowed_count, escalate_count] if c > 0
-        )
         disagreement_severity = 1.0 - (max_conflict / total)
 
         # Identify which frameworks disagree
@@ -253,10 +249,6 @@ class ContradictionDetector:
         """Detect contradictions between short-term and long-term consequences."""
         contradictions = []
 
-        # Get consequences if available
-        short_term_benefit = result.framework_analyses.get(
-            EthicalFrameworkType.UTILITARIAN, None
-        )
         # This is a simplified check - in practice we'd have consequence data
 
         # Check stakeholder analysis for temporal impacts

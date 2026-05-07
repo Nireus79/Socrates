@@ -43,8 +43,6 @@ def patch_multi_llm_agent():
     try:
         from socratic_agents.multi_llm_agent import MultiLLMAgent
 
-        original_list_providers = MultiLLMAgent._list_providers
-
         def patched_list_providers(self, data):
             """Fixed version using correct ProviderMetadata attributes"""
             self.logger.debug("Listing available LLM providers")

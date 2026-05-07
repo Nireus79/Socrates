@@ -17,7 +17,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-if BaseModel != object:
+if BaseModel is not object:
 
     class AgentRequest(BaseModel):
         """Agent request model."""

@@ -12,9 +12,8 @@ Coordinates all agents and manages their interactions, including:
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from socratic_nexus.clients import ClaudeClient
 
@@ -22,16 +21,37 @@ from socratic_system.config import SocratesConfig
 from socratic_system.database import VectorDatabase
 from socratic_system.events import EventEmitter, EventType
 from socratic_system.models import KnowledgeEntry
+from socratic_system.security.agent_identity import AgentIdentityManager
 from socratic_system.security.audit_logger import AuditLogger
 from socratic_system.security.sandbox import Sandbox, SandboxConfig
-from socratic_system.security.agent_identity import AgentIdentityManager
 
 # Import Socratic-Morality governance framework
 try:
-    from socratic_morality import Governor, Constitution
+    from socratic_morality import Constitution, Governor
 except ImportError:
     Governor = None
     Constitution = None
+
+# Type hints for lazy-loaded agents
+if TYPE_CHECKING:
+    from socratic_agents import (
+        CodeGeneratorAgent,
+        CodeValidationAgent,
+        ConflictDetectorAgent,
+        ContextAnalyzerAgent,
+        DocumentProcessorAgent,
+        KnowledgeAnalysisAgent,
+        KnowledgeManagerAgent,
+        MultiLLMAgent,
+        NoteManagerAgent,
+        ProjectManagerAgent,
+        QualityControllerAgent,
+        QuestionQueueAgent,
+        SocraticCounselorAgent,
+        SystemMonitorAgent,
+        UserLearningAgent,
+        UserManagerAgent,
+    )
 
 
 class AgentOrchestrator:
@@ -108,8 +128,8 @@ class AgentOrchestrator:
         self.logger.info("Agent identity manager initialized (Phase 2b)")
 
         # Phase 2: Initialize agent bus and registry for message routing
-        from socratic_system.messaging.agent_registry import AgentRegistry
         from socratic_system.messaging.agent_bus import AgentBus
+        from socratic_system.messaging.agent_registry import AgentRegistry
 
         self.agent_registry = AgentRegistry(health_check_timeout=60)
         self.agent_bus = AgentBus(
@@ -169,8 +189,8 @@ class AgentOrchestrator:
 
         # Phase 3: Initialize caching and background handlers for non-blocking processing
         from socratic_system.caching import InMemoryAnalysisCache
-        from socratic_system.jobs import JobTracker
         from socratic_system.handlers import BackgroundHandlers
+        from socratic_system.jobs import JobTracker
 
         self.cache = InMemoryAnalysisCache()
         self.job_tracker = JobTracker()
@@ -370,6 +390,7 @@ class AgentOrchestrator:
         """Lazy-load code generator agent with sandbox integration"""
         if "code_generator" not in self._agents_cache:
             from socratic_agents import CodeGeneratorAgent
+
             from socratic_system.agents.code_generator_sandbox_wrapper import (
                 CodeGeneratorSandboxWrapper,
             )

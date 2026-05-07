@@ -1,6 +1,6 @@
 """Knowledge service - encapsulates knowledge management and vector search."""
 
-from typing import TYPE_CHECKING, List, Dict, Any, Optional
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from .base import Service
 

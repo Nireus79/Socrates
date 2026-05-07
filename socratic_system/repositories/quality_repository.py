@@ -7,10 +7,7 @@ Used by QualityService instead of direct database calls.
 This is the single point of change for maturity schema updates.
 """
 
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-from socratic_system.models import ProjectContext
 
 from .base_repository import BaseRepository
 

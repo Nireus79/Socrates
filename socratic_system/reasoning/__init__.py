@@ -12,53 +12,48 @@ Public API:
 - DeliberationResult: Final reasoning conclusion
 """
 
-from socratic_system.reasoning.ethical_framework import (
-    EthicalFramework,
-    EthicalFrameworkType,
-    EthicalConclusion,
-    FrameworkAnalysis,
-    KantianAnalyzer,
-    UtilitarianAnalyzer,
-    VirtueAnalyzer,
-    RightsAnalyzer,
-)
-
-from socratic_system.reasoning.stakeholder_analyzer import (
-    StakeholderAnalyzer,
-    Stakeholder,
-    StakeholderAnalysis,
-    StakeholderType,
-    Impact,
-)
-
-from socratic_system.reasoning.ethical_deliberation import (
-    EthicalDeliberation,
-    DeliberationResult,
-)
-
 from socratic_system.reasoning.contradiction_detector import (
-    ContradictionDetector,
     Contradiction,
     ContradictionAnalysis,
+    ContradictionDetector,
     ContradictionType,
 )
-
-from socratic_system.reasoning.moral_precedent_engine import (
-    MoralPrecedentEngine,
-    MoralPrecedent,
-    PrecedentType,
-    PrecedentQuery,
-    PrecedentMatch,
-    PrecedentAnalysis,
+from socratic_system.reasoning.ethical_deliberation import (
+    DeliberationResult,
+    EthicalDeliberation,
 )
-
+from socratic_system.reasoning.ethical_framework import (
+    EthicalConclusion,
+    EthicalFramework,
+    EthicalFrameworkType,
+    FrameworkAnalysis,
+    KantianAnalyzer,
+    RightsAnalyzer,
+    UtilitarianAnalyzer,
+    VirtueAnalyzer,
+)
+from socratic_system.reasoning.moral_precedent_engine import (
+    MoralPrecedent,
+    MoralPrecedentEngine,
+    PrecedentAnalysis,
+    PrecedentMatch,
+    PrecedentQuery,
+    PrecedentType,
+)
+from socratic_system.reasoning.stakeholder_analyzer import (
+    Impact,
+    Stakeholder,
+    StakeholderAnalysis,
+    StakeholderAnalyzer,
+    StakeholderType,
+)
 from socratic_system.reasoning.threat_detector import (
-    ThreatDetector,
     Threat,
     ThreatAnalysis,
+    ThreatDetector,
     ThreatLevel,
-    ThreatType,
     ThreatProfile,
+    ThreatType,
 )
 
 __all__ = [

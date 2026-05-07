@@ -6,8 +6,8 @@ error handling, and request/response transformation.
 """
 
 import logging
-from typing import Any, Dict, Optional, Type, TypeVar
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional, TypeVar
 
 T = TypeVar("T")
 
@@ -120,7 +120,7 @@ class BaseAdapter(ABC):
         self.logger.warning(
             f"Authorization denied for user {current_user} to access resource owned by {resource_owner}"
         )
-        raise AdapterAuthorizationError(f"Not authorized to access this resource")
+        raise AdapterAuthorizationError("Not authorized to access this resource")
 
     def transform_response(
         self,

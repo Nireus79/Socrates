@@ -1,6 +1,6 @@
 """Learning service - encapsulates learning system and user tracking."""
 
-from typing import TYPE_CHECKING, Dict, Any, Optional
+from typing import TYPE_CHECKING, Any, Dict
 
 from .base import Service
 

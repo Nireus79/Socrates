@@ -4,10 +4,10 @@ Secure Agent Server
 Provides TLS-secured server for receiving encrypted requests from other agents.
 """
 
-from typing import Any, Dict, Optional, Callable
-import logging
-from datetime import datetime, UTC
 import json
+import logging
+from datetime import UTC, datetime
+from typing import Any, Callable, Dict, Optional
 
 
 class SecureAgentServer:

@@ -7,9 +7,9 @@ about the underlying database schema.
 """
 
 from socratic_system.services.repositories.base import Repository
-from socratic_system.services.repositories.project_repository import ProjectRepository
 from socratic_system.services.repositories.knowledge_repository import KnowledgeRepository
 from socratic_system.services.repositories.maturity_repository import MaturityRepository
+from socratic_system.services.repositories.project_repository import ProjectRepository
 
 __all__ = [
     "Repository",

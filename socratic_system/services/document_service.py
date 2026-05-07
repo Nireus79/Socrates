@@ -6,7 +6,6 @@ Uses DocumentRepository for all data access (not direct database calls).
 Focuses on document import, content extraction, and chunking.
 """
 
-import logging
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -434,7 +433,7 @@ class DocumentService(BaseService):
             File content as string, or None if unable to read
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 return f.read()
         except Exception as e:
             self.logger.warning(f"Failed to read file {file_path}: {e}")

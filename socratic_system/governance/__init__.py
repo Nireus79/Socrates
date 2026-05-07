@@ -9,8 +9,8 @@ Public API:
 """
 
 from socratic_system.governance.ethical_governor import (
-    EthicalGovernor,
     EthicalDecision,
+    EthicalGovernor,
 )
 
 __all__ = [

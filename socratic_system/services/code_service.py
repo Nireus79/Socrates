@@ -1,11 +1,12 @@
 """Code service - encapsulates code generation and management."""
 
-from typing import TYPE_CHECKING, Dict, Any, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from .base import Service
 
 if TYPE_CHECKING:
     from socratic_agents import SocraticAgentsSystem
+
     from socratic_system.models import ProjectContext
 
 

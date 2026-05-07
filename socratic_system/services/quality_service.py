@@ -1,16 +1,16 @@
 """Quality service - encapsulates quality control and maturity tracking."""
 
-from typing import TYPE_CHECKING, Dict, Any, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from socratic_system.core.maturity_calculator import MaturityCalculator
 from socratic_system.core.analytics_calculator import AnalyticsCalculator
+from socratic_system.core.maturity_calculator import MaturityCalculator
 from socratic_system.repositories.quality_repository import QualityRepository
 
 from .base import Service
 
 if TYPE_CHECKING:
-    from socratic_system.models import ProjectContext
     from socratic_system.database import ProjectDatabase
+    from socratic_system.models import ProjectContext
 
 
 class QualityService(Service):

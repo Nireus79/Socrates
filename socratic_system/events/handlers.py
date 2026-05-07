@@ -10,7 +10,7 @@ Provides:
 
 import asyncio
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 from socratic_system.events.event_emitter import EventEmitter
 

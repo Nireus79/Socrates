@@ -5,10 +5,10 @@ Tracks status of async background jobs for analysis processing.
 
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
 from datetime import datetime
-from typing import Optional, Dict, Any
+from enum import Enum
 from threading import Lock
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

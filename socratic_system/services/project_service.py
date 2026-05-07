@@ -1,15 +1,14 @@
 """Project service - encapsulates project creation and management logic."""
 
-import logging
-from typing import TYPE_CHECKING, Optional, Dict, Any
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from .base import Service
 
 if TYPE_CHECKING:
-    from socratic_system.models import ProjectContext
-    from socratic_system.database import ProjectDatabase
     from socratic_system.claude_client import ClaudeClient
+    from socratic_system.database import ProjectDatabase
     from socratic_system.events import EventEmitter
+    from socratic_system.models import ProjectContext
 
 
 class ProjectService(Service):
@@ -55,6 +54,7 @@ class ProjectService(Service):
         # Create project context
         import datetime
         import uuid
+
         from socratic_system.models import ProjectContext
 
         now = datetime.datetime.now()

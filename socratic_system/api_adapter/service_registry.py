@@ -4,9 +4,9 @@ Service registry for service discovery and management.
 Maintains information about available services and their methods.
 """
 
-import logging
 import inspect
-from typing import Any, Dict, List, Optional, Callable
+import logging
+from typing import Any, Callable, Dict, List, Optional
 
 
 class ServiceInfo:

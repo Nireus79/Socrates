@@ -5,12 +5,13 @@ Wraps the CodeGeneratorAgent to add safe code execution with resource limits,
 security validation, and audit logging.
 """
 
-from typing import Any, Dict, Optional
 import logging
+from typing import Any, Dict, Optional
 
 from socratic_agents import CodeGeneratorAgent
-from socratic_system.security.sandbox import Sandbox, SandboxConfig
+
 from socratic_system.security.audit_logger import AuditLogger
+from socratic_system.security.sandbox import Sandbox, SandboxConfig
 
 
 class CodeGeneratorSandboxWrapper:

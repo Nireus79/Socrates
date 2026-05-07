@@ -8,10 +8,10 @@ Defines:
 """
 
 import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
 from enum import Enum
+from typing import Any, Dict, Optional
 
 
 class MessageType(Enum):
@@ -88,7 +88,7 @@ class ResponseMessage(AgentMessage):
     request_id: str = ""
     status: MessageStatus = MessageStatus.SUCCESS
     result: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
+    error_message: Optional[str] = None
 
     def __post_init__(self):
         self.message_type = MessageType.RESPONSE
@@ -129,7 +129,7 @@ class ResponseMessage(AgentMessage):
         return cls(
             request_id=request_id,
             status=MessageStatus.ERROR,
-            error=error,
+            error_message=error,
             sender=sender,
             **kwargs,
         )

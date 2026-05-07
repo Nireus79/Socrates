@@ -8,25 +8,24 @@ This module bridges the governance layer with advanced ethical reasoning,
 providing explainable and auditable decisions for all agent actions.
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from typing import Any, Dict, List, Optional, Tuple
 import logging
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from typing import Any, Dict, List, Optional, Tuple
 
 from socratic_system.reasoning import (
-    EthicalDeliberation,
-    ContradictionDetector,
-    MoralPrecedentEngine,
-    ThreatDetector,
-    DeliberationResult,
     ContradictionAnalysis,
+    ContradictionDetector,
+    DeliberationResult,
+    EthicalDeliberation,
+    MoralPrecedentEngine,
     PrecedentAnalysis,
-    ThreatAnalysis,
     PrecedentType,
+    ThreatAnalysis,
+    ThreatDetector,
 )
 from socratic_system.security.mutual_tls import (
     MutualTLSManager,
-    MutualTLSPolicy,
 )
 
 

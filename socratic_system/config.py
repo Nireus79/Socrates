@@ -179,7 +179,7 @@ class SocratesConfig:
         key_file = self.data_dir / ".encryption_key"
         if key_file.exists():
             try:
-                with open(str(key_file), "r") as f:
+                with open(str(key_file)) as f:
                     self.encryption_key = f.read().strip()
                 os.environ["SOCRATES_ENCRYPTION_KEY"] = self.encryption_key
                 return

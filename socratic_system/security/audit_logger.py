@@ -10,11 +10,10 @@ Retention: 2+ years, immutable, encrypted
 
 import json
 import logging
-from datetime import datetime, timedelta, UTC
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, Optional
-from dataclasses import dataclass, asdict
-from pathlib import Path
 
 
 class AuditEventType(Enum):
