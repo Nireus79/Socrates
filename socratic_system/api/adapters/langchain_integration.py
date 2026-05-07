@@ -28,20 +28,18 @@ Example:
     ```
 """
 
-import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 try:
-    from langchain.tools import BaseTool, tool
     from langchain.callbacks.manager import (
         AsyncCallbackManagerForToolRun,
         CallbackManagerForToolRun,
     )
+    from langchain.tools import BaseTool
 except ImportError:
     raise ImportError(
-        "LangChain required for LangChain integration. "
-        "Install with: pip install langchain"
+        "LangChain required for LangChain integration. " "Install with: pip install langchain"
     )
 
 from socratic_system.clients.socrates_agent_client import (

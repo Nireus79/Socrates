@@ -28,8 +28,9 @@ class TestContradictionDetectorBasics:
         assert self.detector is not None
         assert self.detector.logger is not None
 
-    @pytest.mark.xfail(reason="Architecture mismatch or test expectation mismatch with current implementation")
-
+    @pytest.mark.xfail(
+        reason="Architecture mismatch or test expectation mismatch with current implementation"
+    )
     def test_analyze_consistent_result(self):
         """Detector identifies fully consistent reasoning."""
         # Action that should be clearly allowed

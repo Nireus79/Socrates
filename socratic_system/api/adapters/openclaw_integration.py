@@ -26,7 +26,7 @@ Example:
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
 from socratic_system.clients.socrates_agent_client import (
     SocratesAgentClient,
@@ -368,7 +368,9 @@ class ClawEventListener:
         """
 
         def handler(params: Dict[str, Any]) -> Dict[str, Any]:
-            logger.info(f"[EventListener] Event '{event_name}' triggered, executing '{action_name}'")
+            logger.info(
+                f"[EventListener] Event '{event_name}' triggered, executing '{action_name}'"
+            )
             return self.adapter.execute_action(action_name, params)
 
         self.handlers[event_name] = handler

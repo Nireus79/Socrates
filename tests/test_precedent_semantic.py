@@ -4,10 +4,9 @@ from unittest.mock import Mock
 
 import pytest
 
-# Mock the MoralPrecedentEngine class since socratic_morality may not have all modules
 try:
-    from socratic_morality.precedent.engine import MoralPrecedentEngine
     from socratic_morality.precedent.embeddings import SemanticEmbeddings
+    from socratic_morality.precedent.engine import MoralPrecedentEngine
 except (ImportError, ModuleNotFoundError):
     # Import our mock SemanticEmbeddings if available
     try:
@@ -22,10 +21,13 @@ except (ImportError, ModuleNotFoundError):
             """Initialize precedent engine."""
             # Import our mock embeddings
             from tests.test_embeddings import SemanticEmbeddings
+
             self.embeddings = SemanticEmbeddings()
             self.cases = []
 
-        async def store_case(self, action, decision, reasoning, principles_cited=None, stakeholders_affected=None):
+        async def store_case(
+            self, action, decision, reasoning, principles_cited=None, stakeholders_affected=None
+        ):
             """Store a precedent case."""
             case_id = str(id(action))
             case = {
@@ -70,7 +72,11 @@ except (ImportError, ModuleNotFoundError):
                             "allowed": case["allowed"],
                             "high_impact": case["high_impact"],
                             "actor": case["actor"],
-                            "similarity_score": overlap / len(action_words | case_words) if (action_words | case_words) else 0.0
+                            "similarity_score": (
+                                overlap / len(action_words | case_words)
+                                if (action_words | case_words)
+                                else 0.0
+                            ),
                         }
                         similar.append(result)
                 return sorted(similar, key=lambda x: x["similarity_score"], reverse=True)[:limit]
@@ -96,7 +102,7 @@ except (ImportError, ModuleNotFoundError):
                             "allowed": case["allowed"],
                             "high_impact": case["high_impact"],
                             "actor": case["actor"],
-                            "similarity_score": max(0.0, similarity)
+                            "similarity_score": max(0.0, similarity),
                         }
                         similar.append(result)
             return sorted(similar, key=lambda x: x["similarity_score"], reverse=True)[:limit]

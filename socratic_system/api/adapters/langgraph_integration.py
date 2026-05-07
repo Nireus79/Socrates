@@ -36,14 +36,13 @@ Example:
 """
 
 import logging
-from typing import Any, Awaitable, Callable, Dict, List, Optional, TypedDict
+from typing import Any, Callable, Dict, Optional, TypedDict
 
 try:
     from langchain.schema import AIMessage, BaseMessage, HumanMessage
 except ImportError:
     raise ImportError(
-        "LangChain required for LangGraph integration. "
-        "Install with: pip install langchain"
+        "LangChain required for LangGraph integration. " "Install with: pip install langchain"
     )
 
 from socratic_system.clients.socrates_agent_client import (
@@ -127,9 +126,7 @@ class SocratesNode:
         except Exception as e:
             logger.error(f"[SocratesNode] Error executing {self.agent_name}: {e}")
             state["agent_results"][self.agent_name] = {"error": str(e)}
-            state["messages"].append(
-                AIMessage(content=f"Error from {self.agent_name}: {str(e)}")
-            )
+            state["messages"].append(AIMessage(content=f"Error from {self.agent_name}: {str(e)}"))
 
         return state
 
@@ -165,9 +162,7 @@ class SocratesNode:
         except Exception as e:
             logger.error(f"[SocratesNode] Error executing {self.agent_name}: {e}")
             state["agent_results"][self.agent_name] = {"error": str(e)}
-            state["messages"].append(
-                AIMessage(content=f"Error from {self.agent_name}: {str(e)}")
-            )
+            state["messages"].append(AIMessage(content=f"Error from {self.agent_name}: {str(e)}"))
 
         finally:
             await client.close()
@@ -320,4 +315,4 @@ class SocratesGraphBuilder:
         Returns:
             Dictionary of node functions
         """
-        return {name: node for name, node in self.nodes.items()}
+        return dict(self.nodes)

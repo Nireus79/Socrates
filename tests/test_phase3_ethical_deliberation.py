@@ -184,8 +184,9 @@ class TestEthicalDeliberation:
 
         assert result.final_conclusion == EthicalConclusion.BLOCKED
 
-    @pytest.mark.xfail(reason="Architecture mismatch or test expectation mismatch with current implementation")
-
+    @pytest.mark.xfail(
+        reason="Architecture mismatch or test expectation mismatch with current implementation"
+    )
     def test_deliberation_allows_beneficial_action(self):
         """Deliberation allows clearly beneficial actions."""
         result = self.engine.deliberate(
@@ -311,8 +312,9 @@ class TestEthicalDeliberationIntegration:
         assert len(result.concerns) > 0
         assert result.overall_reasoning
 
-    @pytest.mark.xfail(reason="Architecture mismatch or test expectation mismatch with current implementation")
-
+    @pytest.mark.xfail(
+        reason="Architecture mismatch or test expectation mismatch with current implementation"
+    )
     def test_end_to_end_allowing_scenario(self):
         """Test complete flow for action that should be allowed."""
         engine = EthicalDeliberation()
