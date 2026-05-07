@@ -270,3 +270,23 @@ class ProjectContext:
     def is_solo_project(self) -> bool:
         """Check if this is a solo project (only owner, no other team members)."""
         return len(self.team_members or []) <= 1
+
+    def cleanup_pending_questions(self, max_keep: int = 1) -> None:
+        """
+        Clean up answered/skipped questions from pending list, maintain FIFO for unanswered.
+
+        Ensures at most max_keep unanswered questions remain in the queue.
+        This prevents accumulation of stale questions and maintains single-question-per-generation workflow.
+
+        Args:
+            max_keep: Maximum number of unanswered questions to keep (default: 1)
+        """
+        if not self.pending_questions:
+            return
+
+        # Separate questions by status
+        unanswered = [q for q in self.pending_questions if q.get("status") == "unanswered"]
+
+        # Keep only the first max_keep unanswered questions (FIFO order)
+        # Discard answered/skipped questions to prevent accumulation
+        self.pending_questions = unanswered[:max_keep]

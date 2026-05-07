@@ -159,5 +159,6 @@ If workflows fail:
 cd /tmp/socratic-agents
 git log --oneline -5  # See recent commits
 git status  # Check current state
-git diff main~3  # See last 3 commits of changes
+git diff main~3  # See last 3 com
+# mits of changes
 ```

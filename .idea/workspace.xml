@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/IMPLEMENTATION_STATUS.md" beforeDir="false" afterPath="$PROJECT_DIR$/IMPLEMENTATION_STATUS.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/reasoning/ethical_deliberation.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/reasoning/ethical_deliberation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/security/audit_logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/security/audit_logger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/sponsorships/webhook.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/sponsorships/webhook.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/project_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/project_commands.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/ui/maturity_display.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/maturity_display.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

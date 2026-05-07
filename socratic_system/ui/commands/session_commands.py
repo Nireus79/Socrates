@@ -297,6 +297,9 @@ Focus on the connection between the user's statement and these insights."""
             elif result.get("insights"):
                 self.print_success("Insights captured and integrated!")
 
+            # Clean up answered questions from pending list (FIFO queue management)
+            project.cleanup_pending_questions(max_keep=1)
+
             # Save project and show detailed feedback
             try:
                 safe_orchestrator_call(

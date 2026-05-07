@@ -66,6 +66,7 @@ class ProjectService(Service):
             phase="discovery",
             created_at=now,
             updated_at=now,
+            knowledge_base_content=spec.get("knowledge_base_content", ""),
         )
 
         # Save to database
