@@ -4,13 +4,13 @@ Phase 1 Tests: ProjectService
 Test suite validating that ProjectService works with orchestrator dependencies.
 """
 
-import pytest
-from datetime import datetime
 from unittest.mock import Mock
 
-from socratic_system.services import ProjectService
-from socratic_system.repositories import ProjectRepository
+import pytest
+
 from socratic_system.models import ProjectContext
+from socratic_system.repositories import ProjectRepository
+from socratic_system.services import ProjectService
 
 
 class TestProjectServiceInitialization:
@@ -58,11 +58,7 @@ class TestProjectServiceOperations:
         service = ProjectService(mock_config, mock_database, mock_claude_client, mock_event_emitter)
 
         project = service.create_project(
-            spec={
-                "name": "Test Project",
-                "description": "Test Description",
-                "user_id": "user_123"
-            }
+            spec={"name": "Test Project", "description": "Test Description", "user_id": "user_123"}
         )
 
         assert project is not None

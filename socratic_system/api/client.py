@@ -57,8 +57,7 @@ class SocratesAgentClient:
         """
         if not httpx:
             raise ImportError(
-                "httpx is required for SocratesAgentClient. "
-                "Install with: pip install httpx"
+                "httpx is required for SocratesAgentClient. " "Install with: pip install httpx"
             )
 
         self.api_url = api_url.rstrip("/")
@@ -143,9 +142,7 @@ class SocratesAgentClient:
         """
         return await self._call_agent("conflict_detector", request)
 
-    async def _call_agent(
-        self, agent_name: str, request: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def _call_agent(self, agent_name: str, request: Dict[str, Any]) -> Dict[str, Any]:
         """Call agent via REST API.
 
         Args:

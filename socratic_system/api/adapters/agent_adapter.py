@@ -108,9 +108,7 @@ class AgentAdapter:
             "timestamp": self._get_timestamp(),
         }
 
-    async def handle_request(
-        self, agent_name: str, request_data: Dict
-    ) -> Dict[str, Any]:
+    async def handle_request(self, agent_name: str, request_data: Dict) -> Dict[str, Any]:
         """Handle external API request.
 
         Args:
@@ -124,9 +122,7 @@ class AgentAdapter:
             ValueError: If validation fails
         """
         try:
-            self.logger.info(
-                f"[APIAdapter] Handling request for agent: {agent_name}"
-            )
+            self.logger.info(f"[APIAdapter] Handling request for agent: {agent_name}")
 
             # Validate request
             self.validate_request(agent_name, request_data)

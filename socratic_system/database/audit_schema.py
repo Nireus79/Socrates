@@ -46,12 +46,8 @@ def create_audit_log_table(connection: sqlite3.Connection) -> None:
     """)
 
     # Create indexes for common queries
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp DESC)"
-    )
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_audit_event_type ON audit_logs(event_type)"
-    )
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_event_type ON audit_logs(event_type)")
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_logs(actor_id, timestamp DESC)"
     )
@@ -61,12 +57,8 @@ def create_audit_log_table(connection: sqlite3.Connection) -> None:
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_audit_severity ON audit_logs(severity, timestamp DESC)"
     )
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_audit_status ON audit_logs(status)"
-    )
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_audit_request_id ON audit_logs(request_id)"
-    )
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_status ON audit_logs(status)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_request_id ON audit_logs(request_id)")
 
     connection.commit()
 
@@ -105,15 +97,9 @@ def create_agent_identity_table(connection: sqlite3.Connection) -> None:
     """)
 
     # Create indexes
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_agent_id ON agent_identities(agent_id)"
-    )
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_agent_name ON agent_identities(agent_name)"
-    )
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_agent_active ON agent_identities(is_active)"
-    )
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_agent_id ON agent_identities(agent_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_agent_name ON agent_identities(agent_name)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_agent_active ON agent_identities(is_active)")
 
     connection.commit()
 
@@ -164,12 +150,8 @@ def create_capability_tokens_table(connection: sqlite3.Connection) -> None:
     """)
 
     # Create indexes
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_token_id ON capability_tokens(token_id)"
-    )
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_token_agent ON capability_tokens(agent_id)"
-    )
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_token_id ON capability_tokens(token_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_token_agent ON capability_tokens(agent_id)")
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_token_active ON capability_tokens(is_active, expires_at)"
     )
@@ -221,12 +203,8 @@ def create_security_events_table(connection: sqlite3.Connection) -> None:
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_security_timestamp ON security_events(timestamp DESC)"
     )
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_security_severity ON security_events(severity)"
-    )
-    cursor.execute(
-        "CREATE INDEX IF NOT EXISTS idx_security_status ON security_events(status)"
-    )
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_security_severity ON security_events(severity)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_security_status ON security_events(status)")
 
     connection.commit()
 
@@ -249,6 +227,7 @@ def add_audit_log_methods_to_db(db_class) -> None:
     Args:
         db_class: Database class to extend
     """
+
     def insert_audit_log(self, entry_data: dict) -> Optional[int]:
         """Insert audit log entry.
 
@@ -260,36 +239,41 @@ def add_audit_log_methods_to_db(db_class) -> None:
         """
         try:
             cursor = self.get_connection().cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO audit_logs (
                     timestamp, event_type, severity, actor_id, actor_type,
                     action, resource, resource_type, status, result_code,
                     details, request_id, session_id, ip_address, user_agent
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                entry_data.get("timestamp"),
-                entry_data.get("event_type"),
-                entry_data.get("severity"),
-                entry_data.get("actor_id"),
-                entry_data.get("actor_type"),
-                entry_data.get("action"),
-                entry_data.get("resource"),
-                entry_data.get("resource_type"),
-                entry_data.get("status"),
-                entry_data.get("result_code"),
-                entry_data.get("details"),  # JSON string
-                entry_data.get("request_id"),
-                entry_data.get("session_id"),
-                entry_data.get("ip_address"),
-                entry_data.get("user_agent"),
-            ))
+            """,
+                (
+                    entry_data.get("timestamp"),
+                    entry_data.get("event_type"),
+                    entry_data.get("severity"),
+                    entry_data.get("actor_id"),
+                    entry_data.get("actor_type"),
+                    entry_data.get("action"),
+                    entry_data.get("resource"),
+                    entry_data.get("resource_type"),
+                    entry_data.get("status"),
+                    entry_data.get("result_code"),
+                    entry_data.get("details"),  # JSON string
+                    entry_data.get("request_id"),
+                    entry_data.get("session_id"),
+                    entry_data.get("ip_address"),
+                    entry_data.get("user_agent"),
+                ),
+            )
             self.get_connection().commit()
             return cursor.lastrowid
         except Exception as e:
             self._logger.error(f"Failed to insert audit log: {e}")
             return None
 
-    def query_audit_logs(self, filters: dict = None, start_date=None, end_date=None, limit: int = 100):
+    def query_audit_logs(
+        self, filters: dict = None, start_date=None, end_date=None, limit: int = 100
+    ):
         """Query audit logs.
 
         Args:
@@ -348,15 +332,13 @@ def add_audit_log_methods_to_db(db_class) -> None:
 
             # Count entries to be deleted
             cursor.execute(
-                "SELECT COUNT(*) FROM audit_logs WHERE timestamp < ?",
-                (cutoff_date.isoformat(),)
+                "SELECT COUNT(*) FROM audit_logs WHERE timestamp < ?", (cutoff_date.isoformat(),)
             )
             count = cursor.fetchone()[0]
 
             if not dry_run and count > 0:
                 cursor.execute(
-                    "DELETE FROM audit_logs WHERE timestamp < ?",
-                    (cutoff_date.isoformat(),)
+                    "DELETE FROM audit_logs WHERE timestamp < ?", (cutoff_date.isoformat(),)
                 )
                 self.get_connection().commit()
                 self._logger.info(f"Purged {count} old audit logs")

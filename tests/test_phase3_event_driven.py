@@ -10,13 +10,13 @@ Tests validate:
 
 import asyncio
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 from socratic_system.events import (
+    AsyncEventProcessor,
     EventEmitter,
     EventHandler,
     EventHandlerRegistry,
-    AsyncEventProcessor,
     JobQueue,
     JobStatus,
     ResultCache,
@@ -38,6 +38,7 @@ class TestEventHandler(unittest.TestCase):
 
     async def test_execute_sync_handler(self):
         """Execute synchronous handler"""
+
         def sync_handler(data):
             return data.get("value")
 
@@ -49,6 +50,7 @@ class TestEventHandler(unittest.TestCase):
 
     async def test_execute_async_handler(self):
         """Execute asynchronous handler"""
+
         async def async_handler(data):
             await asyncio.sleep(0.01)
             return data.get("value")
@@ -61,6 +63,7 @@ class TestEventHandler(unittest.TestCase):
 
     async def test_handler_error(self):
         """Handle errors in handler"""
+
         async def failing_handler(data):
             raise ValueError("Handler failed")
 
@@ -81,6 +84,7 @@ class TestEventHandlerRegistry(unittest.IsolatedAsyncioTestCase):
 
     async def test_register_handler(self):
         """Register event handler"""
+
         async def handler(data):
             return data
 
@@ -91,6 +95,7 @@ class TestEventHandlerRegistry(unittest.IsolatedAsyncioTestCase):
 
     async def test_execute_handlers(self):
         """Execute registered handlers"""
+
         async def handler1(data):
             return "result1"
 
@@ -108,6 +113,7 @@ class TestEventHandlerRegistry(unittest.IsolatedAsyncioTestCase):
 
     async def test_unregister_handler(self):
         """Unregister handler"""
+
         def handler(data):
             return data
 
@@ -163,6 +169,7 @@ class TestJobQueue(unittest.IsolatedAsyncioTestCase):
 
     async def test_submit_job(self):
         """Submit job to queue"""
+
         async def task():
             return "result"
 
@@ -173,6 +180,7 @@ class TestJobQueue(unittest.IsolatedAsyncioTestCase):
 
     async def test_job_execution(self):
         """Test job execution"""
+
         async def task():
             await asyncio.sleep(0.01)
             return "result"
@@ -190,6 +198,7 @@ class TestJobQueue(unittest.IsolatedAsyncioTestCase):
 
     async def test_job_failure(self):
         """Test job failure handling"""
+
         async def failing_task():
             raise ValueError("Task failed")
 
@@ -205,6 +214,7 @@ class TestJobQueue(unittest.IsolatedAsyncioTestCase):
 
     async def test_job_timeout(self):
         """Test job timeout"""
+
         async def slow_task():
             await asyncio.sleep(10)
 
@@ -219,6 +229,7 @@ class TestJobQueue(unittest.IsolatedAsyncioTestCase):
 
     async def test_queue_metrics(self):
         """Test queue metrics"""
+
         async def task():
             await asyncio.sleep(0.01)
             return "result"
@@ -303,14 +314,13 @@ class TestResultPoller(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_result(self):
         """Get result for job"""
+
         async def task():
             return "result"
 
         job_id = await self.queue.submit(task)
         await asyncio.sleep(0.05)
-        await self.queue.execute_job(
-            self.queue.jobs[job_id]
-        )
+        await self.queue.execute_job(self.queue.jobs[job_id])
 
         result = self.poller.get_result(job_id)
 
@@ -319,14 +329,13 @@ class TestResultPoller(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_status(self):
         """Get job status"""
+
         async def task():
             return "result"
 
         job_id = await self.queue.submit(task)
         await asyncio.sleep(0.05)
-        await self.queue.execute_job(
-            self.queue.jobs[job_id]
-        )
+        await self.queue.execute_job(self.queue.jobs[job_id])
 
         status = self.poller.get_status(job_id)
 
@@ -334,6 +343,7 @@ class TestResultPoller(unittest.IsolatedAsyncioTestCase):
 
     async def test_is_ready(self):
         """Check if result is ready"""
+
         async def task():
             return "result"
 
@@ -343,20 +353,19 @@ class TestResultPoller(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.poller.is_ready(job_id))
 
         await asyncio.sleep(0.05)
-        await self.queue.execute_job(
-            self.queue.jobs[job_id]
-        )
+        await self.queue.execute_job(self.queue.jobs[job_id])
 
         # Now ready
         self.assertTrue(self.poller.is_ready(job_id))
 
     async def test_get_batch_results(self):
         """Get multiple results"""
+
         async def task():
             return "result"
 
         job_ids = []
-        for i in range(3):
+        for _i in range(3):
             job_id = await self.queue.submit(task)
             job_ids.append(job_id)
 
@@ -372,14 +381,13 @@ class TestResultPoller(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_poll_status(self):
         """Get poll status"""
+
         async def task():
             return "result"
 
         job_id = await self.queue.submit(task)
         await asyncio.sleep(0.05)
-        await self.queue.execute_job(
-            self.queue.jobs[job_id]
-        )
+        await self.queue.execute_job(self.queue.jobs[job_id])
 
         status = self.poller.get_poll_status(job_id)
 

@@ -5,15 +5,11 @@ Tests for agent discovery, registration, and lifecycle management.
 Validates the foundation of the Agent Bus system.
 """
 
-import asyncio
-import logging
-from unittest.mock import AsyncMock, MagicMock
-
 import pytest
 
 from socratic_system.messaging.agent_registry import (
-    AgentMetadata,
     AgentHandler,
+    AgentMetadata,
     AgentRegistry,
 )
 
@@ -65,6 +61,7 @@ class TestAgentHandler:
     @pytest.mark.asyncio
     async def test_handler_invoke_async(self):
         """Test invoking async handler."""
+
         async def async_handler(request):
             return {"status": "success", "data": request}
 
@@ -80,6 +77,7 @@ class TestAgentHandler:
     @pytest.mark.asyncio
     async def test_handler_invoke_sync_wrapped(self):
         """Test invoking sync handler wrapped in async."""
+
         def sync_handler(request):
             return {"status": "success", "data": request}
 
@@ -115,6 +113,7 @@ class TestAgentRegistryRegistration:
 
     def test_register_agent(self):
         """Test registering an agent."""
+
         async def handler(req):
             return {}
 
@@ -130,6 +129,7 @@ class TestAgentRegistryRegistration:
 
     def test_register_with_metadata(self):
         """Test registering with metadata."""
+
         async def handler(req):
             return {}
 
@@ -147,6 +147,7 @@ class TestAgentRegistryRegistration:
 
     def test_register_duplicate_agent(self):
         """Test re-registering an agent (should update)."""
+
         async def handler(req):
             return {}
 
@@ -166,6 +167,7 @@ class TestAgentRegistryRegistration:
 
     def test_get_handler(self):
         """Test retrieving agent handler."""
+
         async def handler(req):
             return {"result": "ok"}
 
@@ -178,6 +180,7 @@ class TestAgentRegistryRegistration:
 
     def test_unregister_agent(self):
         """Test unregistering an agent."""
+
         async def handler(req):
             return {}
 
@@ -201,6 +204,7 @@ class TestAgentRegistryListing:
 
     def test_list_all_agents(self):
         """Test listing all agents."""
+
         async def handler(req):
             return {}
 
@@ -217,6 +221,7 @@ class TestAgentRegistryListing:
 
     def test_list_by_capability(self):
         """Test listing agents by capability."""
+
         async def handler(req):
             return {}
 
@@ -239,6 +244,7 @@ class TestAgentRegistryListing:
 
     def test_find_by_capability(self):
         """Test finding agents by capability."""
+
         async def handler(req):
             return {}
 
@@ -264,6 +270,7 @@ class TestAgentRegistryStatus:
 
     def test_is_available_true(self):
         """Test agent availability check when available."""
+
         async def handler(req):
             return {}
 
@@ -278,6 +285,7 @@ class TestAgentRegistryStatus:
 
     def test_set_status(self):
         """Test setting agent status."""
+
         async def handler(req):
             return {}
 
@@ -298,6 +306,7 @@ class TestAgentRegistryStatus:
 
     def test_get_status(self):
         """Test getting agent status."""
+
         async def handler(req):
             return {}
 
@@ -309,13 +318,12 @@ class TestAgentRegistryStatus:
 
     def test_get_capabilities(self):
         """Test getting agent capabilities."""
+
         async def handler(req):
             return {}
 
         registry = AgentRegistry()
-        registry.register(
-            "agent1", handler, capabilities=["code_gen", "testing", "docs"]
-        )
+        registry.register("agent1", handler, capabilities=["code_gen", "testing", "docs"])
 
         capabilities = registry.get_capabilities("agent1")
         assert len(capabilities) == 3
@@ -356,6 +364,7 @@ class TestAgentRegistryMetadata:
 
     def test_get_all_metadata(self):
         """Test retrieving all agent metadata."""
+
         async def handler(req):
             return {}
 
@@ -376,6 +385,7 @@ class TestAgentRegistryClearing:
 
     def test_clear_registry(self):
         """Test clearing all agents from registry."""
+
         async def handler(req):
             return {}
 

@@ -60,7 +60,7 @@ class EthicalDeliberation:
         self,
         frameworks: Optional[List[EthicalFramework]] = None,
         escalation_threshold: float = 0.6,
-        logger: Optional[logging.Logger] = None
+        logger: Optional[logging.Logger] = None,
     ):
         """
         Initialize deliberation engine.
@@ -89,7 +89,7 @@ class EthicalDeliberation:
         context: Dict[str, Any],
         constitutional_principles: Optional[List[str]] = None,
         consequences: Optional[Dict[str, Any]] = None,
-        additional_stakeholders: Optional[List[Dict[str, Any]]] = None
+        additional_stakeholders: Optional[List[Dict[str, Any]]] = None,
     ) -> DeliberationResult:
         """
         Deliberate on whether action should be taken.
@@ -108,9 +108,7 @@ class EthicalDeliberation:
 
         # Analyze stakeholders
         stakeholder_analysis = self.stakeholder_analyzer.analyze(
-            action=action,
-            context=context,
-            additional_stakeholders=additional_stakeholders
+            action=action, context=context, additional_stakeholders=additional_stakeholders
         )
 
         # If no consequences provided, use stakeholder analysis to infer
@@ -118,8 +116,12 @@ class EthicalDeliberation:
             consequences = self._infer_consequences(action, stakeholder_analysis)
 
         principles = constitutional_principles or [
-            "transparency", "accountability", "fairness",
-            "security", "privacy", "autonomy"
+            "transparency",
+            "accountability",
+            "fairness",
+            "security",
+            "privacy",
+            "autonomy",
         ]
 
         # Run through all frameworks
@@ -134,7 +136,7 @@ class EthicalDeliberation:
                     context=context,
                     stakeholders=stakeholder_analysis.stakeholders,
                     principles=principles,
-                    consequences=consequences
+                    consequences=consequences,
                 )
 
                 framework_analyses[analysis.framework] = analysis
@@ -153,14 +155,14 @@ class EthicalDeliberation:
         final_conclusion, confidence = self._synthesize_conclusions(
             conclusions=conclusions,
             confidences=confidences,
-            stakeholder_analysis=stakeholder_analysis
+            stakeholder_analysis=stakeholder_analysis,
         )
 
         # Generate reasoning
         overall_reasoning = self._generate_reasoning(
             framework_analyses=framework_analyses,
             stakeholder_analysis=stakeholder_analysis,
-            final_conclusion=final_conclusion
+            final_conclusion=final_conclusion,
         )
 
         # Collect concerns from all frameworks
@@ -170,15 +172,11 @@ class EthicalDeliberation:
 
         # Check if escalation needed
         escalation_required = (
-            confidence < self.escalation_threshold or
-            final_conclusion == EthicalConclusion.ESCALATE
+            confidence < self.escalation_threshold or final_conclusion == EthicalConclusion.ESCALATE
         )
         escalation_reason = None
         if escalation_required and framework_analyses:
-            conflicting = [
-                c for c in conclusions
-                if c != final_conclusion
-            ]
+            conflicting = [c for c in conclusions if c != final_conclusion]
             if conflicting:
                 escalation_reason = (
                     f"Framework disagreement: "
@@ -188,7 +186,9 @@ class EthicalDeliberation:
             elif confidence < 0.5:
                 escalation_reason = "Low confidence in conclusion across frameworks"
             elif final_conclusion == EthicalConclusion.ESCALATE:
-                escalation_reason = "Conclusion marked for escalation due to complexity or uncertainty"
+                escalation_reason = (
+                    "Conclusion marked for escalation due to complexity or uncertainty"
+                )
 
         result = DeliberationResult(
             action=action,
@@ -199,7 +199,7 @@ class EthicalDeliberation:
             stakeholder_analysis=stakeholder_analysis,
             concerns=all_concerns,
             escalation_required=escalation_required,
-            escalation_reason=escalation_reason
+            escalation_reason=escalation_reason,
         )
 
         self.logger.info(
@@ -214,7 +214,7 @@ class EthicalDeliberation:
         self,
         conclusions: List[EthicalConclusion],
         confidences: List[float],
-        stakeholder_analysis: StakeholderAnalysis
+        stakeholder_analysis: StakeholderAnalysis,
     ) -> tuple:
         """
         Synthesize conclusions from multiple frameworks into final decision.
@@ -242,7 +242,8 @@ class EthicalDeliberation:
         if block_count > total * 0.5:  # Majority says block
             # Increase confidence if affects vulnerable
             confidence = sum(
-                conf for conc, conf in zip(conclusions, confidences)
+                conf
+                for conc, conf in zip(conclusions, confidences)
                 if conc == EthicalConclusion.BLOCKED
             ) / max(block_count, 1)
 
@@ -262,7 +263,8 @@ class EthicalDeliberation:
 
         else:  # Majority allow
             confidence = sum(
-                conf for conc, conf in zip(conclusions, confidences)
+                conf
+                for conc, conf in zip(conclusions, confidences)
                 if conc == EthicalConclusion.ALLOWED
             ) / max(allow_count, 1)
             return EthicalConclusion.ALLOWED, confidence
@@ -271,7 +273,7 @@ class EthicalDeliberation:
         self,
         framework_analyses: Dict[EthicalFrameworkType, FrameworkAnalysis],
         stakeholder_analysis: StakeholderAnalysis,
-        final_conclusion: EthicalConclusion
+        final_conclusion: EthicalConclusion,
     ) -> str:
         """Generate natural language reasoning for the conclusion."""
         parts = []
@@ -321,9 +323,7 @@ class EthicalDeliberation:
         return " | ".join(parts)
 
     def _infer_consequences(
-        self,
-        action: str,
-        stakeholder_analysis: StakeholderAnalysis
+        self, action: str, stakeholder_analysis: StakeholderAnalysis
     ) -> Dict[str, Any]:
         """Infer consequences from action description and stakeholder analysis."""
         consequences = {
@@ -334,47 +334,37 @@ class EthicalDeliberation:
             "long_term": {
                 "benefit": 0.0,
                 "harm": 0.0,
-            }
+            },
         }
 
         # Infer from negative impacts
-        negative_impacts = [
-            i for i in stakeholder_analysis.impacts
-            if i.impact_type == "negative"
-        ]
+        negative_impacts = [i for i in stakeholder_analysis.impacts if i.impact_type == "negative"]
 
         if negative_impacts:
             avg_severity = sum(i.severity for i in negative_impacts) / len(negative_impacts)
             for impact in negative_impacts:
                 if impact.timeframe == "short_term":
                     consequences["short_term"]["harm"] = max(
-                        consequences["short_term"]["harm"],
-                        avg_severity
+                        consequences["short_term"]["harm"], avg_severity
                     )
                 else:
                     consequences["long_term"]["harm"] = max(
-                        consequences["long_term"]["harm"],
-                        avg_severity
+                        consequences["long_term"]["harm"], avg_severity
                     )
 
         # Infer from positive impacts
-        positive_impacts = [
-            i for i in stakeholder_analysis.impacts
-            if i.impact_type == "positive"
-        ]
+        positive_impacts = [i for i in stakeholder_analysis.impacts if i.impact_type == "positive"]
 
         if positive_impacts:
             avg_severity = sum(i.severity for i in positive_impacts) / len(positive_impacts)
             for impact in positive_impacts:
                 if impact.timeframe == "short_term":
                     consequences["short_term"]["benefit"] = max(
-                        consequences["short_term"]["benefit"],
-                        avg_severity
+                        consequences["short_term"]["benefit"], avg_severity
                     )
                 else:
                     consequences["long_term"]["benefit"] = max(
-                        consequences["long_term"]["benefit"],
-                        avg_severity
+                        consequences["long_term"]["benefit"], avg_severity
                     )
 
         return consequences

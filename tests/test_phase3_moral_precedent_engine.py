@@ -5,14 +5,13 @@ Tests precedent storage, retrieval, consistency checking, and
 pattern analysis for maintaining ethical consistency.
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 
 from socratic_system.reasoning import (
     MoralPrecedentEngine,
-    PrecedentType,
     PrecedentQuery,
+    PrecedentType,
 )
 
 
@@ -40,9 +39,7 @@ class TestPrecedentStorage:
 
         assert prec_id is not None
         assert prec_id in self.engine.precedents
-        assert self.engine.precedents[prec_id].action_description == (
-            "improve_system_security"
-        )
+        assert self.engine.precedents[prec_id].action_description == ("improve_system_security")
 
     def test_store_multiple_precedents(self):
         """Can store multiple precedents."""
@@ -123,10 +120,7 @@ class TestPrecedentQuerying:
         matches = self.engine.query_precedents(query)
 
         assert len(matches) > 0
-        assert any(
-            "security" in m.precedent.action_description.lower()
-            for m in matches
-        )
+        assert any("security" in m.precedent.action_description.lower() for m in matches)
 
     def test_query_respects_similarity_threshold(self):
         """Query respects similarity threshold."""
@@ -186,7 +180,7 @@ class TestPrecedentAnalysis:
         self.engine = MoralPrecedentEngine()
 
         # Store consistent precedents
-        for i in range(3):
+        for _i in range(3):
             self.engine.store_precedent(
                 action_description="improve system functionality",
                 conclusion=PrecedentType.ALLOWED,
@@ -197,36 +191,28 @@ class TestPrecedentAnalysis:
 
     def test_analyze_finds_matching_precedents(self):
         """Analysis finds matching precedents."""
-        analysis = self.engine.analyze_precedents(
-            action="improve system"
-        )
+        analysis = self.engine.analyze_precedents(action="improve system")
 
         assert analysis is not None
         assert len(analysis.matching_precedents) > 0
 
     def test_analysis_checks_consistency(self):
         """Analysis checks consistency among precedents."""
-        analysis = self.engine.analyze_precedents(
-            action="improve system"
-        )
+        analysis = self.engine.analyze_precedents(action="improve system")
 
         assert isinstance(analysis.precedent_consistency, bool)
         assert analysis.consistency_explanation is not None
 
     def test_analysis_identifies_historical_pattern(self):
         """Analysis identifies patterns in precedents."""
-        analysis = self.engine.analyze_precedents(
-            action="improve system"
-        )
+        analysis = self.engine.analyze_precedents(action="improve system")
 
         assert analysis.historical_pattern is not None
         assert "usually" in analysis.historical_pattern or "Mixed" in analysis.historical_pattern
 
     def test_analysis_recommends_conclusion(self):
         """Analysis can recommend conclusion from precedents."""
-        analysis = self.engine.analyze_precedents(
-            action="improve system"
-        )
+        analysis = self.engine.analyze_precedents(action="improve system")
 
         # With consistent precedents, should recommend
         if analysis.precedent_consistency:
@@ -276,9 +262,7 @@ class TestConsistencyChecking:
 
     def test_no_precedents_allows_any_conclusion(self):
         """No precedents allows any conclusion."""
-        is_consistent, explanation = self.engine.check_consistency(
-            PrecedentType.ESCALATED, []
-        )
+        is_consistent, explanation = self.engine.check_consistency(PrecedentType.ESCALATED, [])
 
         assert is_consistent
 

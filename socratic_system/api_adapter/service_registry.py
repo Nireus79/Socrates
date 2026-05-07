@@ -162,9 +162,7 @@ class ServiceRegistry:
         service_info = ServiceInfo(name, service_instance, version, description)
         self.services[name] = service_info
 
-        self.logger.info(
-            f"Registered service '{name}' with {len(service_info.methods)} methods"
-        )
+        self.logger.info(f"Registered service '{name}' with {len(service_info.methods)} methods")
 
         return service_info
 
@@ -276,10 +274,7 @@ class ServiceRegistry:
         Returns:
             Dictionary of service information
         """
-        return {
-            name: service_info.to_dict()
-            for name, service_info in self.services.items()
-        }
+        return {name: service_info.to_dict() for name, service_info in self.services.items()}
 
     def get_service_info(self, name: str) -> Optional[Dict[str, Any]]:
         """

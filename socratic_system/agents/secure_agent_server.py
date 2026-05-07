@@ -157,9 +157,7 @@ class SecureAgentServer:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
 
-            self.logger.info(
-                f"[SecureServer] Processed request {request_id} successfully"
-            )
+            self.logger.info(f"[SecureServer] Processed request {request_id} successfully")
 
             return {
                 "request_id": request_id,
@@ -187,11 +185,13 @@ class SecureAgentServer:
             Encrypted response
         """
         # Simplified encryption - in production use actual TLS
-        return json.dumps({
-            **response,
-            "encrypted": True,
-            "agent": self.agent_id,
-        })
+        return json.dumps(
+            {
+                **response,
+                "encrypted": True,
+                "agent": self.agent_id,
+            }
+        )
 
     def get_certificate(self) -> str:
         """Get server certificate for presentation during TLS handshake."""

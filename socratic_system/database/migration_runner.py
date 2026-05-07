@@ -50,7 +50,7 @@ class MigrationRunner:
         # Check for critical migration files
         critical_migrations = [
             "add_claude_auth_method_column.sql",
-            "add_knowledge_documents_columns.sql"
+            "add_knowledge_documents_columns.sql",
         ]
 
         missing_critical = []
@@ -268,7 +268,11 @@ class MigrationRunner:
         migrations_to_apply = [
             ("add_github_import_tables.sql", "GitHub import tables", True),  # optional
             ("add_claude_auth_method_column.sql", "Claude auth method column", False),
-            ("add_knowledge_documents_columns.sql", "Knowledge documents file tracking columns", False),
+            (
+                "add_knowledge_documents_columns.sql",
+                "Knowledge documents file tracking columns",
+                False,
+            ),
             ("add_code_history_column.sql", "Code history column", True),  # optional
         ]
 
@@ -318,9 +322,8 @@ class MigrationRunner:
 
         # Verify critical migrations were applied
         final_status = self.check_migration_status()
-        critical_applied = (
-            final_status.get("users_claude_auth_method", False) and
-            final_status.get("knowledge_documents_columns", False)
+        critical_applied = final_status.get("users_claude_auth_method", False) and final_status.get(
+            "knowledge_documents_columns", False
         )
 
         if critical_applied:

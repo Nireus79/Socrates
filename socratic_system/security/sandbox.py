@@ -48,16 +48,19 @@ class SandboxConfig:
 
 class SandboxExecutionError(Exception):
     """Raised when sandboxed execution fails."""
+
     pass
 
 
 class SandboxTimeoutError(SandboxExecutionError):
     """Raised when sandboxed code exceeds timeout."""
+
     pass
 
 
 class SandboxResourceError(SandboxExecutionError):
     """Raised when sandboxed code exceeds resource limits."""
+
     pass
 
 
@@ -87,7 +90,9 @@ class Sandbox:
     - Unlimited resource consumption
     """
 
-    def __init__(self, config: Optional[SandboxConfig] = None, logger: Optional[logging.Logger] = None):
+    def __init__(
+        self, config: Optional[SandboxConfig] = None, logger: Optional[logging.Logger] = None
+    ):
         """Initialize sandbox.
 
         Args:
@@ -112,7 +117,7 @@ class Sandbox:
         code: str,
         globals_dict: Optional[Dict[str, Any]] = None,
         locals_dict: Optional[Dict[str, Any]] = None,
-        agent_name: str = "unknown"
+        agent_name: str = "unknown",
     ) -> ExecutionResult:
         """Execute Python code in sandbox.
 
@@ -130,10 +135,7 @@ class Sandbox:
         try:
             # Create temporary file for code
             with tempfile.NamedTemporaryFile(
-                mode='w',
-                suffix='.py',
-                delete=False,
-                dir=self.config.project_dir
+                mode="w", suffix=".py", delete=False, dir=self.config.project_dir
             ) as f:
                 # Write code to temp file
                 f.write(self._wrap_code_for_execution(code, globals_dict, locals_dict))
@@ -166,7 +168,7 @@ class Sandbox:
                 return_code=-1,
                 execution_time_seconds=execution_time,
                 timed_out=True,
-                exit_reason="timeout"
+                exit_reason="timeout",
             )
         except SandboxResourceError as e:
             execution_time = (datetime.now(UTC) - start_time).total_seconds()
@@ -178,7 +180,7 @@ class Sandbox:
                 return_code=-1,
                 execution_time_seconds=execution_time,
                 resource_exceeded=True,
-                exit_reason="resource_limit"
+                exit_reason="resource_limit",
             )
         except Exception as e:
             execution_time = (datetime.now(UTC) - start_time).total_seconds()
@@ -189,12 +191,12 @@ class Sandbox:
                 error=str(e),
                 return_code=-1,
                 execution_time_seconds=execution_time,
-                exit_reason="error"
+                exit_reason="error",
             )
         finally:
             # Clean up temporary file
             try:
-                if 'temp_file' in locals():
+                if "temp_file" in locals():
                     os.unlink(temp_file)
             except Exception as e:
                 self.logger.warning(f"Failed to cleanup temp file {temp_file}: {e}")
@@ -203,7 +205,7 @@ class Sandbox:
         self,
         code: str,
         globals_dict: Optional[Dict[str, Any]],
-        locals_dict: Optional[Dict[str, Any]]
+        locals_dict: Optional[Dict[str, Any]],
     ) -> str:
         """Wrap user code with safety measures.
 
@@ -255,8 +257,8 @@ finally:
 
     def _indent_code(self, code: str) -> str:
         """Indent user code for wrapping."""
-        lines = code.split('\n')
-        return '\n'.join('    ' + line for line in lines)
+        lines = code.split("\n")
+        return "\n".join("    " + line for line in lines)
 
     def _run_subprocess(self, temp_file: str, agent_name: str) -> ExecutionResult:
         """Run code in subprocess with resource limits.
@@ -321,7 +323,7 @@ finally:
                 return_code=process.returncode,
                 execution_time_seconds=0,  # Would need to track from signal
                 timed_out=False,
-                exit_reason="normal" if process.returncode == 0 else "error"
+                exit_reason="normal" if process.returncode == 0 else "error",
             )
 
         except SandboxTimeoutError:

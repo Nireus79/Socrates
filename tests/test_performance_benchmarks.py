@@ -9,16 +9,17 @@ Validates:
 - Cache effectiveness
 """
 
-import time
-import pytest
-from unittest.mock import MagicMock
 import statistics
+import time
+from unittest.mock import MagicMock
 
+import pytest
+
+from socratic_system.caching import InMemoryAnalysisCache
 from socratic_system.events import EventEmitter
+from socratic_system.jobs import JobTracker
 from socratic_system.messaging import AgentBus, CircuitBreaker, RetryPolicy
 from socratic_system.services import CodeService, QualityService, ValidationService
-from socratic_system.caching import InMemoryAnalysisCache
-from socratic_system.jobs import JobTracker, JobStatus
 
 
 class TestAgentBusPerformance:
@@ -34,9 +35,7 @@ class TestAgentBusPerformance:
     def test_agent_bus_baseline_latency(self):
         """Measure baseline latency of agent_bus.send_request_sync()."""
         # Mock agent response
-        self.agent_bus.send_request_sync = MagicMock(
-            return_value={"status": "success", "data": {}}
-        )
+        self.agent_bus.send_request_sync = MagicMock(return_value={"status": "success", "data": {}})
 
         latencies = []
         iterations = 1000
@@ -51,7 +50,7 @@ class TestAgentBusPerformance:
         p95_latency = sorted(latencies)[int(len(latencies) * 0.95)]
         p99_latency = sorted(latencies)[int(len(latencies) * 0.99)]
 
-        print(f"\nAgent Bus Latency (1000 calls):")
+        print("\nAgent Bus Latency (1000 calls):")
         print(f"  Average: {avg_latency:.3f}ms")
         print(f"  P95: {p95_latency:.3f}ms")
         print(f"  P99: {p99_latency:.3f}ms")
@@ -82,7 +81,7 @@ class TestAgentBusPerformance:
         avg_latency = statistics.mean(latencies)
         max_latency = max(latencies)
 
-        print(f"\nService Layer Overhead (500 calls):")
+        print("\nService Layer Overhead (500 calls):")
         print(f"  Average: {avg_latency:.3f}ms")
         print(f"  Max: {max_latency:.3f}ms")
 
@@ -98,7 +97,6 @@ class TestCircuitBreakerPerformance:
         breaker = CircuitBreaker(failure_threshold=5)
 
         latencies_with_breaker = []
-        latencies_without_breaker = []
 
         iterations = 10000
 
@@ -112,7 +110,7 @@ class TestCircuitBreakerPerformance:
         avg_with_breaker = statistics.mean(latencies_with_breaker)
         max_with_breaker = max(latencies_with_breaker)
 
-        print(f"\nCircuit Breaker Overhead (10000 calls):")
+        print("\nCircuit Breaker Overhead (10000 calls):")
         print(f"  Average: {avg_with_breaker:.3f}µs")
         print(f"  Max: {max_with_breaker:.3f}µs")
 
@@ -138,7 +136,7 @@ class TestCircuitBreakerPerformance:
             breaker.record_success()
         elapsed_close = time.perf_counter() - start
 
-        print(f"\nCircuit Breaker State Transitions:")
+        print("\nCircuit Breaker State Transitions:")
         print(f"  CLOSED to OPEN: {elapsed_open * 1000:.3f}ms")
         print(f"  HALF_OPEN to CLOSED: {elapsed_close * 1000:.3f}ms")
 
@@ -160,13 +158,13 @@ class TestRetryPolicyPerformance:
         for i in range(iterations):
             start = time.perf_counter()
             # Cap attempt at 30 to avoid overflow
-            delay = policy.get_delay(min(i, 30))
+            _delay = policy.get_delay(min(i, 30))
             elapsed = time.perf_counter() - start
             latencies.append(elapsed * 1000000)  # microseconds
 
         avg_latency = statistics.mean(latencies)
 
-        print(f"\nRetry Policy Calculation (100 calls):")
+        print("\nRetry Policy Calculation (100 calls):")
         print(f"  Average: {avg_latency:.3f}µs")
 
         # Calculation should be very fast
@@ -190,14 +188,14 @@ class TestCachePerformance:
         # Measure lookups
         for i in range(iterations):
             start = time.perf_counter()
-            value = cache.get(f"key_{i % 1000}")
+            _value = cache.get(f"key_{i % 1000}")
             elapsed = time.perf_counter() - start
             latencies.append(elapsed * 1000000)  # microseconds
 
         avg_latency = statistics.mean(latencies)
         p95_latency = sorted(latencies)[int(len(latencies) * 0.95)]
 
-        print(f"\nCache Lookup Performance (10000 lookups):")
+        print("\nCache Lookup Performance (10000 lookups):")
         print(f"  Average: {avg_latency:.3f}µs")
         print(f"  P95: {p95_latency:.3f}µs")
 
@@ -228,7 +226,7 @@ class TestCachePerformance:
 
         hit_rate = hits / (hits + misses) * 100
 
-        print(f"\nCache Hit Rate:")
+        print("\nCache Hit Rate:")
         print(f"  Hits: {hits}")
         print(f"  Misses: {misses}")
         print(f"  Hit Rate: {hit_rate:.1f}%")
@@ -248,12 +246,12 @@ class TestJobTrackerPerformance:
         iterations = 1000
 
         for i in range(iterations):
-            job = tracker.create_job(f"job_type_{i % 5}", f"project_{i % 10}")
+            _job = tracker.create_job(f"job_type_{i % 5}", f"project_{i % 10}")
 
         elapsed = time.perf_counter() - start
         throughput = iterations / elapsed
 
-        print(f"\nJob Tracker Creation Throughput:")
+        print("\nJob Tracker Creation Throughput:")
         print(f"  Jobs created: {iterations}")
         print(f"  Time: {elapsed:.3f}s")
         print(f"  Throughput: {throughput:.0f} jobs/sec")
@@ -278,7 +276,7 @@ class TestJobTrackerPerformance:
 
         avg_latency = statistics.mean(latencies)
 
-        print(f"\nJob Status Update Latency:")
+        print("\nJob Status Update Latency:")
         print(f"  Average: {avg_latency:.3f}ms")
 
         # Status updates should be fast
@@ -300,9 +298,7 @@ class TestCompleteWorkflowPerformance:
         quality_service = QualityService(config=MagicMock(), orchestrator=orchestrator)
 
         # Mock responses
-        agent_bus.send_request_sync = MagicMock(
-            return_value={"status": "success", "data": {}}
-        )
+        agent_bus.send_request_sync = MagicMock(return_value={"status": "success", "data": {}})
 
         project = MagicMock()
         project.project_id = "perf_proj"
@@ -327,7 +323,7 @@ class TestCompleteWorkflowPerformance:
         avg_latency = statistics.mean(latencies)
         p95_latency = sorted(latencies)[int(len(latencies) * 0.95)]
 
-        print(f"\nComplete Workflow Latency (100 iterations):")
+        print("\nComplete Workflow Latency (100 iterations):")
         print(f"  Average: {avg_latency:.3f}ms")
         print(f"  P95: {p95_latency:.3f}ms")
 

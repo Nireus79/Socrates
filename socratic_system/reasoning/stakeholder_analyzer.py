@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 
 class StakeholderType(Enum):
     """Types of stakeholders."""
+
     USER = "user"
     AGENT = "agent"
     ORGANIZATION = "organization"
@@ -24,6 +25,7 @@ class StakeholderType(Enum):
 
 class ImpactSeverity(Enum):
     """Severity of impact on stakeholder."""
+
     NONE = 0.0
     MINIMAL = 0.2
     LOW = 0.4
@@ -97,17 +99,11 @@ class StakeholderAnalysis:
 
     def total_positive_impact(self) -> float:
         """Calculate total positive impact across stakeholders."""
-        return sum(
-            i.severity for i in self.impacts
-            if i.impact_type == "positive"
-        )
+        return sum(i.severity for i in self.impacts if i.impact_type == "positive")
 
     def total_negative_impact(self) -> float:
         """Calculate total negative impact across stakeholders."""
-        return sum(
-            i.severity for i in self.impacts
-            if i.impact_type == "negative"
-        )
+        return sum(i.severity for i in self.impacts if i.impact_type == "negative")
 
     def net_impact(self) -> float:
         """Net impact (positive minus negative)."""
@@ -142,7 +138,7 @@ class StakeholderAnalyzer:
         self,
         action: str,
         context: Dict[str, Any],
-        additional_stakeholders: Optional[List[Dict[str, Any]]] = None
+        additional_stakeholders: Optional[List[Dict[str, Any]]] = None,
     ) -> StakeholderAnalysis:
         """
         Analyze stakeholders affected by proposed action.
@@ -162,9 +158,7 @@ class StakeholderAnalyzer:
 
         # Add any additional provided stakeholders
         if additional_stakeholders:
-            stakeholders.extend(
-                self._parse_stakeholders(additional_stakeholders)
-            )
+            stakeholders.extend(self._parse_stakeholders(additional_stakeholders))
 
         analysis.stakeholders = stakeholders
 
@@ -174,20 +168,18 @@ class StakeholderAnalyzer:
 
         # Identify vulnerable groups affected
         analysis.vulnerable_groups = [
-            s for s in stakeholders
-            if s.is_vulnerable() and any(
-                i.affected_party == s.id and i.impact_type == "negative"
-                for i in impacts
-            )
+            s
+            for s in stakeholders
+            if s.is_vulnerable()
+            and any(i.affected_party == s.id and i.impact_type == "negative" for i in impacts)
         ]
 
         # Identify powerless affected
         analysis.powerless_affected = [
-            s for s in stakeholders
-            if not s.has_power_to_resist() and any(
-                i.affected_party == s.id and i.impact_type == "negative"
-                for i in impacts
-            )
+            s
+            for s in stakeholders
+            if not s.has_power_to_resist()
+            and any(i.affected_party == s.id and i.impact_type == "negative" for i in impacts)
         ]
 
         self.logger.info(
@@ -199,95 +191,100 @@ class StakeholderAnalyzer:
 
         return analysis
 
-    def _identify_stakeholders(
-        self,
-        action: str,
-        context: Dict[str, Any]
-    ) -> List[Stakeholder]:
+    def _identify_stakeholders(self, action: str, context: Dict[str, Any]) -> List[Stakeholder]:
         """Identify stakeholders from action and context."""
         stakeholders = []
 
         # Always affected: users/organization
         if context.get("scope", "").lower() in ["system_wide", "all", "global"]:
-            stakeholders.append(Stakeholder(
-                id="all_users",
-                name="All Users",
-                stakeholder_type=StakeholderType.USER,
-                vulnerability=0.5,  # Users generally moderately vulnerable
-                power=0.3,  # Limited power against system
-                interest=0.9,  # Highly affected
-                affected_interests=["transparency", "security", "control"],
-                affected_rights=["privacy", "informed_consent", "information"]
-            ))
+            stakeholders.append(
+                Stakeholder(
+                    id="all_users",
+                    name="All Users",
+                    stakeholder_type=StakeholderType.USER,
+                    vulnerability=0.5,  # Users generally moderately vulnerable
+                    power=0.3,  # Limited power against system
+                    interest=0.9,  # Highly affected
+                    affected_interests=["transparency", "security", "control"],
+                    affected_rights=["privacy", "informed_consent", "information"],
+                )
+            )
 
-            stakeholders.append(Stakeholder(
-                id="organization",
-                name="Organization",
-                stakeholder_type=StakeholderType.ORGANIZATION,
-                vulnerability=0.0,  # Organization not vulnerable
-                power=1.0,  # Has maximum power
-                interest=1.0,  # Directly affected
-                affected_interests=["reputation", "liability", "operations"],
-                affected_rights=["property"]
-            ))
+            stakeholders.append(
+                Stakeholder(
+                    id="organization",
+                    name="Organization",
+                    stakeholder_type=StakeholderType.ORGANIZATION,
+                    vulnerability=0.0,  # Organization not vulnerable
+                    power=1.0,  # Has maximum power
+                    interest=1.0,  # Directly affected
+                    affected_interests=["reputation", "liability", "operations"],
+                    affected_rights=["property"],
+                )
+            )
 
-            stakeholders.append(Stakeholder(
-                id="society",
-                name="Society",
-                stakeholder_type=StakeholderType.SOCIETY,
-                vulnerability=0.6,  # Society moderately vulnerable
-                power=0.2,  # Limited direct power
-                interest=0.5,  # Somewhat affected
-                affected_interests=["public_good", "trust", "accountability"],
-                affected_rights=["information", "justice"]
-            ))
+            stakeholders.append(
+                Stakeholder(
+                    id="society",
+                    name="Society",
+                    stakeholder_type=StakeholderType.SOCIETY,
+                    vulnerability=0.6,  # Society moderately vulnerable
+                    power=0.2,  # Limited direct power
+                    interest=0.5,  # Somewhat affected
+                    affected_interests=["public_good", "trust", "accountability"],
+                    affected_rights=["information", "justice"],
+                )
+            )
 
         elif context.get("scope", "").lower() in ["specific", "targeted", "limited"]:
             # Specific users affected
             num_affected = context.get("num_affected", 1)
             if num_affected == 1:
-                stakeholders.append(Stakeholder(
-                    id="specific_user",
-                    name="Specific User",
-                    stakeholder_type=StakeholderType.USER,
-                    vulnerability=self._assess_vulnerability(context),
-                    power=0.2,
-                    interest=1.0,
-                    affected_interests=["autonomy", "privacy", "consent"],
-                    affected_rights=["privacy", "informed_consent"]
-                ))
+                stakeholders.append(
+                    Stakeholder(
+                        id="specific_user",
+                        name="Specific User",
+                        stakeholder_type=StakeholderType.USER,
+                        vulnerability=self._assess_vulnerability(context),
+                        power=0.2,
+                        interest=1.0,
+                        affected_interests=["autonomy", "privacy", "consent"],
+                        affected_rights=["privacy", "informed_consent"],
+                    )
+                )
             else:
-                stakeholders.append(Stakeholder(
-                    id="group_users",
-                    name=f"Group of {num_affected} Users",
-                    stakeholder_type=StakeholderType.USER,
-                    vulnerability=self._assess_vulnerability(context),
-                    power=0.3,
-                    interest=1.0,
-                    affected_interests=["autonomy", "privacy", "justice"],
-                    affected_rights=["privacy", "informed_consent", "justice"]
-                ))
+                stakeholders.append(
+                    Stakeholder(
+                        id="group_users",
+                        name=f"Group of {num_affected} Users",
+                        stakeholder_type=StakeholderType.USER,
+                        vulnerability=self._assess_vulnerability(context),
+                        power=0.3,
+                        interest=1.0,
+                        affected_interests=["autonomy", "privacy", "justice"],
+                        affected_rights=["privacy", "informed_consent", "justice"],
+                    )
+                )
 
         # Check for vulnerable populations
         if self._mentions_vulnerable_group(context):
-            stakeholders.append(Stakeholder(
-                id="vulnerable_group",
-                name="Vulnerable Population",
-                stakeholder_type=StakeholderType.USER,
-                vulnerability=0.9,  # Very vulnerable
-                power=0.1,  # Very little power
-                interest=1.0,  # Directly affected
-                characteristics={"vulnerable_group": True},
-                affected_interests=["protection", "dignity", "justice"],
-                affected_rights=["dignity", "protection", "justice"]
-            ))
+            stakeholders.append(
+                Stakeholder(
+                    id="vulnerable_group",
+                    name="Vulnerable Population",
+                    stakeholder_type=StakeholderType.USER,
+                    vulnerability=0.9,  # Very vulnerable
+                    power=0.1,  # Very little power
+                    interest=1.0,  # Directly affected
+                    characteristics={"vulnerable_group": True},
+                    affected_interests=["protection", "dignity", "justice"],
+                    affected_rights=["dignity", "protection", "justice"],
+                )
+            )
 
         return stakeholders
 
-    def _parse_stakeholders(
-        self,
-        stakeholder_dicts: List[Dict[str, Any]]
-    ) -> List[Stakeholder]:
+    def _parse_stakeholders(self, stakeholder_dicts: List[Dict[str, Any]]) -> List[Stakeholder]:
         """Parse stakeholder dictionaries into Stakeholder objects."""
         stakeholders = []
         for s_dict in stakeholder_dicts:
@@ -301,7 +298,7 @@ class StakeholderAnalyzer:
                     interest=float(s_dict.get("interest", 0.5)),
                     characteristics=s_dict.get("characteristics", {}),
                     affected_interests=s_dict.get("affected_interests", []),
-                    affected_rights=s_dict.get("affected_rights", [])
+                    affected_rights=s_dict.get("affected_rights", []),
                 )
                 stakeholders.append(stakeholder)
             except Exception as e:
@@ -310,10 +307,7 @@ class StakeholderAnalyzer:
         return stakeholders
 
     def _analyze_impacts(
-        self,
-        action: str,
-        stakeholders: List[Stakeholder],
-        context: Dict[str, Any]
+        self, action: str, stakeholders: List[Stakeholder], context: Dict[str, Any]
     ) -> List[Impact]:
         """Analyze impacts of action on stakeholders."""
         impacts = []
@@ -326,10 +320,7 @@ class StakeholderAnalyzer:
         return impacts
 
     def _assess_impact(
-        self,
-        action: str,
-        stakeholder: Stakeholder,
-        context: Dict[str, Any]
+        self, action: str, stakeholder: Stakeholder, context: Dict[str, Any]
     ) -> Optional[Impact]:
         """Assess impact of action on specific stakeholder."""
         action_lower = action.lower()
@@ -370,14 +361,11 @@ class StakeholderAnalyzer:
             timeframe=timeframe,
             reversibility=reversibility,
             description=f"{impact_type.capitalize()} impact on {stakeholder.name}",
-            affected_rights=stakeholder.affected_rights
+            affected_rights=stakeholder.affected_rights,
         )
 
     def _calculate_severity(
-        self,
-        action: str,
-        stakeholder: Stakeholder,
-        context: Dict[str, Any]
+        self, action: str, stakeholder: Stakeholder, context: Dict[str, Any]
     ) -> float:
         """Calculate severity of impact (0.0-1.0)."""
         base_severity = 0.5
@@ -404,8 +392,14 @@ class StakeholderAnalyzer:
 
         # Check for vulnerable indicators
         vulnerable_keywords = [
-            "minor", "child", "elderly", "disabled", "vulnerable",
-            "disadvantaged", "marginalized", "protected"
+            "minor",
+            "child",
+            "elderly",
+            "disabled",
+            "vulnerable",
+            "disadvantaged",
+            "marginalized",
+            "protected",
         ]
 
         if any(k in str(context).lower() for k in vulnerable_keywords):
@@ -416,9 +410,17 @@ class StakeholderAnalyzer:
     def _mentions_vulnerable_group(self, context: Dict[str, Any]) -> bool:
         """Check if context mentions vulnerable populations."""
         vulnerable_keywords = [
-            "minor", "child", "children", "elderly", "disabled",
-            "vulnerable", "disadvantaged", "marginalized", "protected",
-            "at-risk", "underrepresented"
+            "minor",
+            "child",
+            "children",
+            "elderly",
+            "disabled",
+            "vulnerable",
+            "disadvantaged",
+            "marginalized",
+            "protected",
+            "at-risk",
+            "underrepresented",
         ]
 
         context_str = str(context).lower()

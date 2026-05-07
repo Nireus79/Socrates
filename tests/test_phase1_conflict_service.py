@@ -9,9 +9,7 @@ Validates that:
 4. Services work independently
 """
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from socratic_system.repositories.conflict_repository import ConflictRepository
 from socratic_system.services.conflict_service import ConflictService
@@ -90,7 +88,7 @@ class TestConflictRepositoryOperations:
             "requirements",
             "high",
             "Conflicting requirements detected",
-            {"details": "spec1 vs spec2"}
+            {"details": "spec1 vs spec2"},
         )
 
         assert result is True
@@ -104,17 +102,12 @@ class TestConflictRepositoryOperations:
         """resolve_conflict should mark conflict as resolved."""
         mock_db = MagicMock()
         project = MagicMock()
-        project.conflicts = [
-            {"conflict_type": "requirements", "status": "unresolved"}
-        ]
+        project.conflicts = [{"conflict_type": "requirements", "status": "unresolved"}]
         mock_db.load_project.return_value = project
 
         repo = ConflictRepository(mock_db)
         result = repo.resolve_conflict(
-            "test-project",
-            0,
-            "Updated spec to match requirements",
-            {"updated_spec": "spec1"}
+            "test-project", 0, "Updated spec to match requirements", {"updated_spec": "spec1"}
         )
 
         assert result is True
@@ -238,11 +231,7 @@ class TestConflictServiceOperations:
         service = ConflictService(mock_config, mock_db)
         project = MagicMock()
 
-        result = service.detect_conflicts(
-            "test-project",
-            project,
-            {}
-        )
+        result = service.detect_conflicts("test-project", project, {})
 
         assert result["status"] == "success"
         assert result["conflicts"] == []
@@ -258,11 +247,7 @@ class TestConflictServiceOperations:
         project = MagicMock()
         insights = {"requirement": "new requirement"}
 
-        result = service.detect_conflicts(
-            "test-project",
-            project,
-            insights
-        )
+        result = service.detect_conflicts("test-project", project, insights)
 
         assert result["status"] == "success"
 
@@ -275,10 +260,7 @@ class TestConflictServiceOperations:
         service.repository.resolve_conflict = MagicMock(return_value=True)
 
         result = service.resolve_conflict(
-            "test-project",
-            0,
-            "Updated specification",
-            {"spec_id": "spec1"}
+            "test-project", 0, "Updated specification", {"spec_id": "spec1"}
         )
 
         assert result["status"] == "success"
@@ -290,14 +272,14 @@ class TestConflictServiceOperations:
         mock_config = MagicMock()
 
         service = ConflictService(mock_config, mock_db)
-        service.repository.get_project_conflicts = MagicMock(return_value=[
-            {
-                "conflict_type": "requirements",
-                "details": {
-                    "suggestions": ["Use spec1", "Use spec2"]
+        service.repository.get_project_conflicts = MagicMock(
+            return_value=[
+                {
+                    "conflict_type": "requirements",
+                    "details": {"suggestions": ["Use spec1", "Use spec2"]},
                 }
-            }
-        ])
+            ]
+        )
 
         result = service.get_conflict_suggestions("test-project", 0)
 
@@ -310,11 +292,13 @@ class TestConflictServiceOperations:
         mock_config = MagicMock()
 
         service = ConflictService(mock_config, mock_db)
-        service.repository.get_project_conflicts = MagicMock(return_value=[
-            {"conflict_type": "requirements", "severity": "high"},
-            {"conflict_type": "requirements", "severity": "medium"},
-            {"conflict_type": "tech_stack", "severity": "high"},
-        ])
+        service.repository.get_project_conflicts = MagicMock(
+            return_value=[
+                {"conflict_type": "requirements", "severity": "high"},
+                {"conflict_type": "requirements", "severity": "medium"},
+                {"conflict_type": "tech_stack", "severity": "high"},
+            ]
+        )
 
         result = service.get_project_conflicts("test-project")
 

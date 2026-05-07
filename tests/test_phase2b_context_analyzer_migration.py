@@ -1,7 +1,9 @@
 """Phase 2B: ContextAnalyzerAgent Migration Tests"""
+
 import asyncio
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from socratic_agents.context_analyzer import ContextAnalyzerAgent
 
 
@@ -21,7 +23,7 @@ class TestContextAnalyzerMigration:
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
         agent = ContextAnalyzerAgent(mock_orchestrator)
-        assert hasattr(agent, 'process')
+        assert hasattr(agent, "process")
         assert callable(agent.process)
 
     def test_agent_has_process_async_method(self):
@@ -29,7 +31,7 @@ class TestContextAnalyzerMigration:
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
         agent = ContextAnalyzerAgent(mock_orchestrator)
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "process_async")
         assert callable(agent.process_async)
 
     def test_process_sync(self):
@@ -60,7 +62,9 @@ class TestContextAnalyzerMigration:
         agent = ContextAnalyzerAgent(mock_orchestrator)
 
         agent._get_statistics = MagicMock(return_value={"status": "success"})
-        result = asyncio.run(agent.process_async({"action": "get_statistics", "project": MagicMock()}))
+        result = asyncio.run(
+            agent.process_async({"action": "get_statistics", "project": MagicMock()})
+        )
         assert result["status"] == "success"
 
     def test_unknown_action(self):

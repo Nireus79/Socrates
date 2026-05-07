@@ -1,8 +1,9 @@
 """Tests for semantic similarity in precedent engine."""
+
+from unittest.mock import Mock
+
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
 from socratic_morality.precedent.engine import MoralPrecedentEngine
-from socratic_morality.precedent.embeddings import SemanticEmbeddings
 
 
 class TestPrecedentSemanticSimilarity:
@@ -17,18 +18,22 @@ class TestPrecedentSemanticSimilarity:
     async def test_find_similar_cases_with_embeddings(self, precedent_engine):
         """Test finding similar cases using semantic embeddings."""
         # Store some cases
-        decision1 = Mock(decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor1")
-        decision2 = Mock(decision_type="deny", allowed=False, context={}, high_impact=False, actor="actor2")
+        decision1 = Mock(
+            decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor1"
+        )
+        decision2 = Mock(
+            decision_type="deny", allowed=False, context={}, high_impact=False, actor="actor2"
+        )
 
-        case1_id = await precedent_engine.store_case(
+        await precedent_engine.store_case(
             action="user asks for sensitive data access",
             decision=decision1,
-            reasoning="User has authorization"
+            reasoning="User has authorization",
         )
-        case2_id = await precedent_engine.store_case(
+        await precedent_engine.store_case(
             action="unauthorized data request",
             decision=decision2,
-            reasoning="No proper authorization"
+            reasoning="No proper authorization",
         )
 
         # Enable mock embeddings for semantic similarity
@@ -45,18 +50,18 @@ class TestPrecedentSemanticSimilarity:
         precedent_engine.embeddings.model = None
 
         # Store cases with overlapping words
-        decision1 = Mock(decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor1")
-        decision2 = Mock(decision_type="deny", allowed=False, context={}, high_impact=False, actor="actor2")
+        decision1 = Mock(
+            decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor1"
+        )
+        decision2 = Mock(
+            decision_type="deny", allowed=False, context={}, high_impact=False, actor="actor2"
+        )
 
         await precedent_engine.store_case(
-            action="user requests access to sensitive data",
-            decision=decision1,
-            reasoning="Allowed"
+            action="user requests access to sensitive data", decision=decision1, reasoning="Allowed"
         )
         await precedent_engine.store_case(
-            action="application sends network request",
-            decision=decision2,
-            reasoning="Denied"
+            action="application sends network request", decision=decision2, reasoning="Denied"
         )
 
         # Search for similar - should use word overlap
@@ -71,13 +76,15 @@ class TestPrecedentSemanticSimilarity:
         """Test similarity scoring accuracy."""
         precedent_engine.embeddings.model = None  # Use fallback
 
-        decision = Mock(decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor")
+        decision = Mock(
+            decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor"
+        )
 
         # Store case with specific words
         await precedent_engine.store_case(
             action="approve user authentication request",
             decision=decision,
-            reasoning="Valid credentials"
+            reasoning="Valid credentials",
         )
 
         # Search with similar action
@@ -94,14 +101,14 @@ class TestPrecedentSemanticSimilarity:
     @pytest.mark.asyncio
     async def test_similar_cases_limit(self, precedent_engine):
         """Test limit parameter in similar cases search."""
-        decision = Mock(decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor")
+        decision = Mock(
+            decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor"
+        )
 
         # Store multiple cases
         for i in range(5):
             await precedent_engine.store_case(
-                action=f"test action {i}",
-                decision=decision,
-                reasoning="Test"
+                action=f"test action {i}", decision=decision, reasoning="Test"
             )
 
         # Request only 2 results
@@ -113,18 +120,16 @@ class TestPrecedentSemanticSimilarity:
         """Test that similar cases are sorted by similarity score."""
         precedent_engine.embeddings.model = None  # Use fallback for predictable results
 
-        decision = Mock(decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor")
+        decision = Mock(
+            decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor"
+        )
 
         # Store cases with varying word overlap
         await precedent_engine.store_case(
-            action="exact test action here",
-            decision=decision,
-            reasoning="Test"
+            action="exact test action here", decision=decision, reasoning="Test"
         )
         await precedent_engine.store_case(
-            action="different other action",
-            decision=decision,
-            reasoning="Test"
+            action="different other action", decision=decision, reasoning="Test"
         )
 
         similar = await precedent_engine.find_similar_cases("test action", limit=5)
@@ -136,14 +141,20 @@ class TestPrecedentSemanticSimilarity:
     @pytest.mark.asyncio
     async def test_case_metadata_preserved_in_similarity_search(self, precedent_engine):
         """Test that case metadata is preserved in similarity search results."""
-        decision = Mock(decision_type="allow", allowed=True, context={"key": "value"}, high_impact=True, actor="actor1")
+        decision = Mock(
+            decision_type="allow",
+            allowed=True,
+            context={"key": "value"},
+            high_impact=True,
+            actor="actor1",
+        )
 
         case_id = await precedent_engine.store_case(
             action="test action",
             decision=decision,
             reasoning="Test reasoning",
             principles_cited=["principle1", "principle2"],
-            stakeholders_affected=["user1", "org1"]
+            stakeholders_affected=["user1", "org1"],
         )
 
         similar = await precedent_engine.find_similar_cases("action", limit=1)
@@ -151,8 +162,8 @@ class TestPrecedentSemanticSimilarity:
         assert len(similar) > 0
         case = similar[0]
         assert case["id"] == case_id
-        assert case["allowed"] == True
-        assert case["high_impact"] == True
+        assert case["allowed"]
+        assert case["high_impact"]
         assert case["actor"] == "actor1"
         assert "principle1" in case.get("principles_cited", [])
         assert "user1" in case.get("stakeholders_affected", [])
@@ -177,13 +188,11 @@ class TestEmbeddingsWithPrecedent:
         engine = MoralPrecedentEngine()
         engine.embeddings.model = None  # Disable embeddings
 
-        decision = Mock(decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor")
-
-        await engine.store_case(
-            action="test action",
-            decision=decision,
-            reasoning="Test"
+        decision = Mock(
+            decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor"
         )
+
+        await engine.store_case(action="test action", decision=decision, reasoning="Test")
 
         # Should still work with fallback
         similar = await engine.find_similar_cases("action", limit=1)
@@ -213,7 +222,9 @@ class TestPrecedentSearchConsistency:
         engine = MoralPrecedentEngine()
         engine.embeddings.model = None  # Use fallback for consistency
 
-        decision = Mock(decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor")
+        decision = Mock(
+            decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor"
+        )
 
         # Store cases
         await engine.store_case(action="case one with words", decision=decision, reasoning="A")
@@ -235,12 +246,12 @@ class TestPrecedentSearchConsistency:
         engine = MoralPrecedentEngine()
         engine.embeddings.model = None
 
-        decision = Mock(decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor")
+        decision = Mock(
+            decision_type="allow", allowed=True, context={}, high_impact=False, actor="actor"
+        )
 
         await engine.store_case(
-            action="User Requests Data Access",
-            decision=decision,
-            reasoning="Test"
+            action="User Requests Data Access", decision=decision, reasoning="Test"
         )
 
         # Search with different case

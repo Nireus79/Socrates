@@ -31,7 +31,7 @@ class CodeGeneratorSandboxWrapper:
         sandbox: Optional[Sandbox] = None,
         audit_logger: Optional[AuditLogger] = None,
         validate_before_execution: bool = True,
-        logger: Optional[logging.Logger] = None
+        logger: Optional[logging.Logger] = None,
     ):
         """
         Initialize sandbox wrapper.
@@ -70,7 +70,7 @@ class CodeGeneratorSandboxWrapper:
                 action=action,
                 allowed=True,
                 reason="Code generation request",
-                details={"request_type": action}
+                details={"request_type": action},
             )
 
         # Generate code using base agent
@@ -99,9 +99,7 @@ class CodeGeneratorSandboxWrapper:
         return execute_flag and action == "generate_artifact"
 
     def _execute_generated_code(
-        self,
-        request: Dict[str, Any],
-        generation_result: Dict[str, Any]
+        self, request: Dict[str, Any], generation_result: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Execute generated code in sandbox.
@@ -134,8 +132,8 @@ class CodeGeneratorSandboxWrapper:
                             trigger_source="CodeGenerator",
                             details={
                                 "violations": violations,
-                                "action": "Code generation - validation failed"
-                            }
+                                "action": "Code generation - validation failed",
+                            },
                         )
 
                     generation_result["execution_status"] = "validation_failed"
@@ -156,7 +154,7 @@ class CodeGeneratorSandboxWrapper:
                 "peak_memory_mb": execution_result.peak_memory_mb,
                 "timed_out": execution_result.timed_out,
                 "resource_exceeded": execution_result.resource_exceeded,
-                "exit_reason": execution_result.exit_reason
+                "exit_reason": execution_result.exit_reason,
             }
 
             # Log execution
@@ -169,8 +167,8 @@ class CodeGeneratorSandboxWrapper:
                     details={
                         "success": execution_result.success,
                         "execution_time_seconds": execution_result.execution_time_seconds,
-                        "timed_out": execution_result.timed_out
-                    }
+                        "timed_out": execution_result.timed_out,
+                    },
                 )
 
             return generation_result
@@ -183,10 +181,7 @@ class CodeGeneratorSandboxWrapper:
                     event_type="CODE_EXECUTION_ERROR",
                     severity="WARNING",
                     trigger_source="CodeGenerator",
-                    details={
-                        "error": str(e),
-                        "action": "Code generation - execution failed"
-                    }
+                    details={"error": str(e), "action": "Code generation - execution failed"},
                 )
 
             generation_result["execution_status"] = "error"

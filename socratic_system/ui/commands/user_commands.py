@@ -148,10 +148,10 @@ class UserCreateCommand(BaseCommand):
                 requirements=[
                     "Define what you want to build",
                     "Identify key features needed",
-                    "List any constraints or dependencies"
+                    "List any constraints or dependencies",
                 ],
                 tech_stack=["Python"],
-                goals="Get familiar with Socrates project management"
+                goals="Get familiar with Socrates project management",
             )
 
             # Save the project

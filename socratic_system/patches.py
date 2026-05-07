@@ -74,10 +74,14 @@ def patch_multi_llm_agent():
                     # Check if user has configured this provider
                     if user_id:
                         try:
-                            api_key = self.orchestrator.database.get_api_key(user_id, provider.provider)
+                            api_key = self.orchestrator.database.get_api_key(
+                                user_id, provider.provider
+                            )
                             provider_dict["is_configured"] = api_key is not None
                         except Exception as e:
-                            self.logger.debug(f"Error checking API key for {provider.provider}: {e}")
+                            self.logger.debug(
+                                f"Error checking API key for {provider.provider}: {e}"
+                            )
                             provider_dict["is_configured"] = False
                     else:
                         provider_dict["is_configured"] = False

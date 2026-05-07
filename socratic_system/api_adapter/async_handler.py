@@ -73,9 +73,7 @@ class AsyncJobHandler:
         Raises:
             AdapterError: If job submission fails
         """
-        self.logger.debug(
-            f"Submitting async job: {service_name}.{method_name}"
-        )
+        self.logger.debug(f"Submitting async job: {service_name}.{method_name}")
 
         # Create async task for service invocation
         async def async_service_call():
@@ -131,7 +129,8 @@ class AsyncJobHandler:
         response = {
             "job_id": job_id,
             "status": job_result.status.value,
-            "ready": job_result.status.value in (
+            "ready": job_result.status.value
+            in (
                 "completed",
                 "failed",
                 "timeout",
@@ -228,18 +227,14 @@ class AsyncJobHandler:
         Raises:
             AdapterError: If job not found or times out
         """
-        self.logger.debug(
-            f"Waiting for result of job {job_id} (max {max_polls} polls)"
-        )
+        self.logger.debug(f"Waiting for result of job {job_id} (max {max_polls} polls)")
 
         for attempt in range(max_polls):
             try:
                 status = self.get_job_status(job_id)
 
                 if status["ready"]:
-                    self.logger.info(
-                        f"Job {job_id} completed after {attempt + 1} polls"
-                    )
+                    self.logger.info(f"Job {job_id} completed after {attempt + 1} polls")
                     return status
 
                 if attempt < max_polls - 1:

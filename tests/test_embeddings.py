@@ -1,7 +1,8 @@
 """Tests for semantic embeddings functionality."""
+
+from unittest.mock import Mock
+
 import pytest
-import math
-from unittest.mock import Mock, patch, MagicMock
 from socratic_morality.precedent.embeddings import SemanticEmbeddings
 
 
@@ -199,4 +200,6 @@ class TestEmbeddingsIntegration:
         embeddings1.embeddings_cache["key"] = [0.1, 0.2]
 
         # Should not affect embeddings2
-        assert "key" not in embeddings2.embeddings_cache or embeddings2.embeddings_cache.get("key") != [0.1, 0.2]
+        assert "key" not in embeddings2.embeddings_cache or embeddings2.embeddings_cache.get(
+            "key"
+        ) != [0.1, 0.2]

@@ -4,10 +4,9 @@ Tests for Phase 3.7 - Certificate Management
 Tests certificate generation, validation, revocation, and lifecycle management.
 """
 
-import pytest
 import json
 import tempfile
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 
 from socratic_system.security.agent_certificates import (
     AgentCertificate,
@@ -249,14 +248,14 @@ class TestCertificateAuthority:
         self.ca.issue_certificate("agent1")
         self.ca.issue_certificate("agent2")
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             filepath = f.name
 
         success = self.ca.export_certificates(filepath)
         assert success
 
         # Verify exported data
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             data = json.load(f)
             assert "agent1" in data
             assert "agent2" in data
@@ -272,7 +271,7 @@ class TestCertificateAuthority:
         ca1.issue_certificate("agent1")
         ca1.issue_certificate("agent2")
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             filepath = f.name
 
         ca1.export_certificates(filepath)
@@ -292,7 +291,7 @@ class TestCertificateAuthority:
         cert = self.ca.issue_certificate("agent1")
         original_fingerprint = cert.fingerprint
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             filepath = f.name
 
         self.ca.export_certificates(filepath)

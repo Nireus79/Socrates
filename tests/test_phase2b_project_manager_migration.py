@@ -13,9 +13,9 @@ Validates:
 """
 
 import asyncio
-import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
+import pytest
 from socratic_agents.project_manager import ProjectManagerAgent
 
 
@@ -41,7 +41,7 @@ class TestProjectManagerMigrationSetup:
         agent = ProjectManagerAgent(mock_orchestrator)
 
         # Agent must have process method
-        assert hasattr(agent, 'process')
+        assert hasattr(agent, "process")
         assert callable(agent.process)
 
     def test_agent_has_process_async_method(self):
@@ -52,7 +52,7 @@ class TestProjectManagerMigrationSetup:
         agent = ProjectManagerAgent(mock_orchestrator)
 
         # Agent must have process_async method
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "process_async")
         assert callable(agent.process_async)
 
     def test_agent_has_name_attribute(self):
@@ -63,7 +63,7 @@ class TestProjectManagerMigrationSetup:
         agent = ProjectManagerAgent(mock_orchestrator)
 
         # Agent must identify itself
-        assert hasattr(agent, 'name')
+        assert hasattr(agent, "name")
         assert agent.name == "ProjectManager"
 
 
@@ -130,8 +130,22 @@ class TestProjectManagerSyncInterface:
         mock_orchestrator.database = MagicMock()
 
         mock_projects = [
-            MagicMock(project_id="p1", name="Project 1", owner="alice", phase="discovery", status=None, updated_at=None),
-            MagicMock(project_id="p2", name="Project 2", owner="alice", phase="active", status=None, updated_at=None),
+            MagicMock(
+                project_id="p1",
+                name="Project 1",
+                owner="alice",
+                phase="discovery",
+                status=None,
+                updated_at=None,
+            ),
+            MagicMock(
+                project_id="p2",
+                name="Project 2",
+                owner="alice",
+                phase="active",
+                status=None,
+                updated_at=None,
+            ),
         ]
         mock_orchestrator.database.get_user_projects = MagicMock(return_value=mock_projects)
 
@@ -222,9 +236,7 @@ class TestProjectManagerSyncInterface:
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.database = MagicMock()
-        mock_orchestrator.database.get_archived_items = MagicMock(
-            return_value=["proj-1", "proj-2"]
-        )
+        mock_orchestrator.database.get_archived_items = MagicMock(return_value=["proj-1", "proj-2"])
 
         agent = ProjectManagerAgent(mock_orchestrator)
 
@@ -297,7 +309,14 @@ class TestProjectManagerAsyncInterface:
         mock_orchestrator.database = MagicMock()
 
         mock_projects = [
-            MagicMock(project_id="p1", name="Project 1", owner="alice", phase="discovery", status=None, updated_at=None),
+            MagicMock(
+                project_id="p1",
+                name="Project 1",
+                owner="alice",
+                phase="discovery",
+                status=None,
+                updated_at=None,
+            ),
         ]
         mock_orchestrator.database.get_user_projects = MagicMock(return_value=mock_projects)
 
@@ -448,10 +467,10 @@ class TestProjectManagerPhase2BIntegration:
         agent = ProjectManagerAgent(mock_orchestrator)
 
         # Agent must have core interface
-        assert hasattr(agent, 'name')
-        assert hasattr(agent, 'orchestrator')
-        assert hasattr(agent, 'process')
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "name")
+        assert hasattr(agent, "orchestrator")
+        assert hasattr(agent, "process")
+        assert hasattr(agent, "process_async")
 
         # Verify they're callable/accessible
         assert isinstance(agent.name, str)

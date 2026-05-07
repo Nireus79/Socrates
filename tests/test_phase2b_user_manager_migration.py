@@ -12,9 +12,9 @@ Validates:
 - Permission checks (users can only manage their own accounts)
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
+import pytest
 from socratic_agents.user_manager import UserManagerAgent
 
 
@@ -40,7 +40,7 @@ class TestUserManagerMigrationSetup:
         agent = UserManagerAgent(mock_orchestrator)
 
         # Agent must have process method
-        assert hasattr(agent, 'process')
+        assert hasattr(agent, "process")
         assert callable(agent.process)
 
     def test_agent_has_process_async_method(self):
@@ -51,7 +51,7 @@ class TestUserManagerMigrationSetup:
         agent = UserManagerAgent(mock_orchestrator)
 
         # Agent must have process_async method
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "process_async")
         assert callable(agent.process_async)
 
     def test_agent_has_name_attribute(self):
@@ -62,7 +62,7 @@ class TestUserManagerMigrationSetup:
         agent = UserManagerAgent(mock_orchestrator)
 
         # Agent must identify itself
-        assert hasattr(agent, 'name')
+        assert hasattr(agent, "name")
         assert isinstance(agent.name, str)
 
 
@@ -169,9 +169,7 @@ class TestUserManagerSyncInterface:
         mock_orchestrator = MagicMock()
         mock_orchestrator.agent_bus = MagicMock()
         mock_orchestrator.database = MagicMock()
-        mock_orchestrator.database.get_archived_items = MagicMock(
-            return_value=["alice", "bob"]
-        )
+        mock_orchestrator.database.get_archived_items = MagicMock(return_value=["alice", "bob"])
 
         agent = UserManagerAgent(mock_orchestrator)
 
@@ -388,6 +386,7 @@ class TestUserManagerPhase2BIntegration:
 
         # Test via process_async
         import asyncio
+
         result = asyncio.run(agent.process_async(bus_request))
 
         assert result["status"] == "success"
@@ -400,10 +399,10 @@ class TestUserManagerPhase2BIntegration:
         agent = UserManagerAgent(mock_orchestrator)
 
         # Agent must have core interface
-        assert hasattr(agent, 'name')
-        assert hasattr(agent, 'orchestrator')
-        assert hasattr(agent, 'process')
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "name")
+        assert hasattr(agent, "orchestrator")
+        assert hasattr(agent, "process")
+        assert hasattr(agent, "process_async")
 
         # Verify they're callable/accessible
         assert isinstance(agent.name, str)

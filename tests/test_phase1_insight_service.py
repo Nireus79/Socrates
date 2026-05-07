@@ -6,7 +6,7 @@ Validates repository pattern enforcement and service isolation.
 """
 
 import logging
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -447,9 +447,7 @@ class TestInsightServiceRecommendations:
         ]
 
         service.repository.get_project_insights = MagicMock(return_value=[])
-        service.repository.get_high_confidence_insights = MagicMock(
-            return_value=high_conf_insights
-        )
+        service.repository.get_high_confidence_insights = MagicMock(return_value=high_conf_insights)
 
         result = service.generate_recommendations("test_proj")
 
@@ -582,9 +580,7 @@ class TestServiceIsolation:
         service.repository.get_insights_by_category = MagicMock(return_value=[])
 
         # Store insights should use repository
-        insights = [
-            {"content": "Test", "category": "requirement", "confidence": 0.9}
-        ]
+        insights = [{"content": "Test", "category": "requirement", "confidence": 0.9}]
         service.store_insights("proj_id", insights)
         service.repository.add_insight.assert_called_once()
 

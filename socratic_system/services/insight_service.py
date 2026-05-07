@@ -34,6 +34,7 @@ class InsightService(Service):
         self.context_analyzer = context_analyzer
         # Initialize repository with a mock database for now
         from unittest.mock import MagicMock
+
         mock_database = MagicMock()
         self.repository = InsightRepository(mock_database)
 
@@ -102,11 +103,13 @@ class InsightService(Service):
             if content:
                 category = self._categorize_insight(key)
                 confidence = self._calculate_confidence(str(content))
-                insights.append({
-                    "content": content,
-                    "category": category,
-                    "confidence": confidence,
-                })
+                insights.append(
+                    {
+                        "content": content,
+                        "category": category,
+                        "confidence": confidence,
+                    }
+                )
 
         return {
             "status": "success",
@@ -126,7 +129,10 @@ class InsightService(Service):
         key_lower = key.lower()
 
         # Requirement categories
-        if any(word in key_lower for word in ["requirement", "feature", "spec", "functional", "system_features"]):
+        if any(
+            word in key_lower
+            for word in ["requirement", "feature", "spec", "functional", "system_features"]
+        ):
             return "requirement"
 
         # Architecture categories
@@ -282,7 +288,9 @@ class InsightService(Service):
         """
         self.logger.info(f"Generating recommendations for project {project_id}")
 
-        high_conf_insights = self.repository.get_high_confidence_insights(project_id, min_confidence=0.8)
+        high_conf_insights = self.repository.get_high_confidence_insights(
+            project_id, min_confidence=0.8
+        )
 
         # Group by category
         by_category = {}
@@ -298,12 +306,14 @@ class InsightService(Service):
             if len(insights) >= 2:  # Only recommend if 2+ insights
                 priority = self._calculate_priority(insights)
                 recommendation = self._generate_recommendation_text(category, insights)
-                recommendations.append({
-                    "category": category,
-                    "priority": priority,
-                    "insight_count": len(insights),
-                    "recommendation": recommendation,
-                })
+                recommendations.append(
+                    {
+                        "category": category,
+                        "priority": priority,
+                        "insight_count": len(insights),
+                        "recommendation": recommendation,
+                    }
+                )
 
         return {
             "status": "success",

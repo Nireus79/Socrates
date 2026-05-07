@@ -14,7 +14,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from socratic_system.models import ProjectContext
 from socratic_system.repositories.quality_repository import QualityRepository
 from socratic_system.services.quality_service import QualityService
 
@@ -106,7 +105,7 @@ class TestQualityRepositoryOperations:
         project.analytics_metrics = {
             "velocity": 2.5,
             "total_qa_sessions": 10,
-            "avg_confidence": 0.85
+            "avg_confidence": 0.85,
         }
         mock_db.load_project.return_value = project
 
@@ -132,7 +131,7 @@ class TestQualityRepositoryOperations:
             "score_after": 52.5,
             "delta": 2.5,
             "event_type": "response_processed",
-            "details": {"specs_added": 2}
+            "details": {"specs_added": 2},
         }
 
         result = repo.add_maturity_event("test-project", event)
@@ -152,7 +151,7 @@ class TestQualityRepositoryOperations:
         repo = QualityRepository(mock_db)
         specs = [
             {"name": "spec1", "value": 1.0, "confidence": 0.9},
-            {"name": "spec2", "value": 1.0, "confidence": 0.85}
+            {"name": "spec2", "value": 1.0, "confidence": 0.85},
         ]
 
         result = repo.add_categorized_specs("test-project", "discovery", specs)
@@ -225,7 +224,7 @@ class TestQualityServiceOperations:
         # Mock categorize_insights to return specs
         mock_calculator.categorize_insights.return_value = [
             {"name": "spec1", "value": 1.0, "confidence": 0.9},
-            {"name": "spec2", "value": 1.0, "confidence": 0.8}
+            {"name": "spec2", "value": 1.0, "confidence": 0.8},
         ]
 
         # Mock project
@@ -241,10 +240,7 @@ class TestQualityServiceOperations:
         service.update_analytics_metrics = MagicMock(return_value=True)
 
         result = service.update_maturity_after_response(
-            "test-project",
-            project,
-            {"test": "insight"},
-            "user123"
+            "test-project", project, {"test": "insight"}, "user123"
         )
 
         assert result["status"] == "success"
@@ -270,9 +266,7 @@ class TestQualityServiceOperations:
 
         service = QualityService(mock_config, mock_db)
         result = service.update_maturity_after_response(
-            "test-project",
-            project,
-            {"test": "insight"}
+            "test-project", project, {"test": "insight"}
         )
 
         assert result["status"] == "success"
@@ -294,7 +288,7 @@ class TestQualityServiceOperations:
             "discovery": 50.0,
             "analysis": 70.0,
             "design": 80.0,
-            "implementation": 30.0
+            "implementation": 30.0,
         }
 
         service = QualityService(mock_config, mock_db)
@@ -323,7 +317,7 @@ class TestQualityServiceOperations:
 
         events = [
             {"timestamp": "2024-01-01T00:00:00", "event_type": "response_processed"},
-            {"timestamp": "2024-01-02T00:00:00", "event_type": "response_processed"}
+            {"timestamp": "2024-01-02T00:00:00", "event_type": "response_processed"},
         ]
 
         service = QualityService(mock_config, mock_db)
@@ -337,7 +331,9 @@ class TestQualityServiceOperations:
 
     @patch("socratic_system.services.quality_service.MaturityCalculator")
     @patch("socratic_system.services.quality_service.AnalyticsCalculator")
-    def test_update_analytics_metrics_calculates_velocity(self, mock_analytics_class, mock_calculator_class):
+    def test_update_analytics_metrics_calculates_velocity(
+        self, mock_analytics_class, mock_calculator_class
+    ):
         """update_analytics_metrics should calculate velocity from history."""
         mock_db = MagicMock()
         mock_config = MagicMock()
@@ -356,14 +352,9 @@ class TestQualityServiceOperations:
         project.project_type = "software"
         project.maturity_history = [
             {"event_type": "response_processed", "delta": 2.5},
-            {"event_type": "response_processed", "delta": 2.0}
+            {"event_type": "response_processed", "delta": 2.0},
         ]
-        project.categorized_specs = {
-            "discovery": [
-                {"confidence": 0.9},
-                {"confidence": 0.85}
-            ]
-        }
+        project.categorized_specs = {"discovery": [{"confidence": 0.9}, {"confidence": 0.85}]}
 
         service = QualityService(mock_config, mock_db)
         service.repository.update_analytics_metrics = MagicMock(return_value=True)

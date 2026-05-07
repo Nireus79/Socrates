@@ -67,11 +67,11 @@ class InsightRepository(BaseRepository):
             self.logger.error(f"Failed to add insight for {project_id}: {e}")
             return False
 
-    def get_insights_by_category(
-        self, project_id: str, category: str
-    ) -> List[Dict[str, Any]]:
+    def get_insights_by_category(self, project_id: str, category: str) -> List[Dict[str, Any]]:
         """Get insights filtered by category."""
-        self._log_operation("get_insights_by_category", {"project_id": project_id, "category": category})
+        self._log_operation(
+            "get_insights_by_category", {"project_id": project_id, "category": category}
+        )
         try:
             insights = self.get_project_insights(project_id)
             filtered = [i for i in insights if i.get("category") == category]

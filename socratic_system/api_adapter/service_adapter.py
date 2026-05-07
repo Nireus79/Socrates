@@ -133,23 +133,17 @@ class ServiceAdapter(BaseAdapter):
                     lambda: method(**params),
                 )
 
-            self.logger.debug(
-                f"Successfully called {service_name}.{method_name}"
-            )
+            self.logger.debug(f"Successfully called {service_name}.{method_name}")
             return result
 
         except TypeError as e:
-            self.logger.error(
-                f"Invalid parameters for {service_name}.{method_name}: {str(e)}"
-            )
+            self.logger.error(f"Invalid parameters for {service_name}.{method_name}: {str(e)}")
             raise AdapterValidationError(
                 f"Invalid parameters: {str(e)}",
                 {"method": method_name, "error": str(e)},
             )
         except Exception as e:
-            self.logger.error(
-                f"Error calling {service_name}.{method_name}: {str(e)}"
-            )
+            self.logger.error(f"Error calling {service_name}.{method_name}: {str(e)}")
             raise AdapterError(
                 f"Service method failed: {str(e)}",
                 error_code="SERVICE_CALL_FAILED",
@@ -251,9 +245,7 @@ class ServiceAdapter(BaseAdapter):
             AdapterValidationError: If service or method not found
         """
         if not self.registry.service_exists(service_name):
-            raise AdapterValidationError(
-                f"Service '{service_name}' not found"
-            )
+            raise AdapterValidationError(f"Service '{service_name}' not found")
 
         if not self.registry.method_exists(service_name, method_name):
             raise AdapterValidationError(

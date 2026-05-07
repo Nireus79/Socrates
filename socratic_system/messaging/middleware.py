@@ -94,8 +94,7 @@ class AgentBusMiddleware:
             Dictionary mapping agent names to responses
         """
         tasks = [
-            self.call_agent(agent, action, payload, timeout)
-            for agent, action, payload in calls
+            self.call_agent(agent, action, payload, timeout) for agent, action, payload in calls
         ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)

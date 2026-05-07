@@ -188,6 +188,7 @@ class SocratesConfig:
 
         # Auto-generate new key
         import secrets
+
         self.encryption_key = secrets.token_urlsafe(32)
 
         # Save to file with restricted permissions
@@ -211,6 +212,7 @@ class SocratesConfig:
             os.environ["SOCRATES_ENCRYPTION_KEY"] = self.encryption_key
         except Exception as e:
             import traceback
+
             print(f"Warning: Failed to save encryption key to file: {e}")
             traceback.print_exc()
             # Still set it in environment even if file save failed

@@ -24,9 +24,7 @@ class ResponseDTO(BaseModel):
     version: str = Field(default="v1", description="API version")
     data: Optional[Dict[str, Any]] = Field(None, description="Response data")
     message: Optional[str] = Field(None, description="Response message")
-    timestamp: datetime = Field(
-        default_factory=datetime.now, description="Response timestamp"
-    )
+    timestamp: datetime = Field(default_factory=datetime.now, description="Response timestamp")
 
     @classmethod
     def success(
@@ -91,12 +89,8 @@ class AsyncJobRequest(BaseModel):
 
     service: str = Field(..., description="Target service name")
     method: str = Field(..., description="Service method to call")
-    params: Dict[str, Any] = Field(
-        default_factory=dict, description="Method parameters"
-    )
-    timeout: float = Field(
-        default=300.0, description="Job timeout in seconds", ge=1.0, le=3600.0
-    )
+    params: Dict[str, Any] = Field(default_factory=dict, description="Method parameters")
+    timeout: float = Field(default=300.0, description="Job timeout in seconds", ge=1.0, le=3600.0)
     name: Optional[str] = Field(None, description="Job name for tracking")
 
 
@@ -108,13 +102,9 @@ class AsyncJobResponse(BaseModel):
     job_id: str = Field(..., description="Unique job ID")
     service: str = Field(..., description="Service that will process the job")
     method: str = Field(..., description="Service method")
-    status: str = Field(
-        default="pending", description="Initial job status (pending)"
-    )
+    status: str = Field(default="pending", description="Initial job status (pending)")
     message: str = Field(default="Job submitted", description="Status message")
-    created_at: datetime = Field(
-        default_factory=datetime.now, description="Job creation timestamp"
-    )
+    created_at: datetime = Field(default_factory=datetime.now, description="Job creation timestamp")
 
 
 class JobStatusResponse(BaseModel):

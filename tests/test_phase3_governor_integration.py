@@ -11,10 +11,9 @@ Tests integration of all Phase 3 reasoning modules with Governor system:
 All modules work together to provide explainable, auditable decisions.
 """
 
-import pytest
 from datetime import datetime
 
-from socratic_system.governance import EthicalGovernor, EthicalDecision
+from socratic_system.governance import EthicalDecision, EthicalGovernor
 
 
 class TestEthicalGovernorBasics:
@@ -134,7 +133,9 @@ class TestContradictionDetectionIntegration:
         )
 
         # Decision should include contradiction analysis
-        assert decision.contradictions is None or hasattr(decision.contradictions, "consistency_score")
+        assert decision.contradictions is None or hasattr(
+            decision.contradictions, "consistency_score"
+        )
 
 
 class TestPrecedentIntegration:
@@ -224,7 +225,10 @@ class TestThreatDetectionIntegration:
         )
 
         # If threats detected at high level, should escalate
-        if decision.threat_analysis and decision.threat_analysis.overall_threat_level.value == "critical":
+        if (
+            decision.threat_analysis
+            and decision.threat_analysis.overall_threat_level.value == "critical"
+        ):
             assert decision.decision_type in ["ESCALATE", "DENY", "BLOCK"]
 
 

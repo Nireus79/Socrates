@@ -39,21 +39,16 @@ class BackgroundHandlers:
     def _register_handlers(self):
         """Register all background event handlers with event emitter"""
         # Register response handling
-        self.orchestrator.event_emitter.on(
-            "response.received",
-            self._on_response_received
-        )
+        self.orchestrator.event_emitter.on("response.received", self._on_response_received)
 
         # Register quality analysis
         self.orchestrator.event_emitter.on(
-            "quality.analysis.requested",
-            self._on_quality_analysis_requested
+            "quality.analysis.requested", self._on_quality_analysis_requested
         )
 
         # Register conflict analysis
         self.orchestrator.event_emitter.on(
-            "conflict.analysis.requested",
-            self._on_conflict_analysis_requested
+            "conflict.analysis.requested", self._on_conflict_analysis_requested
         )
 
         logger.debug("Background event handlers registered")
@@ -113,10 +108,7 @@ class BackgroundHandlers:
             logger.debug(f"[BACKGROUND] Starting quality analysis for {project_id}")
 
             # Load project
-            project = await asyncio.to_thread(
-                self.orchestrator.database.load_project,
-                project_id
-            )
+            project = await asyncio.to_thread(self.orchestrator.database.load_project, project_id)
 
             if not project:
                 logger.warning(f"[BACKGROUND] Project not found: {project_id}")
@@ -125,10 +117,7 @@ class BackgroundHandlers:
             # Call quality controller in thread pool (non-blocking)
             quality_result = await asyncio.to_thread(
                 self.orchestrator.quality_controller.process,
-                {
-                    "action": "get_phase_maturity",
-                    "project": project
-                }
+                {"action": "get_phase_maturity", "project": project},
             )
 
             # Cache result for polling
@@ -149,11 +138,10 @@ class BackgroundHandlers:
                 project.last_assessment = datetime.now().isoformat()
 
                 # SAVE UPDATED PROJECT TO DATABASE
-                await asyncio.to_thread(
-                    self.orchestrator.database.save_project,
-                    project
+                await asyncio.to_thread(self.orchestrator.database.save_project, project)
+                logger.debug(
+                    f"[BACKGROUND] Project maturity updated: overall={project.overall_maturity}%"
                 )
-                logger.debug(f"[BACKGROUND] Project maturity updated: overall={project.overall_maturity}%")
 
             # Emit completion event WITH UPDATED VALUES
             await self.orchestrator.event_emitter.emit_async(
@@ -163,25 +151,21 @@ class BackgroundHandlers:
                     "result": quality_result,
                     "overall_maturity": project.overall_maturity,
                     "category_scores": project.category_scores,
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": datetime.now().isoformat(),
+                },
             )
 
             # Broadcast WebSocket update if available
             if self.websocket_broadcaster:
                 try:
-                    await self.websocket_broadcaster(
-                        project_id, "quality", quality_result
-                    )
+                    await self.websocket_broadcaster(project_id, "quality", quality_result)
                 except Exception as e:
                     logger.warning(f"[BACKGROUND] WebSocket broadcast failed: {e}")
 
             logger.info(f"[BACKGROUND] Quality analysis completed for {project_id}")
 
         except Exception as e:
-            logger.error(
-                f"[BACKGROUND] Quality analysis failed for {project_id}: {str(e)}"
-            )
+            logger.error(f"[BACKGROUND] Quality analysis failed for {project_id}: {str(e)}")
 
             # Emit failure event
             await self.orchestrator.event_emitter.emit_async(
@@ -189,8 +173,8 @@ class BackgroundHandlers:
                 {
                     "project_id": project_id,
                     "error": str(e),
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": datetime.now().isoformat(),
+                },
             )
 
     async def _process_conflicts_async(self, project_id: str):
@@ -206,10 +190,7 @@ class BackgroundHandlers:
             logger.debug(f"[BACKGROUND] Starting conflict analysis for {project_id}")
 
             # Load project
-            project = await asyncio.to_thread(
-                self.orchestrator.database.load_project,
-                project_id
-            )
+            project = await asyncio.to_thread(self.orchestrator.database.load_project, project_id)
 
             if not project:
                 logger.warning(f"[BACKGROUND] Project not found: {project_id}")
@@ -218,10 +199,7 @@ class BackgroundHandlers:
             # Call conflict detector in thread pool (non-blocking)
             conflicts_result = await asyncio.to_thread(
                 self.orchestrator.conflict_detector.process,
-                {
-                    "action": "detect_conflicts",
-                    "project": project
-                }
+                {"action": "detect_conflicts", "project": project},
             )
 
             # Cache result for polling
@@ -234,25 +212,21 @@ class BackgroundHandlers:
                 {
                     "project_id": project_id,
                     "result": conflicts_result,
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": datetime.now().isoformat(),
+                },
             )
 
             # Broadcast WebSocket update if available
             if self.websocket_broadcaster:
                 try:
-                    await self.websocket_broadcaster(
-                        project_id, "conflicts", conflicts_result
-                    )
+                    await self.websocket_broadcaster(project_id, "conflicts", conflicts_result)
                 except Exception as e:
                     logger.warning(f"[BACKGROUND] WebSocket broadcast failed: {e}")
 
             logger.info(f"[BACKGROUND] Conflict analysis completed for {project_id}")
 
         except Exception as e:
-            logger.error(
-                f"[BACKGROUND] Conflict analysis failed for {project_id}: {str(e)}"
-            )
+            logger.error(f"[BACKGROUND] Conflict analysis failed for {project_id}: {str(e)}")
 
             # Emit failure event
             await self.orchestrator.event_emitter.emit_async(
@@ -260,8 +234,8 @@ class BackgroundHandlers:
                 {
                     "project_id": project_id,
                     "error": str(e),
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": datetime.now().isoformat(),
+                },
             )
 
     async def _process_insights_async(self, project_id: str):
@@ -277,10 +251,7 @@ class BackgroundHandlers:
             logger.debug(f"[BACKGROUND] Starting insight analysis for {project_id}")
 
             # Load project
-            project = await asyncio.to_thread(
-                self.orchestrator.database.load_project,
-                project_id
-            )
+            project = await asyncio.to_thread(self.orchestrator.database.load_project, project_id)
 
             if not project:
                 logger.warning(f"[BACKGROUND] Project not found: {project_id}")
@@ -289,10 +260,7 @@ class BackgroundHandlers:
             # Call context analyzer in thread pool (non-blocking)
             insights_result = await asyncio.to_thread(
                 self.orchestrator.context_analyzer.process,
-                {
-                    "action": "analyze_context",
-                    "project": project
-                }
+                {"action": "analyze_context", "project": project},
             )
 
             # Cache result for polling
@@ -305,25 +273,21 @@ class BackgroundHandlers:
                 {
                     "project_id": project_id,
                     "result": insights_result,
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": datetime.now().isoformat(),
+                },
             )
 
             # Broadcast WebSocket update if available
             if self.websocket_broadcaster:
                 try:
-                    await self.websocket_broadcaster(
-                        project_id, "insights", insights_result
-                    )
+                    await self.websocket_broadcaster(project_id, "insights", insights_result)
                 except Exception as e:
                     logger.warning(f"[BACKGROUND] WebSocket broadcast failed: {e}")
 
             logger.info(f"[BACKGROUND] Insight analysis completed for {project_id}")
 
         except Exception as e:
-            logger.error(
-                f"[BACKGROUND] Insight analysis failed for {project_id}: {str(e)}"
-            )
+            logger.error(f"[BACKGROUND] Insight analysis failed for {project_id}: {str(e)}")
 
             # Emit failure event
             await self.orchestrator.event_emitter.emit_async(
@@ -331,6 +295,6 @@ class BackgroundHandlers:
                 {
                     "project_id": project_id,
                     "error": str(e),
-                    "timestamp": datetime.now().isoformat()
-                }
+                    "timestamp": datetime.now().isoformat(),
+                },
             )

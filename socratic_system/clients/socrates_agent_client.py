@@ -93,7 +93,9 @@ class SocratesAgentClient:
             timeout: Default timeout for requests in seconds
         """
         if httpx is None:
-            raise ImportError("httpx required for SocratesAgentClient. Install with: pip install httpx")
+            raise ImportError(
+                "httpx required for SocratesAgentClient. Install with: pip install httpx"
+            )
 
         self.api_url = api_url or self.DEFAULT_API_BASE
         self.auth_token = auth_token
@@ -305,9 +307,7 @@ class SocratesAgentClient:
         while True:
             elapsed = time.time() - start_time
             if elapsed > timeout:
-                raise AgentTimeoutError(
-                    f"Job '{job_id}' did not complete within {timeout} seconds"
-                )
+                raise AgentTimeoutError(f"Job '{job_id}' did not complete within {timeout} seconds")
 
             status_info = await self.get_job_status(job_id)
             status = status_info.get("status")
@@ -462,9 +462,7 @@ class SocratesAgentClientSync:
         loop = self._get_loop()
         if loop.is_running():
             raise RuntimeError("Cannot use sync wrapper in async context")
-        return loop.run_until_complete(
-            self._client.wait_for_result(job_id, timeout, poll_interval)
-        )
+        return loop.run_until_complete(self._client.wait_for_result(job_id, timeout, poll_interval))
 
     def close(self):
         """Close client"""

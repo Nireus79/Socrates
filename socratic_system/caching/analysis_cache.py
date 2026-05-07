@@ -110,8 +110,7 @@ class InMemoryAnalysisCache(AnalysisCache):
             # Implement simple LRU by clearing oldest if at capacity
             if len(self._cache) >= self._max_size:
                 # Remove oldest entry (lowest expiry time)
-                oldest_key = min(self._cache.keys(),
-                               key=lambda k: self._cache[k][1])
+                oldest_key = min(self._cache.keys(), key=lambda k: self._cache[k][1])
                 del self._cache[oldest_key]
                 logger.debug(f"Cache capacity reached, evicted: {oldest_key}")
 
@@ -134,10 +133,7 @@ class InMemoryAnalysisCache(AnalysisCache):
         """Remove all expired entries from cache"""
         with self._lock:
             current_time = time.time()
-            expired_keys = [
-                k for k, (_, exp) in self._cache.items()
-                if exp < current_time
-            ]
+            expired_keys = [k for k, (_, exp) in self._cache.items() if exp < current_time]
 
             for k in expired_keys:
                 del self._cache[k]
@@ -161,14 +157,11 @@ class InMemoryAnalysisCache(AnalysisCache):
         """Get cache statistics"""
         with self._lock:
             current_time = time.time()
-            expired_count = sum(
-                1 for _, exp in self._cache.values()
-                if exp < current_time
-            )
+            expired_count = sum(1 for _, exp in self._cache.values() if exp < current_time)
 
             return {
                 "total_entries": len(self._cache),
                 "expired_entries": expired_count,
                 "valid_entries": len(self._cache) - expired_count,
-                "max_size": self._max_size
+                "max_size": self._max_size,
             }

@@ -1,7 +1,9 @@
 """Phase 2B: MultiLLMAgent Migration Tests"""
+
 import asyncio
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from socratic_agents.multi_llm_agent import MultiLLMAgent
 
 
@@ -28,7 +30,7 @@ class TestMultiLLMMigrationSetup:
         agent = MultiLLMAgent(mock_orchestrator)
 
         # Agent must have process method
-        assert hasattr(agent, 'process')
+        assert hasattr(agent, "process")
         assert callable(agent.process)
 
     def test_agent_has_process_async_method(self):
@@ -39,7 +41,7 @@ class TestMultiLLMMigrationSetup:
         agent = MultiLLMAgent(mock_orchestrator)
 
         # Agent must have process_async method
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "process_async")
         assert callable(agent.process_async)
 
     def test_agent_has_name_attribute(self):
@@ -50,7 +52,7 @@ class TestMultiLLMMigrationSetup:
         agent = MultiLLMAgent(mock_orchestrator)
 
         # Agent must identify itself
-        assert hasattr(agent, 'name')
+        assert hasattr(agent, "name")
         assert isinstance(agent.name, str)
 
 
@@ -338,9 +340,7 @@ class TestMultiLLMAsyncInterface:
         mock_result = {"status": "success", "config": {}}
         agent._get_provider_config = MagicMock(return_value=mock_result)
 
-        result = await agent.process_async(
-            {"action": "get_provider_config", "user_id": "user-1"}
-        )
+        result = await agent.process_async({"action": "get_provider_config", "user_id": "user-1"})
 
         assert result["status"] == "success"
 
@@ -492,9 +492,7 @@ class TestMultiLLMAsyncInterface:
         mock_result = {"status": "success", "models": []}
         agent._get_provider_models = MagicMock(return_value=mock_result)
 
-        result = await agent.process_async(
-            {"action": "get_provider_models", "provider": "claude"}
-        )
+        result = await agent.process_async({"action": "get_provider_models", "provider": "claude"})
 
         assert result["status"] == "success"
 
@@ -541,10 +539,10 @@ class TestMultiLLMPhase2BIntegration:
         agent = MultiLLMAgent(mock_orchestrator)
 
         # Agent must have core interface
-        assert hasattr(agent, 'name')
-        assert hasattr(agent, 'orchestrator')
-        assert hasattr(agent, 'process')
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "name")
+        assert hasattr(agent, "orchestrator")
+        assert hasattr(agent, "process")
+        assert hasattr(agent, "process_async")
 
         # Verify they're callable/accessible
         assert isinstance(agent.name, str)

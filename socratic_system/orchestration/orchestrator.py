@@ -96,7 +96,7 @@ class AgentOrchestrator:
             max_file_handles=10,
             project_dir=str(self.config.data_dir),
             allow_file_write=True,
-            allow_network=False
+            allow_network=False,
         )
         self._sandbox = None  # Lazy-loaded
 
@@ -113,7 +113,7 @@ class AgentOrchestrator:
             db_connection=None,  # Will be set after database initialization
             logger=self.logger,
             retention_days=730,  # 2 years
-            encrypt_at_rest=True
+            encrypt_at_rest=True,
         )
         self.logger.info("Audit logger initialized (Phase 2b)")
 
@@ -121,9 +121,7 @@ class AgentOrchestrator:
         # Use API key as base for signing (in production, use dedicated key)
         secret_key = self.api_key or "default_secret_key_development_only"
         self.identity_manager = AgentIdentityManager(
-            secret_key=secret_key,
-            logger=self.logger,
-            token_lifetime_hours=24
+            secret_key=secret_key, logger=self.logger, token_lifetime_hours=24
         )
         self.logger.info("Agent identity manager initialized (Phase 2b)")
 
@@ -195,9 +193,7 @@ class AgentOrchestrator:
         self.cache = InMemoryAnalysisCache()
         self.job_tracker = JobTracker()
         self.background_handlers = BackgroundHandlers(
-            orchestrator=self,
-            cache=self.cache,
-            job_tracker=self.job_tracker
+            orchestrator=self, cache=self.cache, job_tracker=self.job_tracker
         )
         self.logger.info("Analysis caching and background handlers initialized (Phase 3)")
 
@@ -257,7 +253,7 @@ class AgentOrchestrator:
             self.logger.info("Governor initialized successfully with constitutional framework")
             self.logger.debug(f"  Supreme Principle: {self.constitution.supreme_principle}")
             self.logger.debug(f"  Principles: {len(self.constitution.principles)}")
-            if hasattr(self.constitution, 'rules'):
+            if hasattr(self.constitution, "rules"):
                 self.logger.debug(f"  Rules: {len(self.constitution.rules)}")
 
         except Exception as e:
@@ -334,7 +330,9 @@ class AgentOrchestrator:
                         supports_sync=True,
                         supports_async=False,  # agent.process() is synchronous
                     )
-                    self.logger.debug(f"Registered agent '{agent.name}' with registry as '{registry_name}'")
+                    self.logger.debug(
+                        f"Registered agent '{agent.name}' with registry as '{registry_name}'"
+                    )
                 except Exception as e:
                     self.logger.warning(f"Failed to initialize agent {property_name}: {e}")
 
@@ -397,9 +395,7 @@ class AgentOrchestrator:
 
             base_agent = CodeGeneratorAgent(self)
             self._agents_cache["code_generator"] = CodeGeneratorSandboxWrapper(
-                base_agent=base_agent,
-                sandbox=self.sandbox,
-                audit_logger=self.audit_logger
+                base_agent=base_agent, sandbox=self.sandbox, audit_logger=self.audit_logger
             )
         return self._agents_cache["code_generator"]
 
@@ -454,7 +450,9 @@ class AgentOrchestrator:
         if "knowledge_manager" not in self._agents_cache:
             from socratic_agents import KnowledgeManagerAgent
 
-            self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent("KnowledgeManager", self)
+            self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent(
+                "KnowledgeManager", self
+            )
         return self._agents_cache["knowledge_manager"]
 
     @property
@@ -614,7 +612,7 @@ class AgentOrchestrator:
 
         except TypeError as e:
             # Handle type errors (e.g., NoneType errors) with more detail
-            entry_id = entry_data.get('id', 'unknown')
+            entry_id = entry_data.get("id", "unknown")
             self.logger.error(
                 f"Type error adding knowledge entry '{entry_id}': {e}. "
                 f"Entry data keys: {list(entry_data.keys())}"

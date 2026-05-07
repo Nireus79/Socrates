@@ -71,7 +71,9 @@ class OrchestratorService:
         self.logger = logging.getLogger(__name__)
 
         self._initialized = True
-        self.logger.info("OrchestratorService initialized as singleton (Phase 3: SocraticAgentsSystem)")
+        self.logger.info(
+            "OrchestratorService initialized as singleton (Phase 3: SocraticAgentsSystem)"
+        )
 
     def get_or_create(self, user_id: str, api_key: str) -> SocraticAgentsSystem:
         """

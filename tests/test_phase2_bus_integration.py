@@ -6,12 +6,12 @@ Validates registry integration and message routing.
 """
 
 import asyncio
+
 import pytest
 
 from socratic_system.events import EventEmitter
-from socratic_system.messaging.agent_registry import AgentRegistry
 from socratic_system.messaging.agent_bus import AgentBus
-from socratic_system.messaging.messages import RequestMessage
+from socratic_system.messaging.agent_registry import AgentRegistry
 
 
 class TestAgentBusBasics:
@@ -295,7 +295,7 @@ class TestAgentBusTimeout:
         error_raised = False
         error_message = ""
         try:
-            result = await bus.send_request(
+            await bus.send_request(
                 target_agent="slow_agent",
                 request={"action": "test"},
                 timeout=0.1,

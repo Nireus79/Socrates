@@ -75,9 +75,7 @@ class OrchestratorAgentBusAdapter:
                 timeout=timeout,
             )
         except Exception as e:
-            self.logger.warning(
-                f"Agent bus failed for {agent_name}, falling back to legacy: {e}"
-            )
+            self.logger.warning(f"Agent bus failed for {agent_name}, falling back to legacy: {e}")
 
             # Fallback to legacy handler if available
             if agent_name in self._legacy_handlers:
@@ -104,6 +102,7 @@ class OrchestratorAgentBusAdapter:
         Returns:
             Response from agent
         """
+
         async def call():
             return await self.call_agent(agent_name, request, timeout)
 

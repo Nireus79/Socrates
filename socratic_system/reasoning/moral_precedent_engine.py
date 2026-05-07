@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 class PrecedentType(Enum):
     """Types of moral precedents."""
+
     ALLOWED = "allowed"
     BLOCKED = "blocked"
     ESCALATED = "escalated"
@@ -185,18 +186,14 @@ class MoralPrecedentEngine:
 
         for precedent in self.precedents.values():
             # Calculate similarity
-            similarity = precedent.similarity_to(
-                query.action, query.similarity_threshold
-            )
+            similarity = precedent.similarity_to(query.action, query.similarity_threshold)
 
             if similarity < query.similarity_threshold:
                 continue
 
             # Check principle filter
             if query.principle_filter:
-                shared_principles = set(query.principle_filter) & set(
-                    precedent.principles_involved
-                )
+                shared_principles = set(query.principle_filter) & set(precedent.principles_involved)
                 if not shared_principles:
                     continue
 
@@ -208,9 +205,7 @@ class MoralPrecedentEngine:
             # Calculate relevance (combination of similarity and other factors)
             relevance = similarity
             if query.principle_filter:
-                principle_boost = (
-                    len(shared_principles) / len(query.principle_filter) * 0.2
-                )
+                principle_boost = len(shared_principles) / len(query.principle_filter) * 0.2
                 relevance = min(1.0, relevance + principle_boost)
 
             match = PrecedentMatch(
@@ -226,9 +221,7 @@ class MoralPrecedentEngine:
         matches.sort(key=lambda m: m.relevance_score, reverse=True)
         matches = matches[: query.max_results]
 
-        self.logger.debug(
-            f"[Precedent Query] Found {len(matches)} matches for: {query.action}"
-        )
+        self.logger.debug(f"[Precedent Query] Found {len(matches)} matches for: {query.action}")
 
         return matches
 
@@ -276,15 +269,9 @@ class MoralPrecedentEngine:
             )
 
         # Identify historical pattern
-        allowed_count = sum(
-            1 for c in conclusions if c == PrecedentType.ALLOWED
-        )
-        blocked_count = sum(
-            1 for c in conclusions if c == PrecedentType.BLOCKED
-        )
-        escalated_count = sum(
-            1 for c in conclusions if c == PrecedentType.ESCALATED
-        )
+        allowed_count = sum(1 for c in conclusions if c == PrecedentType.ALLOWED)
+        blocked_count = sum(1 for c in conclusions if c == PrecedentType.BLOCKED)
+        escalated_count = sum(1 for c in conclusions if c == PrecedentType.ESCALATED)
 
         if allowed_count > blocked_count and allowed_count > escalated_count:
             analysis.historical_pattern = (
@@ -379,16 +366,10 @@ class MoralPrecedentEngine:
             "total_precedents": len(self.precedents),
             "allowed_count": sum(1 for c in conclusions if c == PrecedentType.ALLOWED),
             "blocked_count": sum(1 for c in conclusions if c == PrecedentType.BLOCKED),
-            "escalated_count": sum(
-                1 for c in conclusions if c == PrecedentType.ESCALATED
-            ),
-            "conditional_count": sum(
-                1 for c in conclusions if c == PrecedentType.CONDITIONAL
-            ),
+            "escalated_count": sum(1 for c in conclusions if c == PrecedentType.ESCALATED),
+            "conditional_count": sum(1 for c in conclusions if c == PrecedentType.CONDITIONAL),
             "average_confidence": sum(confidences) / len(confidences),
-            "most_common_conclusion": max(
-                set(conclusions), key=conclusions.count
-            ).value,
+            "most_common_conclusion": max(set(conclusions), key=conclusions.count).value,
         }
 
     def export_precedents(self, filepath: str) -> None:
@@ -431,20 +412,14 @@ class MoralPrecedentEngine:
                     conclusion=PrecedentType(prec_data["conclusion"]),
                     confidence=prec_data["confidence"],
                     reasoning=prec_data["reasoning"],
-                    principles_involved=prec_data.get(
-                        "principles_involved", []
-                    ),
-                    stakeholders_affected=prec_data.get(
-                        "stakeholders_affected", []
-                    ),
+                    principles_involved=prec_data.get("principles_involved", []),
+                    stakeholders_affected=prec_data.get("stakeholders_affected", []),
                     usage_count=prec_data.get("usage_count", 0),
                 )
                 self.precedents[precedent_id] = precedent
                 self._id_counter = max(self._id_counter, int(precedent_id.split("_")[1]) + 1)
 
-            self.logger.info(
-                f"[Precedent Import] Imported {len(self.precedents)} precedents"
-            )
+            self.logger.info(f"[Precedent Import] Imported {len(self.precedents)} precedents")
 
         except Exception as e:
             self.logger.error(f"[Precedent Import] Failed to import: {e}")

@@ -56,7 +56,7 @@ class RetryPolicy:
             Delay in seconds
         """
         delay = min(
-            self.base_delay * (self.exponential_base ** attempt),
+            self.base_delay * (self.exponential_base**attempt),
             self.max_delay,
         )
 
@@ -94,9 +94,7 @@ class RetryPolicy:
                 last_error = e
                 if attempt < self.max_retries:
                     delay = self.calculate_delay(attempt)
-                    logger.warning(
-                        f"Attempt {attempt + 1} failed, retrying in {delay:.2f}s: {e}"
-                    )
+                    logger.warning(f"Attempt {attempt + 1} failed, retrying in {delay:.2f}s: {e}")
                     await asyncio.sleep(delay)
                 else:
                     logger.error(f"All {self.max_retries + 1} attempts failed")
@@ -296,10 +294,9 @@ class ResilientAgentCaller:
         Returns:
             Function result
         """
+
         async def with_timeout():
-            return await self.timeout_policy.execute_with_timeout(
-                agent_name, func, *args, **kwargs
-            )
+            return await self.timeout_policy.execute_with_timeout(agent_name, func, *args, **kwargs)
 
         async def with_retry():
             return await self.retry_policy.execute_with_retry(with_timeout)

@@ -57,9 +57,7 @@ class BaseAdapter(ABC):
         """
         self.service_name = service_name
         self.version = version
-        self.logger = logging.getLogger(
-            f"{self.__class__.__module__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
 
     def validate_request(
         self,
@@ -182,9 +180,7 @@ class BaseAdapter(ABC):
             if isinstance(error, AdapterValidationError):
                 error_response["error"]["validation_errors"] = error.validation_errors
 
-        self.logger.error(
-            f"Error in {self.service_name}: {error.__class__.__name__}: {str(error)}"
-        )
+        self.logger.error(f"Error in {self.service_name}: {error.__class__.__name__}: {str(error)}")
 
         return error_response
 

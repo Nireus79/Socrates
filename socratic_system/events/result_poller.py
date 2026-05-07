@@ -145,17 +145,13 @@ class ResultPoller:
             result = self.get_result(job_id)
 
             if result is not None:
-                self.logger.debug(
-                    f"Result ready after {attempt + 1} polls"
-                )
+                self.logger.debug(f"Result ready after {attempt + 1} polls")
                 return result
 
             if attempt < max_polls - 1:
                 time.sleep(poll_interval)
 
-        self.logger.warning(
-            f"Result polling timed out for job: {job_id}"
-        )
+        self.logger.warning(f"Result polling timed out for job: {job_id}")
         return None
 
     def get_poll_status(

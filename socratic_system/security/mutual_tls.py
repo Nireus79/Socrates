@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 class CertificateType(Enum):
     """Types of certificates in the TLS system."""
+
     ROOT_CA = "root_ca"
     INTERMEDIATE_CA = "intermediate_ca"
     SERVER = "server"
@@ -25,6 +26,7 @@ class CertificateType(Enum):
 
 class TLSVersion(Enum):
     """Supported TLS versions."""
+
     TLS_1_2 = "1.2"
     TLS_1_3 = "1.3"
 
@@ -71,11 +73,13 @@ class TLSConfiguration:
     key_path: str
     ca_cert_path: str
     tls_version: TLSVersion = TLSVersion.TLS_1_3
-    cipher_suites: List[str] = field(default_factory=lambda: [
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_AES_128_GCM_SHA256",
-    ])
+    cipher_suites: List[str] = field(
+        default_factory=lambda: [
+            "TLS_AES_256_GCM_SHA384",
+            "TLS_CHACHA20_POLY1305_SHA256",
+            "TLS_AES_128_GCM_SHA256",
+        ]
+    )
     verify_peer: bool = True
     require_client_cert: bool = True
     allow_self_signed: bool = False
@@ -100,11 +104,13 @@ class MutualTLSPolicy:
     min_tls_version: TLSVersion = TLSVersion.TLS_1_3
     require_mutual_auth: bool = True
     certificate_validation_required: bool = True
-    allowed_cipher_suites: List[str] = field(default_factory=lambda: [
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_AES_128_GCM_SHA256",
-    ])
+    allowed_cipher_suites: List[str] = field(
+        default_factory=lambda: [
+            "TLS_AES_256_GCM_SHA384",
+            "TLS_CHACHA20_POLY1305_SHA256",
+            "TLS_AES_128_GCM_SHA256",
+        ]
+    )
     max_certificate_age_days: int = 365
     require_certificate_renewal: int = 30  # Days before expiry
     enforce_hostname_verification: bool = True
@@ -115,6 +121,7 @@ class MutualTLSPolicy:
 @dataclass
 class TLSSessionInfo:
     """Information about an active TLS session."""
+
     session_id: str
     agent_id: str
     peer_agent_id: str
@@ -256,9 +263,7 @@ class MutualTLSManager:
 
         self.configurations[agent_id] = config
 
-        self.logger.info(
-            f"[TLS Manager] Configuration created for agent: {agent_id}"
-        )
+        self.logger.info(f"[TLS Manager] Configuration created for agent: {agent_id}")
 
         return config
 
@@ -286,7 +291,10 @@ class MutualTLSManager:
 
         # Check renewal requirement
         if cert_info.requires_renewal(self.policy.require_certificate_renewal):
-            return True, f"Certificate renewal recommended ({cert_info.days_until_expiration()} days until expiry)"
+            return (
+                True,
+                f"Certificate renewal recommended ({cert_info.days_until_expiration()} days until expiry)",
+            )
 
         return True, "Certificate is valid"
 
@@ -317,9 +325,7 @@ class MutualTLSManager:
         if peer_certificate and self.policy.certificate_validation_required:
             is_valid, reason = self.validate_certificate(peer_certificate)
             if not is_valid:
-                self.logger.error(
-                    f"[TLS Manager] Peer certificate validation failed: {reason}"
-                )
+                self.logger.error(f"[TLS Manager] Peer certificate validation failed: {reason}")
                 return None
 
         # Create session
@@ -378,20 +384,26 @@ class MutualTLSManager:
 
         for cert_info in self.certificates.values():
             if cert_info.is_expired():
-                status["expired"].append({
-                    "name": cert_info.name,
-                    "expired_date": cert_info.not_after.isoformat(),
-                })
+                status["expired"].append(
+                    {
+                        "name": cert_info.name,
+                        "expired_date": cert_info.not_after.isoformat(),
+                    }
+                )
             elif cert_info.requires_renewal():
-                status["requires_renewal"].append({
-                    "name": cert_info.name,
-                    "days_until_expiry": cert_info.days_until_expiration(),
-                })
+                status["requires_renewal"].append(
+                    {
+                        "name": cert_info.name,
+                        "days_until_expiry": cert_info.days_until_expiration(),
+                    }
+                )
             elif cert_info.days_until_expiration() < 90:
-                status["expiring_soon"].append({
-                    "name": cert_info.name,
-                    "days_until_expiry": cert_info.days_until_expiration(),
-                })
+                status["expiring_soon"].append(
+                    {
+                        "name": cert_info.name,
+                        "days_until_expiry": cert_info.days_until_expiration(),
+                    }
+                )
             else:
                 status["valid_certificates"] += 1
 
@@ -403,12 +415,9 @@ class MutualTLSManager:
         Returns:
             Dictionary with session status information
         """
-        active_count = sum(
-            1 for s in self.active_sessions.values() if s.is_active
-        )
+        active_count = sum(1 for s in self.active_sessions.values() if s.is_active)
         expired_count = sum(
-            1 for s in self.active_sessions.values()
-            if s.is_active and s.is_expired()
+            1 for s in self.active_sessions.values() if s.is_active and s.is_expired()
         )
 
         return {
@@ -428,9 +437,7 @@ class MutualTLSManager:
             ],
         }
 
-    def export_configuration(
-        self, agent_id: str, filepath: str
-    ) -> bool:
+    def export_configuration(self, agent_id: str, filepath: str) -> bool:
         """Export agent TLS configuration to file.
 
         Args:
@@ -462,9 +469,7 @@ class MutualTLSManager:
             with open(filepath, "w") as f:
                 json.dump(data, f, indent=2)
 
-            self.logger.info(
-                f"[TLS Manager] Configuration exported: {agent_id} -> {filepath}"
-            )
+            self.logger.info(f"[TLS Manager] Configuration exported: {agent_id} -> {filepath}")
             return True
 
         except Exception as e:
@@ -498,9 +503,7 @@ class MutualTLSManager:
 
             self.configurations[agent_id] = config
 
-            self.logger.info(
-                f"[TLS Manager] Configuration imported: {agent_id} <- {filepath}"
-            )
+            self.logger.info(f"[TLS Manager] Configuration imported: {agent_id} <- {filepath}")
             return config
 
         except Exception as e:

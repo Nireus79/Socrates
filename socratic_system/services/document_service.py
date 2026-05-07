@@ -100,9 +100,7 @@ class DocumentService(BaseService):
             # Count words and lines
             word_count = len(content.split())
             line_count = len(content.split("\n"))
-            self.logger.debug(
-                f"Extracted {word_count} words, {line_count} lines"
-            )
+            self.logger.debug(f"Extracted {word_count} words, {line_count} lines")
 
             # Check if file is code and parse structure
             file_ext = os.path.splitext(file_path)[1].lower()
@@ -110,9 +108,7 @@ class DocumentService(BaseService):
             code_structure = None
 
             if is_code:
-                self.logger.debug(
-                    f"Detected code file: {file_name}, parsing structure..."
-                )
+                self.logger.debug(f"Detected code file: {file_name}, parsing structure...")
                 try:
                     code_parser = CodeParser()
                     code_structure = code_parser.parse_file(file_path, content)
@@ -146,17 +142,13 @@ class DocumentService(BaseService):
                 metadata={
                     "is_code": is_code,
                     "language": (
-                        code_structure.get("language", "unknown")
-                        if code_structure
-                        else None
+                        code_structure.get("language", "unknown") if code_structure else None
                     ),
                     "file_ext": file_ext,
                 },
             )
 
-            self.logger.info(
-                f"Imported {file_name}: {word_count} words, {len(chunks)} chunks"
-            )
+            self.logger.info(f"Imported {file_name}: {word_count} words, {len(chunks)} chunks")
 
             return {
                 "status": "success",
@@ -207,9 +199,7 @@ class DocumentService(BaseService):
                     "message": f"Directory not found: {directory_path}",
                 }
 
-            self.logger.info(
-                f"Processing directory: {directory_path} (recursive={recursive})"
-            )
+            self.logger.info(f"Processing directory: {directory_path} (recursive={recursive})")
 
             # Find all supported files
             files_to_process = []
@@ -217,17 +207,13 @@ class DocumentService(BaseService):
             if recursive:
                 for root, _, files in os.walk(directory_path):
                     for file in files:
-                        if any(
-                            file.endswith(ext)
-                            for ext in self.supported_extensions
-                        ):
+                        if any(file.endswith(ext) for ext in self.supported_extensions):
                             files_to_process.append(os.path.join(root, file))
             else:
                 for file in os.listdir(directory_path):
                     file_path = os.path.join(directory_path, file)
                     if os.path.isfile(file_path) and any(
-                        file.endswith(ext)
-                        for ext in self.supported_extensions
+                        file.endswith(ext) for ext in self.supported_extensions
                     ):
                         files_to_process.append(file_path)
 
@@ -248,13 +234,9 @@ class DocumentService(BaseService):
                     successful += 1
                 else:
                     failed += 1
-                    self.logger.warning(
-                        f"Failed to import {file_path}: {result.get('message')}"
-                    )
+                    self.logger.warning(f"Failed to import {file_path}: {result.get('message')}")
 
-            self.logger.info(
-                f"Directory import complete: {successful} successful, {failed} failed"
-            )
+            self.logger.info(f"Directory import complete: {successful} successful, {failed} failed")
 
             return {
                 "status": "success",
@@ -334,9 +316,7 @@ class DocumentService(BaseService):
                 metadata={"title": title},
             )
 
-            self.logger.info(
-                f"Imported text {file_name}: {word_count} words, {len(chunks)} chunks"
-            )
+            self.logger.info(f"Imported text {file_name}: {word_count} words, {len(chunks)} chunks")
 
             return {
                 "status": "success",
@@ -362,17 +342,13 @@ class DocumentService(BaseService):
         Returns:
             Dict with document list and statistics
         """
-        self._log_operation(
-            "get_project_documents", {"project_id": project_id}
-        )
+        self._log_operation("get_project_documents", {"project_id": project_id})
 
         try:
             documents = self.repository.get_project_documents(project_id)
             stats = self.repository.get_document_statistics(project_id)
 
-            self.logger.debug(
-                f"Retrieved {len(documents)} documents for {project_id}"
-            )
+            self.logger.debug(f"Retrieved {len(documents)} documents for {project_id}")
 
             return {
                 "status": "success",
@@ -385,9 +361,7 @@ class DocumentService(BaseService):
             self.logger.error(f"Error getting documents: {e}")
             return {"status": "error", "message": str(e)}
 
-    def delete_document(
-        self, project_id: str, file_name: str
-    ) -> Dict[str, Any]:
+    def delete_document(self, project_id: str, file_name: str) -> Dict[str, Any]:
         """
         Delete a document record.
 
@@ -439,9 +413,7 @@ class DocumentService(BaseService):
             self.logger.warning(f"Failed to read file {file_path}: {e}")
             return None
 
-    def _chunk_content(
-        self, content: str, chunk_size: int = 500, overlap: int = 50
-    ) -> List[str]:
+    def _chunk_content(self, content: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
         """
         Split content into overlapping chunks.
 

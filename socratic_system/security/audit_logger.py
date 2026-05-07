@@ -18,6 +18,7 @@ from typing import Any, Dict, Optional
 
 class AuditEventType(Enum):
     """Types of events to audit."""
+
     # Authentication events
     LOGIN = "login"
     LOGIN_FAILED = "login_failed"
@@ -72,6 +73,7 @@ class AuditEventType(Enum):
 
 class AuditSeverity(Enum):
     """Severity levels for audit events."""
+
     INFO = "info"
     WARNING = "warning"
     ALERT = "alert"
@@ -127,7 +129,7 @@ class AuditLogger:
         db_connection=None,
         logger: Optional[logging.Logger] = None,
         retention_days: int = 730,  # 2 years default
-        encrypt_at_rest: bool = True
+        encrypt_at_rest: bool = True,
     ):
         """Initialize audit logger.
 
@@ -157,7 +159,7 @@ class AuditLogger:
         user_agent: Optional[str] = None,
         request_id: Optional[str] = None,
         session_id: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Log an audit event.
 
@@ -195,13 +197,12 @@ class AuditLogger:
             result_code=result_code,
             details=details or {},
             request_id=request_id,
-            session_id=session_id
+            session_id=session_id,
         )
 
         # Log to console
         self.logger.info(
-            f"[AUDIT] {event_type}: {actor_id} ({actor_type}) {action} {resource} "
-            f"-> {status}"
+            f"[AUDIT] {event_type}: {actor_id} ({actor_type}) {action} {resource} " f"-> {status}"
         )
 
         # Store in database
@@ -222,7 +223,7 @@ class AuditLogger:
         allowed: bool,
         denial_reason: Optional[str] = None,
         request_id: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Log an agent action request (allow or deny).
 
@@ -262,7 +263,7 @@ class AuditLogger:
             status=status,
             result_code=result_code,
             request_id=request_id,
-            details=details
+            details=details,
         )
 
     def log_data_access(
@@ -273,7 +274,7 @@ class AuditLogger:
         fields_accessed: list,
         access_type: str = "read",
         request_id: Optional[str] = None,
-        ip_address: Optional[str] = None
+        ip_address: Optional[str] = None,
     ) -> str:
         """Log data access at field level.
 
@@ -292,7 +293,7 @@ class AuditLogger:
         details = {
             "fields_accessed": fields_accessed,
             "access_type": access_type,
-            "resource_id": resource_id
+            "resource_id": resource_id,
         }
 
         return self.log_event(
@@ -305,7 +306,7 @@ class AuditLogger:
             status="success",
             request_id=request_id,
             ip_address=ip_address,
-            details=details
+            details=details,
         )
 
     def log_security_alert(
@@ -314,7 +315,7 @@ class AuditLogger:
         severity: str,
         description: str,
         affected_resources: Optional[list] = None,
-        remediation: Optional[str] = None
+        remediation: Optional[str] = None,
     ) -> str:
         """Log security alert.
 
@@ -345,7 +346,7 @@ class AuditLogger:
             resource="system",
             resource_type="system",
             severity=severity,
-            details=details
+            details=details,
         )
 
     def _store_entry(self, entry: AuditEntry) -> None:
@@ -390,9 +391,7 @@ class AuditLogger:
             elif hasattr(self.db, "save_audit_entry"):
                 self.db.save_audit_entry(data)
             else:
-                self.logger.warning(
-                    "Database doesn't support audit logging - entry not persisted"
-                )
+                self.logger.warning("Database doesn't support audit logging - entry not persisted")
 
         except Exception as e:
             self.logger.error(f"Failed to persist audit entry: {e}")
@@ -405,7 +404,7 @@ class AuditLogger:
         resource: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> list:
         """Query audit log events.
 
@@ -434,10 +433,7 @@ class AuditLogger:
 
             if hasattr(self.db, "query_audit_logs"):
                 return self.db.query_audit_logs(
-                    filters=filters,
-                    start_date=start_date,
-                    end_date=end_date,
-                    limit=limit
+                    filters=filters, start_date=start_date, end_date=end_date, limit=limit
                 )
             else:
                 self.logger.warning("Database doesn't support audit log queries")
@@ -470,10 +466,7 @@ class AuditLogger:
             return 0
 
     def generate_compliance_report(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        include_fields: Optional[list] = None
+        self, start_date: datetime, end_date: datetime, include_fields: Optional[list] = None
     ) -> Dict[str, Any]:
         """Generate compliance report for date range.
 
@@ -516,11 +509,13 @@ class AuditLogger:
 
             # Flag security incidents
             if severity in ["alert", "critical"]:
-                report["security_incidents"].append({
-                    "timestamp": event.get("timestamp"),
-                    "type": event_type,
-                    "actor": event.get("actor_id"),
-                    "resource": event.get("resource"),
-                })
+                report["security_incidents"].append(
+                    {
+                        "timestamp": event.get("timestamp"),
+                        "type": event_type,
+                        "actor": event.get("actor_id"),
+                        "resource": event.get("resource"),
+                    }
+                )
 
         return report

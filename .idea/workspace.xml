@@ -6,44 +6,50 @@
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AGENT_INDEPENDENCE_REFACTORING.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ARCHITECTURE_ANALYSIS_LIBRARY_EXPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ARCHITECTURE_COMPARISON_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/COMPREHENSIVE_LIBRARY_READINESS_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DETAILED_CODE_FIXES.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/FINAL_ISSUE_FIXES.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/FINAL_SUMMARY.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/FIXES_NEEDED.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GOVERNOR_QUICKSTART.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/IMPLEMENTATION_STATUS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/INTEGRATION_TESTING_COMPLETE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/INTEGRATION_TESTING_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ISSUES_SUMMARY.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ISSUE_RESOLUTION_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/LIBRARY_PUBLICATION_ACTION_PLAN.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/LOCAL_SETUP_VERIFICATION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/NEW_USER_ONBOARDING_ISSUES.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE2_FINAL_COMPLETION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE3_COMPLETION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE3_IMPLEMENTATION_PLAN.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE4_API_INTEGRATION_NOTES.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE4_DATABASE_MIGRATION_STATUS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE4_RELEASE_PLAN.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE4_TESTING_PLAN.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASES_1-4_COMPLETION_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/QUICK_START_FIXES.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README_FIXES.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/ROOT_CAUSE_ANALYSIS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/SECURITY_CHECKLIST.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/SECURITY_COMPLETION_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/SECURITY_IMPLEMENTATION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/SECURITY_PHASE2_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/SOCRATIC_AGENTS_FIXES_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/TEST_FIXES_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/TEST_INVESTIGATION_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/CLEANUP_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/LIBRARY_EXTRACTION_PLAN.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/e2e/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/e2e/conftest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/e2e/journeys/test_interconnection.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/e2e/journeys/test_interconnection.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/integration/workflows/test_knowledge_workflows.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/integration/workflows/test_knowledge_workflows.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_e2e_new_architecture.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_e2e_new_architecture.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_embeddings.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_embeddings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_library_export_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_library_export_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_performance_benchmarks.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_performance_benchmarks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase1_conflict_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase1_conflict_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase1_document_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase1_document_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase1_insight_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase1_insight_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase1_project_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase1_project_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase1_quality_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase1_quality_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2_agent_registry.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2_agent_registry.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2_bus_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2_bus_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_code_generator_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_code_generator_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_code_validation_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_code_validation_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_conflict_detector_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_conflict_detector_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_context_analyzer_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_context_analyzer_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_document_processor_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_document_processor_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_knowledge_analysis_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_knowledge_analysis_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_knowledge_manager_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_knowledge_manager_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_learning_agent_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_learning_agent_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_multi_llm_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_multi_llm_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_note_manager_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_note_manager_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_project_manager_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_project_manager_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_quality_controller_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_quality_controller_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_question_queue_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_question_queue_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_socratic_counselor_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_socratic_counselor_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_system_monitor_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_system_monitor_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase2b_user_manager_migration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase2b_user_manager_migration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_7_certificates.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_7_certificates.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_8_tls_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_8_tls_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_9_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_9_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_contradiction_detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_contradiction_detector.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_ethical_deliberation.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_ethical_deliberation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_event_driven.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_event_driven.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_governor_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_governor_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_implementation.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_implementation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_moral_precedent_engine.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_moral_precedent_engine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_mutual_tls.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_mutual_tls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase3_threat_detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase3_threat_detector.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase4_api_adapter.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase4_api_adapter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_precedent_semantic.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_precedent_semantic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_security_sandbox_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_security_sandbox_integration.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

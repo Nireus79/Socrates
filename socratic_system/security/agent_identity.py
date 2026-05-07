@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Tuple
 
 class TokenStatus(Enum):
     """Status of a capability token."""
+
     ACTIVE = "active"
     EXPIRED = "expired"
     REVOKED = "revoked"
@@ -122,7 +123,7 @@ class AgentIdentityManager:
         self,
         secret_key: str,
         logger: Optional[logging.Logger] = None,
-        token_lifetime_hours: int = 24
+        token_lifetime_hours: int = 24,
     ):
         """Initialize identity manager.
 
@@ -138,10 +139,7 @@ class AgentIdentityManager:
         self._tokens: Dict[str, CapabilityToken] = {}
 
     def register_agent(
-        self,
-        agent_name: str,
-        capabilities: List[str],
-        resource_limits: Dict
+        self, agent_name: str, capabilities: List[str], resource_limits: Dict
     ) -> AgentIdentity:
         """Register a new agent identity.
 
@@ -168,7 +166,7 @@ class AgentIdentityManager:
             expires_at=datetime.now(UTC) + timedelta(days=365),
             is_active=True,
             capabilities=capabilities,
-            resource_limits=resource_limits
+            resource_limits=resource_limits,
         )
 
         # Sign identity
@@ -188,7 +186,7 @@ class AgentIdentityManager:
         agent_id: str,
         capabilities: List[str],
         resource_access: Dict[str, str],
-        resource_limits: Dict
+        resource_limits: Dict,
     ) -> Tuple[bool, Optional[CapabilityToken], Optional[str]]:
         """Issue a capability token to an agent.
 
@@ -229,7 +227,7 @@ class AgentIdentityManager:
             issued_at=now,
             expires_at=expires_at,
             is_active=True,
-            is_revoked=False
+            is_revoked=False,
         )
 
         # Sign token
@@ -280,11 +278,7 @@ class AgentIdentityManager:
 
         return True, None
 
-    def revoke_token(
-        self,
-        token_id: str,
-        reason: Optional[str] = None
-    ) -> bool:
+    def revoke_token(self, token_id: str, reason: Optional[str] = None) -> bool:
         """Revoke a capability token.
 
         Args:
@@ -330,7 +324,9 @@ class AgentIdentityManager:
 
         return True
 
-    def get_agent_capabilities(self, agent_id: str) -> Tuple[bool, Optional[List[str]], Optional[str]]:
+    def get_agent_capabilities(
+        self, agent_id: str
+    ) -> Tuple[bool, Optional[List[str]], Optional[str]]:
         """Get capabilities for an agent.
 
         Args:
@@ -349,10 +345,7 @@ class AgentIdentityManager:
         return True, identity.capabilities, None
 
     def can_perform_action(
-        self,
-        agent_id: str,
-        action: str,
-        token: Optional[CapabilityToken] = None
+        self, agent_id: str, action: str, token: Optional[CapabilityToken] = None
     ) -> Tuple[bool, Optional[str]]:
         """Check if agent can perform a specific action.
 
@@ -410,11 +403,7 @@ class AgentIdentityManager:
         """
         # Convert data to JSON for consistent signing
         data_str = json.dumps(data, sort_keys=True, default=str)
-        signature = hmac.new(
-            self.secret_key,
-            data_str.encode(),
-            hashlib.sha256
-        ).hexdigest()
+        signature = hmac.new(self.secret_key, data_str.encode(), hashlib.sha256).hexdigest()
         return signature
 
     def get_stats(self) -> Dict:

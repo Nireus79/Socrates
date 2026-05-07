@@ -299,7 +299,9 @@ class SubscriptionTestingModeCommand(BaseCommand):
             print("  • Unlimited team members")
             print("  • Unlimited questions/month")
             print("  • All LLM models available")
-            print(f"\n{Fore.CYAN}Run /subscription romani-ite-domum off to disable{Style.RESET_ALL}\n")
+            print(
+                f"\n{Fore.CYAN}Run /subscription romani-ite-domum off to disable{Style.RESET_ALL}\n"
+            )
 
             return self.success("Testing mode enabled")
 

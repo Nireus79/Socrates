@@ -5,8 +5,7 @@ Tests secure client-server communication, certificate validation,
 encryption, and request handling.
 """
 
-import pytest
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from socratic_system.agents.secure_agent_client import (
     SecureAgentClient,
@@ -194,6 +193,7 @@ class TestSecureAgentServer:
 
     def test_server_register_handler(self):
         """Server can register action handlers."""
+
         def test_handler(params):
             return {"status": "ok", "params": params}
 
@@ -202,6 +202,7 @@ class TestSecureAgentServer:
 
     def test_server_handle_request(self):
         """Server can handle requests."""
+
         def test_handler(params):
             return {"result": params.get("key")}
 
@@ -231,6 +232,7 @@ class TestSecureAgentServer:
 
     def test_server_handler_exception(self):
         """Server handles exceptions in handlers."""
+
         def failing_handler(params):
             raise Exception("Test error")
 
@@ -248,6 +250,7 @@ class TestSecureAgentServer:
 
     def test_server_request_logging(self):
         """Server logs received requests."""
+
         def test_handler(params):
             return {"ok": True}
 
@@ -271,6 +274,7 @@ class TestSecureAgentServer:
 
     def test_server_status(self):
         """Server provides status information."""
+
         def handler1(params):
             return {}
 

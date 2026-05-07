@@ -5,8 +5,6 @@ Tests anomaly detection, threat identification, and pattern analysis
 for detecting suspicious or problematic reasoning.
 """
 
-import pytest
-
 from socratic_system.reasoning import (
     ThreatDetector,
     ThreatLevel,
@@ -57,7 +55,11 @@ class TestThreatDetectorBasics:
 
         assert analysis is not None
         # With framework disagreement, should be safer
-        assert analysis.overall_threat_level in [ThreatLevel.NONE, ThreatLevel.LOW, ThreatLevel.MEDIUM]
+        assert analysis.overall_threat_level in [
+            ThreatLevel.NONE,
+            ThreatLevel.LOW,
+            ThreatLevel.MEDIUM,
+        ]
 
     def test_analyze_suspicious_action(self):
         """Detector identifies suspicious reasoning."""
@@ -104,8 +106,7 @@ class TestReasoningInconsistencies:
 
         # Should detect contradictions
         inconsistency_threats = [
-            t for t in analysis.threats
-            if t.threat_type == ThreatType.REASONING_INCONSISTENCY
+            t for t in analysis.threats if t.threat_type == ThreatType.REASONING_INCONSISTENCY
         ]
         assert len(inconsistency_threats) > 0
 
@@ -146,10 +147,7 @@ class TestFrameworkManipulation:
         )
 
         # May detect uniform conclusion pattern
-        manipulation_threats = [
-            t for t in analysis.threats
-            if t.threat_type == ThreatType.FRAMEWORK_MANIPULATION
-        ]
+        [t for t in analysis.threats if t.threat_type == ThreatType.FRAMEWORK_MANIPULATION]
         # Not guaranteed to detect, depends on implementation
 
 
@@ -182,8 +180,7 @@ class TestPrincipleViolations:
 
         # Should detect principle violations
         principle_threats = [
-            t for t in analysis.threats
-            if t.threat_type == ThreatType.PRINCIPLE_VIOLATION
+            t for t in analysis.threats if t.threat_type == ThreatType.PRINCIPLE_VIOLATION
         ]
         assert len(principle_threats) > 0
 
@@ -212,10 +209,7 @@ class TestStakeholderHarm:
         )
 
         # Should detect stakeholder harm
-        harm_threats = [
-            t for t in analysis.threats
-            if t.threat_type == ThreatType.STAKEHOLDER_HARM
-        ]
+        harm_threats = [t for t in analysis.threats if t.threat_type == ThreatType.STAKEHOLDER_HARM]
         assert len(harm_threats) > 0
 
 
@@ -257,10 +251,7 @@ class TestPatternAnomalies:
         )
 
         # Should not detect anomaly
-        anomaly_threats = [
-            t for t in analysis.threats
-            if t.threat_type == ThreatType.PATTERN_ANOMALY
-        ]
+        [t for t in analysis.threats if t.threat_type == ThreatType.PATTERN_ANOMALY]
         # May or may not have threats depending on threshold
 
 
@@ -285,8 +276,7 @@ class TestConfidenceManipulation:
 
         # Should detect confidence manipulation
         manipulation_threats = [
-            t for t in analysis.threats
-            if t.threat_type == ThreatType.CONFIDENCE_MANIPULATION
+            t for t in analysis.threats if t.threat_type == ThreatType.CONFIDENCE_MANIPULATION
         ]
         assert len(manipulation_threats) > 0
 
@@ -315,8 +305,7 @@ class TestEscalationAvoidance:
 
         # Should detect escalation avoidance
         escalation_threats = [
-            t for t in analysis.threats
-            if t.threat_type == ThreatType.ESCALATION_AVOIDANCE
+            t for t in analysis.threats if t.threat_type == ThreatType.ESCALATION_AVOIDANCE
         ]
         assert len(escalation_threats) > 0
 
@@ -345,8 +334,7 @@ class TestPrecedentDeviation:
 
         # Should detect precedent deviation
         deviation_threats = [
-            t for t in analysis.threats
-            if t.threat_type == ThreatType.PRECEDENT_DEVIATION
+            t for t in analysis.threats if t.threat_type == ThreatType.PRECEDENT_DEVIATION
         ]
         assert len(deviation_threats) > 0
 
@@ -422,7 +410,7 @@ class TestBaselineStatistics:
         # Add some data
         for conf in [0.8, 0.85, 0.90, 0.88, 0.92]:
             self.detector.analyze(
-                action=f"action",
+                action="action",
                 framework_analyses={},
                 confidence=conf,
                 final_conclusion="allowed",

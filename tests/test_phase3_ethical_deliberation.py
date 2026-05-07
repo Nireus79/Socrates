@@ -5,18 +5,14 @@ Tests multi-framework ethical reasoning, stakeholder analysis,
 and ethical deliberation engine.
 """
 
-import pytest
-from datetime import datetime
-
 from socratic_system.reasoning import (
-    EthicalDeliberation,
-    EthicalFrameworkType,
     EthicalConclusion,
-    StakeholderAnalyzer,
+    EthicalDeliberation,
     KantianAnalyzer,
+    RightsAnalyzer,
+    StakeholderAnalyzer,
     UtilitarianAnalyzer,
     VirtueAnalyzer,
-    RightsAnalyzer,
 )
 
 
@@ -30,11 +26,9 @@ class TestEthicalFrameworks:
         analysis = analyzer.analyze(
             action="hide_operational_logs_from_users",
             context={"scope": "system_wide"},
-            stakeholders=[
-                {"id": "users", "name": "Users", "vulnerability": 0.5}
-            ],
+            stakeholders=[{"id": "users", "name": "Users", "vulnerability": 0.5}],
             principles=["transparency", "honesty"],
-            consequences={}
+            consequences={},
         )
 
         assert analysis.conclusion == EthicalConclusion.BLOCKED
@@ -55,8 +49,8 @@ class TestEthicalFrameworks:
             principles=["efficiency"],
             consequences={
                 "short_term": {"benefit": 0.8, "harm": 0.1},
-                "long_term": {"benefit": 0.7, "harm": 0.2}
-            }
+                "long_term": {"benefit": 0.7, "harm": 0.2},
+            },
         )
 
         assert analysis.conclusion == EthicalConclusion.ALLOWED
@@ -71,7 +65,7 @@ class TestEthicalFrameworks:
             context={},
             stakeholders=[],
             principles=["honesty", "integrity"],
-            consequences={}
+            consequences={},
         )
 
         assert analysis.conclusion == EthicalConclusion.BLOCKED
@@ -84,11 +78,9 @@ class TestEthicalFrameworks:
         analysis = analyzer.analyze(
             action="access_user_data_without_permission",
             context={"consent_obtained": False, "informed": False},
-            stakeholders=[
-                {"id": "user", "name": "User", "vulnerability": 0.5}
-            ],
+            stakeholders=[{"id": "user", "name": "User", "vulnerability": 0.5}],
             principles=["consent", "privacy"],
-            consequences={}
+            consequences={},
         )
 
         assert analysis.conclusion == EthicalConclusion.BLOCKED
@@ -105,8 +97,7 @@ class TestStakeholderAnalysis:
     def test_identifies_all_stakeholders(self):
         """Analyzer identifies all relevant stakeholders."""
         analysis = self.analyzer.analyze(
-            action="hide_operational_logs",
-            context={"scope": "system_wide"}
+            action="hide_operational_logs", context={"scope": "system_wide"}
         )
 
         assert len(analysis.stakeholders) > 0
@@ -117,10 +108,7 @@ class TestStakeholderAnalysis:
         """Analyzer identifies vulnerable stakeholders."""
         analysis = self.analyzer.analyze(
             action="restrict_access_for_minors",
-            context={
-                "scope": "targeted",
-                "affected_group": "minors"
-            }
+            context={"scope": "targeted", "affected_group": "minors"},
         )
 
         assert len(analysis.vulnerable_groups) > 0
@@ -128,8 +116,7 @@ class TestStakeholderAnalysis:
     def test_calculates_net_impact(self):
         """Analyzer calculates net impact correctly."""
         analysis = self.analyzer.analyze(
-            action="improve_system_performance",
-            context={"scope": "system_wide"}
+            action="improve_system_performance", context={"scope": "system_wide"}
         )
 
         # Should have some impacts
@@ -142,10 +129,7 @@ class TestStakeholderAnalysis:
 
     def test_detects_powerless_affected(self):
         """Analyzer identifies stakeholders with no power to resist."""
-        analysis = self.analyzer.analyze(
-            action="enforce_new_policy",
-            context={"scope": "all"}
-        )
+        analysis = self.analyzer.analyze(action="enforce_new_policy", context={"scope": "all"})
 
         # Check for powerless affected
         powerless = [s for s in analysis.stakeholders if not s.has_power_to_resist()]
@@ -164,20 +148,19 @@ class TestEthicalDeliberation:
                 VirtueAnalyzer(),
                 RightsAnalyzer(),
             ],
-            escalation_threshold=0.6
+            escalation_threshold=0.6,
         )
 
     def test_deliberation_produces_conclusion(self):
         """Deliberation produces a final conclusion."""
         result = self.engine.deliberate(
-            action="log_all_user_actions_transparently",
-            context={"scope": "system_wide"}
+            action="log_all_user_actions_transparently", context={"scope": "system_wide"}
         )
 
         assert result.final_conclusion in [
             EthicalConclusion.ALLOWED,
             EthicalConclusion.BLOCKED,
-            EthicalConclusion.ESCALATE
+            EthicalConclusion.ESCALATE,
         ]
         assert 0.0 <= result.confidence <= 1.0
 
@@ -186,12 +169,13 @@ class TestEthicalDeliberation:
         result = self.engine.deliberate(
             action="hide_security_vulnerabilities_from_users",
             context={"scope": "system_wide"},
-            constitutional_principles=["transparency", "security"]
+            constitutional_principles=["transparency", "security"],
         )
 
         # Multiple frameworks should block this
         blocked_count = sum(
-            1 for a in result.framework_analyses.values()
+            1
+            for a in result.framework_analyses.values()
             if a.conclusion == EthicalConclusion.BLOCKED
         )
         assert blocked_count >= 2
@@ -205,13 +189,14 @@ class TestEthicalDeliberation:
             context={"scope": "system_wide"},
             consequences={
                 "short_term": {"benefit": 0.9, "harm": 0.0},
-                "long_term": {"benefit": 0.9, "harm": 0.1}
-            }
+                "long_term": {"benefit": 0.9, "harm": 0.1},
+            },
         )
 
         # Most frameworks should allow this
         allowed_count = sum(
-            1 for a in result.framework_analyses.values()
+            1
+            for a in result.framework_analyses.values()
             if a.conclusion == EthicalConclusion.ALLOWED
         )
         assert allowed_count >= 2
@@ -225,14 +210,12 @@ class TestEthicalDeliberation:
             context={"scope": "specific"},
             consequences={
                 "short_term": {"benefit": 0.7, "harm": 0.8},
-                "long_term": {"benefit": 0.9, "harm": 0.5}
-            }
+                "long_term": {"benefit": 0.9, "harm": 0.5},
+            },
         )
 
         # Frameworks likely disagree on this
-        conclusions = [
-            a.conclusion for a in result.framework_analyses.values()
-        ]
+        [a.conclusion for a in result.framework_analyses.values()]
 
         # Either escalates or very low confidence
         if result.final_conclusion == EthicalConclusion.ESCALATE:
@@ -243,8 +226,7 @@ class TestEthicalDeliberation:
     def test_deliberation_includes_stakeholder_analysis(self):
         """Deliberation includes stakeholder analysis in result."""
         result = self.engine.deliberate(
-            action="restrict_access_for_safety",
-            context={"scope": "system_wide"}
+            action="restrict_access_for_safety", context={"scope": "system_wide"}
         )
 
         assert result.stakeholder_analysis is not None
@@ -253,22 +235,24 @@ class TestEthicalDeliberation:
     def test_deliberation_generates_reasoning(self):
         """Deliberation generates natural language reasoning."""
         result = self.engine.deliberate(
-            action="improve_transparency_through_logging",
-            context={"scope": "system_wide"}
+            action="improve_transparency_through_logging", context={"scope": "system_wide"}
         )
 
         assert result.overall_reasoning is not None
         assert len(result.overall_reasoning) > 0
         # Check that reasoning includes impact and framework analysis
         reasoning_lower = result.overall_reasoning.lower()
-        assert "impact" in reasoning_lower or "stakeholder" in reasoning_lower or \
-               "allowed" in reasoning_lower or "escalate" in reasoning_lower
+        assert (
+            "impact" in reasoning_lower
+            or "stakeholder" in reasoning_lower
+            or "allowed" in reasoning_lower
+            or "escalate" in reasoning_lower
+        )
 
     def test_deliberation_collects_concerns(self):
         """Deliberation collects concerns from all frameworks."""
         result = self.engine.deliberate(
-            action="exploit_user_vulnerabilities",
-            context={"scope": "system_wide"}
+            action="exploit_user_vulnerabilities", context={"scope": "system_wide"}
         )
 
         assert len(result.concerns) > 0
@@ -288,18 +272,17 @@ class TestEthicalDeliberation:
 
     def test_deliberation_respects_escalation_threshold(self):
         """Deliberation escalates when confidence below threshold."""
-        low_confidence_engine = EthicalDeliberation(
-            escalation_threshold=0.9
-        )
+        low_confidence_engine = EthicalDeliberation(escalation_threshold=0.9)
 
         # Find an ambiguous action
         result = low_confidence_engine.deliberate(
-            action="implement_new_feature_with_tradeoffs",
-            context={"scope": "system_wide"}
+            action="implement_new_feature_with_tradeoffs", context={"scope": "system_wide"}
         )
 
         if result.confidence < 0.9:
-            assert result.escalation_required or result.final_conclusion == EthicalConclusion.ESCALATE
+            assert (
+                result.escalation_required or result.final_conclusion == EthicalConclusion.ESCALATE
+            )
 
 
 class TestEthicalDeliberationIntegration:
@@ -312,7 +295,7 @@ class TestEthicalDeliberationIntegration:
         result = engine.deliberate(
             action="deceive_users_about_data_usage",
             context={"scope": "system_wide"},
-            constitutional_principles=["honesty", "transparency", "privacy"]
+            constitutional_principles=["honesty", "transparency", "privacy"],
         )
 
         # Verify complete result structure
@@ -334,8 +317,8 @@ class TestEthicalDeliberationIntegration:
             constitutional_principles=["security", "honesty", "transparency"],
             consequences={
                 "short_term": {"benefit": 0.8, "harm": 0.0},
-                "long_term": {"benefit": 0.9, "harm": 0.0}
-            }
+                "long_term": {"benefit": 0.9, "harm": 0.0},
+            },
         )
 
         # Should be allowed
@@ -351,8 +334,8 @@ class TestEthicalDeliberationIntegration:
             context={"scope": "system_wide"},
             consequences={
                 "short_term": {"benefit": 0.5, "harm": 0.4},
-                "long_term": {"benefit": 0.6, "harm": 0.5}
-            }
+                "long_term": {"benefit": 0.6, "harm": 0.5},
+            },
         )
 
         # May require escalation due to tradeoffs
@@ -363,20 +346,19 @@ class TestEthicalDeliberationIntegration:
         engine = EthicalDeliberation()
 
         result = engine.deliberate(
-            action="restrict_system_features_for_safety",
-            context={"scope": "system_wide"}
+            action="restrict_system_features_for_safety", context={"scope": "system_wide"}
         )
 
         # Should have analysis from all frameworks
         assert len(result.framework_analyses) >= 4
 
         # Each framework provides reasoning
-        for framework_type, analysis in result.framework_analyses.items():
+        for _framework_type, analysis in result.framework_analyses.items():
             assert analysis.reasoning
             assert analysis.conclusion in [
                 EthicalConclusion.ALLOWED,
                 EthicalConclusion.BLOCKED,
-                EthicalConclusion.ESCALATE
+                EthicalConclusion.ESCALATE,
             ]
 
 
@@ -387,16 +369,13 @@ class TestEthicalDeliberationEdgeCases:
         """Handle empty action description gracefully."""
         engine = EthicalDeliberation()
 
-        result = engine.deliberate(
-            action="",
-            context={}
-        )
+        result = engine.deliberate(action="", context={})
 
         # Should still produce a result
         assert result.final_conclusion in [
             EthicalConclusion.ALLOWED,
             EthicalConclusion.BLOCKED,
-            EthicalConclusion.ESCALATE
+            EthicalConclusion.ESCALATE,
         ]
 
     def test_no_stakeholders_identified(self):
@@ -404,8 +383,7 @@ class TestEthicalDeliberationEdgeCases:
         engine = EthicalDeliberation()
 
         result = engine.deliberate(
-            action="internal_logging_improvement",
-            context={"scope": "internal"}
+            action="internal_logging_improvement", context={"scope": "internal"}
         )
 
         # Should still produce analysis
@@ -421,8 +399,8 @@ class TestEthicalDeliberationEdgeCases:
             context={"scope": "system_wide"},
             consequences={
                 "short_term": {"benefit": 0.5, "harm": 0.5},
-                "long_term": {"benefit": 0.7, "harm": 0.3}
-            }
+                "long_term": {"benefit": 0.7, "harm": 0.3},
+            },
         )
 
         # Should handle ambiguity

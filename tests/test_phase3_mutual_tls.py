@@ -4,16 +4,14 @@ Tests for Phase 3.5 - Mutual TLS Configuration
 Tests certificate management, TLS configuration, and secure session establishment.
 """
 
-import pytest
-import tempfile
 import os
-from datetime import datetime, timedelta
+import tempfile
 
 from socratic_system.security.mutual_tls import (
-    MutualTLSManager,
     CertificateType,
-    TLSVersion,
+    MutualTLSManager,
     MutualTLSPolicy,
+    TLSVersion,
 )
 
 

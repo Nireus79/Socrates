@@ -12,8 +12,8 @@ Tests verify:
 from unittest.mock import Mock
 
 import pytest
-
 from socratic_agents.knowledge_analysis import KnowledgeAnalysisAgent
+
 from socratic_system.events import EventEmitter, EventType
 from socratic_system.models.role import ROLE_EXAMPLES, ROLE_FOCUS_AREAS, VALID_ROLES
 

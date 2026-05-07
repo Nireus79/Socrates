@@ -8,17 +8,15 @@ Tests the complete workflow using:
 - Event-driven background processing
 """
 
-import asyncio
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from datetime import datetime
 
 from socratic_system.events import EventEmitter
-from socratic_system.messaging import AgentBus, CircuitBreaker, RetryPolicy
+from socratic_system.messaging import AgentBus
 from socratic_system.services import (
     CodeService,
     ConflictService,
-    LearningService,
     QualityService,
     ValidationService,
 )
@@ -53,7 +51,7 @@ class TestServiceAgentBusIntegration:
         project.project_id = "test_proj_1"
 
         # Call generate_code
-        result = code_service.generate_code(project, language="python", user_id="user1")
+        code_service.generate_code(project, language="python", user_id="user1")
 
         # Verify agent_bus was called
         self.agent_bus.send_request_sync.assert_called_once()
@@ -77,7 +75,7 @@ class TestServiceAgentBusIntegration:
         project.project_id = "test_proj_1"
 
         # Call detect_conflicts
-        result = conflict_service.detect_conflicts(project, user_id="user1")
+        conflict_service.detect_conflicts(project, user_id="user1")
 
         # Verify agent_bus was called
         self.agent_bus.send_request_sync.assert_called_once()
@@ -100,7 +98,7 @@ class TestServiceAgentBusIntegration:
         project.project_id = "test_proj_1"
 
         # Call calculate_maturity
-        result = quality_service.calculate_maturity(project)
+        quality_service.calculate_maturity(project)
 
         # Verify agent_bus was called
         self.agent_bus.send_request_sync.assert_called_once()
@@ -120,7 +118,7 @@ class TestServiceAgentBusIntegration:
         self.agent_bus.send_request_sync = MagicMock(return_value=mock_response)
 
         # Call run_tests
-        result = validation_service.run_tests(project_id="test_proj_1", user_id="user1")
+        validation_service.run_tests(project_id="test_proj_1", user_id="user1")
 
         # Verify agent_bus was called
         self.agent_bus.send_request_sync.assert_called_once()
@@ -191,7 +189,9 @@ class TestResiliencePatternIntegration:
     def setup_method(self):
         """Set up test fixtures."""
         self.event_emitter = EventEmitter()
-        self.agent_bus = AgentBus(self.event_emitter, enable_circuit_breaker=True, enable_retry=True)
+        self.agent_bus = AgentBus(
+            self.event_emitter, enable_circuit_breaker=True, enable_retry=True
+        )
 
         self.orchestrator = MagicMock()
         self.orchestrator.agent_bus = self.agent_bus
@@ -210,7 +210,7 @@ class TestResiliencePatternIntegration:
         self.agent_bus.send_request_sync = failing_call
 
         # Try multiple calls - should fail due to exception
-        for i in range(3):
+        for _i in range(3):
             try:
                 code_service.generate_code(project, language="python", user_id="user1")
             except Exception as e:
@@ -222,8 +222,9 @@ class TestServiceDecoupling:
 
     def test_service_doesnt_depend_on_agent_internals(self):
         """Test CodeService doesn't import agent classes."""
-        from socratic_system.services.code_service import CodeService
         import inspect
+
+        from socratic_system.services.code_service import CodeService
 
         source = inspect.getsource(CodeService)
 
@@ -236,8 +237,9 @@ class TestServiceDecoupling:
 
     def test_service_uses_orchestrator_bus_not_direct_call(self):
         """Test services use agent_bus, not orchestrator.process_request()."""
-        from socratic_system.services.code_service import CodeService
         import inspect
+
+        from socratic_system.services.code_service import CodeService
 
         source = inspect.getsource(CodeService)
 
@@ -294,9 +296,7 @@ class TestPerformanceCharacteristics:
         project.project_id = "multi_service_test"
 
         # Mock all responses
-        self.agent_bus.send_request_sync = MagicMock(
-            return_value={"status": "success", "data": {}}
-        )
+        self.agent_bus.send_request_sync = MagicMock(return_value={"status": "success", "data": {}})
 
         # Run workflow 20 times
         start = time.time()

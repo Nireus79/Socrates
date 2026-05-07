@@ -104,9 +104,7 @@ class SecureAgentClient:
             connection_id = f"tls_{self.source_agent_id}_{target_agent_id}"
             self.active_connections[connection_id] = True
 
-            self.logger.info(
-                f"[SecureClient] Established secure connection to {target_agent_id}"
-            )
+            self.logger.info(f"[SecureClient] Established secure connection to {target_agent_id}")
             return True
 
         except Exception as e:
@@ -186,9 +184,7 @@ class SecureAgentClient:
             self.active_connections[connection_id] = False
             del self.active_connections[connection_id]
 
-            self.logger.info(
-                f"[SecureClient] Closed connection to {target_agent_id}"
-            )
+            self.logger.info(f"[SecureClient] Closed connection to {target_agent_id}")
             return True
 
         return False
@@ -211,15 +207,17 @@ class SecureAgentClient:
         # In production, use actual TLS encryption
         import json
 
-        return json.dumps({
-            "request_id": request.request_id,
-            "source_agent": request.source_agent,
-            "target_agent": request.target_agent,
-            "action": request.action,
-            "parameters": request.parameters,
-            "timestamp": request.timestamp.isoformat(),
-            "encrypted": True,
-        })
+        return json.dumps(
+            {
+                "request_id": request.request_id,
+                "source_agent": request.source_agent,
+                "target_agent": request.target_agent,
+                "action": request.action,
+                "parameters": request.parameters,
+                "timestamp": request.timestamp.isoformat(),
+                "encrypted": True,
+            }
+        )
 
     def _send_encrypted(
         self,
@@ -240,11 +238,13 @@ class SecureAgentClient:
         # Mock response
         import json
 
-        return json.dumps({
-            "status_code": 200,
-            "data": {"success": True},
-            "encrypted": True,
-        })
+        return json.dumps(
+            {
+                "status_code": 200,
+                "data": {"success": True},
+                "encrypted": True,
+            }
+        )
 
     def _decrypt_response(self, encrypted_data: str) -> SecureResponse:
         """Decrypt response from target agent."""

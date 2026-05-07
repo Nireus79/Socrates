@@ -13,10 +13,9 @@ Validates:
 """
 
 import asyncio
-import pytest
-from unittest.mock import AsyncMock, MagicMock
-from datetime import datetime
+from unittest.mock import MagicMock
 
+import pytest
 from socratic_agents.question_queue_agent import QuestionQueueAgent
 
 
@@ -42,7 +41,7 @@ class TestQuestionQueueMigrationSetup:
         agent = QuestionQueueAgent(mock_orchestrator)
 
         # Agent must have process method
-        assert hasattr(agent, 'process')
+        assert hasattr(agent, "process")
         assert callable(agent.process)
 
     def test_agent_has_process_async_method(self):
@@ -53,7 +52,7 @@ class TestQuestionQueueMigrationSetup:
         agent = QuestionQueueAgent(mock_orchestrator)
 
         # Agent must have process_async method
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "process_async")
         assert callable(agent.process_async)
 
     def test_agent_has_name_attribute(self):
@@ -64,7 +63,7 @@ class TestQuestionQueueMigrationSetup:
         agent = QuestionQueueAgent(mock_orchestrator)
 
         # Agent must identify itself
-        assert hasattr(agent, 'name')
+        assert hasattr(agent, "name")
         assert isinstance(agent.name, str)
 
 
@@ -453,7 +452,9 @@ class TestQuestionQueueRoleAssignment:
 
         agent = QuestionQueueAgent(mock_orchestrator)
 
-        roles = agent._determine_roles("What are the best practices for implementation?", mock_project)
+        roles = agent._determine_roles(
+            "What are the best practices for implementation?", mock_project
+        )
 
         assert "specialist" in roles or "lead" in roles
 
@@ -510,9 +511,7 @@ class TestQuestionQueueDatabaseOperations:
         mock_orchestrator.database = MagicMock()
 
         mock_project = MagicMock()
-        mock_project.pending_questions = [
-            {"id": "q_123", "status": "pending"}
-        ]
+        mock_project.pending_questions = [{"id": "q_123", "status": "pending"}]
         mock_orchestrator.database.load_project = MagicMock(return_value=mock_project)
 
         agent = QuestionQueueAgent(mock_orchestrator)
@@ -570,10 +569,10 @@ class TestQuestionQueuePhase2BIntegration:
         agent = QuestionQueueAgent(mock_orchestrator)
 
         # Agent must have core interface
-        assert hasattr(agent, 'name')
-        assert hasattr(agent, 'orchestrator')
-        assert hasattr(agent, 'process')
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "name")
+        assert hasattr(agent, "orchestrator")
+        assert hasattr(agent, "process")
+        assert hasattr(agent, "process_async")
 
         # Verify they're callable/accessible
         assert isinstance(agent.name, str)

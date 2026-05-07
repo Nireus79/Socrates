@@ -114,17 +114,13 @@ class Job:
             self.result.error = str(e)
 
         finally:
-            self.result.completed_at = (
-                datetime.now(timezone.utc).isoformat()
-            )
+            self.result.completed_at = datetime.now(timezone.utc).isoformat()
 
             # Calculate duration
             if self.result.started_at and self.result.completed_at:
                 start = datetime.fromisoformat(self.result.started_at)
                 end = datetime.fromisoformat(self.result.completed_at)
-                self.result.duration_ms = (
-                    (end - start).total_seconds() * 1000
-                )
+                self.result.duration_ms = (end - start).total_seconds() * 1000
 
         return self.result
 
@@ -222,10 +218,7 @@ class JobQueue:
 
     async def start_workers(self) -> None:
         """Start background workers"""
-        self.workers = [
-            asyncio.create_task(self.worker())
-            for _ in range(self.max_workers)
-        ]
+        self.workers = [asyncio.create_task(self.worker()) for _ in range(self.max_workers)]
         self.logger.info(f"Started {self.max_workers} workers")
 
     async def stop_workers(self) -> None:

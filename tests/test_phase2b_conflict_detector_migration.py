@@ -12,9 +12,9 @@ Validates:
 """
 
 import asyncio
-import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
+import pytest
 from socratic_agents.conflict_detector import ConflictDetectorAgent
 
 
@@ -40,7 +40,7 @@ class TestConflictDetectorMigrationSetup:
         agent = ConflictDetectorAgent(mock_orchestrator)
 
         # Agent must have process method
-        assert hasattr(agent, 'process')
+        assert hasattr(agent, "process")
         assert callable(agent.process)
 
     def test_agent_has_process_async_method(self):
@@ -51,7 +51,7 @@ class TestConflictDetectorMigrationSetup:
         agent = ConflictDetectorAgent(mock_orchestrator)
 
         # Agent must have process_async method
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "process_async")
         assert callable(agent.process_async)
 
     def test_agent_has_name_attribute(self):
@@ -62,7 +62,7 @@ class TestConflictDetectorMigrationSetup:
         agent = ConflictDetectorAgent(mock_orchestrator)
 
         # Agent must identify itself
-        assert hasattr(agent, 'name')
+        assert hasattr(agent, "name")
         assert isinstance(agent.name, str)
 
 
@@ -272,10 +272,10 @@ class TestConflictDetectorPhase2BIntegration:
         agent = ConflictDetectorAgent(mock_orchestrator)
 
         # Agent must have core interface
-        assert hasattr(agent, 'name')
-        assert hasattr(agent, 'orchestrator')
-        assert hasattr(agent, 'process')
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "name")
+        assert hasattr(agent, "orchestrator")
+        assert hasattr(agent, "process")
+        assert hasattr(agent, "process_async")
 
         # Verify they're callable/accessible
         assert isinstance(agent.name, str)

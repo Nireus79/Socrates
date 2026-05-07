@@ -13,16 +13,10 @@ Validates:
 """
 
 import asyncio
-import pytest
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
+import pytest
 from socratic_agents.system_monitor import SystemMonitorAgent
-from socratic_system.config import SocratesConfig
-from socratic_system.events import EventEmitter
-from socratic_system.messaging.agent_registry import AgentRegistry
-from socratic_system.messaging.agent_bus import AgentBus
-from socratic_system.models import TokenUsage
 
 
 class TestSystemMonitorMigrationSetup:
@@ -49,7 +43,7 @@ class TestSystemMonitorMigrationSetup:
         agent = SystemMonitorAgent(mock_orchestrator)
 
         # Agent must have process method
-        assert hasattr(agent, 'process')
+        assert hasattr(agent, "process")
         assert callable(agent.process)
 
     def test_agent_has_process_async_method(self):
@@ -60,7 +54,7 @@ class TestSystemMonitorMigrationSetup:
         agent = SystemMonitorAgent(mock_orchestrator)
 
         # Agent must have process_async method
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "process_async")
         assert callable(agent.process_async)
 
     def test_agent_has_name_attribute(self):
@@ -71,7 +65,7 @@ class TestSystemMonitorMigrationSetup:
         agent = SystemMonitorAgent(mock_orchestrator)
 
         # Agent must identify itself
-        assert hasattr(agent, 'name')
+        assert hasattr(agent, "name")
         assert isinstance(agent.name, str)
 
 
@@ -108,13 +102,15 @@ class TestSystemMonitorSyncInterface:
         agent = SystemMonitorAgent(mock_orchestrator)
 
         # Track some tokens first
-        agent._track_tokens({
-            "action": "track_tokens",
-            "input_tokens": 100,
-            "output_tokens": 50,
-            "total_tokens": 150,
-            "cost_estimate": 0.005,
-        })
+        agent._track_tokens(
+            {
+                "action": "track_tokens",
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "total_tokens": 150,
+                "cost_estimate": 0.005,
+            }
+        )
 
         result = agent.process({"action": "get_stats"})
 
@@ -198,13 +194,15 @@ class TestSystemMonitorAsyncInterface:
         agent = SystemMonitorAgent(mock_orchestrator)
 
         # Track tokens
-        agent._track_tokens({
-            "action": "track_tokens",
-            "input_tokens": 100,
-            "output_tokens": 50,
-            "total_tokens": 150,
-            "cost_estimate": 0.005,
-        })
+        agent._track_tokens(
+            {
+                "action": "track_tokens",
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "total_tokens": 150,
+                "cost_estimate": 0.005,
+            }
+        )
 
         result = await agent.process_async({"action": "get_stats"})
 
@@ -266,13 +264,15 @@ class TestSystemMonitorStateManagement:
 
         # Track multiple token usages
         for i in range(5):
-            agent._track_tokens({
-                "action": "track_tokens",
-                "input_tokens": 100 * (i + 1),
-                "output_tokens": 50 * (i + 1),
-                "total_tokens": 150 * (i + 1),
-                "cost_estimate": 0.005 * (i + 1),
-            })
+            agent._track_tokens(
+                {
+                    "action": "track_tokens",
+                    "input_tokens": 100 * (i + 1),
+                    "output_tokens": 50 * (i + 1),
+                    "total_tokens": 150 * (i + 1),
+                    "cost_estimate": 0.005 * (i + 1),
+                }
+            )
 
         assert len(agent.token_usage) == 5
         assert agent.token_usage[0].total_tokens == 150
@@ -286,13 +286,15 @@ class TestSystemMonitorStateManagement:
         agent = SystemMonitorAgent(mock_orchestrator)
 
         # Track high usage
-        result = agent._track_tokens({
-            "action": "track_tokens",
-            "input_tokens": 40000,
-            "output_tokens": 15000,
-            "total_tokens": 55000,
-            "cost_estimate": 1.0,
-        })
+        result = agent._track_tokens(
+            {
+                "action": "track_tokens",
+                "input_tokens": 40000,
+                "output_tokens": 15000,
+                "total_tokens": 55000,
+                "cost_estimate": 1.0,
+            }
+        )
 
         assert result["warning"] is True
 
@@ -387,7 +389,6 @@ class TestSystemMonitorPhase2BIntegration:
         }
 
         # Test via process_async
-        import asyncio
         result = asyncio.run(agent.process_async(bus_request))
 
         assert result["status"] == "success"
@@ -401,10 +402,10 @@ class TestSystemMonitorPhase2BIntegration:
         agent = SystemMonitorAgent(mock_orchestrator)
 
         # Agent must have core interface
-        assert hasattr(agent, 'name')
-        assert hasattr(agent, 'orchestrator')
-        assert hasattr(agent, 'process')
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "name")
+        assert hasattr(agent, "orchestrator")
+        assert hasattr(agent, "process")
+        assert hasattr(agent, "process_async")
 
         # Verify they're callable/accessible
         assert isinstance(agent.name, str)

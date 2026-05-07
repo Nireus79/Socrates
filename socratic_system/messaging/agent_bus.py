@@ -129,10 +129,7 @@ class RetryPolicy:
         Returns:
             Delay in seconds with exponential backoff
         """
-        delay = min(
-            self.initial_delay * (self.backoff_factor ** attempt),
-            self.max_delay
-        )
+        delay = min(self.initial_delay * (self.backoff_factor**attempt), self.max_delay)
         return delay
 
 
@@ -218,11 +215,7 @@ class AgentBus:
         # Set up event routing for agent requests
         self._setup_event_routing()
 
-    def _check_capability(
-        self,
-        agent_name: str,
-        action: str
-    ) -> tuple[bool, Optional[str]]:
+    def _check_capability(self, agent_name: str, action: str) -> tuple[bool, Optional[str]]:
         """Check if agent has capability to perform action.
 
         Args:
@@ -266,10 +259,7 @@ class AgentBus:
             return False, f"Capability check error: {str(e)}"
 
     def _check_governance(
-        self,
-        agent_name: str,
-        action: str,
-        request_data: Dict[str, Any]
+        self, agent_name: str, action: str, request_data: Dict[str, Any]
     ) -> tuple[bool, Optional[str]]:
         """Check if action is allowed under constitutional governance.
 
@@ -288,9 +278,7 @@ class AgentBus:
         try:
             # Use Governor to evaluate action against constitution
             allowed, decision = self.governor.evaluate_action(
-                agent=agent_name,
-                action=action,
-                context=request_data
+                agent=agent_name, action=action, context=request_data
             )
 
             if not allowed:
@@ -299,9 +287,7 @@ class AgentBus:
                 )
                 return False, f"Action denied by constitutional governance: {decision}"
 
-            self.logger.debug(
-                f"[Governor] Action '{action}' by {agent_name} APPROVED"
-            )
+            self.logger.debug(f"[Governor] Action '{action}' by {agent_name} APPROVED")
             return True, None
 
         except Exception as e:
@@ -339,9 +325,7 @@ class AgentBus:
             # Convert event_type to string for pattern matching
             from socratic_system.events import EventType
 
-            event_name = (
-                event_type.value if isinstance(event_type, EventType) else str(event_type)
-            )
+            event_name = event_type.value if isinstance(event_type, EventType) else str(event_type)
 
             # Check if this is an agent request event: "agent.{agent_name}.request"
             if event_name.startswith("agent.") and event_name.endswith(".request"):
@@ -352,9 +336,7 @@ class AgentBus:
                     try:
                         loop = asyncio.get_event_loop()
                         if loop.is_running():
-                            asyncio.create_task(
-                                self._handle_agent_request(agent_name, data)
-                            )
+                            asyncio.create_task(self._handle_agent_request(agent_name, data))
                         else:
                             # Fallback: run synchronously if no event loop
                             asyncio.run(self._handle_agent_request(agent_name, data))
@@ -397,9 +379,7 @@ class AgentBus:
 
             handler = self.registry.get_handler(agent_name)
             if not handler:
-                self.logger.warning(
-                    f"[AgentBus] No handler registered for agent '{agent_name}'"
-                )
+                self.logger.warning(f"[AgentBus] No handler registered for agent '{agent_name}'")
                 self.handle_response(
                     request_id,
                     {
@@ -430,7 +410,7 @@ class AgentBus:
                         allowed=False,
                         denial_reason=f"Capability denied: {capability_reason}",
                         request_id=request_id,
-                        context={"check_type": "capability"}
+                        context={"check_type": "capability"},
                     )
                 self.handle_response(
                     request_id,
@@ -446,9 +426,7 @@ class AgentBus:
             allowed, denial_reason = self._check_governance(agent_name, action, payload)
 
             if not allowed:
-                self.logger.warning(
-                    f"[AgentBus] Request blocked by governance: {denial_reason}"
-                )
+                self.logger.warning(f"[AgentBus] Request blocked by governance: {denial_reason}")
                 # Log denied action
                 if self.audit_logger:
                     self.audit_logger.log_agent_action(
@@ -457,7 +435,7 @@ class AgentBus:
                         allowed=False,
                         denial_reason=f"Governance denied: {denial_reason}",
                         request_id=request_id,
-                        context={"check_type": "governance"}
+                        context={"check_type": "governance"},
                     )
                 self.handle_response(
                     request_id,
@@ -472,10 +450,7 @@ class AgentBus:
             # Log allowed action
             if self.audit_logger:
                 self.audit_logger.log_agent_action(
-                    agent_name=agent_name,
-                    action=action,
-                    allowed=True,
-                    request_id=request_id
+                    agent_name=agent_name, action=action, allowed=True, request_id=request_id
                 )
 
             # Invoke the handler
@@ -495,9 +470,7 @@ class AgentBus:
             self.handle_response(request_id, response)
 
         except Exception as e:
-            self.logger.error(
-                f"[AgentBus] Error handling request for agent '{agent_name}': {e}"
-            )
+            self.logger.error(f"[AgentBus] Error handling request for agent '{agent_name}': {e}")
             self.handle_response(
                 request_id,
                 {"status": "error", "message": f"Agent processing error: {str(e)}"},
@@ -543,9 +516,7 @@ class AgentBus:
                     f"[AgentBus] Circuit breaker OPEN for {target_agent} - rejecting request"
                 )
                 self.metrics["circuit_breaker_rejections"] += 1
-                raise AgentError(
-                    f"Agent {target_agent} is unavailable (circuit breaker open)"
-                )
+                raise AgentError(f"Agent {target_agent} is unavailable (circuit breaker open)")
 
         # Fire-and-forget doesn't use retry
         if fire_and_forget:
@@ -638,9 +609,7 @@ class AgentBus:
         # All retries exhausted
         self.metrics["failed_requests"] += 1
         if isinstance(last_error, asyncio.TimeoutError):
-            raise AgentTimeoutError(
-                f"{target_agent} timed out after {max_retries + 1} attempts"
-            )
+            raise AgentTimeoutError(f"{target_agent} timed out after {max_retries + 1} attempts")
         else:
             raise AgentError(f"Agent {target_agent} request failed: {last_error}")
 
@@ -662,9 +631,7 @@ class AgentBus:
             future.set_result(response)
             self.logger.debug(f"[AgentBus] Response queued for {request_id}")
 
-    def register_handler(
-        self, agent_name: str, handler_func: Callable
-    ) -> None:
+    def register_handler(self, agent_name: str, handler_func: Callable) -> None:
         """Register handler for agent responses.
 
         Args:
@@ -675,9 +642,7 @@ class AgentBus:
         self.event_emitter.on(event_name, handler_func)
         self.logger.debug(f"[AgentBus] Handler registered for {agent_name}")
 
-    def emit_event(
-        self, agent_name: str, event_type: str, data: Dict[str, Any]
-    ) -> None:
+    def emit_event(self, agent_name: str, event_type: str, data: Dict[str, Any]) -> None:
         """Emit event from agent.
 
         Args:
@@ -717,9 +682,7 @@ class AgentBus:
         """
         # If orchestrator is available, use it for backward compatibility
         if orchestrator is not None:
-            self.logger.debug(
-                f"[AgentBus] Routing {target_agent} request through orchestrator"
-            )
+            self.logger.debug(f"[AgentBus] Routing {target_agent} request through orchestrator")
             return orchestrator.process_request(target_agent, request)
 
         # Try to run async send_request
@@ -764,8 +727,7 @@ class AgentBus:
             **self.metrics,
             "pending_requests": len(self.request_queue),
             "circuit_breakers": {
-                name: breaker.get_state()
-                for name, breaker in self.circuit_breakers.items()
+                name: breaker.get_state() for name, breaker in self.circuit_breakers.items()
             },
         }
 
@@ -804,9 +766,7 @@ class AgentBus:
                         fire_and_forget=True,
                     )
                 except Exception as e:
-                    self.logger.warning(
-                        f"[AgentBus] Failed to notify {agent_name}: {e}"
-                    )
+                    self.logger.warning(f"[AgentBus] Failed to notify {agent_name}: {e}")
 
             self.metrics["broadcast_messages"] += 1
 

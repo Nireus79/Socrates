@@ -28,9 +28,7 @@ class KnowledgeService(Service):
         self.project_db = project_db
         self.vector_db = vector_db
 
-    def search_knowledge(
-        self, query: str, project_id: str, top_k: int = 5
-    ) -> List[Dict[str, Any]]:
+    def search_knowledge(self, query: str, project_id: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """Search knowledge base for similar documents.
 
         Args:

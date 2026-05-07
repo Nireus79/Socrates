@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 class EthicalFrameworkType(Enum):
     """Types of ethical frameworks."""
+
     KANTIAN = "kantian"
     UTILITARIAN = "utilitarian"
     VIRTUE = "virtue"
@@ -24,6 +25,7 @@ class EthicalFrameworkType(Enum):
 
 class EthicalConclusion(Enum):
     """Conclusion of ethical analysis."""
+
     ALLOWED = "allowed"
     BLOCKED = "blocked"
     ESCALATE = "escalate"
@@ -71,7 +73,7 @@ class EthicalFramework(ABC):
         context: Dict[str, Any],
         stakeholders: List[Dict[str, Any]],
         principles: List[str],
-        consequences: Dict[str, Any]
+        consequences: Dict[str, Any],
     ) -> FrameworkAnalysis:
         """
         Analyze action through this framework's lens.
@@ -124,7 +126,7 @@ class KantianAnalyzer(EthicalFramework):
         context: Dict[str, Any],
         stakeholders: List[Dict[str, Any]],
         principles: List[str],
-        consequences: Dict[str, Any]
+        consequences: Dict[str, Any],
     ) -> FrameworkAnalysis:
         """Analyze through Kantian lens."""
         conclusion = EthicalConclusion.ALLOWED
@@ -155,8 +157,11 @@ class KantianAnalyzer(EthicalFramework):
                 concerns.append(f"Violates duty: {duty}")
             reasoning_parts.append(f"Violates {len(duties_violated)} duties")
 
-        reasoning = " | ".join(reasoning_parts) if reasoning_parts else \
-                   "Action respects autonomy, passes universalization test, fulfills duties"
+        reasoning = (
+            " | ".join(reasoning_parts)
+            if reasoning_parts
+            else "Action respects autonomy, passes universalization test, fulfills duties"
+        )
 
         return FrameworkAnalysis(
             framework=EthicalFrameworkType.KANTIAN,
@@ -164,14 +169,21 @@ class KantianAnalyzer(EthicalFramework):
             confidence=confidence,
             reasoning=reasoning,
             concerns=concerns,
-            affected_principles=principles
+            affected_principles=principles,
         )
 
     def _treats_as_means_only(self, action: str, stakeholders: List[Dict[str, Any]]) -> bool:
         """Check if action treats anyone merely as a means."""
         means_patterns = [
-            "exploit", "manipulate", "deceive", "hide", "exclude",
-            "coerce", "force", "deny_autonomy", "override_consent"
+            "exploit",
+            "manipulate",
+            "deceive",
+            "hide",
+            "exclude",
+            "coerce",
+            "force",
+            "deny_autonomy",
+            "override_consent",
         ]
 
         action_lower = action.lower()
@@ -187,8 +199,13 @@ class KantianAnalyzer(EthicalFramework):
         """Check if action passes universalization test."""
         # Actions that couldn't be universal laws
         non_universalizable = [
-            "lie", "deceive", "break promise", "harm innocently",
-            "refuse help", "exploit", "hide truth"
+            "lie",
+            "deceive",
+            "break promise",
+            "harm innocently",
+            "refuse help",
+            "exploit",
+            "hide truth",
         ]
 
         action_lower = action.lower()
@@ -199,10 +216,7 @@ class KantianAnalyzer(EthicalFramework):
         return True
 
     def _check_duty_violations(
-        self,
-        action: str,
-        stakeholders: List[Dict[str, Any]],
-        context: Dict[str, Any]
+        self, action: str, stakeholders: List[Dict[str, Any]], context: Dict[str, Any]
     ) -> List[str]:
         """Check for violations of basic duties."""
         violations = []
@@ -247,7 +261,7 @@ class UtilitarianAnalyzer(EthicalFramework):
         context: Dict[str, Any],
         stakeholders: List[Dict[str, Any]],
         principles: List[str],
-        consequences: Dict[str, Any]
+        consequences: Dict[str, Any],
     ) -> FrameworkAnalysis:
         """Analyze through utilitarian lens."""
         conclusion = EthicalConclusion.ALLOWED
@@ -259,14 +273,8 @@ class UtilitarianAnalyzer(EthicalFramework):
         short_term = consequences.get("short_term", {})
         long_term = consequences.get("long_term", {})
 
-        total_benefit = (
-            short_term.get("benefit", 0) +
-            long_term.get("benefit", 0)
-        )
-        total_harm = (
-            short_term.get("harm", 0) +
-            long_term.get("harm", 0)
-        )
+        total_benefit = short_term.get("benefit", 0) + long_term.get("benefit", 0)
+        total_harm = short_term.get("harm", 0) + long_term.get("harm", 0)
 
         if total_harm > total_benefit:
             conclusion = EthicalConclusion.BLOCKED
@@ -286,8 +294,11 @@ class UtilitarianAnalyzer(EthicalFramework):
             confidence = min(confidence, 0.75)
             reasoning_parts.append("Long-term harms concerning")
 
-        reasoning = " | ".join(reasoning_parts) if reasoning_parts else \
-                   f"Net positive: benefits ({total_benefit}) exceed harms ({total_harm})"
+        reasoning = (
+            " | ".join(reasoning_parts)
+            if reasoning_parts
+            else f"Net positive: benefits ({total_benefit}) exceed harms ({total_harm})"
+        )
 
         return FrameworkAnalysis(
             framework=EthicalFrameworkType.UTILITARIAN,
@@ -295,13 +306,11 @@ class UtilitarianAnalyzer(EthicalFramework):
             confidence=confidence,
             reasoning=reasoning,
             concerns=concerns,
-            affected_principles=principles
+            affected_principles=principles,
         )
 
     def _extreme_harm_to_minorities(
-        self,
-        stakeholders: List[Dict[str, Any]],
-        consequences: Dict[str, Any]
+        self, stakeholders: List[Dict[str, Any]], consequences: Dict[str, Any]
     ) -> bool:
         """Check if harm is concentrated on small vulnerable groups."""
         if not stakeholders or len(stakeholders) < 2:
@@ -312,7 +321,9 @@ class UtilitarianAnalyzer(EthicalFramework):
         for s in stakeholders:
             # Handle both dict and dataclass stakeholders
             stakeholder_id = s.get("id", "") if isinstance(s, dict) else getattr(s, "id", "")
-            vulnerability = s.get("vulnerability", 0) if isinstance(s, dict) else getattr(s, "vulnerability", 0)
+            vulnerability = (
+                s.get("vulnerability", 0) if isinstance(s, dict) else getattr(s, "vulnerability", 0)
+            )
             harms.append((stakeholder_id, vulnerability))
 
         # Check for concentrated harm on vulnerable
@@ -344,7 +355,7 @@ class VirtueAnalyzer(EthicalFramework):
         context: Dict[str, Any],
         stakeholders: List[Dict[str, Any]],
         principles: List[str],
-        consequences: Dict[str, Any]
+        consequences: Dict[str, Any],
     ) -> FrameworkAnalysis:
         """Analyze through virtue ethics lens."""
         conclusion = EthicalConclusion.ALLOWED
@@ -378,8 +389,11 @@ class VirtueAnalyzer(EthicalFramework):
             concerns.append("Does not promote human flourishing")
             reasoning_parts.append("May inhibit flourishing of affected parties")
 
-        reasoning = " | ".join(reasoning_parts) if reasoning_parts else \
-                   "Action reflects virtuous character and promotes flourishing"
+        reasoning = (
+            " | ".join(reasoning_parts)
+            if reasoning_parts
+            else "Action reflects virtuous character and promotes flourishing"
+        )
 
         return FrameworkAnalysis(
             framework=EthicalFrameworkType.VIRTUE,
@@ -387,7 +401,7 @@ class VirtueAnalyzer(EthicalFramework):
             confidence=confidence,
             reasoning=reasoning,
             concerns=concerns,
-            affected_principles=principles
+            affected_principles=principles,
         )
 
     def _identify_vices(self, action: str) -> List[str]:
@@ -433,16 +447,17 @@ class VirtueAnalyzer(EthicalFramework):
                 virtues.append(virtue)
 
         # If action promotes general good/improvement, consider it virtuous
-        if any(word in action_lower for word in ["improve", "optimize", "secure", "reliable", "safe", "enhance"]):
+        if any(
+            word in action_lower
+            for word in ["improve", "optimize", "secure", "reliable", "safe", "enhance"]
+        ):
             if "wisdom" not in virtues:
                 virtues.append("wisdom")
 
         return virtues
 
     def _promotes_flourishing(
-        self,
-        stakeholders: List[Dict[str, Any]],
-        consequences: Dict[str, Any]
+        self, stakeholders: List[Dict[str, Any]], consequences: Dict[str, Any]
     ) -> bool:
         """Check if action promotes human flourishing."""
         if not stakeholders:
@@ -450,9 +465,18 @@ class VirtueAnalyzer(EthicalFramework):
 
         # Flourishing includes autonomy, growth, relationships, health
         flourishing_factors = [
-            "autonomy", "growth", "relationships", "health",
-            "knowledge", "development", "well-being", "improve",
-            "secure", "reliable", "beneficial", "good"
+            "autonomy",
+            "growth",
+            "relationships",
+            "health",
+            "knowledge",
+            "development",
+            "well-being",
+            "improve",
+            "secure",
+            "reliable",
+            "beneficial",
+            "good",
         ]
 
         consequences_text = str(consequences).lower()
@@ -485,7 +509,7 @@ class RightsAnalyzer(EthicalFramework):
         context: Dict[str, Any],
         stakeholders: List[Dict[str, Any]],
         principles: List[str],
-        consequences: Dict[str, Any]
+        consequences: Dict[str, Any],
     ) -> FrameworkAnalysis:
         """Analyze through rights-based lens."""
         conclusion = EthicalConclusion.ALLOWED
@@ -516,8 +540,11 @@ class RightsAnalyzer(EthicalFramework):
             concerns.append("Does not adequately protect vulnerable populations")
             reasoning_parts.append("Vulnerable populations at risk")
 
-        reasoning = " | ".join(reasoning_parts) if reasoning_parts else \
-                   "Action respects all fundamental rights and obtains consent"
+        reasoning = (
+            " | ".join(reasoning_parts)
+            if reasoning_parts
+            else "Action respects all fundamental rights and obtains consent"
+        )
 
         return FrameworkAnalysis(
             framework=EthicalFrameworkType.RIGHTS_BASED,
@@ -525,14 +552,11 @@ class RightsAnalyzer(EthicalFramework):
             confidence=confidence,
             reasoning=reasoning,
             concerns=concerns,
-            affected_principles=principles
+            affected_principles=principles,
         )
 
     def _identify_rights_violations(
-        self,
-        action: str,
-        stakeholders: List[Dict[str, Any]],
-        context: Dict[str, Any]
+        self, action: str, stakeholders: List[Dict[str, Any]], context: Dict[str, Any]
     ) -> List[str]:
         """Identify fundamental rights violations."""
         violations = []
@@ -555,7 +579,9 @@ class RightsAnalyzer(EthicalFramework):
 
         return violations
 
-    def _consent_obtained(self, stakeholders: List[Dict[str, Any]], context: Dict[str, Any]) -> bool:
+    def _consent_obtained(
+        self, stakeholders: List[Dict[str, Any]], context: Dict[str, Any]
+    ) -> bool:
         """Check if informed consent obtained from affected parties."""
         # Check if consent was explicitly denied or not given
         consent_given = context.get("consent_obtained")
@@ -596,8 +622,7 @@ class RightsAnalyzer(EthicalFramework):
             if is_vulnerable:
                 # Vulnerable person must be protected
                 needs_protection = any(
-                    ind in str(stakeholder).lower()
-                    for ind in vulnerable_indicators
+                    ind in str(stakeholder).lower() for ind in vulnerable_indicators
                 )
                 if needs_protection:
                     return True

@@ -4,9 +4,11 @@ Pytest configuration for E2E tests.
 Provides fixtures for end-to-end testing of system workflows.
 """
 
-import pytest
 from unittest.mock import MagicMock
-from socratic_system.models import User, ProjectContext
+
+import pytest
+
+from socratic_system.models import ProjectContext, User
 
 
 @pytest.fixture

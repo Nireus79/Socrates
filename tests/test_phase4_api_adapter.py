@@ -11,20 +11,17 @@ Tests validate:
 
 import asyncio
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime
 
 from socratic_system.api_adapter import (
-    BaseAdapter,
     AdapterError,
     AdapterValidationError,
-    ResponseDTO,
+    AsyncJobHandler,
     AsyncJobRequest,
+    BaseAdapter,
     JobStatusResponse,
+    ResponseDTO,
     ServiceAdapter,
     ServiceRegistry,
-    ServiceInfo,
-    AsyncJobHandler,
 )
 from socratic_system.events import JobQueue, ResultCache
 
@@ -87,9 +84,7 @@ class TestBaseAdapter(unittest.TestCase):
 
     def test_transform_response(self):
         """Transform response"""
-        response = self.adapter.transform_response(
-            {"key": "value"}, message="Success"
-        )
+        response = self.adapter.transform_response({"key": "value"}, message="Success")
         self.assertEqual(response["status"], "success")
         self.assertEqual(response["data"]["key"], "value")
         self.assertEqual(response["message"], "Success")
@@ -184,24 +179,18 @@ class TestServiceAdapter(unittest.IsolatedAsyncioTestCase):
 
     async def test_call_async_method(self):
         """Call async method"""
-        result = await self.adapter.call_service_method(
-            "mock", "async_method", {"value": "test"}
-        )
+        result = await self.adapter.call_service_method("mock", "async_method", {"value": "test"})
         self.assertEqual(result, "async_test")
 
     async def test_call_sync_method(self):
         """Call sync method"""
-        result = await self.adapter.call_service_method(
-            "mock", "sync_method", {"value": "test"}
-        )
+        result = await self.adapter.call_service_method("mock", "sync_method", {"value": "test"})
         self.assertEqual(result, "sync_test")
 
     async def test_call_failing_method(self):
         """Call failing method"""
         with self.assertRaises(AdapterError):
-            await self.adapter.call_service_method(
-                "mock", "failing_method", {}
-            )
+            await self.adapter.call_service_method("mock", "failing_method", {})
 
     async def test_handle_request(self):
         """Handle service request"""
@@ -264,9 +253,7 @@ class TestAsyncJobHandler(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_job_status(self):
         """Get job status"""
-        job_id = await self.handler.submit_async_job(
-            "mock", "sync_method", {"value": "test"}
-        )
+        job_id = await self.handler.submit_async_job("mock", "sync_method", {"value": "test"})
         await asyncio.sleep(0.1)
 
         status = self.handler.get_job_status(job_id)
@@ -299,18 +286,14 @@ class TestAsyncJobHandler(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_active_jobs(self):
         """Get active jobs"""
-        job_id = await self.handler.submit_async_job(
-            "mock", "sync_method", {"value": "test"}
-        )
+        await self.handler.submit_async_job("mock", "sync_method", {"value": "test"})
 
         active = self.handler.get_active_jobs()
         self.assertGreaterEqual(active["total"], 0)
 
     async def test_get_completed_jobs(self):
         """Get completed jobs"""
-        job_id = await self.handler.submit_async_job(
-            "mock", "sync_method", {"value": "test"}
-        )
+        await self.handler.submit_async_job("mock", "sync_method", {"value": "test"})
         await asyncio.sleep(0.2)
 
         completed = self.handler.get_completed_jobs()

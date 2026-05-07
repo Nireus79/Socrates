@@ -142,9 +142,7 @@ class MaturityRepository(Repository[Dict[str, Any]]):
             return metrics.get("overall_score")
         return None
 
-    def update_category_score(
-        self, project_id: str, category: str, score: float
-    ) -> bool:
+    def update_category_score(self, project_id: str, category: str, score: float) -> bool:
         """
         Update a specific category score.
 

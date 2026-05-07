@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 class ThreatLevel(Enum):
     """Severity levels for detected threats."""
+
     NONE = "none"
     LOW = "low"
     MEDIUM = "medium"
@@ -24,6 +25,7 @@ class ThreatLevel(Enum):
 
 class ThreatType(Enum):
     """Types of threats that can be detected."""
+
     REASONING_INCONSISTENCY = "reasoning_inconsistency"
     FRAMEWORK_MANIPULATION = "framework_manipulation"
     PRINCIPLE_VIOLATION = "principle_violation"
@@ -141,33 +143,23 @@ class ThreatDetector:
         threats.extend(inconsistency_threats)
 
         # Detect framework manipulation patterns
-        manipulation_threats = self._detect_framework_manipulation(
-            framework_analyses
-        )
+        manipulation_threats = self._detect_framework_manipulation(framework_analyses)
         threats.extend(manipulation_threats)
 
         # Detect principle violations
-        principle_threats = self._detect_principle_violations(
-            framework_analyses
-        )
+        principle_threats = self._detect_principle_violations(framework_analyses)
         threats.extend(principle_threats)
 
         # Detect stakeholder harm patterns
-        harm_threats = self._detect_stakeholder_harm(
-            framework_analyses
-        )
+        harm_threats = self._detect_stakeholder_harm(framework_analyses)
         threats.extend(harm_threats)
 
         # Detect anomalous patterns
-        anomaly_threats = self._detect_pattern_anomalies(
-            confidence, final_conclusion
-        )
+        anomaly_threats = self._detect_pattern_anomalies(confidence, final_conclusion)
         threats.extend(anomaly_threats)
 
         # Detect confidence manipulation
-        confidence_threats = self._detect_confidence_manipulation(
-            confidence, framework_analyses
-        )
+        confidence_threats = self._detect_confidence_manipulation(confidence, framework_analyses)
         threats.extend(confidence_threats)
 
         # Detect escalation avoidance
@@ -188,10 +180,20 @@ class ThreatDetector:
         # Calculate overall threat level
         if threats:
             max_severity = max(
-                [ThreatLevel.NONE, ThreatLevel.LOW, ThreatLevel.MEDIUM,
-                 ThreatLevel.HIGH, ThreatLevel.CRITICAL],
-                key=lambda x: [ThreatLevel.NONE, ThreatLevel.LOW, ThreatLevel.MEDIUM,
-                              ThreatLevel.HIGH, ThreatLevel.CRITICAL].index(x)
+                [
+                    ThreatLevel.NONE,
+                    ThreatLevel.LOW,
+                    ThreatLevel.MEDIUM,
+                    ThreatLevel.HIGH,
+                    ThreatLevel.CRITICAL,
+                ],
+                key=lambda x: [
+                    ThreatLevel.NONE,
+                    ThreatLevel.LOW,
+                    ThreatLevel.MEDIUM,
+                    ThreatLevel.HIGH,
+                    ThreatLevel.CRITICAL,
+                ].index(x),
             )
 
             for threat in threats:
@@ -217,9 +219,7 @@ class ThreatDetector:
             analysis.overall_risk_score = 0.0
 
         # Determine if action is safe
-        analysis.is_safe = (
-            analysis.overall_threat_level in [ThreatLevel.NONE, ThreatLevel.LOW]
-        )
+        analysis.is_safe = analysis.overall_threat_level in [ThreatLevel.NONE, ThreatLevel.LOW]
 
         # Collect safety concerns and recommendations
         analysis.safety_concerns = [t.description for t in threats]
@@ -263,9 +263,7 @@ class ThreatDetector:
 
         return threats
 
-    def _detect_framework_manipulation(
-        self, framework_analyses: Dict[str, Any]
-    ) -> List[Threat]:
+    def _detect_framework_manipulation(self, framework_analyses: Dict[str, Any]) -> List[Threat]:
         """Detect signs of framework manipulation or gaming."""
         threats = []
 
@@ -273,10 +271,7 @@ class ThreatDetector:
             return threats
 
         # Check for suspiciously uniform conclusions
-        conclusions = [
-            str(f.get("conclusion", "unknown"))
-            for f in framework_analyses.values()
-        ]
+        conclusions = [str(f.get("conclusion", "unknown")) for f in framework_analyses.values()]
         unique_conclusions = set(conclusions)
 
         if len(unique_conclusions) == 1 and len(conclusions) > 1:
@@ -299,9 +294,7 @@ class ThreatDetector:
 
         return threats
 
-    def _detect_principle_violations(
-        self, framework_analyses: Dict[str, Any]
-    ) -> List[Threat]:
+    def _detect_principle_violations(self, framework_analyses: Dict[str, Any]) -> List[Threat]:
         """Detect violations of core principles."""
         threats = []
 
@@ -330,9 +323,7 @@ class ThreatDetector:
 
         return threats
 
-    def _detect_stakeholder_harm(
-        self, framework_analyses: Dict[str, Any]
-    ) -> List[Threat]:
+    def _detect_stakeholder_harm(self, framework_analyses: Dict[str, Any]) -> List[Threat]:
         """Detect patterns indicating stakeholder harm."""
         threats = []
 
@@ -368,9 +359,7 @@ class ThreatDetector:
 
         return threats
 
-    def _detect_pattern_anomalies(
-        self, confidence: float, conclusion: str
-    ) -> List[Threat]:
+    def _detect_pattern_anomalies(self, confidence: float, conclusion: str) -> List[Threat]:
         """Detect anomalies in reasoning patterns."""
         threats = []
 
@@ -459,9 +448,7 @@ class ThreatDetector:
 
         # Check for escalation that should have occurred
         if contradiction_analysis:
-            has_major_contradictions = contradiction_analysis.get(
-                "has_major_contradictions", False
-            )
+            has_major_contradictions = contradiction_analysis.get("has_major_contradictions", False)
             if has_major_contradictions and "escalate" not in conclusion.lower():
                 threat = Threat(
                     threat_type=ThreatType.ESCALATION_AVOIDANCE,

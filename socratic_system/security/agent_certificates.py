@@ -239,10 +239,12 @@ class CertificateAuthority:
             elif cert.is_expired():
                 status["expired"] += 1
             elif cert.requires_renewal():
-                status["expiring_soon"].append({
-                    "agent_id": cert.agent_id,
-                    "days_until_expiry": cert.days_until_expiration(),
-                })
+                status["expiring_soon"].append(
+                    {
+                        "agent_id": cert.agent_id,
+                        "days_until_expiry": cert.days_until_expiration(),
+                    }
+                )
             else:
                 status["valid"] += 1
 
@@ -251,10 +253,7 @@ class CertificateAuthority:
     def export_certificates(self, filepath: str) -> bool:
         """Export all certificates to JSON file."""
         try:
-            data = {
-                agent_id: cert.to_dict()
-                for agent_id, cert in self.issued_certificates.items()
-            }
+            data = {agent_id: cert.to_dict() for agent_id, cert in self.issued_certificates.items()}
 
             with open(filepath, "w") as f:
                 json.dump(data, f, indent=2)
@@ -285,9 +284,11 @@ class CertificateAuthority:
                     fingerprint=cert_data["fingerprint"],
                     key_size=cert_data["key_size"],
                     is_revoked=cert_data["is_revoked"],
-                    revoked_at=datetime.fromisoformat(cert_data["revoked_at"])
-                    if cert_data.get("revoked_at")
-                    else None,
+                    revoked_at=(
+                        datetime.fromisoformat(cert_data["revoked_at"])
+                        if cert_data.get("revoked_at")
+                        else None
+                    ),
                     revocation_reason=cert_data.get("revocation_reason"),
                 )
                 self.issued_certificates[agent_id] = cert

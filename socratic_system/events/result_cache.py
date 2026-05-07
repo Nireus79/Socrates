@@ -168,10 +168,7 @@ class ResultCache:
         Returns:
             Number of entries removed
         """
-        expired_keys = [
-            key for key, entry in self.cache.items()
-            if entry.is_expired()
-        ]
+        expired_keys = [key for key, entry in self.cache.items() if entry.is_expired()]
 
         for key in expired_keys:
             del self.cache[key]
@@ -188,9 +185,7 @@ class ResultCache:
         """
         hit_rate = 0.0
         if self.metrics["total_gets"] > 0:
-            hit_rate = (
-                self.metrics["cache_hits"] / self.metrics["total_gets"] * 100
-            )
+            hit_rate = self.metrics["cache_hits"] / self.metrics["total_gets"] * 100
 
         return {
             **self.metrics,
@@ -222,7 +217,4 @@ class ResultCache:
             Dictionary of valid entries
         """
         self.cleanup_expired()
-        return {
-            key: entry.value
-            for key, entry in self.cache.items()
-        }
+        return {key: entry.value for key, entry in self.cache.items()}

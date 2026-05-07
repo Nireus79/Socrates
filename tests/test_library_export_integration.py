@@ -5,9 +5,7 @@ Tests the complete workflow using SocratesAgentClient without exposing
 internal Socrates dependencies.
 """
 
-import asyncio
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 
 from socratic_system.api.client import SocratesAgentClient, SocratesAgentClientSync
 from socratic_system.messaging import CircuitBreaker, CircuitBreakerState, RetryPolicy
@@ -48,6 +46,7 @@ class TestCircuitBreaker:
 
         # Wait for timeout, then check
         import time
+
         time.sleep(0.02)  # Wait longer than timeout
         # Now allow_request should transition to HALF_OPEN
         assert breaker.allow_request() is True
@@ -55,11 +54,7 @@ class TestCircuitBreaker:
 
     def test_circuit_breaker_closes_after_successes(self):
         """Test circuit closes after success threshold in HALF_OPEN."""
-        breaker = CircuitBreaker(
-            failure_threshold=1,
-            success_threshold=2,
-            timeout_seconds=0
-        )
+        breaker = CircuitBreaker(failure_threshold=1, success_threshold=2, timeout_seconds=0)
 
         # Open circuit
         breaker.record_failure()
@@ -67,6 +62,7 @@ class TestCircuitBreaker:
 
         # Go to HALF_OPEN
         import time
+
         time.sleep(0.01)
         breaker.allow_request()
         assert breaker.state == CircuitBreakerState.HALF_OPEN
@@ -93,12 +89,7 @@ class TestRetryPolicy:
 
     def test_retry_policy_initialization(self):
         """Test retry policy initializes correctly."""
-        policy = RetryPolicy(
-            max_retries=3,
-            initial_delay=0.1,
-            max_delay=10.0,
-            backoff_factor=2.0
-        )
+        policy = RetryPolicy(max_retries=3, initial_delay=0.1, max_delay=10.0, backoff_factor=2.0)
         assert policy.max_retries == 3
         assert policy.initial_delay == 0.1
         assert policy.max_delay == 10.0
@@ -106,11 +97,7 @@ class TestRetryPolicy:
 
     def test_retry_policy_exponential_backoff(self):
         """Test exponential backoff calculation."""
-        policy = RetryPolicy(
-            initial_delay=0.1,
-            max_delay=10.0,
-            backoff_factor=2.0
-        )
+        policy = RetryPolicy(initial_delay=0.1, max_delay=10.0, backoff_factor=2.0)
 
         # Delays should double each attempt
         delays = [policy.get_delay(i) for i in range(5)]
@@ -122,11 +109,7 @@ class TestRetryPolicy:
 
     def test_retry_policy_respects_max_delay(self):
         """Test retry policy caps at max delay."""
-        policy = RetryPolicy(
-            initial_delay=1.0,
-            max_delay=5.0,
-            backoff_factor=3.0
-        )
+        policy = RetryPolicy(initial_delay=1.0, max_delay=5.0, backoff_factor=3.0)
 
         # At attempt 3, would be 27, but capped at 5
         delay = policy.get_delay(3)
@@ -170,9 +153,7 @@ class TestAgentBusResilience:
     def test_client_async_initialization(self):
         """Test async client initializes correctly."""
         client = SocratesAgentClient(
-            api_url="http://localhost:8000",
-            auth_token="test-token",
-            timeout=60.0
+            api_url="http://localhost:8000", auth_token="test-token", timeout=60.0
         )
 
         assert client is not None
@@ -180,10 +161,7 @@ class TestAgentBusResilience:
 
     def test_client_sync_wrapper(self):
         """Test synchronous client wrapper."""
-        client = SocratesAgentClientSync(
-            api_url="http://localhost:8000",
-            auth_token="test-token"
-        )
+        client = SocratesAgentClientSync(api_url="http://localhost:8000", auth_token="test-token")
 
         # Client should be initialized
         assert client is not None
@@ -228,8 +206,8 @@ class TestLibraryExportArchitecture:
 
     def test_di_container_service_injection(self):
         """Test DI container properly injects services."""
-        from socratic_system.di_container import DIContainer
         from socratic_system.config import SocratesConfig
+        from socratic_system.di_container import DIContainer
 
         config = SocratesConfig(api_key="test-key")
 
@@ -241,10 +219,10 @@ class TestLibraryExportArchitecture:
                 vector_db=None,
                 claude_client=None,
                 event_emitter=None,
-                system=None  # Phase 3: SocraticAgentsSystem instead of orchestrator
+                system=None,  # Phase 3: SocraticAgentsSystem instead of orchestrator
             )
             assert container is not None
-        except Exception as e:
+        except Exception:
             # Container creation might fail without full deps, but should be callable
             assert "DIContainer" in str(type(container)) or True
 
@@ -269,7 +247,7 @@ class TestPhase3BackgroundProcessing:
 
     def test_job_tracker_operations(self):
         """Test job tracker manages jobs correctly."""
-        from socratic_system.jobs import JobTracker, JobStatus
+        from socratic_system.jobs import JobStatus, JobTracker
 
         tracker = JobTracker()
 
@@ -307,10 +285,7 @@ class TestEndToEndLibraryUsage:
 
     def test_async_and_sync_compatibility(self):
         """Test async and sync clients are compatible."""
-        from socratic_system.api.client import (
-            SocratesAgentClient,
-            SocratesAgentClientSync
-        )
+        from socratic_system.api.client import SocratesAgentClient, SocratesAgentClientSync
 
         async_client = SocratesAgentClient()
         sync_client = SocratesAgentClientSync()
@@ -347,6 +322,7 @@ class TestPerformanceCharacteristics:
     def test_cache_lookup_performance(self):
         """Test cache lookup is fast."""
         import time
+
         from socratic_system.caching import InMemoryAnalysisCache
 
         cache = InMemoryAnalysisCache()

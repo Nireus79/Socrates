@@ -35,7 +35,9 @@ class QualityService(Service):
         self.analytics = AnalyticsCalculator(project_type=project_type)
         self.project_type = project_type
 
-    def calculate_phase_maturity(self, project_id: str, project: "ProjectContext") -> Dict[str, Any]:
+    def calculate_phase_maturity(
+        self, project_id: str, project: "ProjectContext"
+    ) -> Dict[str, Any]:
         """Calculate phase maturity for project.
 
         Args:
@@ -56,9 +58,7 @@ class QualityService(Service):
 
         # Store result
         self.repository.update_phase_maturity_score(
-            project_id,
-            project.phase,
-            maturity.overall_score
+            project_id, project.phase, maturity.overall_score
         )
 
         return {
@@ -70,7 +70,11 @@ class QualityService(Service):
         }
 
     def update_maturity_after_response(
-        self, project_id: str, project: "ProjectContext", insights: Optional[Dict] = None, user_id: str = None
+        self,
+        project_id: str,
+        project: "ProjectContext",
+        insights: Optional[Dict] = None,
+        user_id: str = None,
     ) -> Dict[str, Any]:
         """Update maturity after processing user response.
 
@@ -89,7 +93,9 @@ class QualityService(Service):
         if hasattr(project, "phase_maturity_scores"):
             score_before = project.phase_maturity_scores.get(project.phase, 0.0)
         else:
-            score_before = self.repository.get_phase_maturity_scores(project_id).get(project.phase, 0.0)
+            score_before = self.repository.get_phase_maturity_scores(project_id).get(
+                project.phase, 0.0
+            )
         answer_score = 0.0
 
         # Categorize insights if provided
@@ -100,16 +106,15 @@ class QualityService(Service):
                 # Calculate answer score as sum of confidence-weighted values
                 answer_score = sum(s.get("value", 1.0) * s.get("confidence", 0.9) for s in specs)
             else:
-                return {
-                    "status": "success",
-                    "message": "No new specs added"
-                }
+                return {"status": "success", "message": "No new specs added"}
 
         # Recalculate maturity
         maturity_result = self.calculate_phase_maturity(project_id, project)
 
         # Get score after (from project's overall maturity if available, otherwise from maturity result)
-        if hasattr(project, "_calculate_overall_maturity") and callable(project._calculate_overall_maturity):
+        if hasattr(project, "_calculate_overall_maturity") and callable(
+            project._calculate_overall_maturity
+        ):
             score_after = project._calculate_overall_maturity()
         else:
             score_after = maturity_result.get("overall_score", score_before)
@@ -126,7 +131,9 @@ class QualityService(Service):
             "phase": project.phase,
         }
 
-    def get_maturity_summary(self, project_id: str, project: "ProjectContext" = None) -> Dict[str, Any]:
+    def get_maturity_summary(
+        self, project_id: str, project: "ProjectContext" = None
+    ) -> Dict[str, Any]:
         """Get complete maturity summary for project.
 
         Args:
@@ -209,7 +216,11 @@ class QualityService(Service):
 
         # Calculate velocity from maturity history
         if hasattr(project, "maturity_history") and project.maturity_history:
-            deltas = [e.get("delta", 0) for e in project.maturity_history if e.get("event_type") == "response_processed"]
+            deltas = [
+                e.get("delta", 0)
+                for e in project.maturity_history
+                if e.get("event_type") == "response_processed"
+            ]
             if deltas:
                 metrics["velocity"] = sum(deltas) / len(deltas)
                 metrics["total_qa_sessions"] = len(deltas)

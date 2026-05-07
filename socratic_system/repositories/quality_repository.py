@@ -68,9 +68,7 @@ class QualityRepository(BaseRepository):
             self.logger.error(f"Failed to get phase maturity scores for {project_id}: {e}")
             return {}
 
-    def update_phase_maturity_score(
-        self, project_id: str, phase: str, score: float
-    ) -> bool:
+    def update_phase_maturity_score(self, project_id: str, phase: str, score: float) -> bool:
         """
         Update maturity score for a specific phase.
 
@@ -106,9 +104,7 @@ class QualityRepository(BaseRepository):
             )
             return True
         except Exception as e:
-            self.logger.error(
-                f"Failed to update phase maturity for {project_id}/{phase}: {e}"
-            )
+            self.logger.error(f"Failed to update phase maturity for {project_id}/{phase}: {e}")
             return False
 
     def get_category_scores(self, project_id: str) -> Dict[str, Dict[str, Any]]:
@@ -183,9 +179,7 @@ class QualityRepository(BaseRepository):
             self.logger.error(f"Failed to get analytics metrics for {project_id}: {e}")
             return {}
 
-    def update_analytics_metrics(
-        self, project_id: str, metrics: Dict[str, Any]
-    ) -> bool:
+    def update_analytics_metrics(self, project_id: str, metrics: Dict[str, Any]) -> bool:
         """
         Update analytics metrics for a project.
 
@@ -196,9 +190,7 @@ class QualityRepository(BaseRepository):
         Returns:
             True if successful, False otherwise
         """
-        self._log_operation(
-            "update_analytics_metrics", {"project_id": project_id}
-        )
+        self._log_operation("update_analytics_metrics", {"project_id": project_id})
         try:
             project = self.database.load_project(project_id)
             if not project:
@@ -233,9 +225,7 @@ class QualityRepository(BaseRepository):
             self.logger.error(f"Failed to get maturity history for {project_id}: {e}")
             return []
 
-    def add_maturity_event(
-        self, project_id: str, event: Dict[str, Any]
-    ) -> bool:
+    def add_maturity_event(self, project_id: str, event: Dict[str, Any]) -> bool:
         """
         Add a maturity event to history.
 
@@ -310,9 +300,7 @@ class QualityRepository(BaseRepository):
 
             project.categorized_specs[phase].extend(specs)
             self.database.save_project(project)
-            self.logger.debug(
-                f"Added {len(specs)} specs to phase {phase} for project {project_id}"
-            )
+            self.logger.debug(f"Added {len(specs)} specs to phase {phase} for project {project_id}")
             return True
         except Exception as e:
             self.logger.error(f"Failed to add categorized specs for {project_id}: {e}")

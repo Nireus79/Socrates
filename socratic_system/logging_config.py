@@ -189,12 +189,12 @@ class LoggingConfig:
         # Use UTF-8 encoding to handle Unicode characters like arrows (→)
         handler = logging.StreamHandler(sys.stdout)
         # Set encoding to UTF-8 to handle international characters
-        if hasattr(handler, 'setEncoding'):
-            handler.setEncoding('utf-8')
-        elif hasattr(handler.stream, 'reconfigure'):
+        if hasattr(handler, "setEncoding"):
+            handler.setEncoding("utf-8")
+        elif hasattr(handler.stream, "reconfigure"):
             # For Python 3.7+, try to reconfigure stdout to use UTF-8
             try:
-                handler.stream.reconfigure(encoding='utf-8', errors='replace')
+                handler.stream.reconfigure(encoding="utf-8", errors="replace")
             except Exception:
                 pass  # Fall back to default if reconfigure fails
         handler.setLevel(self.log_level)
@@ -223,7 +223,7 @@ class LoggingConfig:
 
         filepath = self.log_dir / filename
         handler = logging.handlers.RotatingFileHandler(
-            filepath, maxBytes=max_bytes, backupCount=backup_count, encoding='utf-8'
+            filepath, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
         )
         handler.setLevel(level)
 

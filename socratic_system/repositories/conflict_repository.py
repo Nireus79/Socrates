@@ -102,9 +102,7 @@ class ConflictRepository(BaseRepository):
 
             project.conflicts.append(conflict)
             self.database.save_project(project)
-            self.logger.debug(
-                f"Added {conflict_type} conflict to project {project_id}"
-            )
+            self.logger.debug(f"Added {conflict_type} conflict to project {project_id}")
             return True
         except Exception as e:
             self.logger.error(f"Failed to add conflict for {project_id}: {e}")
@@ -150,14 +148,10 @@ class ConflictRepository(BaseRepository):
             conflict["resolved_at"] = __import__("datetime").datetime.now().isoformat()
 
             self.database.save_project(project)
-            self.logger.debug(
-                f"Resolved conflict {conflict_index} in project {project_id}"
-            )
+            self.logger.debug(f"Resolved conflict {conflict_index} in project {project_id}")
             return True
         except Exception as e:
-            self.logger.error(
-                f"Failed to resolve conflict for {project_id}: {e}"
-            )
+            self.logger.error(f"Failed to resolve conflict for {project_id}: {e}")
             return False
 
     def get_unresolved_conflicts(self, project_id: str) -> List[Dict[str, Any]]:
@@ -170,25 +164,17 @@ class ConflictRepository(BaseRepository):
         Returns:
             List of unresolved conflict dicts
         """
-        self._log_operation(
-            "get_unresolved_conflicts", {"project_id": project_id}
-        )
+        self._log_operation("get_unresolved_conflicts", {"project_id": project_id})
         try:
             conflicts = self.get_project_conflicts(project_id)
             unresolved = [c for c in conflicts if c.get("status") == "unresolved"]
-            self.logger.debug(
-                f"Found {len(unresolved)} unresolved conflicts for {project_id}"
-            )
+            self.logger.debug(f"Found {len(unresolved)} unresolved conflicts for {project_id}")
             return unresolved
         except Exception as e:
-            self.logger.error(
-                f"Failed to get unresolved conflicts for {project_id}: {e}"
-            )
+            self.logger.error(f"Failed to get unresolved conflicts for {project_id}: {e}")
             return []
 
-    def get_conflicts_by_type(
-        self, project_id: str, conflict_type: str
-    ) -> List[Dict[str, Any]]:
+    def get_conflicts_by_type(self, project_id: str, conflict_type: str) -> List[Dict[str, Any]]:
         """
         Get conflicts of a specific type.
 
@@ -206,14 +192,10 @@ class ConflictRepository(BaseRepository):
         try:
             conflicts = self.get_project_conflicts(project_id)
             filtered = [c for c in conflicts if c.get("conflict_type") == conflict_type]
-            self.logger.debug(
-                f"Found {len(filtered)} {conflict_type} conflicts for {project_id}"
-            )
+            self.logger.debug(f"Found {len(filtered)} {conflict_type} conflicts for {project_id}")
             return filtered
         except Exception as e:
-            self.logger.error(
-                f"Failed to get {conflict_type} conflicts for {project_id}: {e}"
-            )
+            self.logger.error(f"Failed to get {conflict_type} conflicts for {project_id}: {e}")
             return []
 
     def get_high_severity_conflicts(self, project_id: str) -> List[Dict[str, Any]]:
@@ -226,23 +208,16 @@ class ConflictRepository(BaseRepository):
         Returns:
             List of high severity conflicts
         """
-        self._log_operation(
-            "get_high_severity_conflicts", {"project_id": project_id}
-        )
+        self._log_operation("get_high_severity_conflicts", {"project_id": project_id})
         try:
             conflicts = self.get_project_conflicts(project_id)
-            high_severity = [
-                c for c in conflicts
-                if c.get("severity") in ["high", "critical"]
-            ]
+            high_severity = [c for c in conflicts if c.get("severity") in ["high", "critical"]]
             self.logger.debug(
                 f"Found {len(high_severity)} high severity conflicts for {project_id}"
             )
             return high_severity
         except Exception as e:
-            self.logger.error(
-                f"Failed to get high severity conflicts for {project_id}: {e}"
-            )
+            self.logger.error(f"Failed to get high severity conflicts for {project_id}: {e}")
             return []
 
     def clear_conflicts(self, project_id: str) -> bool:

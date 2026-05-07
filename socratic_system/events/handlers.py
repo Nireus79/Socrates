@@ -58,9 +58,7 @@ class EventHandler:
 
         except Exception as e:
             self.error_count += 1
-            logging.error(
-                f"Error executing handler for {self.event_type}: {e}"
-            )
+            logging.error(f"Error executing handler for {self.event_type}: {e}")
             raise
 
 
@@ -104,8 +102,7 @@ class EventHandlerRegistry:
         """
         if event_type in self.handlers:
             self.handlers[event_type] = [
-                h for h in self.handlers[event_type]
-                if h.handler != handler
+                h for h in self.handlers[event_type] if h.handler != handler
             ]
 
     async def execute_handlers(
@@ -205,9 +202,7 @@ class AsyncEventProcessor:
             handler: Handler function
             async_handler: Whether handler is async
         """
-        self.handler_registry.register(
-            event_type, handler, async_handler
-        )
+        self.handler_registry.register(event_type, handler, async_handler)
 
     async def process_event(
         self,
@@ -224,9 +219,7 @@ class AsyncEventProcessor:
         Returns:
             Results from handlers
         """
-        return await self.handler_registry.execute_handlers(
-            event_type, data
-        )
+        return await self.handler_registry.execute_handlers(event_type, data)
 
     async def emit_and_process(
         self,

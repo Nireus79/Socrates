@@ -5,14 +5,11 @@ Tests logical inconsistency detection, principle conflict identification,
 and temporal consequence contradiction analysis.
 """
 
-import pytest
-from datetime import datetime
-
 from socratic_system.reasoning import (
-    EthicalDeliberation,
     ContradictionDetector,
     ContradictionType,
     EthicalConclusion,
+    EthicalDeliberation,
 )
 
 
@@ -97,9 +94,7 @@ class TestFrameworkDisagreement:
 
         # Framework disagreement might or might not exist depending on result
         if len(result.framework_analyses) > 1:
-            conclusions = [
-                f.conclusion for f in result.framework_analyses.values()
-            ]
+            conclusions = [f.conclusion for f in result.framework_analyses.values()]
             if len(set(conclusions)) > 1:
                 # If frameworks disagree, detector should find it
                 assert len(disagreement_contradictions) > 0
@@ -148,7 +143,7 @@ class TestPrincipleConflicts:
         analysis = self.detector.analyze(result)
 
         # Check for principle conflicts
-        principle_conflicts = [
+        [
             c
             for c in analysis.contradictions
             if c.contradiction_type == ContradictionType.PRINCIPLE_CONFLICT
@@ -199,7 +194,7 @@ class TestTemporalContradictions:
 
         analysis = self.detector.analyze(result)
 
-        temporal_contradictions = [
+        [
             c
             for c in analysis.contradictions
             if c.contradiction_type == ContradictionType.TEMPORAL_CONTRADICTION
@@ -249,7 +244,7 @@ class TestConsequenceMismatch:
 
         analysis = self.detector.analyze(result)
 
-        mismatch_contradictions = [
+        [
             c
             for c in analysis.contradictions
             if c.contradiction_type == ContradictionType.CONSEQUENCE_MISMATCH
@@ -309,7 +304,7 @@ class TestStakeholderConflicts:
 
         analysis = self.detector.analyze(result)
 
-        stakeholder_contradictions = [
+        [
             c
             for c in analysis.contradictions
             if c.contradiction_type == ContradictionType.STAKEHOLDER_CONFLICT
@@ -361,8 +356,7 @@ class TestConsistencyScore:
         # Result with fewer contradictions should have higher consistency
         # (not always true due to randomness, but generally expected)
         consistency_scores_valid = (
-            0.0 <= analysis1.consistency_score <= 1.0
-            and 0.0 <= analysis2.consistency_score <= 1.0
+            0.0 <= analysis1.consistency_score <= 1.0 and 0.0 <= analysis2.consistency_score <= 1.0
         )
         assert consistency_scores_valid
 
@@ -439,7 +433,7 @@ class TestIntegrationWithDeliberation:
         # If escalation is required, should have contradictions or low consistency
         if result.escalation_required:
             # Either contradictions or low consistency
-            has_issues = (
+            (
                 len(analysis.contradictions) > 0
                 or analysis.consistency_score < 0.7
                 or len(analysis.coherence_issues) > 0

@@ -176,15 +176,9 @@ class AgentRegistry:
             if capability is None:
                 return list(self._agents.keys())
 
-            return [
-                name
-                for name, meta in self._agents.items()
-                if capability in meta.capabilities
-            ]
+            return [name for name, meta in self._agents.items() if capability in meta.capabilities]
 
-    def is_available(
-        self, agent_name: str, check_health: bool = True
-    ) -> bool:
+    def is_available(self, agent_name: str, check_health: bool = True) -> bool:
         """Check if agent is available for requests.
 
         Args:

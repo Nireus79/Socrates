@@ -11,19 +11,14 @@ Tests the complete integration of all Phase 3 modules:
 - Security validation
 """
 
-import pytest
-import json
 import tempfile
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime
 
-from socratic_system.governance.ethical_governor import EthicalGovernor
-from socratic_system.reasoning.ethical_deliberation import EthicalDeliberation
-from socratic_system.security.agent_certificates import CertificateAuthority, AgentCertificate
-from socratic_system.agents.secure_agent_client import SecureAgentClient, SecureRequest, SecureResponse
+from socratic_system.agents.secure_agent_client import SecureAgentClient
 from socratic_system.agents.secure_agent_server import SecureAgentServer
+from socratic_system.governance.ethical_governor import EthicalGovernor
 from socratic_system.reasoning.threat_detector import ThreatDetector
-from socratic_system.reasoning.moral_precedent_engine import MoralPrecedentEngine
-from socratic_system.reasoning.contradiction_detector import ContradictionDetector
+from socratic_system.security.agent_certificates import CertificateAuthority
 
 
 class TestGovernorWithTLS:
@@ -289,12 +284,6 @@ class TestThreatDetectionWithSecureChannels:
 
     def test_threat_detector_history_tracking(self):
         """Threat detector maintains confidence and conclusion history."""
-        # Initialize threat detector
-        initial_length = len(self.threat_detector.confidence_history)
-
-        # Create certificate for context
-        cert = self.ca.issue_certificate("agent1")
-
         # Threat detector should track history
         assert self.threat_detector.confidence_history is not None
         assert isinstance(self.threat_detector.confidence_history, list)
@@ -340,7 +329,7 @@ class TestCompleteLedger:
 
     def test_security_audit_trail_with_certificates(self):
         """Audit trail includes certificate and TLS information."""
-        cert = self.ca.issue_certificate("agent1", valid_days=365)
+        self.ca.issue_certificate("agent1", valid_days=365)
 
         self.server.start()
 
@@ -350,7 +339,7 @@ class TestCompleteLedger:
         self.server.register_handler("audit_query", audit_handler)
 
         # Execute action with full audit trail
-        response = self.server.handle_request(
+        self.server.handle_request(
             request_id="req_001",
             source_agent="agent1",
             action="audit_query",
@@ -364,7 +353,7 @@ class TestCompleteLedger:
 
     def test_certificate_lifecycle_in_ledger(self):
         """Certificate lifecycle events are recorded."""
-        cert = self.ca.issue_certificate("agent1", valid_days=365)
+        self.ca.issue_certificate("agent1", valid_days=365)
         initial_status = self.ca.get_certificate_status()
         assert initial_status["valid"] == 1
 
@@ -605,10 +594,10 @@ class TestDataPersistence:
 
     def test_certificate_export_import_cycle(self):
         """Certificates survive export/import cycle."""
-        cert1 = self.ca.issue_certificate("agent1", valid_days=365)
-        cert2 = self.ca.issue_certificate("agent2", valid_days=365)
+        self.ca.issue_certificate("agent1", valid_days=365)
+        self.ca.issue_certificate("agent2", valid_days=365)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             filepath = f.name
 
         # Export
@@ -631,7 +620,7 @@ class TestDataPersistence:
         cert = self.ca.issue_certificate("agent1", valid_days=365)
         original_valid = cert.is_valid()
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             filepath = f.name
 
         self.ca.export_certificates(filepath)
@@ -712,7 +701,7 @@ class TestIntegrationScenarios:
             client_private_key_pem=client1_cert.private_key_pem,
             ca_certificate_pem="-----BEGIN CERTIFICATE-----\nca_cert\n-----END CERTIFICATE-----",
         )
-        connected1 = client1.connect(
+        client1.connect(
             target_agent_id="server",
             target_certificate_pem=server.get_certificate(),
         )
@@ -724,7 +713,7 @@ class TestIntegrationScenarios:
             client_private_key_pem=client2_cert.private_key_pem,
             ca_certificate_pem="-----BEGIN CERTIFICATE-----\nca_cert\n-----END CERTIFICATE-----",
         )
-        connected2 = client2.connect(
+        client2.connect(
             target_agent_id="server",
             target_certificate_pem=server.get_certificate(),
         )
@@ -738,4 +727,3 @@ class TestIntegrationScenarios:
         status = server.get_server_status()
         assert status["agent_id"] == "server"
         assert status["is_running"]
-

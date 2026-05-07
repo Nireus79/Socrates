@@ -40,6 +40,7 @@ class ConflictService(Service):
         else:
             # Mock repository for Phase 3 or when no database
             from unittest.mock import MagicMock
+
             self.repository = ConflictRepository(MagicMock())
 
     def detect_conflicts(
@@ -78,11 +79,13 @@ class ConflictService(Service):
             # Example: detect conflicting requirements
             for _key, value in insights.items():
                 if isinstance(value, str) and "conflict" in value.lower():
-                    detected.append({
-                        "type": "requirement",
-                        "severity": "medium",
-                        "description": value,
-                    })
+                    detected.append(
+                        {
+                            "type": "requirement",
+                            "severity": "medium",
+                            "description": value,
+                        }
+                    )
 
         return {
             "status": "success",

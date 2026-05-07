@@ -129,7 +129,9 @@ def create_socratic_system(config: SocratesConfig) -> SocraticAgentsSystem:
     )
 
 
-def quick_start_system(api_key: str, data_dir: str = None, log_level: str = "INFO") -> SocraticAgentsSystem:
+def quick_start_system(
+    api_key: str, data_dir: str = None, log_level: str = "INFO"
+) -> SocraticAgentsSystem:
     """
     Quick start with SocraticAgentsSystem and minimal configuration.
 

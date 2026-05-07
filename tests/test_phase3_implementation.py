@@ -12,11 +12,10 @@ Tests validate:
 import asyncio
 import time
 import unittest
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 from socratic_system.caching import InMemoryAnalysisCache
-from socratic_system.jobs import JobTracker, JobStatus, JobResult
+from socratic_system.jobs import JobStatus, JobTracker
 
 
 class TestInMemoryAnalysisCache(unittest.TestCase):
@@ -149,7 +148,7 @@ class TestJobTracker(unittest.TestCase):
 
     def test_get_job(self):
         """Test retrieving a job"""
-        job_result = self.tracker.create_job("quality_job_1", "project1")
+        self.tracker.create_job("quality_job_1", "project1")
         job = self.tracker.get_job("quality_job_1")
 
         self.assertIsNotNone(job)
@@ -210,9 +209,9 @@ class TestJobTracker(unittest.TestCase):
     def test_get_project_jobs(self):
         """Test getting all jobs for a project"""
         # Create multiple jobs for the same project
-        job1 = self.tracker.create_job("quality_job_1", "project1")
-        job2 = self.tracker.create_job("conflict_job_1", "project1")
-        job3 = self.tracker.create_job("quality_job_2", "project2")
+        self.tracker.create_job("quality_job_1", "project1")
+        self.tracker.create_job("conflict_job_1", "project1")
+        self.tracker.create_job("quality_job_2", "project2")
 
         project1_jobs = self.tracker.get_project_jobs("project1")
         self.assertEqual(len(project1_jobs), 2)
@@ -370,8 +369,6 @@ class TestBackgroundHandlers(unittest.IsolatedAsyncioTestCase):
         quality_result = {"status": "success", "score": 92}
         self.orchestrator.quality_controller.process = AsyncMock(return_value=quality_result)
 
-        event_data = {"project_id": "project1"}
-
         await self.handlers._process_quality_async("project1")
 
         # Check result is cached
@@ -420,7 +417,7 @@ class TestPollingEndpointBehavior(unittest.TestCase):
     def test_status_endpoint_pending(self):
         """Test status endpoint when analysis is pending"""
         # Create jobs but don't complete them
-        quality_job = self.job_tracker.create_job("quality_job_1", "project1")
+        self.job_tracker.create_job("quality_job_1", "project1")
 
         project_jobs = self.job_tracker.get_project_jobs("project1")
         self.assertEqual(len(project_jobs), 1)
@@ -571,7 +568,7 @@ class TestPhase3Integration(unittest.TestCase):
         # 2. Return response immediately
         # 3. Background tasks process analyses async
 
-        cache = InMemoryAnalysisCache()
+        InMemoryAnalysisCache()
         tracker = JobTracker()
 
         # Simulate immediate return in Phase 3
@@ -582,7 +579,7 @@ class TestPhase3Integration(unittest.TestCase):
         }
 
         # Jobs are created but don't block the response
-        job = tracker.create_job("quality_job_1", "project1")
+        tracker.create_job("quality_job_1", "project1")
         self.assertIsNotNone(response)
         self.assertTrue(response.get("_background_processing"))
 

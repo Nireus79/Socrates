@@ -1,7 +1,9 @@
 """Phase 2B: NoteManagerAgent Migration Tests"""
+
 import asyncio
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from socratic_agents.note_manager import NoteManagerAgent
 
 
@@ -28,7 +30,7 @@ class TestNoteManagerMigrationSetup:
         agent = NoteManagerAgent(mock_orchestrator)
 
         # Agent must have process method
-        assert hasattr(agent, 'process')
+        assert hasattr(agent, "process")
         assert callable(agent.process)
 
     def test_agent_has_process_async_method(self):
@@ -39,7 +41,7 @@ class TestNoteManagerMigrationSetup:
         agent = NoteManagerAgent(mock_orchestrator)
 
         # Agent must have process_async method
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "process_async")
         assert callable(agent.process_async)
 
     def test_agent_has_name_attribute(self):
@@ -50,7 +52,7 @@ class TestNoteManagerMigrationSetup:
         agent = NoteManagerAgent(mock_orchestrator)
 
         # Agent must identify itself
-        assert hasattr(agent, 'name')
+        assert hasattr(agent, "name")
         assert isinstance(agent.name, str)
 
 
@@ -323,10 +325,10 @@ class TestNoteManagerPhase2BIntegration:
         agent = NoteManagerAgent(mock_orchestrator)
 
         # Agent must have core interface
-        assert hasattr(agent, 'name')
-        assert hasattr(agent, 'orchestrator')
-        assert hasattr(agent, 'process')
-        assert hasattr(agent, 'process_async')
+        assert hasattr(agent, "name")
+        assert hasattr(agent, "orchestrator")
+        assert hasattr(agent, "process")
+        assert hasattr(agent, "process_async")
 
         # Verify they're callable/accessible
         assert isinstance(agent.name, str)

@@ -9,10 +9,7 @@ Validates that:
 4. Services work independently
 """
 
-import os
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from socratic_system.repositories.document_repository import DocumentRepository
 from socratic_system.services.document_service import DocumentService
@@ -94,7 +91,7 @@ class TestDocumentRepositoryOperations:
             word_count=100,
             chunk_count=5,
             entries_stored=5,
-            metadata={"is_code": False}
+            metadata={"is_code": False},
         )
 
         assert result is True
@@ -311,11 +308,7 @@ class TestDocumentServiceOperations:
         service.repository.add_document = MagicMock(return_value=True)
 
         text_content = "This is test content. " * 100
-        result = service.import_text(
-            "test-project",
-            text_content,
-            title="test_document"
-        )
+        result = service.import_text("test-project", text_content, title="test_document")
 
         assert result["status"] == "success"
         assert result["words_extracted"] > 0
@@ -350,13 +343,17 @@ class TestDocumentServiceOperations:
         mock_config = MagicMock()
 
         service = DocumentService(mock_config, mock_db)
-        service.repository.get_project_documents = MagicMock(return_value=[
-            {"file_name": "doc1.txt", "word_count": 100},
-        ])
-        service.repository.get_document_statistics = MagicMock(return_value={
-            "total_documents": 1,
-            "total_words": 100,
-        })
+        service.repository.get_project_documents = MagicMock(
+            return_value=[
+                {"file_name": "doc1.txt", "word_count": 100},
+            ]
+        )
+        service.repository.get_document_statistics = MagicMock(
+            return_value={
+                "total_documents": 1,
+                "total_words": 100,
+            }
+        )
 
         result = service.get_project_documents("test-project")
 
@@ -386,9 +383,7 @@ class TestDocumentServiceOperations:
 
         # Create content with known word count
         content = " ".join(["word"] * 1500)  # 1500 words
-        chunks = service._chunk_content(
-            content, chunk_size=500, overlap=50
-        )
+        chunks = service._chunk_content(content, chunk_size=500, overlap=50)
 
         # With 500 word chunks and 50 word overlap:
         # Chunk 1: words 0-499

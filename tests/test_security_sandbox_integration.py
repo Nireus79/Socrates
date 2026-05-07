@@ -5,17 +5,16 @@ Tests the sandbox execution, code validation, and integration with
 the CodeGenerator agent and audit logging.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
-import logging
-from datetime import datetime, timedelta
+from unittest.mock import MagicMock
 
-from socratic_system.security.sandbox import Sandbox, SandboxConfig, ExecutionResult
-from socratic_system.security.agent_identity import AgentIdentityManager, CapabilityToken
-from socratic_system.security.audit_logger import AuditLogger
+import pytest
+
 from socratic_system.agents.code_generator_sandbox_wrapper import (
     CodeGeneratorSandboxWrapper,
 )
+from socratic_system.security.agent_identity import AgentIdentityManager
+from socratic_system.security.audit_logger import AuditLogger
+from socratic_system.security.sandbox import Sandbox, SandboxConfig
 
 
 class TestSandboxExecution:
@@ -112,8 +111,7 @@ class TestAgentIdentityManager:
     def setup_method(self):
         """Set up identity manager for each test."""
         self.identity_manager = AgentIdentityManager(
-            secret_key="test_secret_key",
-            token_lifetime_hours=1
+            secret_key="test_secret_key", token_lifetime_hours=1
         )
 
     def test_register_agent_identity(self):
@@ -121,7 +119,7 @@ class TestAgentIdentityManager:
         identity = self.identity_manager.register_agent(
             agent_name="TestAgent",
             capabilities=["read", "write"],
-            resource_limits={"timeout": 60, "memory": 512}
+            resource_limits={"timeout": 60, "memory": 512},
         )
 
         assert identity.agent_name == "TestAgent"
@@ -135,7 +133,7 @@ class TestAgentIdentityManager:
         identity = self.identity_manager.register_agent(
             agent_name="TestAgent",
             capabilities=["execute", "analyze"],
-            resource_limits={"timeout": 30}
+            resource_limits={"timeout": 30},
         )
 
         # Issue token
@@ -143,7 +141,7 @@ class TestAgentIdentityManager:
             agent_id=identity.agent_id,
             capabilities=["execute"],
             resource_access={"files": "read"},
-            resource_limits={"timeout": 30}
+            resource_limits={"timeout": 30},
         )
 
         assert success is True
@@ -154,16 +152,14 @@ class TestAgentIdentityManager:
     def test_token_signature_verification(self):
         """Test that tokens have signature fields."""
         identity = self.identity_manager.register_agent(
-            agent_name="TestAgent",
-            capabilities=["read"],
-            resource_limits={}
+            agent_name="TestAgent", capabilities=["read"], resource_limits={}
         )
 
         success, token, error = self.identity_manager.issue_capability_token(
             agent_id=identity.agent_id,
             capabilities=["read"],
             resource_access={},
-            resource_limits={}
+            resource_limits={},
         )
 
         # Verify token has signature
@@ -174,9 +170,7 @@ class TestAgentIdentityManager:
     def test_prevent_capability_escalation(self):
         """Test that agents cannot escalate capabilities."""
         identity = self.identity_manager.register_agent(
-            agent_name="TestAgent",
-            capabilities=["read"],
-            resource_limits={}
+            agent_name="TestAgent", capabilities=["read"], resource_limits={}
         )
 
         # Try to issue token with capability agent doesn't have
@@ -184,7 +178,7 @@ class TestAgentIdentityManager:
             agent_id=identity.agent_id,
             capabilities=["admin"],  # Agent doesn't have this
             resource_access={},
-            resource_limits={}
+            resource_limits={},
         )
 
         assert success is False
@@ -193,16 +187,14 @@ class TestAgentIdentityManager:
     def test_token_revocation(self):
         """Test token revocation."""
         identity = self.identity_manager.register_agent(
-            agent_name="TestAgent",
-            capabilities=["read"],
-            resource_limits={}
+            agent_name="TestAgent", capabilities=["read"], resource_limits={}
         )
 
         success, token, error = self.identity_manager.issue_capability_token(
             agent_id=identity.agent_id,
             capabilities=["read"],
             resource_access={},
-            resource_limits={}
+            resource_limits={},
         )
 
         assert token is not None
@@ -218,9 +210,7 @@ class TestAgentIdentityManager:
     def test_agent_revocation(self):
         """Test revoking all capabilities for an agent."""
         identity = self.identity_manager.register_agent(
-            agent_name="TestAgent",
-            capabilities=["read", "write"],
-            resource_limits={}
+            agent_name="TestAgent", capabilities=["read", "write"], resource_limits={}
         )
 
         # Revoke agent
@@ -228,9 +218,7 @@ class TestAgentIdentityManager:
         assert revoked is True
 
         # Verify agent is no longer active
-        success, caps, error = self.identity_manager.get_agent_capabilities(
-            identity.agent_id
-        )
+        success, caps, error = self.identity_manager.get_agent_capabilities(identity.agent_id)
         assert success is False
 
     def test_identity_manager_statistics(self):
@@ -238,9 +226,7 @@ class TestAgentIdentityManager:
         # Register multiple agents
         for i in range(3):
             self.identity_manager.register_agent(
-                agent_name=f"Agent{i}",
-                capabilities=["read"],
-                resource_limits={}
+                agent_name=f"Agent{i}", capabilities=["read"], resource_limits={}
             )
 
         stats = self.identity_manager.get_stats()
@@ -262,15 +248,12 @@ class TestCodeGeneratorSandboxWrapper:
             base_agent=self.mock_base_agent,
             sandbox=self.sandbox,
             audit_logger=self.audit_logger,
-            validate_before_execution=True
+            validate_before_execution=True,
         )
 
     def test_wrapper_delegates_to_base_agent(self):
         """Test that wrapper delegates process calls to base agent."""
-        expected_result = {
-            "status": "success",
-            "artifact": "print('Hello')"
-        }
+        expected_result = {"status": "success", "artifact": "print('Hello')"}
         self.mock_base_agent.process.return_value = expected_result
 
         request = {"action": "generate_artifact"}
@@ -281,10 +264,7 @@ class TestCodeGeneratorSandboxWrapper:
 
     def test_wrapper_logs_generation_request(self):
         """Test that wrapper logs generation requests."""
-        self.mock_base_agent.process.return_value = {
-            "status": "success",
-            "artifact": "x = 5"
-        }
+        self.mock_base_agent.process.return_value = {"status": "success", "artifact": "x = 5"}
 
         request = {"action": "generate_artifact"}
         self.wrapper.process(request)
@@ -298,13 +278,10 @@ class TestCodeGeneratorSandboxWrapper:
         dangerous_code = "eval('2+2')"
         self.mock_base_agent.process.return_value = {
             "status": "success",
-            "artifact": dangerous_code
+            "artifact": dangerous_code,
         }
 
-        request = {
-            "action": "generate_artifact",
-            "execute_generated_code": True
-        }
+        request = {"action": "generate_artifact", "execute_generated_code": True}
         result = self.wrapper.process(request)
 
         # Should fail validation
@@ -318,15 +295,9 @@ class TestCodeGeneratorSandboxWrapper:
 result = 2 + 2
 print(f"Result: {result}")
 """
-        self.mock_base_agent.process.return_value = {
-            "status": "success",
-            "artifact": safe_code
-        }
+        self.mock_base_agent.process.return_value = {"status": "success", "artifact": safe_code}
 
-        request = {
-            "action": "generate_artifact",
-            "execute_generated_code": True
-        }
+        request = {"action": "generate_artifact", "execute_generated_code": True}
         result = self.wrapper.process(request)
 
         # Should execute successfully
@@ -340,15 +311,9 @@ print(f"Result: {result}")
         error_code = """
 raise ValueError("Test error")
 """
-        self.mock_base_agent.process.return_value = {
-            "status": "success",
-            "artifact": error_code
-        }
+        self.mock_base_agent.process.return_value = {"status": "success", "artifact": error_code}
 
-        request = {
-            "action": "generate_artifact",
-            "execute_generated_code": True
-        }
+        request = {"action": "generate_artifact", "execute_generated_code": True}
         result = self.wrapper.process(request)
 
         # Should capture error
@@ -359,10 +324,7 @@ raise ValueError("Test error")
     def test_wrapper_does_not_execute_without_flag(self):
         """Test that wrapper doesn't execute code without explicit flag."""
         code = "print('Should not execute')"
-        self.mock_base_agent.process.return_value = {
-            "status": "success",
-            "artifact": code
-        }
+        self.mock_base_agent.process.return_value = {"status": "success", "artifact": code}
 
         request = {
             "action": "generate_artifact",
@@ -376,15 +338,9 @@ raise ValueError("Test error")
     def test_wrapper_logs_execution_results(self):
         """Test that wrapper logs execution results."""
         safe_code = "x = 5"
-        self.mock_base_agent.process.return_value = {
-            "status": "success",
-            "artifact": safe_code
-        }
+        self.mock_base_agent.process.return_value = {"status": "success", "artifact": safe_code}
 
-        request = {
-            "action": "generate_artifact",
-            "execute_generated_code": True
-        }
+        request = {"action": "generate_artifact", "execute_generated_code": True}
         self.wrapper.process(request)
 
         # Verify execution was logged
@@ -397,11 +353,7 @@ class TestSecurityIntegration:
 
     def test_sandbox_resource_limits(self):
         """Test that sandbox enforces resource limits."""
-        config = SandboxConfig(
-            timeout_seconds=1,
-            max_memory_mb=50,
-            max_file_handles=2
-        )
+        config = SandboxConfig(timeout_seconds=1, max_memory_mb=50, max_file_handles=2)
         sandbox = Sandbox(config)
 
         # Code that tries to use lots of memory
@@ -416,16 +368,11 @@ for i in range(1000000):
 
     def test_audit_logging_completeness(self):
         """Test that security operations are fully logged."""
-        audit_logger = AuditLogger(
-            db_connection=None,  # In-memory logger
-            retention_days=1
-        )
+        audit_logger = AuditLogger(db_connection=None, retention_days=1)  # In-memory logger
 
         # Log agent action
         result_id = audit_logger.log_agent_action(
-            agent_name="TestAgent",
-            action="code_execution",
-            allowed=True
+            agent_name="TestAgent", action="code_execution", allowed=True
         )
 
         # Verify logging returned an ID
@@ -441,23 +388,15 @@ for i in range(1000000):
 
         # Register agent with limited capabilities
         identity = identity_manager.register_agent(
-            agent_name="LimitedAgent",
-            capabilities=["read"],
-            resource_limits={}
+            agent_name="LimitedAgent", capabilities=["read"], resource_limits={}
         )
 
         # Check that agent can perform allowed action
-        allowed, error = identity_manager.can_perform_action(
-            identity.agent_id,
-            "read"
-        )
+        allowed, error = identity_manager.can_perform_action(identity.agent_id, "read")
         assert allowed is True
 
         # Check that agent cannot perform disallowed action
-        allowed, error = identity_manager.can_perform_action(
-            identity.agent_id,
-            "admin"
-        )
+        allowed, error = identity_manager.can_perform_action(identity.agent_id, "admin")
         assert allowed is False
         assert error is not None
 
@@ -470,15 +409,11 @@ class TestSecurityDefenseLayers:
         identity_manager = AgentIdentityManager("secret")
 
         identity = identity_manager.register_agent(
-            agent_name="Agent1",
-            capabilities=["read"],
-            resource_limits={}
+            agent_name="Agent1", capabilities=["read"], resource_limits={}
         )
 
         # Should be able to find registered agent
-        success, caps, error = identity_manager.get_agent_capabilities(
-            identity.agent_id
-        )
+        success, caps, error = identity_manager.get_agent_capabilities(identity.agent_id)
         assert success is True
         assert "read" in caps
 
@@ -489,23 +424,15 @@ class TestSecurityDefenseLayers:
         identity_manager = AgentIdentityManager("secret")
 
         identity = identity_manager.register_agent(
-            agent_name="RestrictedAgent",
-            capabilities=["read_only"],
-            resource_limits={"timeout": 5}
+            agent_name="RestrictedAgent", capabilities=["read_only"], resource_limits={"timeout": 5}
         )
 
         # Only allowed capability
-        allowed, _ = identity_manager.can_perform_action(
-            identity.agent_id,
-            "read_only"
-        )
+        allowed, _ = identity_manager.can_perform_action(identity.agent_id, "read_only")
         assert allowed is True
 
         # Denied capability
-        allowed, _ = identity_manager.can_perform_action(
-            identity.agent_id,
-            "write"
-        )
+        allowed, _ = identity_manager.can_perform_action(identity.agent_id, "write")
         assert allowed is False
 
     @pytest.mark.skip(reason="Sandbox validation patterns need refinement")
@@ -516,9 +443,7 @@ class TestSecurityDefenseLayers:
         sandbox = Sandbox(SandboxConfig())
 
         # Dangerous code should be rejected
-        is_safe, violations = sandbox.validate_code_safety(
-            "exec('print(1)')"
-        )
+        is_safe, violations = sandbox.validate_code_safety("exec('print(1)')")
         assert is_safe is False
 
     def test_layer_4_safe_execution(self):
@@ -535,11 +460,7 @@ class TestSecurityDefenseLayers:
         audit_logger = AuditLogger(db_connection=None)
 
         # Log action
-        audit_logger.log_agent_action(
-            agent_name="TestAgent",
-            action="test_action",
-            allowed=True
-        )
+        audit_logger.log_agent_action(agent_name="TestAgent", action="test_action", allowed=True)
 
         # Verify logger is functioning
         assert audit_logger.logger is not None

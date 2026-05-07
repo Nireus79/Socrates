@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class JobStatus(Enum):
     """Status of background job"""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -51,7 +52,7 @@ class JobResult:
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "result": self.result,
             "error": self.error,
-            "progress": self.progress
+            "progress": self.progress,
         }
 
     def is_complete(self) -> bool:
@@ -88,7 +89,7 @@ class JobTracker:
                 job_id=job_id,
                 project_id=project_id,
                 status=JobStatus.PENDING,
-                created_at=datetime.now()
+                created_at=datetime.now(),
             )
             self._jobs[job_id] = job
             logger.debug(f"Job created: {job_id} for project {project_id}")
@@ -181,10 +182,7 @@ class JobTracker:
             List of JobResult objects
         """
         with self._lock:
-            return [
-                job for job in self._jobs.values()
-                if job.project_id == project_id
-            ]
+            return [job for job in self._jobs.values() if job.project_id == project_id]
 
     def get_pending_jobs(self) -> list:
         """Get all pending jobs.
@@ -193,10 +191,7 @@ class JobTracker:
             List of JobResult objects in PENDING status
         """
         with self._lock:
-            return [
-                job for job in self._jobs.values()
-                if job.status == JobStatus.PENDING
-            ]
+            return [job for job in self._jobs.values() if job.status == JobStatus.PENDING]
 
     def delete_job(self, job_id: str):
         """Delete job entry (for cleanup).
@@ -250,5 +245,5 @@ class JobTracker:
                 "processing": processing,
                 "completed": completed,
                 "failed": failed,
-                "max_jobs": self._max_jobs
+                "max_jobs": self._max_jobs,
             }

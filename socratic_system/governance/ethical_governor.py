@@ -58,7 +58,10 @@ class EthicalDecision:
         """Determine if decision requires human escalation."""
         if self.decision_type == "ESCALATE":
             return True
-        if self.threat_analysis and self.threat_analysis.overall_threat_level.value in ["high", "critical"]:
+        if self.threat_analysis and self.threat_analysis.overall_threat_level.value in [
+            "high",
+            "critical",
+        ]:
             return True
         if self.confidence < 0.6:
             return True
@@ -169,12 +172,17 @@ class EthicalGovernor:
                 if deliberation_result.final_conclusion.value == "blocked":
                     decision.allowed = False
                     decision.decision_type = "DENY"
-                    decision.reasoning = f"Ethical violation: {deliberation_result.overall_reasoning}"
+                    decision.reasoning = (
+                        f"Ethical violation: {deliberation_result.overall_reasoning}"
+                    )
                     decision.violations = deliberation_result.concerns
 
                 if deliberation_result.escalation_required:
                     decision.decision_type = "ESCALATE"
-                    decision.reasoning = deliberation_result.escalation_reason or "Escalation required due to framework disagreement"
+                    decision.reasoning = (
+                        deliberation_result.escalation_reason
+                        or "Escalation required due to framework disagreement"
+                    )
 
             except Exception as e:
                 self.logger.error(f"[Governor] Deliberation failed: {e}")
@@ -185,9 +193,7 @@ class EthicalGovernor:
         # Step 2: Contradiction Detection
         if self.contradiction_detector and decision.deliberation:
             try:
-                contradiction_analysis = self.contradiction_detector.analyze(
-                    decision.deliberation
-                )
+                contradiction_analysis = self.contradiction_detector.analyze(decision.deliberation)
                 decision.contradictions = contradiction_analysis
 
                 # High inconsistency may escalate
@@ -238,7 +244,10 @@ class EthicalGovernor:
                 # Convert framework analyses to dict format for threat detector
                 framework_analyses_dict = {}
                 if decision.deliberation:
-                    for framework_type, analysis in decision.deliberation.framework_analyses.items():
+                    for (
+                        framework_type,
+                        analysis,
+                    ) in decision.deliberation.framework_analyses.items():
                         framework_analyses_dict[framework_type.value] = {
                             "conclusion": analysis.conclusion.value,
                             "confidence": analysis.confidence,
@@ -250,12 +259,26 @@ class EthicalGovernor:
                     action=action,
                     framework_analyses=framework_analyses_dict,
                     contradiction_analysis={
-                        "num_contradictions": len(decision.contradictions.contradictions) if decision.contradictions else 0,
-                        "has_major_contradictions": decision.contradictions.has_major_contradictions if decision.contradictions else False,
+                        "num_contradictions": (
+                            len(decision.contradictions.contradictions)
+                            if decision.contradictions
+                            else 0
+                        ),
+                        "has_major_contradictions": (
+                            decision.contradictions.has_major_contradictions
+                            if decision.contradictions
+                            else False
+                        ),
                     },
                     precedent_analysis={
-                        "consistent": decision.precedent.precedent_consistency if decision.precedent else True,
-                        "recommended": decision.precedent.recommended_conclusion.value if decision.precedent and decision.precedent.recommended_conclusion else "allowed",
+                        "consistent": (
+                            decision.precedent.precedent_consistency if decision.precedent else True
+                        ),
+                        "recommended": (
+                            decision.precedent.recommended_conclusion.value
+                            if decision.precedent and decision.precedent.recommended_conclusion
+                            else "allowed"
+                        ),
                     },
                     confidence=decision.confidence,
                     final_conclusion="allowed" if decision.allowed else "denied",
@@ -265,7 +288,9 @@ class EthicalGovernor:
                 # Escalate if threats detected
                 if not threat_analysis.is_safe:
                     decision.decision_type = "ESCALATE"
-                    decision.reasoning += f"\nThreats detected: {threat_analysis.overall_threat_level.value}"
+                    decision.reasoning += (
+                        f"\nThreats detected: {threat_analysis.overall_threat_level.value}"
+                    )
                     decision.allowed = False  # Conservative: deny if threats
 
             except Exception as e:
@@ -311,9 +336,8 @@ class EthicalGovernor:
         return {
             "total_decisions": len(self.decisions),
             "escalations": len(self.escalations),
-            "allow_rate": sum(
-                1 for d in self.decisions.values() if d.allowed
-            ) / max(1, len(self.decisions)),
+            "allow_rate": sum(1 for d in self.decisions.values() if d.allowed)
+            / max(1, len(self.decisions)),
             "decisions": {
                 did: {
                     "action": d.action,
@@ -361,18 +385,30 @@ class EthicalGovernor:
             "violations": decision.violations,
             "reasoning_artifacts": {
                 "deliberation": deliberation_artifact,
-                "contradictions": {
-                    "num_contradictions": len(decision.contradictions.contradictions),
-                    "consistency_score": decision.contradictions.consistency_score,
-                } if decision.contradictions else None,
-                "precedent": {
-                    "consistent": decision.precedent.precedent_consistency,
-                    "historical_pattern": decision.precedent.historical_pattern,
-                } if decision.precedent else None,
-                "threat_analysis": {
-                    "threats": len(decision.threat_analysis.threats),
-                    "threat_level": decision.threat_analysis.overall_threat_level.value,
-                    "risk_score": decision.threat_analysis.overall_risk_score,
-                } if decision.threat_analysis else None,
+                "contradictions": (
+                    {
+                        "num_contradictions": len(decision.contradictions.contradictions),
+                        "consistency_score": decision.contradictions.consistency_score,
+                    }
+                    if decision.contradictions
+                    else None
+                ),
+                "precedent": (
+                    {
+                        "consistent": decision.precedent.precedent_consistency,
+                        "historical_pattern": decision.precedent.historical_pattern,
+                    }
+                    if decision.precedent
+                    else None
+                ),
+                "threat_analysis": (
+                    {
+                        "threats": len(decision.threat_analysis.threats),
+                        "threat_level": decision.threat_analysis.overall_threat_level.value,
+                        "risk_score": decision.threat_analysis.overall_risk_score,
+                    }
+                    if decision.threat_analysis
+                    else None
+                ),
             },
         }

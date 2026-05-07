@@ -113,9 +113,7 @@ class DocumentRepository(BaseRepository):
             self.logger.error(f"Failed to add document for {project_id}: {e}")
             return False
 
-    def get_document_by_name(
-        self, project_id: str, file_name: str
-    ) -> Optional[Dict[str, Any]]:
+    def get_document_by_name(self, project_id: str, file_name: str) -> Optional[Dict[str, Any]]:
         """
         Get a document by file name.
 
@@ -137,14 +135,10 @@ class DocumentRepository(BaseRepository):
                     return doc
             return None
         except Exception as e:
-            self.logger.error(
-                f"Failed to get document {file_name} for {project_id}: {e}"
-            )
+            self.logger.error(f"Failed to get document {file_name} for {project_id}: {e}")
             return None
 
-    def get_documents_by_type(
-        self, project_id: str, content_type: str
-    ) -> List[Dict[str, Any]]:
+    def get_documents_by_type(self, project_id: str, content_type: str) -> List[Dict[str, Any]]:
         """
         Get all documents of a specific type.
 
@@ -162,14 +156,10 @@ class DocumentRepository(BaseRepository):
         try:
             documents = self.get_project_documents(project_id)
             filtered = [d for d in documents if d.get("content_type") == content_type]
-            self.logger.debug(
-                f"Found {len(filtered)} {content_type} documents for {project_id}"
-            )
+            self.logger.debug(f"Found {len(filtered)} {content_type} documents for {project_id}")
             return filtered
         except Exception as e:
-            self.logger.error(
-                f"Failed to get {content_type} documents for {project_id}: {e}"
-            )
+            self.logger.error(f"Failed to get {content_type} documents for {project_id}: {e}")
             return []
 
     def get_document_statistics(self, project_id: str) -> Dict[str, Any]:
@@ -182,9 +172,7 @@ class DocumentRepository(BaseRepository):
         Returns:
             Dict with document statistics
         """
-        self._log_operation(
-            "get_document_statistics", {"project_id": project_id}
-        )
+        self._log_operation("get_document_statistics", {"project_id": project_id})
         try:
             documents = self.get_project_documents(project_id)
 
@@ -220,9 +208,7 @@ class DocumentRepository(BaseRepository):
             self.logger.error(f"Failed to get document statistics for {project_id}: {e}")
             return {"total_documents": 0, "total_words": 0}
 
-    def delete_document(
-        self, project_id: str, file_name: str
-    ) -> bool:
+    def delete_document(self, project_id: str, file_name: str) -> bool:
         """
         Delete a document record from project.
 
@@ -252,9 +238,7 @@ class DocumentRepository(BaseRepository):
                 self.logger.debug(f"Deleted document {file_name} from {project_id}")
                 return True
             else:
-                self.logger.warning(
-                    f"Document {file_name} not found in project {project_id}"
-                )
+                self.logger.warning(f"Document {file_name} not found in project {project_id}")
                 return False
         except Exception as e:
             self.logger.error(f"Failed to delete document for {project_id}: {e}")
