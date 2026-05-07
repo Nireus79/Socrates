@@ -275,8 +275,6 @@ async def interpret_input(
         # Get user's auth method if logged in
         user_auth_method = "api_key"
         if current_user:
-            from socrates_api.database import get_database
-
             user_obj = db.load_user(current_user)
             if user_obj and hasattr(user_obj, "claude_auth_method"):
                 user_auth_method = user_obj.claude_auth_method or "api_key"

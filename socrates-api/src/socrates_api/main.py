@@ -17,17 +17,10 @@ from typing import Optional
 from dotenv import load_dotenv
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request, status
-
-# Load environment variables from .env file
-env_path = Path(__file__).parent.parent.parent / ".env"
-if env_path.exists():
-    load_dotenv(env_path)
-else:
-    load_dotenv()  # Load from current directory or system environment
-from socrates_api.middleware.cors_fix import SimpleCORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
 
+from socrates_api.middleware.cors_fix import SimpleCORSMiddleware
 from socrates_api.middleware.metrics import (
     add_metrics_middleware,
     get_metrics_summary,
@@ -38,6 +31,13 @@ from socrates_api.middleware.rate_limit import (
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware
 from socratic_system.events import EventType
+
+# Load environment variables from .env file
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    load_dotenv()  # Load from current directory or system environment
 from socratic_system.exceptions import SocratesError
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 

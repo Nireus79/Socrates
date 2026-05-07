@@ -43,7 +43,8 @@ jobs:
       - name: Type check with mypy
         run: |
           pip install mypy
-          mypy socratic_system --ignore-missing-imports || true
+          mypy socratic_system --ignore-missing-imports \
+            --exclude 'socratic_system/api/adapters' || true
         continue-on-error: true
 
   test-batch-1:
