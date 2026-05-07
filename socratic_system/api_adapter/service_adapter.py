@@ -205,7 +205,7 @@ class ServiceAdapter(BaseAdapter):
         """
         return self.registry.get_registry_info()
 
-    def get_service_info(self, service_name: str) -> Dict[str, Any]:
+    def get_service_info(self, service_name: str) -> Optional[Dict[str, Any]]:
         """
         Get service information.
 
@@ -213,7 +213,7 @@ class ServiceAdapter(BaseAdapter):
             service_name: Service name
 
         Returns:
-            Service information
+            Service information or None if not found
 
         Raises:
             AdapterValidationError: If service not found
@@ -230,7 +230,7 @@ class ServiceAdapter(BaseAdapter):
         self,
         service_name: str,
         method_name: str,
-    ) -> Dict[str, Any]:
+    ) -> Optional[Dict[str, Any]]:
         """
         Get method information.
 
@@ -239,7 +239,7 @@ class ServiceAdapter(BaseAdapter):
             method_name: Method name
 
         Returns:
-            Method information
+            Method information or None if not found
 
         Raises:
             AdapterValidationError: If service or method not found

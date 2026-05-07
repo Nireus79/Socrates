@@ -5,7 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/jobs/job_tracker.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/jobs/job_tracker.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/messaging/agent_bus.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/messaging/agent_bus.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/messaging/middleware.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/messaging/middleware.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/security/agent_certificates.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/security/agent_certificates.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_system/security/agent_identity.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/security/agent_identity.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/security/mutual_tls.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/security/mutual_tls.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

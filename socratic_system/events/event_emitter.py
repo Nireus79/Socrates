@@ -8,7 +8,7 @@ import asyncio
 import logging
 import threading
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from .event_types import EventType
 
@@ -109,7 +109,7 @@ class EventEmitter:
 
     def emit(
         self,
-        event_type: EventType,
+        event_type: Union[EventType, str],
         data: Optional[Dict[str, Any]] = None,
         skip_logging: bool = False,
     ) -> None:
@@ -117,7 +117,7 @@ class EventEmitter:
         Emit an event to all registered listeners.
 
         Args:
-            event_type: The type of event to emit
+            event_type: The type of event to emit (EventType enum or string)
             data: Optional dictionary of data to pass to listeners
             skip_logging: If True, skip logging this event (useful for high-frequency events)
 

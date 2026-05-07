@@ -79,6 +79,7 @@ class ResponseDTO(BaseModel):
             status="error",
             service=service,
             data=data,
+            message=error_message,
         )
 
 
