@@ -43,7 +43,12 @@ class SubscriptionStatusCommand(BaseCommand):
         print(
             f"{Fore.WHITE}Status:{Style.RESET_ALL} {Fore.GREEN}{user.subscription_status.title()}{Style.RESET_ALL}"
         )
-        print(f"{Fore.WHITE}Monthly Cost:{Style.RESET_ALL} ${limits.monthly_cost:.2f}\n")
+        print(f"{Fore.WHITE}Monthly Cost:{Style.RESET_ALL} ${limits.monthly_cost:.2f}")
+        if user.testing_mode:
+            print(
+                f"{Fore.WHITE}Testing Mode:{Style.RESET_ALL} {Fore.MAGENTA}ENABLED (all features unlocked){Style.RESET_ALL}"
+            )
+        print()
 
         print(f"{Fore.CYAN}Usage This Month{Style.RESET_ALL}\n")
 
