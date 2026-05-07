@@ -11,7 +11,7 @@ This enables:
 - Service lifecycle management
 """
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from socratic_nexus.clients import ClaudeClient
 
@@ -63,8 +63,8 @@ class ServiceContainer:
         self.claude_client = claude_client
         self.event_emitter = event_emitter
 
-        # Service cache
-        self._services: Dict[str, Service] = {}
+        # Service cache (holds both services and repositories)
+        self._services: Dict[str, Any] = {}
 
     # Repository accessors
 

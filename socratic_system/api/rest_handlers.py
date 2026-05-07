@@ -11,8 +11,8 @@ try:
     from pydantic import BaseModel
 except ImportError:
     # FastAPI optional - only needed if using REST API
-    FastAPI = None
-    BaseModel = object
+    FastAPI = None  # type: ignore
+    BaseModel = object  # type: ignore
 
 logger = logging.getLogger(__name__)
 
