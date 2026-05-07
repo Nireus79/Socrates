@@ -29,7 +29,7 @@ Example:
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 try:
     from langchain.callbacks.manager import (

@@ -36,7 +36,7 @@ Example:
 """
 
 import logging
-from typing import Any, Callable, Dict, Optional, TypedDict
+from typing import Any, Callable, Dict, List, Optional, TypedDict
 
 try:
     from langchain.schema import AIMessage, BaseMessage, HumanMessage
