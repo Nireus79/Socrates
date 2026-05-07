@@ -32,6 +32,11 @@ export const CollaborationPage: React.FC = () => {
   const { hasFeature, refreshSubscription } = useSubscriptionStore();
   const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
   const [featureCheckComplete, setFeatureCheckComplete] = React.useState(false);
+  const [showAddModal, setShowAddModal] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState('team');
+  const [collabToRemove, setCollabToRemove] = React.useState<string | null>(null);
+  const [showRemoveConfirm, setShowRemoveConfirm] = React.useState(false);
+  const [isRemoving, setIsRemoving] = React.useState(false);
   const {
     collaborators,
     invitations,
@@ -42,6 +47,8 @@ export const CollaborationPage: React.FC = () => {
     updateCollaboratorRole,
     removeCollaborator,
     clearError,
+    activities,
+    fetchActivities,
   } = useCollaborationStore();
 
   // Refresh subscription status on page load to check testing mode
@@ -71,13 +78,6 @@ export const CollaborationPage: React.FC = () => {
       </MainLayout>
     );
   }
-
-  const [showAddModal, setShowAddModal] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState('team');
-  const [collabToRemove, setCollabToRemove] = React.useState<string | null>(null);
-  const [showRemoveConfirm, setShowRemoveConfirm] = React.useState(false);
-  const [isRemoving, setIsRemoving] = React.useState(false);
-  const { activities, fetchActivities } = useCollaborationStore();
 
   // Load projects list on mount
   React.useEffect(() => {
