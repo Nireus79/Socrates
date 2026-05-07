@@ -67,7 +67,16 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         showSuccess('Success', 'Project created successfully');
         onClose();
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to create project';
+        // Extract error message from API response if available
+        let errorMessage = 'Failed to create project';
+        if (error instanceof Error) {
+          errorMessage = error.message;
+          // Check for Axios error with API detail (e.g., subscription limits)
+          const axiosError = error as any;
+          if (axiosError.response?.data?.detail) {
+            errorMessage = axiosError.response.data.detail;
+          }
+        }
         setApiError(errorMessage);
         showError('Failed to Create Project', errorMessage);
         console.error('Error creating project:', error);

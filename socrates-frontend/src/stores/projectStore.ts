@@ -131,8 +131,18 @@ export const useProjectStore = create<ProjectState>((set) => ({
 
       return newProject;
     } catch (error) {
+      // Extract error message from API response if available
+      let errorMessage = 'Failed to create project';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        // Check for Axios error with API detail
+        const axiosError = error as any;
+        if (axiosError.response?.data?.detail) {
+          errorMessage = axiosError.response.data.detail;
+        }
+      }
       set({
-        error: error instanceof Error ? error.message : 'Failed to create project',
+        error: errorMessage,
         isLoading: false,
       });
       throw error;

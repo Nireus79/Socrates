@@ -97,8 +97,7 @@ export const NLUChatWidget: React.FC<NLUChatWidgetProps> = ({
 • /search - Open search
 • /info - Show system information
 • /status - Show system status
-• /debug on|off|status - Toggle debug mode
-• /subscription testing-mode on|off - Enable/disable testing mode (admin)`;
+• /debug on|off|status - Toggle debug mode`;
         setMessages(prev => [...prev, { role: 'assistant', content: helpText, type: 'command' }]);
         return;
       }

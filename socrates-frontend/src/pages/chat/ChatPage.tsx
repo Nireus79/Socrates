@@ -407,8 +407,7 @@ export const ChatPage: React.FC = () => {
               `**/info** - Show system information\n` +
               `**/docs** [topic] - Get documentation on a topic\n` +
               `**/status** - Show system status\n` +
-              `**/debug** - Debug information\n` +
-              `**/subscription testing-mode [on|off]** - Toggle testing mode\n\n`;
+              `**/debug** - Debug information\n\n`;
           }
 
           helpText += `**Or just type a question** to chat with Claude about anything!`;
@@ -425,8 +424,7 @@ export const ChatPage: React.FC = () => {
             `**/help** - Show this help message\n` +
             `**/info** - Show system information\n` +
             `**/docs** [topic] - Get documentation on a topic\n` +
-            `**/status** - Show system status\n` +
-            `**/subscription testing-mode [on|off]** - Toggle testing mode\n\n` +
+            `**/status** - Show system status\n\n` +
             `**Or just type a question** to chat with Claude about anything!`;
           setFreeSessionResponses(prev => [...prev, {
             role: 'assistant',
