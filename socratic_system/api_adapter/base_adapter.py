@@ -164,21 +164,23 @@ class BaseAdapter(ABC):
         Returns:
             Error response dictionary
         """
-        error_response = {
-            "status": "error",
-            "service": self.service_name,
-            "version": self.version,
-            "error": {
-                "type": error.__class__.__name__,
-                "message": str(error),
-            },
-            "status_code": status_code,
+        error_dict: Dict[str, Any] = {
+            "type": error.__class__.__name__,
+            "message": str(error),
         }
 
         if isinstance(error, AdapterError):
-            error_response["error"]["code"] = error.error_code
+            error_dict["code"] = error.error_code
             if isinstance(error, AdapterValidationError):
-                error_response["error"]["validation_errors"] = error.validation_errors
+                error_dict["validation_errors"] = error.validation_errors
+
+        error_response: Dict[str, Any] = {
+            "status": "error",
+            "service": self.service_name,
+            "version": self.version,
+            "error": error_dict,
+            "status_code": status_code,
+        }
 
         self.logger.error(f"Error in {self.service_name}: {error.__class__.__name__}: {str(error)}")
 
