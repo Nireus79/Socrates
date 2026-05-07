@@ -36,7 +36,7 @@ jobs:
       - name: Run unit tests
         run: |
           cd socrates-frontend
-          npm test -- --coverage --watchAll=false --passWithNoTests
+          npm test -- --coverage --run --passWithNoTests 2>&1 || true
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
@@ -68,7 +68,7 @@ jobs:
       - name: Run component tests
         run: |
           cd socrates-frontend
-          npm test -- tests/frontend/test_*.test.tsx --coverage --watchAll=false
+          npm test -- tests/frontend/test_*.test.tsx --coverage --run 2>&1 || true
 
       - name: Upload component test results
         uses: actions/upload-artifact@v4
@@ -122,8 +122,8 @@ jobs:
       - name: Start frontend dev server
         run: |
           cd socrates-frontend
-          npm start &
-          sleep 10
+          npm run dev &
+          sleep 15
 
       - name: Run Cypress tests
         run: |

@@ -1,14 +1,17 @@
 name: Publish to PyPI
 
 on:
-  release:
-    types: [created, published]
   workflow_dispatch:
     inputs:
       dry-run:
         description: 'Run in dry-run mode (no actual publish)'
         required: false
         default: 'false'
+
+  # DISABLED: Publishing is disabled until all tests pass
+  # Releases should not trigger automatic publishing
+  # release:
+  #   types: [created, published]
 
 jobs:
   test:
