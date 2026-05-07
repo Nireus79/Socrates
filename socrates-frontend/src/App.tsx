@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore } from './stores';
+import { useAuthStore, useSubscriptionStore } from './stores';
 import { apiClient } from './api/client';
 import { useServerLifecycle } from './hooks/useServerLifecycle';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -84,6 +84,9 @@ function ServerLifecycleManager() {
 }
 
 function App() {
+  const { user } = useAuthStore();
+  const { refreshSubscription } = useSubscriptionStore();
+
   // Initialize backend API on app mount
   React.useEffect(() => {
     const initializeBackend = async () => {
@@ -99,6 +102,13 @@ function App() {
 
     initializeBackend();
   }, []);
+
+  // Sync subscription state (including testing_mode) with backend when user authenticates
+  React.useEffect(() => {
+    if (user) {
+      refreshSubscription();
+    }
+  }, [user, refreshSubscription]);
 
   return (
     <ErrorBoundary>
