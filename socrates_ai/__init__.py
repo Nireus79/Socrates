@@ -12,13 +12,13 @@ from socratic_system import (
     clients,
     config,
     conflict,
-    create_orchestrator,
+    create_socratic_system,
     database,
     events,
     exceptions,
     models,
     orchestration,
-    quick_start,
+    quick_start_system,
     ui,
     utils,
 )
@@ -80,8 +80,8 @@ __all__ = [
     "ValidationError",
     "APIError",
     # Convenience Functions
-    "create_orchestrator",
-    "quick_start",
+    "create_socratic_system",
+    "quick_start_system",
     # Legacy (CLI)
     "SocraticRAGSystem",
     # Submodules
