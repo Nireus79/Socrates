@@ -82,7 +82,10 @@ class CircuitBreaker:
 
         if self.state == CircuitBreakerState.OPEN:
             # Try recovery after timeout
-            if self.last_failure_time is not None and time.time() - self.last_failure_time >= self.timeout_seconds:
+            if (
+                self.last_failure_time is not None
+                and time.time() - self.last_failure_time >= self.timeout_seconds
+            ):
                 self.state = CircuitBreakerState.HALF_OPEN
                 self.success_count = 0
                 self.logger.info("Circuit breaker HALF_OPEN - testing recovery")
