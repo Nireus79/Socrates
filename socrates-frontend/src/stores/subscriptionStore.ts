@@ -128,15 +128,23 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   refreshSubscription: async (): Promise<void> => {
     try {
       const response = await apiClient.get('/subscription/status') as any;
-      console.log('[SubscriptionStore] API Response:', response?.data);
-      if (response?.data?.current_tier) {
-        const newTier = response.data.current_tier as 'free' | 'pro' | 'enterprise';
-        const newStatus = response.data.status || 'active' as 'active' | 'inactive' | 'suspended';
-        const testingModeEnabled = response.data.testing_mode || false;
+      console.log('[SubscriptionStore] Full API Response:', response);
+      console.log('[SubscriptionStore] response.data:', response?.data);
+
+      // Try both response.data and direct response (in case apiClient returns differently)
+      const data = response?.data || response;
+      console.log('[SubscriptionStore] Using data:', data);
+
+      if (data?.current_tier) {
+        const newTier = data.current_tier as 'free' | 'pro' | 'enterprise';
+        const newStatus = data.status || 'active' as 'active' | 'inactive' | 'suspended';
+        const testingModeEnabled = data.testing_mode || false;
         console.log('[SubscriptionStore] Setting testingMode to:', testingModeEnabled);
         get().setTier(newTier, newStatus);
         get().setTestingMode(testingModeEnabled);
-        console.log('[SubscriptionStore] Current store state:', get());
+        console.log('[SubscriptionStore] Current store state testingMode:', get().testingMode);
+      } else {
+        console.warn('[SubscriptionStore] No current_tier found in response');
       }
     } catch (error) {
       console.error('Failed to refresh subscription status:', error);
