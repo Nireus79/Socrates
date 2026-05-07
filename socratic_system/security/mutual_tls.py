@@ -374,39 +374,43 @@ class MutualTLSManager:
         Returns:
             Dictionary with certificate status information
         """
-        status = {
-            "total_certificates": len(self.certificates),
-            "valid_certificates": 0,
-            "expiring_soon": [],
-            "expired": [],
-            "requires_renewal": [],
-        }
+        expired_list: List[Dict[str, Any]] = []
+        requires_renewal_list: List[Dict[str, Any]] = []
+        expiring_soon_list: List[Dict[str, Any]] = []
+        valid_count = 0
 
         for cert_info in self.certificates.values():
             if cert_info.is_expired():
-                status["expired"].append(
+                expired_list.append(
                     {
                         "name": cert_info.name,
                         "expired_date": cert_info.not_after.isoformat(),
                     }
                 )
             elif cert_info.requires_renewal():
-                status["requires_renewal"].append(
+                requires_renewal_list.append(
                     {
                         "name": cert_info.name,
                         "days_until_expiry": cert_info.days_until_expiration(),
                     }
                 )
             elif cert_info.days_until_expiration() < 90:
-                status["expiring_soon"].append(
+                expiring_soon_list.append(
                     {
                         "name": cert_info.name,
                         "days_until_expiry": cert_info.days_until_expiration(),
                     }
                 )
             else:
-                status["valid_certificates"] += 1
+                valid_count += 1
 
+        status: Dict[str, Any] = {
+            "total_certificates": len(self.certificates),
+            "valid_certificates": valid_count,
+            "expiring_soon": expiring_soon_list,
+            "expired": expired_list,
+            "requires_renewal": requires_renewal_list,
+        }
         return status
 
     def get_session_status(self) -> Dict[str, Any]:

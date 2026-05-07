@@ -13,7 +13,7 @@ import secrets
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class TokenStatus(Enum):
@@ -35,8 +35,8 @@ class AgentIdentity:
     issued_at: datetime
     expires_at: Optional[datetime] = None
     is_active: bool = True
-    capabilities: List[str] = None
-    resource_limits: Dict = None
+    capabilities: Optional[List[str]] = None
+    resource_limits: Optional[Dict[str, Any]] = None
     signature: Optional[str] = None
 
     def __post_init__(self):
@@ -72,12 +72,12 @@ class CapabilityToken:
     agent_name: str
     capabilities: List[str]  # Actions agent can perform
     resource_access: Dict[str, str]  # Resources and access types
-    resource_limits: Dict  # Limits (timeout, memory, etc.)
+    resource_limits: Dict[str, Any]  # Limits (timeout, memory, etc.)
     issued_at: datetime
     expires_at: datetime
     is_active: bool = True
     is_revoked: bool = False
-    signature: str = None
+    signature: Optional[str] = None
     last_used: Optional[datetime] = None
     use_count: int = 0
 
@@ -93,7 +93,7 @@ class CapabilityToken:
         """Check if token grants a specific capability."""
         return capability in self.capabilities
 
-    def get_resource_limit(self, resource_type: str) -> Optional[any]:
+    def get_resource_limit(self, resource_type: str) -> Optional[Any]:
         """Get resource limit for a resource type."""
         return self.resource_limits.get(resource_type)
 

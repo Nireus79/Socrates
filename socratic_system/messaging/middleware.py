@@ -46,10 +46,12 @@ class AgentBusMiddleware:
         Returns:
             Response from agent
         """
+        request = {"action": action}
+        if payload:
+            request.update(payload)
         return await self.agent_bus.send_request(
             target_agent=agent_name,
-            action=action,
-            payload=payload,
+            request=request,
             timeout=timeout,
         )
 
@@ -70,10 +72,12 @@ class AgentBusMiddleware:
         Returns:
             Request ID for tracking
         """
+        request = {"action": action}
+        if payload:
+            request.update(payload)
         result = await self.agent_bus.send_request(
             target_agent=agent_name,
-            action=action,
-            payload=payload,
+            request=request,
             fire_and_forget=True,
         )
         return result.get("request_id", "")
@@ -160,10 +164,11 @@ class ServiceAgentAdapter:
         Returns:
             Response from agent
         """
+        request_dict = {"action": action}
+        request_dict.update(kwargs)
         return await self.agent_bus.send_request(
             target_agent=target_agent,
-            action=action,
-            payload=kwargs,
+            request=request_dict,
         )
 
     async def request_multiple(
@@ -181,10 +186,11 @@ class ServiceAgentAdapter:
         """
         tasks = {}
         for name, (agent, payload) in requests.items():
+            request_dict = {"action": "process"}
+            request_dict.update(payload)
             tasks[name] = self.agent_bus.send_request(
                 target_agent=agent,
-                action="process",
-                payload=payload,
+                request=request_dict,
             )
 
         results = {}

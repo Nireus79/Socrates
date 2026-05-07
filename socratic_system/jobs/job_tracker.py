@@ -215,7 +215,7 @@ class JobTracker:
             to_delete = []
 
             for job_id, job in self._jobs.items():
-                if job.is_complete():
+                if job.is_complete() and job.completed_at is not None:
                     age = (current_time - job.completed_at).total_seconds()
                     if age > max_age_seconds:
                         to_delete.append(job_id)

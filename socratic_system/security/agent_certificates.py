@@ -10,7 +10,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -225,29 +225,33 @@ class CertificateAuthority:
 
     def get_certificate_status(self) -> Dict[str, Any]:
         """Get status of all certificates."""
-        status = {
-            "total_issued": len(self.issued_certificates),
-            "valid": 0,
-            "expired": 0,
-            "revoked": 0,
-            "expiring_soon": [],
-        }
+        valid_count = 0
+        expired_count = 0
+        revoked_count = 0
+        expiring_soon_list: List[Dict[str, Any]] = []
 
         for cert in self.issued_certificates.values():
             if cert.is_revoked:
-                status["revoked"] += 1
+                revoked_count += 1
             elif cert.is_expired():
-                status["expired"] += 1
+                expired_count += 1
             elif cert.requires_renewal():
-                status["expiring_soon"].append(
+                expiring_soon_list.append(
                     {
                         "agent_id": cert.agent_id,
                         "days_until_expiry": cert.days_until_expiration(),
                     }
                 )
             else:
-                status["valid"] += 1
+                valid_count += 1
 
+        status: Dict[str, Any] = {
+            "total_issued": len(self.issued_certificates),
+            "valid": valid_count,
+            "expired": expired_count,
+            "revoked": revoked_count,
+            "expiring_soon": expiring_soon_list,
+        }
         return status
 
     def export_certificates(self, filepath: str) -> bool:

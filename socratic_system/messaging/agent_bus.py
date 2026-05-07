@@ -49,7 +49,7 @@ class CircuitBreaker:
         self.state = CircuitBreakerState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time = None
+        self.last_failure_time: Optional[float] = None
         self.logger = logging.getLogger(__name__)
 
     def record_success(self) -> None:
@@ -82,7 +82,7 @@ class CircuitBreaker:
 
         if self.state == CircuitBreakerState.OPEN:
             # Try recovery after timeout
-            if time.time() - self.last_failure_time >= self.timeout_seconds:
+            if self.last_failure_time is not None and time.time() - self.last_failure_time >= self.timeout_seconds:
                 self.state = CircuitBreakerState.HALF_OPEN
                 self.success_count = 0
                 self.logger.info("Circuit breaker HALF_OPEN - testing recovery")
@@ -531,7 +531,7 @@ class AgentBus:
             return {"request_id": request_id, "status": "queued"}
 
         # Request-response with retry
-        last_error = None
+        last_error: Optional[Exception] = None
         retry_count = 0
         max_retries = self.retry_policy.max_retries if self.enable_retry else 0
 
