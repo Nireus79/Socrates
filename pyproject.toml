@@ -99,6 +99,7 @@ dev = [
     "pytest>=9.0.0",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0.0",
+    "pytest-timeout>=2.1.0",
     "black>=24.0",
     "ruff>=0.4.0",
     "mypy>=1.8.0",
@@ -262,7 +263,7 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 asyncio_mode = "auto"
-addopts = "--strict-markers --tb=short -v"
+addopts = "--strict-markers --tb=short -v --timeout=60 --timeout-method=thread"
 markers = [
     "unit: Unit tests (no external dependencies)",
     "integration: Integration tests (require mocking or local setup)",
