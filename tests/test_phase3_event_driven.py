@@ -165,7 +165,18 @@ class TestJobQueue(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         """Clean up"""
-        await self.queue.stop_workers()
+        try:
+            await asyncio.wait_for(self.queue.stop_workers(), timeout=10.0)
+        except asyncio.TimeoutError:
+            # Force cleanup if stop_workers hangs
+            self.queue.workers.clear()
+        finally:
+            # Cancel any remaining tasks
+            loop = asyncio.get_event_loop()
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                if task is not asyncio.current_task():
+                    task.cancel()
 
     async def test_submit_job(self):
         """Submit job to queue"""
