@@ -46,6 +46,33 @@ export ANTHROPIC_API_KEY="sk-ant-your-key-here"  # Or your API key
 | `python socrates.py --frontend` | CLI + React frontend | Hybrid mode, visual + terminal interface |
 | `python socrates.py --help` | Show all options | See all available commands |
 
+### Docker Deployment (Recommended)
+
+For a containerized, production-ready deployment, use Docker Compose:
+
+```bash
+# Clone and navigate to Docker deployment directory
+git clone https://github.com/Nireus79/Socrates.git
+cd Socrates/deployment/docker
+
+# Start all services (API, Frontend, Database, Redis)
+docker-compose up -d
+
+# This starts:
+# - API Server: http://localhost:8000
+# - Web Frontend: http://localhost:5173
+# - PostgreSQL Database
+# - Redis Cache
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+See [Docker Build and Deployment Instructions](deployment/DOCKER_BUILD.md) for detailed Docker information including prerequisites, building custom images, and troubleshooting.
+
 **Example: Full Stack (Recommended for First Time)**
 ```bash
 python socrates.py --full
@@ -283,10 +310,18 @@ System that identifies contradictions between:
 
 ## System Requirements
 
+### Local Installation
 - **Python 3.8+**
 - **4GB RAM** minimum
 - **Internet connection** (for Claude API)
 - **API Key** - Get one at [console.anthropic.com](https://console.anthropic.com)
+
+### Docker Deployment
+- **Docker Desktop** (latest version)
+- **WSL 2** integration enabled (Windows users)
+- **8GB RAM** minimum (recommended)
+- **10GB disk space** minimum for Docker images and databases
+- **Internet connection** (for Claude API and Docker Hub)
 
 ---
 

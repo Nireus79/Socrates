@@ -4,18 +4,40 @@ Complete guide for setting up Socratic for development and contributing to the p
 
 ## Table of Contents
 
-1. [Environment Setup](#environment-setup)
-2. [Running Full Stack](#running-full-stack)
-3. [Backend Development](#backend-development)
-4. [Frontend Development](#frontend-development)
-5. [Testing](#testing)
-6. [Key Components](#key-components)
-7. [Common Development Tasks](#common-development-tasks)
-8. [Contributing](#contributing)
+1. [Development Setup Options](#development-setup-options)
+2. [Local Environment Setup](#local-environment-setup)
+3. [Docker Development Environment](#docker-development-environment)
+4. [Running Full Stack](#running-full-stack)
+5. [Backend Development](#backend-development)
+6. [Frontend Development](#frontend-development)
+7. [Testing](#testing)
+8. [Key Components](#key-components)
+9. [Common Development Tasks](#common-development-tasks)
+10. [Contributing](#contributing)
 
 ---
 
-## Environment Setup
+## Development Setup Options
+
+Choose one of two approaches:
+
+### Option 1: Local Development (Recommended for Active Development)
+- Direct Python venv installation
+- Faster iteration and debugging
+- Direct access to all logs and files
+- Best for: Modifying agents, APIs, core logic
+- See [Local Environment Setup](#local-environment-setup)
+
+### Option 2: Docker Development (Recommended for Testing Full Stack)
+- Complete containerized environment
+- Matches production setup
+- Isolated dependencies
+- Best for: Testing full deployment, frontend integration
+- See [Docker Development Environment](#docker-development-environment)
+
+---
+
+## Local Environment Setup
 
 ### Clone Repository
 
@@ -42,8 +64,11 @@ pip install -r requirements.txt
 ### API Key Setup
 
 ```bash
-# Set Anthropic API key
+# Set Anthropic API key (required for both local and Docker)
 export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+
+# On Windows (PowerShell)
+$env:ANTHROPIC_API_KEY="sk-ant-your-key-here"
 ```
 
 ### Node.js Setup (for Frontend)
@@ -58,6 +83,94 @@ npm --version     # Should be 9+
 # Ubuntu: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && sudo apt install -y nodejs
 # Windows: Download from nodejs.org
 ```
+
+---
+
+## Docker Development Environment
+
+For development with a full containerized stack, use Docker Compose.
+
+### Prerequisites
+
+- Docker Desktop (latest version)
+- WSL 2 integration enabled (Windows only)
+- 8GB RAM minimum
+- 10GB disk space
+
+### Setup
+
+```bash
+# Navigate to deployment directory
+cd deployment/docker
+
+# Verify Docker is working
+docker --version
+docker compose --version
+
+# Set API key
+export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+```
+
+### Running Full Stack in Docker
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Verify services are running
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+Access the system:
+- API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- Frontend: http://localhost:5173
+
+### Development with Docker
+
+For iterative development with Docker:
+
+```bash
+# View live logs from API
+docker-compose logs -f api
+
+# Restart API after code changes
+docker-compose restart api
+
+# Rebuild services if requirements.txt changed
+docker-compose build --no-cache api
+docker-compose up -d
+
+# Access running container for debugging
+docker-compose exec api bash
+
+# Check API responses
+curl http://localhost:8000/health
+```
+
+### Switching Between Local and Docker
+
+You can switch between local and Docker development:
+
+```bash
+# Stop Docker services
+docker-compose down
+
+# Then use local development
+python socrates.py --full
+
+# Or switch back to Docker
+cd deployment/docker
+docker-compose up -d
+```
+
+For detailed Docker troubleshooting and production deployment, see [Docker Build and Deployment](deployment/DOCKER_BUILD.md).
 
 ---
 
