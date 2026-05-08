@@ -213,6 +213,10 @@ class JobQueue:
 
                 self.queue.task_done()
 
+            except asyncio.CancelledError:
+                self.logger.debug("Worker cancelled, shutting down")
+                break
+
             except Exception as e:
                 self.logger.error(f"Worker error: {e}")
 
