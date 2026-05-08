@@ -55,11 +55,6 @@ For a containerized, production-ready deployment, use Docker Compose:
 git clone https://github.com/Nireus79/Socrates.git
 cd Socrates/deployment/docker
 
-# Create .env file with your API key
-cat > .env << EOF
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-EOF
-
 # Start all services (API, Frontend, Database, Redis)
 docker-compose up -d
 
@@ -319,7 +314,6 @@ System that identifies contradictions between:
 - **Python 3.8+**
 - **4GB RAM** minimum
 - **Internet connection** (for Claude API)
-- **API Key** - Get one at [console.anthropic.com](https://console.anthropic.com)
 
 ### Docker Deployment
 - **Docker Desktop** (latest version)
@@ -327,6 +321,9 @@ System that identifies contradictions between:
 - **8GB RAM** minimum (recommended)
 - **10GB disk space** minimum for Docker images and databases
 - **Internet connection** (for Claude API and Docker Hub)
+
+### Getting an API Key
+You'll need an Anthropic API key to use Socrates. Get one at [console.anthropic.com](https://console.anthropic.com). Add it through **Settings > LLM > Anthropic** after starting the application.
 
 ---
 

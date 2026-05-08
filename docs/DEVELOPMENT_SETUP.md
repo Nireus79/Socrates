@@ -106,11 +106,6 @@ cd deployment/docker
 # Verify Docker is working
 docker --version
 docker compose --version
-
-# Create .env file with your API key
-cat > .env << EOF
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-EOF
 ```
 
 ### Running Full Stack in Docker
