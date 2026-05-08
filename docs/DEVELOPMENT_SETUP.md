@@ -107,8 +107,10 @@ cd deployment/docker
 docker --version
 docker compose --version
 
-# Set API key
-export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+# Create .env file with your API key
+cat > .env << EOF
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+EOF
 ```
 
 ### Running Full Stack in Docker

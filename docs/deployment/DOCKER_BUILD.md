@@ -25,9 +25,18 @@ Complete guide for building and deploying Socrates using Docker and Docker Compo
 
 ### API Requirements
 - **Anthropic API Key** - Get from [console.anthropic.com](https://console.anthropic.com)
-- Set environment variable before deployment:
+- Create `.env` file in `deployment/docker/` directory:
+  ```bash
+  cd deployment/docker
+  cat > .env << EOF
+  ANTHROPIC_API_KEY=sk-ant-your-key-here
+  EOF
+  ```
+
+  Alternatively, set as environment variable before deployment:
   ```bash
   export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+  docker-compose up -d
   ```
 
 ## Critical Dependencies

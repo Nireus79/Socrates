@@ -55,6 +55,11 @@ For a containerized, production-ready deployment, use Docker Compose:
 git clone https://github.com/Nireus79/Socrates.git
 cd Socrates/deployment/docker
 
+# Create .env file with your API key
+cat > .env << EOF
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+EOF
+
 # Start all services (API, Frontend, Database, Redis)
 docker-compose up -d
 
