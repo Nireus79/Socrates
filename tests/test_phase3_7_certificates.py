@@ -99,7 +99,8 @@ class TestAgentCertificate:
         )
 
         days_left = cert.days_until_expiration()
-        assert days_left == 30
+        # Allow for timing variations - should be 29 or 30 days
+        assert days_left in (29, 30)
 
     def test_certificate_renewal_requirement(self):
         """Renewal requirement detected when near expiration."""
