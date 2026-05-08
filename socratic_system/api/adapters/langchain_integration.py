@@ -64,6 +64,8 @@ class SocratesTool(BaseTool):
     project_id: Optional[str] = None
 
     class Config:
+        """Pydantic config for SocratesTool."""
+
         arbitrary_types_allowed = True
 
     def _run(
@@ -294,13 +296,17 @@ class SocratesAgentExecutor:
         await self.client._client.close()
 
     def __enter__(self):
+        """Enter context manager."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context manager."""
         self.close()
 
     async def __aenter__(self):
+        """Enter async context manager."""
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Exit async context manager."""
         await self.aclose()
