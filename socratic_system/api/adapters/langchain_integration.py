@@ -110,8 +110,8 @@ class SocratesTool(BaseTool):
             logger.debug(f"[SocratesTool] Async invoking {self.agent_name}: {query}")
 
             client = SocratesAgentClient(
-                api_url=self.client.api_url,
-                auth_token=self.client.auth_token,
+                api_url=self.client.api_url,  # type: ignore[attr-defined]
+                auth_token=self.client.auth_token,  # type: ignore[attr-defined]
             )
 
             result = await client.invoke_agent_sync(

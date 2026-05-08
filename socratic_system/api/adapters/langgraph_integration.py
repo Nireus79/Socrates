@@ -225,7 +225,7 @@ def create_socrates_nodes(
         logger.debug(f"[LangGraph] Created node for {agent_name}")
 
     logger.info(f"[LangGraph] Created {len(nodes)} Socrates nodes")
-    return nodes
+    return nodes  # type: ignore[return-value]
 
 
 def create_initial_state(
