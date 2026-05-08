@@ -234,9 +234,14 @@ class JobQueue:
         for worker in self.workers:
             worker.cancel()
 
-        # Wait for all cancellations to complete
+        # Wait for all cancellations to complete with a timeout
         try:
-            await asyncio.gather(*self.workers, return_exceptions=True)
+            await asyncio.wait_for(
+                asyncio.gather(*self.workers, return_exceptions=True),
+                timeout=5.0
+            )
+        except asyncio.TimeoutError:
+            self.logger.warning("Worker shutdown timed out, forcing termination")
         except Exception as e:
             self.logger.warning(f"Error during worker shutdown: {e}")
 
