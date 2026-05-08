@@ -223,8 +223,20 @@ class JobQueue:
 
     async def stop_workers(self) -> None:
         """Stop background workers"""
+        if not self.workers:
+            return
+
+        # Cancel all workers
         for worker in self.workers:
             worker.cancel()
+
+        # Wait for all cancellations to complete
+        try:
+            await asyncio.gather(*self.workers, return_exceptions=True)
+        except Exception as e:
+            self.logger.warning(f"Error during worker shutdown: {e}")
+
+        self.workers.clear()
         self.logger.info("Stopped workers")
 
     def get_job_status(self, job_id: str) -> Optional[JobResult]:
