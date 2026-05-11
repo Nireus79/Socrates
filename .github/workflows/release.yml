@@ -76,19 +76,13 @@ jobs:
 
       - name: Update version in pyproject.toml files
         run: |
-          # Update main library
+          # Update main library (consolidated socrates-ai package)
           sed -i 's/version = ".*"/version = "${{ steps.version.outputs.new-version }}"/' pyproject.toml
 
-          # Update CLI
-          sed -i 's/version = ".*"/version = "${{ steps.version.outputs.new-version }}"/' socrates-cli/pyproject.toml
-
-          # Update API
-          sed -i 's/version = ".*"/version = "${{ steps.version.outputs.new-version }}"/' socrates-api/pyproject.toml
-
           # Update __init__.py files
-          sed -i 's/__version__ = ".*"/__version__ = "${{ steps.version.outputs.new-version }}"/' socratic_system/__init__.py
-          sed -i 's/__version__ = ".*"/__version__ = "${{ steps.version.outputs.new-version }}"/' socrates_cli/__init__.py
-          sed -i 's/__version__ = ".*"/__version__ = "${{ steps.version.outputs.new-version }}"/' socrates_api/__init__.py
+          sed -i 's/__version__ = ".*"/__version__ = "${{ steps.version.outputs.new-version }}"/' socratic_system/__init__.py || true
+          sed -i 's/__version__ = ".*"/__version__ = "${{ steps.version.outputs.new-version }}"/' socrates_cli/__init__.py || true
+          sed -i 's/__version__ = ".*"/__version__ = "${{ steps.version.outputs.new-version }}"/' socrates_api/__init__.py || true
 
       - name: Generate changelog
         id: changelog
@@ -119,8 +113,8 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add pyproject.toml socrates-cli/pyproject.toml socrates-api/pyproject.toml
-          git add socratic_system/__init__.py socrates_cli/__init__.py socrates_api/__init__.py
+          git add pyproject.toml
+          git add socratic_system/__init__.py socrates_cli/__init__.py socrates_api/__init__.py 2>/dev/null || true
           git commit -m "chore: bump version to ${{ steps.version.outputs.new-version }}"
 
       - name: Create and push tag
