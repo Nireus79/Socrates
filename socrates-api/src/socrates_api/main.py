@@ -174,7 +174,9 @@ async def _cleanup_orchestrator():
             logger.info("Cleaning up orchestrator...")
 
             # Cancel any background agent tasks
-            if hasattr(orchestrator, "agent_bus") and hasattr(orchestrator.agent_bus, "background_tasks"):
+            if hasattr(orchestrator, "agent_bus") and hasattr(
+                orchestrator.agent_bus, "background_tasks"
+            ):
                 try:
                     for task in orchestrator.agent_bus.background_tasks:
                         if not task.done():
@@ -324,6 +326,7 @@ async def lifespan(app: FastAPI):
         # This allows auth endpoints to work even without full orchestrator
         try:
             from socrates_api.database import DatabaseSingleton
+
             logger.info("Ensuring database is initialized as fallback...")
             DatabaseSingleton.initialize()  # Initialize with defaults
             db = DatabaseSingleton.get_instance()
@@ -418,6 +421,7 @@ add_metrics_middleware(app)
 
 # Add activity tracking middleware
 from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
+
 app.add_middleware(ActivityTrackerMiddleware)
 
 

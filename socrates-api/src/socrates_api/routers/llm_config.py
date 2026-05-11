@@ -39,7 +39,9 @@ async def list_providers(
         logger.info(f"Listing LLM providers for user: {current_user}")
 
         orchestrator = get_orchestrator()
-        result = await orchestrator.agent_bus.send_request("multi_llm_manager", {"action": "list_providers"})
+        result = await orchestrator.agent_bus.send_request(
+            "multi_llm_manager", {"action": "list_providers"}
+        )
 
         if result["status"] != "success":
             raise HTTPException(
@@ -287,11 +289,13 @@ async def get_api_key_status(
 
         # Check if environment fallback is being used
         import os
+
         env_key_available = bool(os.getenv("ANTHROPIC_API_KEY"))
         if not configured_providers and env_key_available:
-            warnings.insert(0,
+            warnings.insert(
+                0,
                 "No user API keys configured. Currently using environment variable as fallback. "
-                "For better security and control, add your API key in Settings > LLM > Anthropic."
+                "For better security and control, add your API key in Settings > LLM > Anthropic.",
             )
 
         return APIResponse(
@@ -344,7 +348,8 @@ async def get_usage_stats(
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm_manager", {"action": "get_usage_stats", "user_id": current_user, "days": days}
+            "multi_llm_manager",
+            {"action": "get_usage_stats", "user_id": current_user, "days": days},
         )
 
         if result["status"] != "success":
