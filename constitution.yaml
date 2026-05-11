@@ -132,7 +132,7 @@ escalation_rules:
     reason: "System confidence in decision below acceptable threshold"
 
 capabilities:
-  DocumentProcessor:
+  document_processor:
     actions:
       - file_import
       - text_import
@@ -146,7 +146,7 @@ capabilities:
       max_file_size_mb: 50
       timeout_seconds: 300
 
-  CodeGenerator:
+  code_generator:
     actions:
       - code_generation
       - code_execution_sandboxed
@@ -163,7 +163,7 @@ capabilities:
       - timeout_enforcement: true
       - resource_limits: true
 
-  KnowledgeManager:
+  knowledge_manager:
     actions:
       - knowledge_store
       - knowledge_retrieve
@@ -175,7 +175,7 @@ capabilities:
       max_query_size: 10000
       timeout_seconds: 30
 
-  SystemMonitor:
+  system_monitor:
     actions:
       - token_tracking
       - health_check
@@ -187,7 +187,7 @@ capabilities:
       timeout_seconds: 30
       max_queries_per_minute: 60
 
-  UserManager:
+  user_manager:
     actions:
       - user_list
       - user_profile_read
@@ -205,7 +205,7 @@ capabilities:
       - password_reset
       - permission_change
 
-  QualityController:
+  quality_controller:
     actions:
       - maturity_calculation
       - readiness_assessment
@@ -217,7 +217,7 @@ capabilities:
       timeout_seconds: 60
       max_calculations_per_minute: 30
 
-  ContextAnalyzer:
+  context_analyzer:
     actions:
       - analyze_project_context
       - extract_requirements
@@ -228,7 +228,7 @@ capabilities:
     resource_limits:
       timeout_seconds: 120
 
-  SocraticCounselor:
+  socratic_counselor:
     actions:
       - generate_question
       - evaluate_response
@@ -241,7 +241,7 @@ capabilities:
       timeout_seconds: 60
       max_conversation_length: 50000
 
-  LearningAgent:
+  learning_agent:
     actions:
       - track_question_effectiveness
       - learn_behavior_pattern
@@ -255,7 +255,7 @@ capabilities:
       timeout_seconds: 90
       max_patterns_per_user: 1000
 
-  MultiLLMAgent:
+  multi_llm_agent:
     actions:
       - list_providers
       - call_provider
@@ -287,7 +287,7 @@ capabilities:
       timeout_seconds: 120
       max_parallel_calls: 3
 
-  NoteManager:
+  note_manager:
     actions:
       - add_note
       - list_notes
@@ -301,7 +301,7 @@ capabilities:
       timeout_seconds: 30
       max_note_size: 100000
 
-  ProjectManager:
+  project_manager:
     actions:
       - create_project
       - read_project
