@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install requirements FIRST (better layer caching)
-COPY pyproject.toml .
+COPY pyproject.toml README.md LICENSE .
+COPY socrates_ai socrates_ai/
 COPY socratic_system socratic_system/
 COPY socrates-api socrates-api/
 COPY socrates-cli socrates-cli/
