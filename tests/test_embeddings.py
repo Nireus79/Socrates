@@ -102,10 +102,10 @@ class TestEmbeddingGeneration:
     def test_embed_caching(self):
         """Test that embeddings are cached."""
         embeddings = SemanticEmbeddings()
-        embeddings.model = None
+        # Add to cache
         embeddings.embeddings_cache["cached_text"] = [0.1, 0.2, 0.3]
 
-        # Should return cached result even without model
+        # Should return cached result
         result = embeddings.embed("cached_text")
         assert result == [0.1, 0.2, 0.3]
 
@@ -121,7 +121,6 @@ class TestEmbeddingGeneration:
     def test_embed_caches_new_result(self):
         """Test that new embeddings are cached."""
         embeddings = SemanticEmbeddings()
-        embeddings.model = None  # Disable model to use cached values
 
         # Add to cache
         test_embedding = [0.5, 0.6, 0.7]
@@ -225,7 +224,6 @@ class TestEmbeddingsIntegration:
         embeddings = SemanticEmbeddings()
 
         # Create mock embeddings
-        embeddings.model = None
         embeddings.embeddings_cache["text1"] = [1.0, 0.0, 0.0]
         embeddings.embeddings_cache["text2"] = [1.0, 0.0, 0.0]
         embeddings.embeddings_cache["text3"] = [0.0, 1.0, 0.0]

@@ -304,7 +304,6 @@ class TestEmbeddingsWithPrecedent:
     async def test_embeddings_caching_with_precedent(self):
         """Test that embeddings are cached across multiple searches."""
         engine = MoralPrecedentEngine()
-        engine.embeddings.model = None  # Disable model to use cache
 
         # Pre-populate cache
         test_embedding = [0.1, 0.2, 0.3]
