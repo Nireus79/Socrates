@@ -233,6 +233,7 @@ capabilities:
       - generate_question
       - evaluate_response
       - track_progress
+      - generate_answer_suggestions
     resource_access:
       - user_data:read
       - user_data:write
