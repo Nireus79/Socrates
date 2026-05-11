@@ -227,6 +227,97 @@ async def set_api_key(
 
 
 @router.get(
+    "/status",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get API key configuration status",
+)
+async def get_api_key_status(
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get the API key configuration status for all providers.
+
+    Shows which providers have API keys configured and which need attention.
+    Helps users understand if they need to add or update their API keys.
+
+    Args:
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with provider status and warnings
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"Getting API key status for user: {current_user}")
+
+        orchestrator = get_orchestrator()
+
+        # Get list of providers
+        providers_result = await orchestrator.agent_bus.send_request(
+            "multi_llm_manager", {"action": "list_providers"}
+        )
+
+        if providers_result["status"] != "success":
+            raise HTTPException(
+                status_code=500, detail=providers_result.get("message", "Failed to list providers")
+            )
+
+        providers = providers_result.get("data", {}).get("providers", [])
+
+        # Check which ones are configured and which need API keys
+        warnings = []
+        configured_providers = []
+        missing_api_keys = []
+
+        for provider in providers:
+            provider_name = provider.get("name", "")
+            is_configured = provider.get("is_configured", False)
+            requires_api_key = provider.get("requires_api_key", False)
+
+            if is_configured:
+                configured_providers.append(provider_name)
+            elif requires_api_key:
+                missing_api_keys.append(provider_name)
+                warnings.append(
+                    f"API key missing for {provider_name}. "
+                    f"Add or update your API key in Settings > LLM > {provider_name} to use this provider."
+                )
+
+        # Check if environment fallback is being used
+        import os
+        env_key_available = bool(os.getenv("ANTHROPIC_API_KEY"))
+        if not configured_providers and env_key_available:
+            warnings.insert(0,
+                "No user API keys configured. Currently using environment variable as fallback. "
+                "For better security and control, add your API key in Settings > LLM > Anthropic."
+            )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="API key configuration status",
+            data={
+                "configured_providers": configured_providers,
+                "missing_api_keys": missing_api_keys,
+                "warnings": warnings,
+                "environment_fallback_available": env_key_available,
+                "action_required": len(missing_api_keys) > 0,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting API key status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get API key status: {str(e)}",
+        )
+
+
+@router.get(
     "/usage-stats",
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,

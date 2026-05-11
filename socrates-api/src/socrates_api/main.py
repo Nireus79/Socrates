@@ -166,6 +166,46 @@ def _setup_event_listeners(orchestrator: AgentOrchestrator):
     logger.info("Event listeners registered")
 
 
+async def _cleanup_orchestrator():
+    """Gracefully cleanup orchestrator and background tasks"""
+    try:
+        orchestrator = app_state.get("orchestrator")
+        if orchestrator:
+            logger.info("Cleaning up orchestrator...")
+
+            # Cancel any background agent tasks
+            if hasattr(orchestrator, "agent_bus") and hasattr(orchestrator.agent_bus, "background_tasks"):
+                try:
+                    for task in orchestrator.agent_bus.background_tasks:
+                        if not task.done():
+                            task.cancel()
+                    logger.info("Background agent tasks cancelled")
+                except Exception as e:
+                    logger.warning(f"Error cancelling background tasks: {e}")
+
+            # Close Claude client connection if it has a close method
+            if hasattr(orchestrator, "claude_client"):
+                try:
+                    if hasattr(orchestrator.claude_client, "close"):
+                        await orchestrator.claude_client.close()
+                    logger.info("Claude client connection closed")
+                except Exception as e:
+                    logger.warning(f"Error closing Claude client: {e}")
+
+            # Close vector database if it has a close method
+            if hasattr(orchestrator, "vector_db"):
+                try:
+                    if hasattr(orchestrator.vector_db, "close"):
+                        orchestrator.vector_db.close()
+                    logger.info("Vector database closed")
+                except Exception as e:
+                    logger.warning(f"Error closing vector database: {e}")
+
+            logger.info("Orchestrator cleanup completed")
+    except Exception as e:
+        logger.error(f"Error during orchestrator cleanup: {e}")
+
+
 async def _monitor_shutdown():
     """Background task to monitor and execute scheduled shutdown
 
@@ -175,6 +215,7 @@ async def _monitor_shutdown():
 
     Currently handles:
     - Browser-close detection: 5-minute delay before shutdown
+    - Graceful cleanup of orchestrator and background tasks
     """
     from socrates_api.middleware.activity_tracker import should_shutdown_now
 
@@ -185,6 +226,10 @@ async def _monitor_shutdown():
             # Check if browser-close shutdown is due (scheduled by client)
             if should_shutdown_now():
                 logger.info("Executing scheduled shutdown...")
+
+                # Gracefully cleanup orchestrator before shutdown
+                await _cleanup_orchestrator()
+
                 # Send SIGTERM to parent process (for full-stack mode)
                 # If running standalone, this will shutdown this process
                 parent_pid = os.getppid()

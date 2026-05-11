@@ -23,6 +23,9 @@ interface LLMState {
   models: Map<string, LLMModel[]>;
   config: LLMConfig | null;
   usageStats: UsageStats | null;
+  apiKeyWarnings: string[];
+  missingApiKeys: string[];
+  actionRequired: boolean;
   isLoading: boolean;
   isSaving: boolean;
   error: string | null;
@@ -30,6 +33,7 @@ interface LLMState {
   // Actions
   listProviders: () => Promise<void>;
   getConfig: () => Promise<void>;
+  getApiKeyStatus: () => Promise<void>;
   setDefaultProvider: (provider: string) => Promise<void>;
   setProviderModel: (provider: string, model: string) => Promise<void>;
   addAPIKey: (provider: string, apiKey: string) => Promise<void>;
@@ -46,6 +50,9 @@ export const useLLMStore = create<LLMState>((set, get) => ({
   models: new Map(),
   config: null,
   usageStats: null,
+  apiKeyWarnings: [],
+  missingApiKeys: [],
+  actionRequired: false,
   isLoading: false,
   isSaving: false,
   error: null,
@@ -92,6 +99,23 @@ export const useLLMStore = create<LLMState>((set, get) => ({
         err instanceof Error ? err.message : 'Failed to get configuration';
       set({ error: message, isLoading: false });
       throw err;
+    }
+  },
+
+  /**
+   * Get API key configuration status
+   */
+  getApiKeyStatus: async () => {
+    try {
+      const response = await llmAPI.getApiKeyStatus();
+      set({
+        apiKeyWarnings: response.warnings || [],
+        missingApiKeys: response.missing_api_keys || [],
+        actionRequired: response.action_required || false,
+      });
+    } catch (err) {
+      console.error('Failed to get API key status:', err);
+      // Don't set error state - this is non-critical
     }
   },
 

@@ -40,10 +40,13 @@ export const LLMSettingsPage: React.FC = () => {
     providers,
     config,
     usageStats,
+    apiKeyWarnings,
+    actionRequired,
     isLoading,
     error,
     listProviders,
     getConfig,
+    getApiKeyStatus,
     getUsageStats,
     setDefaultProvider,
     setProviderModel,
@@ -67,8 +70,9 @@ export const LLMSettingsPage: React.FC = () => {
       listProviders().catch(console.error),
       getConfig().catch(console.error),
       getUsageStats().catch(console.error),
+      getApiKeyStatus().catch(console.error),
     ]);
-  }, [listProviders, getConfig, getUsageStats]);
+  }, [listProviders, getConfig, getUsageStats, getApiKeyStatus]);
 
   // Update selectedAuthMethod when config changes
   React.useEffect(() => {
@@ -155,6 +159,27 @@ export const LLMSettingsPage: React.FC = () => {
         <Alert type="error" closeable onClose={clearError}>
           {error}
         </Alert>
+      )}
+
+      {/* API Key Configuration Warnings */}
+      {apiKeyWarnings.length > 0 && (
+        <div className="space-y-2">
+          {apiKeyWarnings.map((warning, index) => (
+            <Alert key={index} type="warning">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">{warning.split('. ')[0]}.</p>
+                  {warning.includes('.') && (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                      {warning.split('. ').slice(1).join('. ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Alert>
+          ))}
+        </div>
       )}
 
       {/* Loading State */}

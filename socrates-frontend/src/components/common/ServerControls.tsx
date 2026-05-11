@@ -74,9 +74,25 @@ export function ServerControls({ className }: ServerControlsProps) {
       setIsShutdownModalOpen(false);
       // Update status to show shutdown is scheduled
       setShutdownRemaining(5);
+
+      // Show countdown alert with information
+      let remaining = 5;
+      const countdownInterval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          alert(
+            'Server shutdown initiated. The backend processes are being cleaned up. ' +
+            'You can restart the server from the command line.'
+          );
+        }
+      }, 1000);
     } catch (error) {
       console.error('Failed to shutdown server:', error);
-      alert('Failed to shutdown server');
+      alert(
+        'Failed to shutdown server. Error: ' +
+        (error instanceof Error ? error.message : String(error))
+      );
     } finally {
       setIsShuttingDown(false);
     }

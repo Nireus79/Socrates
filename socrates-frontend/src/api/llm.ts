@@ -159,6 +159,24 @@ export const llmAPI = {
   },
 
   /**
+   * Get API key configuration status
+   *
+   * Returns information about which providers have API keys configured
+   * and which ones need attention (missing keys or fallback to environment variable)
+   */
+  async getApiKeyStatus(): Promise<{
+    configured_providers: string[];
+    missing_api_keys: string[];
+    warnings: string[];
+    environment_fallback_available: boolean;
+    action_required: boolean;
+  }> {
+    return apiClient.get(
+      `/llm-config/status`
+    );
+  },
+
+  /**
    * Get usage statistics
    */
   async getUsageStats(timePeriod: string = 'month'): Promise<UsageStats> {
