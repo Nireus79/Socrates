@@ -261,7 +261,7 @@ class AgentBus:
             # Fail-safe: deny if we can't verify
             return False, f"Capability check error: {str(e)}"
 
-    def _check_governance(
+    async def _check_governance(
         self, agent_name: str, action: str, request_data: Dict[str, Any]
     ) -> tuple[bool, Optional[str]]:
         """Check if action is allowed under constitutional governance.
@@ -280,15 +280,19 @@ class AgentBus:
 
         try:
             # Use Governor to evaluate action against constitution
-            allowed, decision = self.governor.evaluate_action(
-                agent=agent_name, action=action, context=request_data
+            # Governor.evaluate() returns a GovernorDecision object with allowed property
+            decision = await self.governor.evaluate(
+                action=action,
+                actor=agent_name,
+                context=request_data,
+                purpose="Agent action authorization"
             )
 
-            if not allowed:
+            if not decision.allowed:
                 self.logger.warning(
-                    f"[Governor] Action '{action}' by {agent_name} DENIED: {decision}"
+                    f"[Governor] Action '{action}' by {agent_name} DENIED: {decision.reasoning}"
                 )
-                return False, f"Action denied by constitutional governance: {decision}"
+                return False, f"Action denied by constitutional governance: {decision.reasoning}"
 
             self.logger.debug(f"[Governor] Action '{action}' by {agent_name} APPROVED")
             return True, None
@@ -426,7 +430,7 @@ class AgentBus:
                 return
 
             # Check governance before allowing action
-            allowed, denial_reason = self._check_governance(agent_name, action, payload)
+            allowed, denial_reason = await self._check_governance(agent_name, action, payload)
 
             if not allowed:
                 self.logger.warning(f"[AgentBus] Request blocked by governance: {denial_reason}")
