@@ -4,7 +4,7 @@ A complete project management and vibe coding RAG system.
 Comprehensive AI-powered platform for collaborative software project development, with real-time collaboration,
 multi-agent orchestration, and production-grade infrastructure.
 
-> **Status**: Production Ready (v1.2.0)
+> **Status**: Production Ready (v0.2.0)
 > **License**: MIT
 > **Architecture**: FastAPI Backend + React Frontend + PostgreSQL + Redis + ChromaDB
 > **Latest**: All code quality checks passing (ruff, docstrings, tests)
