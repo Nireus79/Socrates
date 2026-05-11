@@ -27,8 +27,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e . -e ./socrates-cli -e ./socrates-api
-          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+          pip install -e .
+          pip install -e ".[dev]"
 
       - name: Lint with ruff
         run: |
@@ -70,8 +70,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e . -e ./socrates-cli -e ./socrates-api
-          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+          pip install -e .
+          pip install -e ".[dev]"
 
       - name: Run core unit tests
         run: |
@@ -111,8 +111,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e . -e ./socrates-cli -e ./socrates-api
-          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+          pip install -e .
+          pip install -e ".[dev]"
 
       - name: Run database tests
         run: |
@@ -153,8 +153,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e . -e ./socrates-cli -e ./socrates-api
-          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+          pip install -e .
+          pip install -e ".[dev]"
 
       - name: Run agent tests
         run: |
@@ -196,8 +196,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e . -e ./socrates-cli -e ./socrates-api
-          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+          pip install -e .
+          pip install -e ".[dev]"
 
       - name: Run data layer tests
         run: |
@@ -238,8 +238,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e . -e ./socrates-cli -e ./socrates-api
-          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+          pip install -e .
+          pip install -e ".[dev]"
 
       - name: Test CLI installation
         run: |
@@ -273,8 +273,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e . -e ./socrates-cli -e ./socrates-api
-          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+          pip install -e .
+          pip install -e ".[dev]"
           pip install pytest-cov pytest-timeout coverage
 
       - name: Run utilities tests
@@ -316,8 +316,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e . -e ./socrates-cli -e ./socrates-api
-          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+          pip install -e .
+          pip install -e ".[dev]"
           pip install pytest-timeout
 
       - name: Test API endpoints
