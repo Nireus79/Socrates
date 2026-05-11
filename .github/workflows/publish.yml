@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e . -e socrates-cli -e socrates-api
+          pip install -e .
           pip install -e ".[dev]" pytest-cov
 
       - name: Run tests
@@ -52,10 +52,6 @@ jobs:
         package:
           - path: .
             name: socrates-ai
-          - path: socrates-cli
-            name: socrates-cli
-          - path: socrates-api
-            name: socrates-api
 
     steps:
       - name: Checkout code
@@ -101,10 +97,6 @@ jobs:
         package:
           - path: .
             name: socrates-ai
-          - path: socrates-cli
-            name: socrates-cli
-          - path: socrates-api
-            name: socrates-api
 
     steps:
       - name: Checkout code
@@ -197,16 +189,12 @@ jobs:
           cat > /tmp/release_notes.md << 'EOF'
           # Release Notes
 
-          ## Packages Published
-          - **socrates-ai**: Core library with AI agents and orchestration
-          - **socrates-cli**: Command-line interface tool
-          - **socrates-api**: REST API server
+          ## Package Published
+          - **socrates-ai**: Core library with AI agents, orchestration, CLI, and REST API
 
-          All packages are available on PyPI:
+          Install from PyPI:
           ```bash
           pip install socrates-ai
-          pip install socrates-cli
-          pip install socrates-api
           ```
 
           ## Changelog
@@ -240,8 +228,6 @@ jobs:
       - name: Create notification
         run: |
           echo "Successfully published Socrates v${{ github.event.release.tag_name }} to PyPI"
-          echo "- socrates-ai"
-          echo "- socrates-cli"
-          echo "- socrates-api"
+          echo "- socrates-ai (includes CLI and API as internal modules)"
           echo ""
           echo "Install with: pip install socrates-ai"
