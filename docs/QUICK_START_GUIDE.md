@@ -2,9 +2,38 @@
 
 Get Socrates running locally in minutes!
 
+> **Version**: 0.2.0 (Beta) | **Status**: Published to PyPI
+
 ---
 
-## Prerequisites Check (1 minute)
+## Option 1: Quick Install from PyPI (1 minute)
+
+For fastest setup, install from PyPI:
+
+```bash
+# Install package
+pip install socrates-ai
+
+# Get your API key from https://console.anthropic.com/api/keys
+
+# Create .env file with your key
+echo "ANTHROPIC_API_KEY=sk-ant-your-actual-key-here" > .env
+
+# Start API server
+socrates-api
+
+# In another terminal, start frontend (see Option 2 below)
+```
+
+**This starts the API at**: http://localhost:8000
+
+---
+
+## Option 2: Full Development Setup (From Source)
+
+For development or if you want to modify code:
+
+### Prerequisites Check (1 minute)
 
 Verify you have these installed:
 

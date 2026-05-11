@@ -29,15 +29,78 @@ Socrates AI can integrate with external systems in three ways:
 
 ## Supported Integrations
 
-### Built-In Integrations
+### Framework Integrations (Built-In)
+
+Socrates AI v0.2.0 includes first-class integrations with popular AI and development frameworks:
+
+| Framework | Type | Purpose | Status |
+|---|---|---|---|
+| **LangChain** | Python Library | Chain language model operations | ✓ v0.2.0+ |
+| **LangGraph** | Python Library | Build stateful multi-agent systems | ✓ v0.2.0+ |
+| **OpenClaw** | Framework | Collaborative agent orchestration | ✓ v0.2.0+ |
+
+**Installation**:
+```bash
+# Individual framework integrations
+pip install socrates-ai[langchain]
+pip install socrates-ai[langgraph]
+pip install socrates-ai[openclaw]
+
+# All frameworks
+pip install socrates-ai[all]
+```
+
+### Integration Examples
+
+#### LangChain Integration
+
+```python
+from socrates_ai import SocratesAI
+from langchain.chains import LLMChain
+
+socrates = SocratesAI(api_key="sk-ant-...")
+
+# Use Socrates with LangChain chains
+chain = socrates.create_langchain_chain("code_generation")
+result = chain.run(specification="Build a REST API")
+```
+
+#### LangGraph Integration
+
+```python
+from socrates_ai import SocratesAI
+from langgraph.graph import StateGraph
+
+socrates = SocratesAI(api_key="sk-ant-...")
+
+# Create LangGraph workflow with Socrates agents
+graph = StateGraph(socrates.get_agent_nodes())
+graph.add_edge("start", "code_generator")
+compiled = graph.compile()
+```
+
+#### OpenClaw Integration
+
+```python
+from socrates_ai import SocratesAI
+from openclaw import Coordinator
+
+socrates = SocratesAI(api_key="sk-ant-...")
+
+# Integrate with OpenClaw for collaborative orchestration
+coordinator = Coordinator(socrates.get_agents())
+coordinator.register_protocol("socratic_questioning")
+```
+
+### Service Integrations
 
 | Integration | Type | Purpose | Status |
 |---|---|---|---|
-| **GitHub** | Webhook | Trigger project creation from repos | ✓ Planned v1.4 |
-| **Slack** | API | Post dialogue summaries to Slack | ✓ Planned v1.4 |
-| **Jira** | API | Create issues from generated code | ✓ Planned v1.4 |
-| **Google Drive** | API | Auto-upload generated code | ✓ Planned v1.5 |
-| **VS Code** | Extension | Integrated IDE extension | ✓ Planned v1.5 |
+| **GitHub** | Webhook | Trigger project creation from repos | ✓ Planned v0.3 |
+| **Slack** | API | Post dialogue summaries to Slack | ✓ Planned v0.3 |
+| **Jira** | API | Create issues from generated code | ✓ Planned v0.3 |
+| **Google Drive** | API | Auto-upload generated code | ✓ Planned v0.4 |
+| **VS Code** | Extension | Integrated IDE extension | ✓ Planned v0.4 |
 
 ### Community Integrations
 
@@ -539,5 +602,26 @@ Have an integration idea? Open a GitHub issue or discussion:
 
 ---
 
-**Last Updated**: January 2026
-**Version**: 1.3.0
+## Package Structure (v0.2.0)
+
+Socrates is now published as a unified package on PyPI with all components integrated:
+
+```bash
+# Single package installation
+pip install socrates-ai
+
+# Access all components
+from socrates_ai import SocratesAI              # Core library
+from socrates_cli import cli                     # Command-line interface
+from socrates_api import main                    # REST API server
+```
+
+The API and CLI are available as entry points:
+- `socrates-api` - Start the REST API server on port 8000
+- `socrates` - Command-line interface
+
+---
+
+**Last Updated**: May 2026
+**Version**: 0.2.0 (Beta)
+**PyPI**: [socrates-ai](https://pypi.org/project/socrates-ai/)

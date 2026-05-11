@@ -4,10 +4,11 @@ A complete project management and vibe coding RAG system.
 Comprehensive AI-powered platform for collaborative software project development, with real-time collaboration,
 multi-agent orchestration, and production-grade infrastructure.
 
-> **Status**: Production Ready (v0.2.0)
+> **Status**: Beta (v0.2.0)
 > **License**: MIT
 > **Architecture**: FastAPI Backend + React Frontend + PostgreSQL + Redis + ChromaDB
-> **Latest**: All code quality checks passing (ruff, docstrings, tests)
+> **Latest**: All code quality checks passing, PyPI published, integrations ready
+> **Package**: [socrates-ai on PyPI](https://pypi.org/project/socrates-ai/)
 <img width="1887" height="918" alt="SocratesSS" src="https://github.com/user-attachments/assets/63c74ccb-869d-46c1-ace7-f0ed358acdb9" />
 
 ## Key Features
@@ -28,19 +29,19 @@ multi-agent orchestration, and production-grade infrastructure.
 
 ☸️ **Kubernetes-Ready**: Complete Kubernetes manifests, Helm charts, Docker multi-platform builds, CI/CD automation
 
-## 🎯 Latest Improvements (v1.2.0)
+## 🎯 Latest Release (v0.2.0 Beta)
 
-✨ **Code Quality**
+✨ **Package & Integrations**
+- ✅ Published to PyPI as unified `socrates-ai` package
+- ✅ Integrated with LangChain, LangGraph, and OpenClaw
+- ✅ CLI and REST API as internal modules with entry points
+- ✅ Docker build optimized with layer caching
+
+🔧 **Code Quality & Performance**
 - ✅ All ruff linting checks passing (0 errors)
 - ✅ All docstrings formatted per PEP 257
-- ✅ 1,023 tests passing
-- ✅ Docker build optimized (11 min → <2 min)
-
-🔧 **Features & Fixes**
-- ✅ Testing mode with 24-hour persistence for feature evaluation
-- ✅ Real-time collaboration improvements
-- ✅ Enterprise security enhancements
-- ✅ Performance optimizations across the stack
+- ✅ Tests passing, Code quality workflow validated
+- ✅ Docker build optimized (first build ~10 min, subsequent ~30 sec)
 
 ## 📚 Documentation
 
@@ -56,6 +57,31 @@ Quick links to get you started:
 ---
 
 ## Quick Start
+
+### PyPI Installation (Recommended)
+
+```bash
+# Install from PyPI
+pip install socrates-ai
+
+# With LangChain integration
+pip install socrates-ai[langchain]
+
+# With LangGraph integration
+pip install socrates-ai[langgraph]
+
+# With OpenClaw integration
+pip install socrates-ai[openclaw]
+
+# All integrations
+pip install socrates-ai[all]
+
+# Start API server
+socrates-api
+
+# Or use CLI
+socrates --help
+```
 
 ### Docker Compose (Local Development)
 
