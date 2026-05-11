@@ -38,7 +38,7 @@ export async function getNotes(projectId: string, limit?: number, tag?: string):
   const url = `/projects/${projectId}/notes${queryString ? `?${queryString}` : ''}`;
 
   const response = await apiClient.get(url) as any;
-  return response?.data || { notes: [], total: 0, returned: 0 };
+  return response || { notes: [], total: 0, returned: 0 };
 }
 
 /**
@@ -51,7 +51,7 @@ export async function createNote(projectId: string, title: string, content: stri
     tags,
   }) as any;
 
-  return response?.data?.note || null;
+  return response?.note || null;
 }
 
 /**
@@ -62,7 +62,7 @@ export async function searchNotes(projectId: string, query: string): Promise<Sea
     query,
   }) as any;
 
-  return response?.data || { results: [], total_matches: 0, query };
+  return response || { results: [], total_matches: 0, query };
 }
 
 /**
@@ -70,5 +70,5 @@ export async function searchNotes(projectId: string, query: string): Promise<Sea
  */
 export async function deleteNote(projectId: string, noteId: string): Promise<boolean> {
   const response = await apiClient.delete(`/projects/${projectId}/notes/${noteId}`) as any;
-  return response?.success || false;
+  return !!response?.note_id;
 }
