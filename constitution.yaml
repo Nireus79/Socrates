@@ -134,6 +134,10 @@ escalation_rules:
 capabilities:
   document_processor:
     actions:
+      - import_file
+      - import_text
+      - import_url
+      - process_response
       - file_import
       - text_import
       - directory_import
@@ -162,6 +166,17 @@ capabilities:
       - sandboxing: strict
       - timeout_enforcement: true
       - resource_limits: true
+
+  code_validation:
+    actions:
+      - validate_project
+      - run_tests
+    resource_access:
+      - code_execution:read
+      - database:read
+    resource_limits:
+      max_execution_time_seconds: 120
+      max_memory_mb: 512
 
   knowledge_manager:
     actions:
@@ -207,21 +222,32 @@ capabilities:
 
   quality_controller:
     actions:
+      - calculate_maturity
       - maturity_calculation
       - readiness_assessment
       - advancement_verification
+      - advance_phase
+      - get_recommendations
+      - get_pending_approvals
+      - approve_workflow
+      - reject_workflow
     resource_access:
       - database:read
+      - database:write
       - project_context:read
+      - project_context:write
     resource_limits:
       timeout_seconds: 60
       max_calculations_per_minute: 30
 
   context_analyzer:
     actions:
+      - analyze_context
       - analyze_project_context
       - extract_requirements
       - identify_conflicts
+      - generate_script
+      - generate_summary
     resource_access:
       - project_context:read
       - database:read
@@ -234,6 +260,8 @@ capabilities:
       - evaluate_response
       - track_progress
       - generate_answer_suggestions
+      - process_response
+      - reopen_question
     resource_access:
       - user_data:read
       - user_data:write
@@ -274,6 +302,10 @@ capabilities:
       - list_providers
       - get_provider_config
       - set_provider_config
+      - set_default_provider
+      - set_provider_model
+      - set_auth_method
+      - get_config
       - add_api_key
       - remove_api_key
       - get_provider_models
@@ -317,6 +349,18 @@ capabilities:
     resource_limits:
       requires_audit: true
       timeout_seconds: 60
+
+  analytics_engine:
+    actions:
+      - get_trends
+      - track_metrics
+      - generate_reports
+    resource_access:
+      - database:read
+      - metrics:read
+    resource_limits:
+      timeout_seconds: 120
+      max_data_points: 100000
 
 approval_workflows:
   high_risk_actions:
