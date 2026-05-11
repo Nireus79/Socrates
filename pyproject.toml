@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "2.0.0"
-description = "Production-ready collaborative development platform with Constitutional AI governance, multi-agent orchestration, Socratic AI guidance, and RAG knowledge management - now using socratic-morality and socratic-agents libraries"
+version = "0.2.0"
+description = "Multi-agent AI orchestration platform with Constitutional AI governance, Socratic guidance, and RAG knowledge management"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -43,7 +43,7 @@ keywords = [
     "gitops"
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Programming Language :: Python :: 3",
@@ -95,34 +95,66 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Development tools and testing
 dev = [
     "pytest>=9.0.0",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0.0",
     "pytest-timeout>=2.1.0",
+    "pytest-mock>=3.10.0",
+    "pytest-xdist>=3.0.0",
     "black>=24.0",
     "ruff>=0.4.0",
     "mypy>=1.8.0",
     "isort>=5.13.0",
     "types-requests>=2.31.0",
-    # Optional external libraries - included in dev to ensure full test coverage
+    "bandit>=1.7.0",
+    "safety>=2.3.0",
+]
+
+# LangChain integration
+langchain = [
+    "langchain>=0.1.0",
+    "langchain-community>=0.1.0",
+    "langchain-anthropic>=0.1.0",
+]
+
+# LangGraph integration
+langgraph = [
+    "langgraph>=0.1.0",
+]
+
+# OpenClaw integration
+openclaw = [
+    "openclaw>=0.1.0",
+]
+
+# Extended Socratic modules
+extensions = [
     "socratic-analyzer>=0.1.6",
     "socratic-conflict>=0.1.5",
     "socratic-docs>=0.2.1",
     "socratic-knowledge>=0.1.6",
     "socratic-learning>=0.2.0",
-    "socratic-maturity>=0.2.0",
     "socratic-performance>=0.2.1",
     "socratic-workflow>=0.1.4",
 ]
-async = [
-    "asyncio>=3.4.3",
-]
+
+# Documentation generation
 docs = [
     "sphinx>=5.0",
     "sphinx-rtd-theme>=1.0",
     "sphinx-autodoc-typehints>=1.19",
 ]
+
+# All integrations and extensions
+all = [
+    "socrates-ai[langchain,langgraph,openclaw,extensions,docs]",
+]
+
+[project.scripts]
+socrates = "socrates_cli.cli:main"
+socrates-api = "socrates_api.main:run"
 
 [project.urls]
 Homepage = "https://github.com/Nireus79/Socrates"
