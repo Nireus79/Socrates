@@ -285,7 +285,7 @@ class AgentBus:
                 action=action,
                 actor=agent_name,
                 context=request_data,
-                purpose="Agent action authorization"
+                purpose="Agent action authorization",
             )
 
             if not decision.allowed:
