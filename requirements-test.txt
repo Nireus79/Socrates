@@ -36,7 +36,7 @@ ruff>=0.4.0
 locust>=2.15.0
 
 # Documentation
-pytest-html>=3.2.0
+pytest-html>=4.2.0
 
 # Database Testing
 sqlalchemy>=2.0.0
