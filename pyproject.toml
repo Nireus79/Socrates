@@ -63,7 +63,7 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "socratic-morality>=0.0.5",
+    "socratic-morality>=0.0.6",
     "socratic-agents>=0.3.7",
     "socratic-nexus>=0.4.3",
     "socratic-maturity>=0.2.0",
