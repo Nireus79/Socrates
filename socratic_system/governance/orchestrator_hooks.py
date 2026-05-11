@@ -5,7 +5,7 @@ Provides middleware-style governance checks for all agent actions.
 """
 
 import logging
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 from socratic_system.governance.morality_integration import (
     get_morality_governance,
@@ -55,9 +55,7 @@ class GovernanceAwareOrchestrator:
         # Extract action description from request
         action = self._extract_action_description(agent_name, request)
 
-        logger.info(
-            f"Processing {agent_name} request with governance check: {action}"
-        )
+        logger.info(f"Processing {agent_name} request with governance check: {action}")
 
         # Check constitutional compliance
         decision = await self.governance.evaluate_agent_action(
@@ -70,8 +68,7 @@ class GovernanceAwareOrchestrator:
         # Block if not allowed
         if not decision["allowed"]:
             error_msg = (
-                f"Action blocked by governance: {action}. "
-                f"Violations: {decision['violations']}"
+                f"Action blocked by governance: {action}. " f"Violations: {decision['violations']}"
             )
             logger.warning(error_msg)
 
@@ -95,18 +92,14 @@ class GovernanceAwareOrchestrator:
 
         # Process with orchestrator
         try:
-            response = await self.orchestrator.process_request(
-                agent_name, request
-            )
+            response = await self.orchestrator.process_request(agent_name, request)
             return response
 
         except Exception as e:
             logger.error(f"Error during orchestration: {e}", exc_info=True)
             raise
 
-    async def check_capability(
-        self, agent_name: str, action: str
-    ) -> bool:
+    async def check_capability(self, agent_name: str, action: str) -> bool:
         """
         Check if agent has capability to perform action.
 
@@ -132,9 +125,7 @@ class GovernanceAwareOrchestrator:
             return False
 
     @staticmethod
-    def _extract_action_description(
-        agent_name: str, request: Dict[str, Any]
-    ) -> str:
+    def _extract_action_description(agent_name: str, request: Dict[str, Any]) -> str:
         """
         Extract human-readable action description from request.
 

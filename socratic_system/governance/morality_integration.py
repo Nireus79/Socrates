@@ -9,9 +9,13 @@ import logging
 from typing import Any, Dict, Optional
 
 from socratic_morality.api.governance_api import GovernanceAPI
-from socratic_morality.governance.constitutional_enforcer import ConstitutionalEnforcer
+from socratic_morality.governance.constitutional_enforcer import (
+    ConstitutionalEnforcer,
+)
+from socratic_morality.reasoning.semantic_precedent_engine import (
+    SemanticPrecedentEngine,
+)
 from socratic_morality.reasoning.socratic_dialogue_engine import SocraticDialogueEngine
-from socratic_morality.reasoning.semantic_precedent_engine import SemanticPrecedentEngine
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +50,9 @@ class MoralityGovernanceIntegration:
 
         # Initialize governance components
         self.governance_api = GovernanceAPI()
-        self.constitutional_enforcer = ConstitutionalEnforcer(
-            constitution_path=constitution_path
-        )
+        self.constitutional_enforcer = ConstitutionalEnforcer(constitution_path=constitution_path)
         self.socratic_dialogue = (
-            SocraticDialogueEngine(llm_provider=llm_provider)
-            if enable_dialogue
-            else None
+            SocraticDialogueEngine(llm_provider=llm_provider) if enable_dialogue else None
         )
         self.semantic_precedent = SemanticPrecedentEngine()
 
@@ -96,10 +96,7 @@ class MoralityGovernanceIntegration:
         if purpose:
             context["purpose"] = purpose
 
-        logger.info(
-            f"Evaluating action: {action} "
-            f"(agent={agent_name}, purpose={purpose})"
-        )
+        logger.info(f"Evaluating action: {action} " f"(agent={agent_name}, purpose={purpose})")
 
         # Use interactive dialogue if requested and available
         use_dialogue = interactive and self.enable_dialogue
@@ -113,13 +110,10 @@ class MoralityGovernanceIntegration:
             )
 
             # Log decision
-            log_level = (
-                logging.WARNING if not decision.allowed else logging.INFO
-            )
+            log_level = logging.WARNING if not decision.allowed else logging.INFO
             logger.log(
                 log_level,
-                f"Decision: {decision.decision_type} "
-                f"(confidence={decision.confidence:.2f})",
+                f"Decision: {decision.decision_type} " f"(confidence={decision.confidence:.2f})",
             )
 
             return {
@@ -128,18 +122,14 @@ class MoralityGovernanceIntegration:
                 "confidence": decision.confidence,
                 "reasoning": decision.reasoning_trace,
                 "violations": [str(v) for v in decision.violations],
-                "dialogue_transcript": getattr(
-                    decision, "dialogue_transcript", None
-                ),
+                "dialogue_transcript": getattr(decision, "dialogue_transcript", None),
             }
 
         except Exception as e:
             logger.error(f"Error during governance evaluation: {e}", exc_info=True)
             raise
 
-    async def check_constitutional_principles(
-        self, action: str
-    ) -> Dict[str, Any]:
+    async def check_constitutional_principles(self, action: str) -> Dict[str, Any]:
         """
         Quick check of action against constitutional principles.
 
@@ -165,9 +155,7 @@ class MoralityGovernanceIntegration:
             "confidence": check.confidence,
         }
 
-    async def get_agent_capabilities(
-        self, agent_name: str
-    ) -> Dict[str, Any]:
+    async def get_agent_capabilities(self, agent_name: str) -> Dict[str, Any]:
         """
         Get authorized capabilities for an agent.
 
@@ -184,9 +172,7 @@ class MoralityGovernanceIntegration:
             return {}
 
         if not hasattr(constitution, "agent_capabilities"):
-            logger.warning(
-                "Constitution does not define agent capabilities"
-            )
+            logger.warning("Constitution does not define agent capabilities")
             return {}
 
         caps = constitution.agent_capabilities.get(agent_name, {})
@@ -199,9 +185,7 @@ class MoralityGovernanceIntegration:
             "restrictions": caps.get("restrictions", []),
         }
 
-    async def store_decision_precedent(
-        self, action: str, decision: Dict[str, Any]
-    ) -> None:
+    async def store_decision_precedent(self, action: str, decision: Dict[str, Any]) -> None:
         """
         Store a governance decision as a precedent for future reference.
 
@@ -210,21 +194,19 @@ class MoralityGovernanceIntegration:
             decision: Governance decision result
         """
         try:
-            await self.semantic_precedent.add_precedent_case({
-                "action": action,
-                "conclusion": decision.get("decision_type"),
-                "reasoning": decision.get("reasoning"),
-                "confidence": decision.get("confidence"),
-            })
-            logger.debug(
-                f"Stored precedent for action: {action}"
+            await self.semantic_precedent.add_precedent_case(
+                {
+                    "action": action,
+                    "conclusion": decision.get("decision_type"),
+                    "reasoning": decision.get("reasoning"),
+                    "confidence": decision.get("confidence"),
+                }
             )
+            logger.debug(f"Stored precedent for action: {action}")
         except Exception as e:
             logger.warning(f"Failed to store precedent: {e}")
 
-    async def get_decision_history(
-        self, limit: int = 10
-    ) -> list[Dict[str, Any]]:
+    async def get_decision_history(self, limit: int = 10) -> list[Dict[str, Any]]:
         """
         Get recent governance decisions.
 
@@ -280,8 +262,7 @@ def get_morality_governance() -> MoralityGovernanceIntegration:
     """
     if _morality_integration is None:
         raise RuntimeError(
-            "Morality governance not initialized. "
-            "Call initialize_morality_governance() first."
+            "Morality governance not initialized. " "Call initialize_morality_governance() first."
         )
 
     return _morality_integration
