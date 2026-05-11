@@ -19,6 +19,7 @@ import {
   Badge,
   Dialog,
 } from '../../components/common';
+import { Modal } from '../../components/common/dialog';
 import { LLMSettingsPage } from '../../components/llm';
 import { ChangePasswordModal, TwoFactorSetup, SessionManager } from '../../components/settings';
 
@@ -752,7 +753,7 @@ export const SettingsPage: React.FC = () => {
           variant="danger"
         />
 
-        <Dialog
+        <Modal
           isOpen={showFinalConfirmDialog}
           onClose={() => {
             setShowFinalConfirmDialog(false);
@@ -760,13 +761,67 @@ export const SettingsPage: React.FC = () => {
             setDeleteConfirmation('');
           }}
           title="Final Confirmation"
-          description="To confirm deletion, type 'I UNDERSTAND' and 'DELETE' in the prompts that follow."
-          confirmLabel="Delete My Account Forever"
-          cancelLabel="Cancel"
-          onConfirm={handleFinalDeleteAccount}
-          variant="danger"
-          isLoading={isLoading}
-        />
+          size="md"
+        >
+          <div className="space-y-4">
+            <p className="text-gray-700 dark:text-gray-300">
+              To confirm deletion, type <strong>'I UNDERSTAND'</strong> in the first field and <strong>'DELETE'</strong> in the second field.
+            </p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                Type: I UNDERSTAND
+              </label>
+              <Input
+                type="text"
+                placeholder="I UNDERSTAND"
+                value={confirmationText}
+                onChange={(e) => setConfirmationText(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                Type: DELETE
+              </label>
+              <Input
+                type="text"
+                placeholder="DELETE"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+
+            <Alert
+              type="danger"
+              title="Warning"
+              description="This action is permanent and cannot be undone. All your data will be deleted."
+            />
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowFinalConfirmDialog(false);
+                  setConfirmationText('');
+                  setDeleteConfirmation('');
+                }}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleFinalDeleteAccount}
+                disabled={isLoading || confirmationText !== 'I UNDERSTAND' || deleteConfirmation !== 'DELETE'}
+              >
+                {isLoading ? 'Deleting...' : 'Delete My Account Forever'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </MainLayout>
   );
