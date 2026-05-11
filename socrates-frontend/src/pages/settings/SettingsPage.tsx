@@ -795,10 +795,11 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             <Alert
-              type="danger"
+              type="error"
               title="Warning"
-              description="This action is permanent and cannot be undone. All your data will be deleted."
-            />
+            >
+              This action is permanent and cannot be undone. All your data will be deleted.
+            </Alert>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
               <Button
