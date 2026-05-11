@@ -1,6 +1,8 @@
 # Multi-stage build for Socrates application
-# Stage 1: Builder
-FROM python:3.11-slim as builder
+# Stage 1: Dependencies Builder
+# This stage only installs Python dependencies and creates the package metadata
+# It's cached separately from application code changes
+FROM python:3.11-slim as dependencies
 
 WORKDIR /build
 
@@ -10,19 +12,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install requirements FIRST (better layer caching)
+# Copy ONLY package definition and metadata files (not application code)
+# This layer is cached and won't rebuild when application code changes
 COPY pyproject.toml README.md LICENSE .
+
+# Copy package directories needed for setup.py/pyproject.toml
 COPY socrates_ai socrates_ai/
 COPY socratic_system socratic_system/
 COPY socrates-api socrates-api/
 COPY socrates-cli socrates-cli/
 
+# Install dependencies - this is the slow step that gets cached
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -e . && \
     pip cache purge
 
 # Stage 2: Runtime
-FROM python:3.11-slim
+# Copy pre-built dependencies from dependencies stage
+FROM python:3.11-slim as runtime
+
+# Stage 2: Runtime
+FROM python:3.11-slim as runtime
 
 WORKDIR /app
 
@@ -35,11 +45,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create non-root user
 RUN useradd -m -u 1000 socrates
 
-# Copy Python packages from builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Copy Python packages from dependencies stage (includes all pre-installed packages)
+COPY --from=dependencies /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=dependencies /usr/local/bin /usr/local/bin
 
 # Copy application code
+# This happens AFTER dependencies are installed, so code changes don't invalidate dependency cache
 COPY --chown=socrates:socrates . .
 
 # Create directories for logs and data
