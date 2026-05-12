@@ -52,8 +52,31 @@ def orchestrator(e2e_environment):
 @pytest.fixture
 def database(e2e_environment):
     """Create database for E2E testing."""
+    from socratic_system.models.user import User
+    import datetime
+
     db_path = str(Path(e2e_environment["db_dir"]) / "test.db")
-    return ProjectDatabase(db_path)
+    db = ProjectDatabase(db_path)
+
+    # Create test users for e2e tests
+    users = [
+        "e2e_user",
+        "test_owner",
+        "orch_user",
+        "model_owner",
+        "agent_user",
+        "multi_owner",
+    ]
+    for username in users:
+        user = User(
+            username=username,
+            email=f"{username}@test.com",
+            passcode_hash="hash",
+            created_at=datetime.datetime.now(),
+        )
+        db.save_user(user)
+
+    return db
 
 
 @pytest.mark.e2e
