@@ -40,19 +40,89 @@ Complete guide for deploying Socrates API to production environments.
 
 ## Docker Deployment
 
-### Quick Start with Docker Compose
+### Using Pre-Built Images from Docker Hub (Recommended)
+
+Pre-built images are available on Docker Hub for fast, consistent production deployments:
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/socrates.git
-cd socrates
+git clone https://github.com/Nireus79/Socrates.git
+cd Socrates
 
 # Create environment configuration
-cp .env.production.example .env.production
-# Edit .env.production with your values
+cp deployment/configurations/.env.example .env.docker
+# Edit .env.docker with your values (set ANTHROPIC_API_KEY, etc.)
 
-# Start all services
-docker-compose -f docker-compose.yml up -d
+# Use Docker Compose with pre-built images
+cat > docker-compose.hub.yml << 'EOF'
+version: '3.8'
+services:
+  api:
+    image: nireus79/socrates-api:latest
+    ports:
+      - "8000:8000"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql://socrates_user:password@postgres:5432/socrates_prod
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - socrates_data:/app/data
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: socrates_prod
+      POSTGRES_USER: socrates_user
+      POSTGRES_PASSWORD: your_secure_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  socrates_data:
+  postgres_data:
+  redis_data:
+EOF
+
+# Start services
+docker-compose -f docker-compose.hub.yml up -d
+
+# Verify services
+docker-compose ps
+curl http://localhost:8000/health/detailed
+```
+
+**Advantages of pre-built images:**
+- Startup: < 1 minute (just pull + start)
+- Consistency: Same image across environments
+- No local build required
+- Automated updates via GitHub Actions
+
+See [Docker Deployment Guide](docs/DOCKER_DEPLOYMENT.md) for more details.
+
+### Quick Start with Docker Compose (Local Build)
+
+For local development or custom builds:
+
+```bash
+# Clone repository
+git clone https://github.com/Nireus79/Socrates.git
+cd Socrates
+
+# Create environment configuration
+cp deployment/configurations/.env.example .env
+# Edit .env with your values
+
+# Start all services (builds locally)
+docker-compose -f deployment/docker/docker-compose.yml up -d
 
 # Verify services
 docker-compose ps

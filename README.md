@@ -45,14 +45,23 @@ multi-agent orchestration, and production-grade infrastructure.
 
 ## 📚 Documentation
 
-Quick links to get you started:
+### Getting Started
 - **[Quick Start Guide](docs/QUICK_START_GUIDE.md)** ⚡ - Get running in 5-10 minutes
 - **[Installation Guide](docs/INSTALLATION.md)** - Detailed setup for all platforms
-- **[Architecture Guide](docs/ARCHITECTURE.md)** - Understand the system design
-- **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy to production
+
+### Development & Architecture
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Understand the system design
+- **[Architecture Case Studies](docs/ARCHITECTURE_CASE_STUDIES.md)** - Deep design rationale and tradeoffs
+- **[System Design](docs/SYSTEM_DESIGN.md)** - High-level architecture with components and patterns
+- **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
 - **[GitHub Integration](docs/GITHUB_INTEGRATION.md)** - Advanced GitHub features
+
+### Production & Operations
+- **[Docker Deployment](docs/DOCKER_DEPLOYMENT.md)** - Docker & Docker Compose setup with Hub integration
+- **[Production Deployment](docs/PRODUCTION_DEPLOYMENT.md)** - Production checklist, scaling, high availability, and runbooks
+- **[Observability Guide](docs/OBSERVABILITY.md)** - Monitoring, metrics, logging, alerts, and health checks
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy to production
 
 ---
 
@@ -102,6 +111,25 @@ docker-compose -f deployment/docker/docker-compose.yml up -d
 # Access API at http://localhost:8000
 # API Documentation at http://localhost:8000/docs
 ```
+
+### Docker Hub (Production)
+
+Pre-built images are available on Docker Hub for fast production deployments:
+
+```bash
+# Option 1: Use docker-compose with pre-built images
+cp deployment/configurations/.env.example .env.docker
+# Edit .env.docker with your settings
+
+docker-compose -f docker-compose.hub.yml up -d
+
+# Option 2: Run single container
+docker run -e ANTHROPIC_API_KEY=sk-ant-your-key \
+           -p 8000:8000 \
+           nireus79/socrates-api:latest
+```
+
+See [Docker Deployment Guide](docs/DOCKER_DEPLOYMENT.md) for detailed Docker Hub usage, pushing images, and GitHub Actions CI/CD setup.
 
 ### Kubernetes (Production)
 
@@ -225,6 +253,8 @@ See [API_REFERENCE.md](docs/API_REFERENCE.md) for complete endpoint documentatio
 - Rate limiting (5/min free, 100/min pro)
 - Input validation & sanitization
 - Encrypted database fields
+- TLS/HTTPS support
+- Request signing and verification
 
 ✅ **Performance**
 - Connection pooling (20 connections)
@@ -232,6 +262,7 @@ See [API_REFERENCE.md](docs/API_REFERENCE.md) for complete endpoint documentatio
 - Query optimization & indexing
 - Async database operations
 - Request compression
+- Multi-stage Docker builds for fast deployments
 
 ✅ **Reliability**
 - Database transactions & rollback
@@ -239,17 +270,63 @@ See [API_REFERENCE.md](docs/API_REFERENCE.md) for complete endpoint documentatio
 - Health monitoring & self-healing
 - Graceful degradation
 - Error tracking & logging
+- High-availability database setup (read replicas, failover)
+- Circuit breaker pattern for external services
 
 ✅ **Operations**
 - Kubernetes manifests & Helm charts
+- Docker pre-built images on Docker Hub
 - Docker multi-platform builds
 - CI/CD GitHub Actions workflows
 - Prometheus metrics & Grafana dashboards
-- Structured logging
+- Structured JSON logging
+- Distributed tracing support (OpenTelemetry)
+- Complete runbooks for common operations
 
-## Deployment
+## Production-Ready Deployment
 
-### Docker Compose (Recommended for Local Development)
+Socrates is built for production from day one. To deploy to production:
+
+1. **Review the [Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT.md)** - Complete checklist covering:
+   - Security hardening (encryption keys, TLS, authentication)
+   - Database setup (PostgreSQL with replication, backups)
+   - Cache configuration (Redis, connection pooling)
+   - Resource management (limits, concurrency settings)
+   - Monitoring & alerting setup
+
+2. **Follow the [Observability Guide](docs/OBSERVABILITY.md)** for:
+   - Structured logging with JSON format
+   - Prometheus metrics collection
+   - Health checks and readiness probes
+   - Distributed tracing with OpenTelemetry
+   - Alerting rules and dashboards
+
+3. **Use the [Docker Deployment Guide](docs/DOCKER_DEPLOYMENT.md)** for:
+   - Pre-built Docker Hub images
+   - Multi-stage builds and optimization
+   - GitHub Actions CI/CD automation
+   - Scaling beyond Docker Compose
+
+### Quick Production Checklist
+
+- [ ] Use PostgreSQL (not SQLite)
+- [ ] Enable Redis for distributed caching
+- [ ] Generate strong encryption keys
+- [ ] Set `ENVIRONMENT=production`
+- [ ] Configure HTTPS/TLS with valid certificates
+- [ ] Set up database backups (daily minimum)
+- [ ] Enable health checks
+- [ ] Configure Prometheus metrics
+- [ ] Set up log aggregation
+- [ ] Configure alerting
+- [ ] Load balance across multiple API instances
+- [ ] Monitor key metrics (error rate, response time, resource usage)
+
+See [Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT.md) for the full 20-item checklist and detailed instructions.
+
+## Deployment Options
+
+### Local Development (Docker Compose)
 
 Includes PostgreSQL, Redis, ChromaDB, and Nginx:
 
@@ -263,7 +340,23 @@ docker-compose up -d
 # PostgreSQL: localhost:5432 (user: socrates / pass: socrates_dev_password)
 ```
 
-See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for production Kubernetes setup.
+### Production Deployment
+
+**Docker Compose with pre-built images**:
+```bash
+# Use pre-built images from Docker Hub
+docker-compose -f docker-compose.hub.yml up -d
+```
+
+**Kubernetes** (recommended for high availability):
+```bash
+# Using Helm
+helm install socrates ./helm \
+  --namespace production \
+  --values production-values.yaml
+```
+
+See [Docker Deployment](docs/DOCKER_DEPLOYMENT.md) and [Production Deployment](docs/PRODUCTION_DEPLOYMENT.md) for complete setup instructions.
 
 ## Development
 
