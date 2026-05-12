@@ -21,6 +21,7 @@ except ImportError as e:
     @dataclass
     class KnowledgeEntry:
         """Fallback KnowledgeEntry definition when socratic_knowledge is unavailable"""
+
         id: str
         content: str
         category: str
