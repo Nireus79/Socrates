@@ -18,7 +18,7 @@ except ImportError as e:
     from typing import Any, Dict, List, Optional
 
     @dataclass
-    class KnowledgeEntry:
+    class KnowledgeEntry:  # type: ignore[no-redef]
         """Fallback KnowledgeEntry definition when socratic_knowledge is unavailable"""
 
         id: str
