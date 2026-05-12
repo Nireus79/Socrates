@@ -1,6 +1,4 @@
-"""
-Data models for Socrates AI
-"""
+"""Data models for Socrates AI"""
 
 try:
     from socratic_conflict import ConflictInfo

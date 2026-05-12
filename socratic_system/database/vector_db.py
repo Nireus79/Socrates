@@ -1,6 +1,4 @@
-"""
-Vector database for knowledge management in Socrates AI
-"""
+"""Vector database for knowledge management in Socrates AI"""
 
 import gc
 import logging
@@ -97,8 +95,8 @@ class VectorDatabase:
         return self._embedding_model_instance
 
     def _format_metadata_for_chromadb(self, metadata: Optional[Dict]) -> Dict:
-        """
-        Convert metadata to ChromaDB-compatible format.
+        """Convert metadata to ChromaDB-compatible format.
+
         ChromaDB only supports primitive types (str, int, float, bool, None).
         Lists and dicts are converted to strings.
         """
