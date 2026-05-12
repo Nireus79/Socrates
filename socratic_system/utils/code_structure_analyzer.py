@@ -12,7 +12,6 @@ Analyzes generated code to identify:
 import ast
 import logging
 import re
-from typing import Dict, List
 
 logger = logging.getLogger("socrates.utils.code_structure_analyzer")
 

@@ -13,7 +13,7 @@ import logging
 import tarfile
 import zipfile
 from pathlib import Path
-from typing import Literal, Optional, Tuple
+from typing import Literal
 
 logger = logging.getLogger("socrates.utils.archive_builder")
 

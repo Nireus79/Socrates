@@ -7,7 +7,6 @@ Follows the Provider pattern used in Socrates for LLM providers.
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Type
 
 from .base import BaseLanguageExtractor
 

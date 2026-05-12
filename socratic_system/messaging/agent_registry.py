@@ -7,10 +7,10 @@ Provides single source of truth for available agents and their capabilities.
 
 import logging
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from collections.abc import Callable
+from typing import Any
 
 
 @dataclass

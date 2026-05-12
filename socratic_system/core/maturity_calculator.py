@@ -4,7 +4,7 @@ Independent maturity calculation module - Pure calculation logic without agent d
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from socratic_system.core.insight_categorizer import InsightCategorizer
 from socratic_system.core.project_categories import get_phase_categories

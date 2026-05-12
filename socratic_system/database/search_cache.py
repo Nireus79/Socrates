@@ -8,7 +8,6 @@ Typical speedup: 100ms → 5ms (20x improvement) for cached searches.
 import logging
 import threading
 import time
-from typing import Dict, List, Optional, Tuple
 
 
 class SearchResultCache:

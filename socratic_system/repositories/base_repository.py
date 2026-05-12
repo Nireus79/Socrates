@@ -6,7 +6,7 @@ Services depend on repository interfaces, not database implementation.
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
 logger = logging.getLogger(__name__)

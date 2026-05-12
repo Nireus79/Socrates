@@ -5,7 +5,6 @@ import hmac
 import logging
 import os
 from datetime import datetime, timedelta
-from typing import Dict, Optional
 
 from socratic_system.sponsorships.models import Sponsorship
 from socratic_system.sponsorships.tiers import get_tier_from_sponsorship_amount

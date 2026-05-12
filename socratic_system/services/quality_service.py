@@ -1,6 +1,6 @@
 """Quality service - encapsulates quality control and maturity tracking."""
 
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from socratic_system.core.analytics_calculator import AnalyticsCalculator
 from socratic_system.core.maturity_calculator import MaturityCalculator

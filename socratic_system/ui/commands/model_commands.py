@@ -1,6 +1,6 @@
 """Model selection and switching commands"""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from colorama import Fore, Style
 

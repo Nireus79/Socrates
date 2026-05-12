@@ -1,6 +1,6 @@
 """Code service - encapsulates code generation and management."""
 
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from .base import Service
 

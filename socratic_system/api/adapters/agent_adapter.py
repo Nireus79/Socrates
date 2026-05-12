@@ -4,7 +4,7 @@ Serializes/deserializes requests and responses for external API access.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from socratic_system.orchestration import AgentOrchestrator

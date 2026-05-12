@@ -8,7 +8,6 @@ Typical speedup: 50ms → 0.5ms (100x improvement) for cached embeddings.
 import hashlib
 import logging
 import threading
-from typing import Dict, List, Optional
 
 
 class EmbeddingCache:

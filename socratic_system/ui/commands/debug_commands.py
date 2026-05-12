@@ -1,7 +1,7 @@
 """Debug and logging commands"""
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from colorama import Fore, Style
 

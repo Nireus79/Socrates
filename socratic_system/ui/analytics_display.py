@@ -5,7 +5,7 @@ Provides ASCII-based charts and formatting for analytics reports.
 No external dependencies - pure text-based rendering.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class AnalyticsDisplay:

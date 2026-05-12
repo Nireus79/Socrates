@@ -1,6 +1,6 @@
 """Project service - encapsulates project creation and management logic."""
 
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base import Service
 

@@ -13,7 +13,6 @@ Problem Solved:
 import ast
 import logging
 import re
-from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 

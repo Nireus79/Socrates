@@ -7,7 +7,7 @@ with result streaming and polling support.
 
 import asyncio
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from socratic_system.events.job_queue import JobQueue
 from socratic_system.events.result_cache import ResultCache

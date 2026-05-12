@@ -11,8 +11,8 @@ Provides:
 import asyncio
 import logging
 import random
-from typing import Any, Dict, Optional, TypeVar, Union
 from collections.abc import Callable
+from typing import Any, TypeVar
 
 from socratic_system.messaging.exceptions import AgentError, AgentTimeoutError
 

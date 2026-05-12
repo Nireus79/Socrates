@@ -7,7 +7,6 @@ for common workflow patterns.
 
 import logging
 import uuid
-from typing import Dict, List, Optional
 
 from socratic_system.models import (
     WorkflowDefinition,

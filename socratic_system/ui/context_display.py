@@ -1,7 +1,5 @@
 """Context display for showing current application state"""
 
-from typing import Optional
-
 from colorama import Fore, Style
 
 from socratic_system.models import ProjectContext, User

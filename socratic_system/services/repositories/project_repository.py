@@ -6,8 +6,6 @@ interface for services to work with projects without knowing the underlying
 database schema or operations.
 """
 
-from typing import List, Optional
-
 from socratic_system.database import ProjectDatabase
 from socratic_system.models import ProjectContext
 from socratic_system.services.repositories.base import Repository

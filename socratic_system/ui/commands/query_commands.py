@@ -1,6 +1,6 @@
 """Direct query and answer commands - bypass Socratic mode for direct answers"""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from colorama import Fore, Style
 

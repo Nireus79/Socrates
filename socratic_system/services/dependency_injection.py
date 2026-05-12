@@ -11,7 +11,7 @@ This enables:
 - Service lifecycle management
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from socratic_nexus.clients import ClaudeClient
 

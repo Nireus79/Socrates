@@ -22,7 +22,7 @@ import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 
 @dataclass
@@ -90,9 +90,7 @@ class Sandbox:
     - Unlimited resource consumption
     """
 
-    def __init__(
-        self, config: SandboxConfig | None = None, logger: logging.Logger | None = None
-    ):
+    def __init__(self, config: SandboxConfig | None = None, logger: logging.Logger | None = None):
         """Initialize sandbox.
 
         Args:

@@ -15,7 +15,7 @@ except ImportError as e:
 
     # Provide a fallback KnowledgeEntry definition so the system continues to work
     from dataclasses import dataclass
-    from typing import Any, Dict, List, Optional
+    from typing import Any
 
     @dataclass
     class KnowledgeEntry:  # type: ignore[no-redef]

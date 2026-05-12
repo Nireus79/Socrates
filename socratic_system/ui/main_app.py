@@ -11,7 +11,7 @@ import sys
 import time
 import webbrowser
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from colorama import Fore, Style
 

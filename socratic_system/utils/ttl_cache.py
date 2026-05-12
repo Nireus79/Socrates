@@ -7,9 +7,9 @@ Implements a function decorator for automatic memoization with time-to-live.
 import functools
 import logging
 import threading
-from datetime import datetime, timedelta
-from typing import Any, Dict, Tuple
 from collections.abc import Callable
+from datetime import datetime, timedelta
+from typing import Any
 
 
 class TTLCache:

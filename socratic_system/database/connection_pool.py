@@ -11,8 +11,8 @@ Features:
 
 import logging
 import time
-from typing import Any, Dict, Optional
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine

@@ -6,7 +6,7 @@ Phase 3: Updated to use SocraticAgentsSystem instead of AgentOrchestrator.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from socratic_system.repositories.base_repository import (
     KnowledgeRepository,

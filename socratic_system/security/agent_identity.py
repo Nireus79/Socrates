@@ -13,7 +13,7 @@ import secrets
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 class TokenStatus(Enum):
@@ -320,9 +320,7 @@ class AgentIdentityManager:
 
         return True
 
-    def get_agent_capabilities(
-        self, agent_id: str
-    ) -> tuple[bool, list[str] | None, str | None]:
+    def get_agent_capabilities(self, agent_id: str) -> tuple[bool, list[str] | None, str | None]:
         """Get capabilities for an agent.
 
         Args:

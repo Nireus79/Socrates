@@ -6,7 +6,6 @@ Extracts markdown but cannot validate syntax.
 """
 
 import logging
-from typing import List
 
 from .base import BaseLanguageExtractor
 from .models import ValidationResult

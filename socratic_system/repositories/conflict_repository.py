@@ -7,7 +7,7 @@ Used by ConflictService instead of direct database calls.
 This is the single point of change for conflict schema updates.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from .base_repository import BaseRepository
 

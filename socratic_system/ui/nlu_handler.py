@@ -7,7 +7,7 @@ into structured slash commands without modifying the existing command system.
 
 import json
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from colorama import Fore, Style
 

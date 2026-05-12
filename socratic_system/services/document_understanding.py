@@ -10,7 +10,7 @@ Provides capabilities for:
 """
 
 import hashlib
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class DocumentUnderstandingService:

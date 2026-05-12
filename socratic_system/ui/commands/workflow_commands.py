@@ -8,7 +8,7 @@ Commands:
   /workflow info <id>      - Show detailed workflow information
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from colorama import Fore, Style
 

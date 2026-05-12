@@ -1,7 +1,7 @@
 """Subscription management commands."""
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 from colorama import Fore, Style
 

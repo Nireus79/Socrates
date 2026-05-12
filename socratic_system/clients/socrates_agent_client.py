@@ -8,7 +8,7 @@ in a Socrates API instance.
 import asyncio
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 try:
     import httpx

@@ -1,6 +1,6 @@
 """Conflict service - encapsulates conflict detection."""
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from socratic_system.repositories.conflict_repository import ConflictRepository
 

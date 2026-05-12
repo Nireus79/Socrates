@@ -7,7 +7,6 @@ All encrypted data is stored in format: salt_b64:encrypted_b64
 
 import base64
 import os
-from typing import Optional
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend

@@ -8,7 +8,7 @@ Provides:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from socratic_system.events.job_queue import JobQueue, JobStatus
 from socratic_system.events.result_cache import ResultCache

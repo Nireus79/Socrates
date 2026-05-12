@@ -11,7 +11,6 @@ Handles:
 import hashlib
 import logging
 import sqlite3
-from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger("socrates.database.project_files")
 

@@ -7,10 +7,10 @@ Provides real-time metrics and historical trends.
 
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
-from collections.abc import Callable
+from typing import Any
 
 
 @dataclass

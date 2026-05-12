@@ -1,6 +1,6 @@
 """Skills management commands for team members"""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from colorama import Fore, Style
 

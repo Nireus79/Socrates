@@ -6,8 +6,8 @@ getting recommendations, and viewing progression trends.
 """
 
 import logging
-from typing import Any, Dict, List
 from collections.abc import Callable
+from typing import Any
 
 from socratic_system.core.analytics_calculator import AnalyticsCalculator
 from socratic_system.ui.analytics_display import AnalyticsDisplay

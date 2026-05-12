@@ -5,7 +5,7 @@ Encapsulates all maturity and quality score persistence operations, providing
 a clean interface for quality-related services.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from socratic_system.database import ProjectDatabase
 from socratic_system.services.repositories.base import Repository

@@ -2,7 +2,7 @@
 NOTE: Responses now use APIResponse format with data wrapped in "data" field.Conversation history management commands
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from colorama import Fore, Style
 

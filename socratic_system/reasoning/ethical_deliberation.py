@@ -8,7 +8,7 @@ about proposed actions with detailed reasoning and confidence levels.
 import logging
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from socratic_system.reasoning.ethical_framework import (
     EthicalConclusion,

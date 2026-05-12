@@ -15,7 +15,6 @@ Options:
 import argparse
 import logging
 import sys
-from typing import Optional
 
 # Configure logging
 logging.basicConfig(

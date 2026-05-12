@@ -6,8 +6,7 @@ Used by project_manager agent, API endpoints, and any other components.
 """
 
 import uuid
-from datetime import datetime, timezone, UTC
-from typing import Optional
+from datetime import UTC, datetime
 
 
 class ProjectIDGenerator:

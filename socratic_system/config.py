@@ -15,7 +15,7 @@ Examples:
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 
 @dataclass
@@ -43,9 +43,7 @@ class SocratesConfig:
 
     # API Configuration
     api_key: str | None = None  # Optional for API server mode (uses per-user database keys)
-    subscription_token: str | None = (
-        None  # Alternative: use Claude subscription instead of API key
-    )
+    subscription_token: str | None = None  # Alternative: use Claude subscription instead of API key
 
     # Model Configuration
     claude_model: str = "claude-haiku-4-5-20251001"

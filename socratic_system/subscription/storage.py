@@ -1,7 +1,5 @@
 """Storage quota management and tracking."""
 
-from typing import Optional, Tuple
-
 from socratic_system.models.user import User
 from socratic_system.subscription.tiers import get_tier_limits
 

@@ -5,7 +5,7 @@ Abstracts all insight database operations.
 Used by InsightService instead of direct database calls.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from .base_repository import BaseRepository
 

@@ -7,9 +7,9 @@ async messaging. Eliminates direct agent coupling and enables resilience pattern
 import asyncio
 import logging
 import time
-from enum import Enum
-from typing import Any, Dict, List, Optional
 from collections.abc import Callable
+from enum import Enum
+from typing import Any
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)

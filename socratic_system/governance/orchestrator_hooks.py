@@ -5,7 +5,7 @@ Provides middleware-style governance checks for all agent actions.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from socratic_system.governance.morality_integration import (
     get_morality_governance,

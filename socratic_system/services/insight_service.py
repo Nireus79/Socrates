@@ -1,6 +1,6 @@
 """Insight service - encapsulates insight extraction and analysis."""
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from socratic_system.repositories.insight_repository import InsightRepository
 

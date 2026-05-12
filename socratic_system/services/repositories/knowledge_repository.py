@@ -5,8 +5,6 @@ Encapsulates knowledge-related database operations for both vector and
 relational databases, providing a clean interface for services.
 """
 
-from typing import List, Optional
-
 from socratic_system.database import ProjectDatabase, VectorDatabase
 from socratic_system.models import KnowledgeEntry
 from socratic_system.services.repositories.base import Repository

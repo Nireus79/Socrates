@@ -8,7 +8,6 @@ based on project type and phase context.
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List
 
 from socratic_system.core.project_categories import (
     get_phase_categories,

@@ -5,7 +5,7 @@ Provides standardized DTOs for service communication.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 

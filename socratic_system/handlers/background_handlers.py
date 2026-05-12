@@ -7,7 +7,7 @@ Handlers are triggered by events and run non-blocking in the background.
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

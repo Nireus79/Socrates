@@ -7,7 +7,6 @@ using the ast module.
 
 import ast
 import logging
-from typing import List
 
 from .base import BaseLanguageExtractor
 from .models import ValidationResult

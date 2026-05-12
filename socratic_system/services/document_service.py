@@ -7,7 +7,7 @@ Focuses on document import, content extraction, and chunking.
 """
 
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from socratic_system.parsers import CodeParser
 from socratic_system.repositories.document_repository import DocumentRepository

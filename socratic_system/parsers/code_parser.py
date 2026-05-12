@@ -10,7 +10,7 @@ Supports multiple programming languages and extracts:
 
 import ast
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 
 class CodeParser:

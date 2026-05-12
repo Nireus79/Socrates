@@ -3,7 +3,6 @@
 import gc
 import logging
 import os
-from typing import Dict, List, Optional
 
 import chromadb
 from sentence_transformers import SentenceTransformer

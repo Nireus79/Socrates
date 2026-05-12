@@ -2,7 +2,7 @@
 NOTE: Responses now use APIResponse format with data wrapped in "data" field.GitHub integration commands for importing and syncing repositories
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from colorama import Fore, Style
 from socratic_agents.github_sync_handler import (

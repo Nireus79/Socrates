@@ -4,7 +4,6 @@ User model for Socrates AI
 
 import datetime
 from dataclasses import dataclass
-from typing import List, Optional
 
 
 @dataclass

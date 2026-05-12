@@ -1,7 +1,5 @@
 """Subscription checking and enforcement logic."""
 
-from typing import Optional, Tuple
-
 from colorama import Fore, Style
 
 from socratic_system.models.user import User

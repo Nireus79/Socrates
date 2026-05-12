@@ -1,7 +1,6 @@
 """Subscription tier definitions and limits."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass

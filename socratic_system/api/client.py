@@ -6,7 +6,7 @@ No dependency on orchestrator, services, or agent implementations.
 
 import asyncio
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 try:
     import httpx

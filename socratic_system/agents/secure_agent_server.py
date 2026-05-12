@@ -6,9 +6,9 @@ Provides TLS-secured server for receiving encrypted requests from other agents.
 
 import json
 import logging
-from datetime import UTC, datetime
-from typing import Any, Dict, Optional
 from collections.abc import Callable
+from datetime import UTC, datetime
+from typing import Any
 
 
 class SecureAgentServer:

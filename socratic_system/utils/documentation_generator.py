@@ -8,8 +8,6 @@ Generates:
 - SETUP.md with development setup instructions
 """
 
-from typing import Dict, List, Optional
-
 
 class DocumentationGenerator:
     """Generate comprehensive project documentation from project context"""

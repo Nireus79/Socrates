@@ -10,8 +10,8 @@ Provides:
 
 import asyncio
 import logging
-from typing import Any, Dict, List
 from collections.abc import Callable
+from typing import Any
 
 from socratic_system.events.event_emitter import EventEmitter
 

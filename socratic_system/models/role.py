@@ -9,7 +9,6 @@ system to work seamlessly across different domains.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
 
 
 @dataclass

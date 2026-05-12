@@ -9,8 +9,8 @@ Provides adapters for:
 
 import asyncio
 import logging
-from typing import Any, Dict, Optional
 from collections.abc import Callable
+from typing import Any
 
 from socratic_system.messaging.agent_bus import AgentBus
 

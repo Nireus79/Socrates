@@ -6,7 +6,7 @@ ensuring questions target specific categories.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any
 
 from socratic_system.models import (
     WorkflowDefinition,

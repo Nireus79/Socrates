@@ -11,7 +11,7 @@ providing explainable and auditable decisions for all agent actions.
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from socratic_system.reasoning import (
     ContradictionAnalysis,

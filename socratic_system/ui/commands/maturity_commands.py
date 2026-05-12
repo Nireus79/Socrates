@@ -8,7 +8,7 @@ Commands:
   /maturity history       - Show maturity progression timeline
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from socratic_system.ui.maturity_display import MaturityDisplay
 from socratic_system.utils.orchestrator_helper import safe_orchestrator_call

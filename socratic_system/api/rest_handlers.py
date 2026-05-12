@@ -4,7 +4,7 @@ Exposes agents as REST endpoints for external library access.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 try:
     from fastapi import FastAPI, HTTPException

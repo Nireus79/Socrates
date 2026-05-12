@@ -6,7 +6,7 @@ and Socratic-Morality's constitutional AI governance.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from socratic_morality.api.governance_api import GovernanceAPI
 from socratic_morality.governance.constitutional_enforcer import (

@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from socratic_system.reasoning.ethical_deliberation import DeliberationResult
 from socratic_system.reasoning.ethical_framework import (

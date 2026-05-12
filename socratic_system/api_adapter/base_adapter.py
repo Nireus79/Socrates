@@ -7,7 +7,7 @@ error handling, and request/response transformation.
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 

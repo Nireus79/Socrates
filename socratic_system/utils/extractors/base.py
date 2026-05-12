@@ -7,7 +7,6 @@ Defines the interface that all language extractors must implement.
 import logging
 import re
 from abc import ABC, abstractmethod
-from typing import List
 
 from .models import ExtractionResult, ValidationResult
 

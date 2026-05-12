@@ -1,7 +1,6 @@
 """GitHub Sponsors tier mapping for Socrates monetization."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass

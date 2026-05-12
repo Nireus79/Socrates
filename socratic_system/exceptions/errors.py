@@ -2,7 +2,7 @@
 Custom exception classes for Socrates system
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class SocratesError(Exception):

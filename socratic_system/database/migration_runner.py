@@ -10,7 +10,6 @@ Handles:
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 logger = logging.getLogger("socrates.database.migrations")
 

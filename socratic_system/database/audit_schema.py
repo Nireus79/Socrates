@@ -5,7 +5,6 @@ Creates immutable, encrypted audit trail tables for compliance and forensics.
 """
 
 import sqlite3
-from typing import Optional
 
 
 def create_audit_log_table(connection: sqlite3.Connection) -> None:

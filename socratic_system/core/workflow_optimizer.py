@@ -8,7 +8,6 @@ based on the selected strategy.
 import logging
 import uuid
 from datetime import datetime
-from typing import List
 
 try:
     from socratic_analyzer import (

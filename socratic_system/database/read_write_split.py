@@ -58,12 +58,12 @@ Examples:
 from __future__ import annotations
 
 import logging
-from contextlib import asynccontextmanager
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from contextvars import ContextVar
 from enum import Enum
 from functools import wraps
-from typing import Any, AsyncContextManager
-from collections.abc import Callable
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -159,7 +159,9 @@ class DatabaseRouter:
             f"replica(s). Default read preference: {read_preference.value}"
         )
 
-    def get_session(self, role: DatabaseRole | None = None) -> AsyncContextManager[AsyncSession]:
+    def get_session(
+        self, role: DatabaseRole | None = None
+    ) -> AbstractAsyncContextManager[AsyncSession]:
         """Get a database session from appropriate pool.
 
         Routes to primary or replica based on role parameter or context variable.

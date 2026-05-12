@@ -7,9 +7,9 @@ Supports both synchronous and asynchronous event listeners for concurrent event 
 import asyncio
 import logging
 import threading
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
 from collections.abc import Callable
+from datetime import datetime
+from typing import Any
 
 from .event_types import EventType
 

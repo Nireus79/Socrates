@@ -6,8 +6,8 @@ Maintains information about available services and their methods.
 
 import inspect
 import logging
-from typing import Any, Dict, List, Optional
 from collections.abc import Callable
+from typing import Any
 
 
 class ServiceInfo:

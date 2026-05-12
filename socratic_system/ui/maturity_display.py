@@ -2,8 +2,6 @@
 Maturity display component for terminal UI visualization
 """
 
-from typing import Dict, List
-
 from colorama import Fore, Style
 
 

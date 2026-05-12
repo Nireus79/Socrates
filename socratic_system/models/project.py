@@ -4,7 +4,6 @@ Project context model for Socrates AI
 
 import datetime
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 from socratic_system.models.role import TeamMemberRole
 
@@ -72,9 +71,7 @@ class ProjectContext:
 
     # Workflow optimization fields (NEW)
     workflow_definitions: dict[str, any] = None  # Workflow definitions by phase
-    workflow_approval_requests: list[dict[str, any]] | None = (
-        None  # History of approval requests
-    )
+    workflow_approval_requests: list[dict[str, any]] | None = None  # History of approval requests
     active_workflow_execution: dict[str, any] | None = None  # Current workflow execution state
     workflow_history: list[dict[str, any]] | None = None  # Completed workflows with metrics
     metadata: dict[str, any] | None = (

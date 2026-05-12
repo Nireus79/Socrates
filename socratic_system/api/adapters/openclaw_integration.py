@@ -26,8 +26,8 @@ Example:
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
 from collections.abc import Callable
+from typing import Any
 
 from socratic_system.clients.socrates_agent_client import (
     SocratesAgentClient,
