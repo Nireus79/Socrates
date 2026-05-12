@@ -2,7 +2,7 @@
 # Stage 1: Dependencies Builder
 # This stage only installs Python dependencies and creates the package metadata
 # It's cached separately from application code changes
-FROM python:3.11-slim as dependencies
+FROM python:3.11-slim AS dependencies
 
 WORKDIR /build
 
@@ -29,7 +29,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 
 # Stage 2: Runtime
 # Copy pre-built dependencies from dependencies stage
-FROM python:3.11-slim as runtime
+FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
