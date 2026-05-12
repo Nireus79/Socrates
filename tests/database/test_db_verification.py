@@ -178,7 +178,10 @@ class TestProjectOperations:
         from socratic_system.models.user import User
 
         test_user = User(
-            username="testuser", email="test@test.com", passcode_hash="hash", created_at=datetime.now()
+            username="testuser",
+            email="test@test.com",
+            passcode_hash="hash",
+            created_at=datetime.now(),
         )
         db_instance.save_user(test_user)
 
@@ -388,6 +391,18 @@ class TestPhaseMaturityScores:
             db_path = f.name
 
         db_instance = ProjectDatabase(db_path)
+
+        # Create test user for project foreign key constraint
+        from socratic_system.models.user import User
+
+        test_user = User(
+            username="testuser",
+            email="test@test.com",
+            passcode_hash="hash",
+            created_at=datetime.now(),
+        )
+        db_instance.save_user(test_user)
+
         yield db_instance
 
         if os.path.exists(db_path):
@@ -443,6 +458,28 @@ class TestDatabaseIntegrity:
             db_path = f.name
 
         db_instance = ProjectDatabase(db_path)
+
+        # Create test users for project foreign key constraint
+        from socratic_system.models.user import User
+
+        # Create testuser and multiple users
+        test_user = User(
+            username="testuser",
+            email="test@test.com",
+            passcode_hash="hash",
+            created_at=datetime.now(),
+        )
+        db_instance.save_user(test_user)
+
+        for i in range(1, 3):
+            user = User(
+                username=f"user{i}",
+                email=f"user{i}@test.com",
+                passcode_hash=f"hash{i}",
+                created_at=datetime.now(),
+            )
+            db_instance.save_user(user)
+
         yield db_instance
 
         if os.path.exists(db_path):

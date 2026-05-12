@@ -40,7 +40,10 @@ def temp_db():
 
         # Create test user for project foreign key constraint
         test_user = User(
-            username="testuser", email="test@test.com", passcode_hash="hash", created_at=datetime.datetime.now()
+            username="testuser",
+            email="test@test.com",
+            passcode_hash="hash",
+            created_at=datetime.datetime.now(),
         )
         db.save_user(test_user)
 
