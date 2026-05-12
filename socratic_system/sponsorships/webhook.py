@@ -41,7 +41,7 @@ def verify_github_signature(payload: bytes, signature: str) -> bool:
     return hmac.compare_digest(expected_signature, signature)
 
 
-def process_sponsorship_event(event_data: Dict) -> Optional[Sponsorship]:
+def process_sponsorship_event(event_data: dict) -> Sponsorship | None:
     """
     Process GitHub Sponsors webhook event.
 
@@ -97,7 +97,7 @@ def process_sponsorship_event(event_data: Dict) -> Optional[Sponsorship]:
     return sponsorship
 
 
-def handle_sponsorship_webhook(event_data: Dict) -> Dict:
+def handle_sponsorship_webhook(event_data: dict) -> dict:
     """
     Main webhook handler for GitHub Sponsors events.
 

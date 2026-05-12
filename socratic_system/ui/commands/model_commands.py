@@ -24,7 +24,7 @@ class ModelCommand(BaseCommand):
             usage="model [status|list|set <model_name>]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute model command"""
         orchestrator = context.get("orchestrator")
         app = context.get("app")
@@ -46,7 +46,7 @@ class ModelCommand(BaseCommand):
         else:
             return self.error(f"Unknown subcommand: {subcommand}")
 
-    def _show_status(self, orchestrator) -> Dict[str, Any]:
+    def _show_status(self, orchestrator) -> dict[str, Any]:
         """Show current model status"""
         current_model = orchestrator.config.claude_model
         model_name = self._get_model_name_from_full(current_model)
@@ -56,7 +56,7 @@ class ModelCommand(BaseCommand):
 
         return self.success(data={"current_model": current_model})
 
-    def _list_models(self, orchestrator) -> Dict[str, Any]:
+    def _list_models(self, orchestrator) -> dict[str, Any]:
         """List available models"""
         print(f"\n{Fore.CYAN}Available Models{Style.RESET_ALL}")
         current_model = orchestrator.config.claude_model
@@ -72,8 +72,8 @@ class ModelCommand(BaseCommand):
         return self.success(data={"models": AVAILABLE_MODELS})
 
     def _set_model(
-        self, args: List[str], orchestrator, app, context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, args: list[str], orchestrator, app, context: dict[str, Any]
+    ) -> dict[str, Any]:
         """Set/switch to a new model"""
         if not args:
             return self.error("Model name required. Usage: /model set <model_name>")

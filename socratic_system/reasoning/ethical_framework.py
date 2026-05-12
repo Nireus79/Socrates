@@ -39,9 +39,9 @@ class FrameworkAnalysis:
     conclusion: EthicalConclusion
     confidence: float  # 0.0-1.0
     reasoning: str
-    concerns: List[str]
-    affected_principles: List[str]
-    timestamp: Optional[datetime] = None
+    concerns: list[str]
+    affected_principles: list[str]
+    timestamp: datetime | None = None
 
     def __post_init__(self):
         """Initialize after dataclass creation."""
@@ -57,7 +57,7 @@ class EthicalFramework(ABC):
     ethical lens (deontological, consequentialist, virtue-based, etc).
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """Initialize framework.
 
         Args:
@@ -70,10 +70,10 @@ class EthicalFramework(ABC):
     def analyze(
         self,
         action: str,
-        context: Dict[str, Any],
-        stakeholders: List[Dict[str, Any]],
-        principles: List[str],
-        consequences: Dict[str, Any],
+        context: dict[str, Any],
+        stakeholders: list[dict[str, Any]],
+        principles: list[str],
+        consequences: dict[str, Any],
     ) -> FrameworkAnalysis:
         """
         Analyze action through this framework's lens.
@@ -123,10 +123,10 @@ class KantianAnalyzer(EthicalFramework):
     def analyze(
         self,
         action: str,
-        context: Dict[str, Any],
-        stakeholders: List[Dict[str, Any]],
-        principles: List[str],
-        consequences: Dict[str, Any],
+        context: dict[str, Any],
+        stakeholders: list[dict[str, Any]],
+        principles: list[str],
+        consequences: dict[str, Any],
     ) -> FrameworkAnalysis:
         """Analyze through Kantian lens."""
         conclusion = EthicalConclusion.ALLOWED
@@ -172,7 +172,7 @@ class KantianAnalyzer(EthicalFramework):
             affected_principles=principles,
         )
 
-    def _treats_as_means_only(self, action: str, stakeholders: List[Dict[str, Any]]) -> bool:
+    def _treats_as_means_only(self, action: str, stakeholders: list[dict[str, Any]]) -> bool:
         """Check if action treats anyone merely as a means."""
         means_patterns = [
             "exploit",
@@ -195,7 +195,7 @@ class KantianAnalyzer(EthicalFramework):
 
         return False
 
-    def _universalizable(self, action: str, context: Dict[str, Any]) -> bool:
+    def _universalizable(self, action: str, context: dict[str, Any]) -> bool:
         """Check if action passes universalization test."""
         # Actions that couldn't be universal laws
         non_universalizable = [
@@ -216,8 +216,8 @@ class KantianAnalyzer(EthicalFramework):
         return True
 
     def _check_duty_violations(
-        self, action: str, stakeholders: List[Dict[str, Any]], context: Dict[str, Any]
-    ) -> List[str]:
+        self, action: str, stakeholders: list[dict[str, Any]], context: dict[str, Any]
+    ) -> list[str]:
         """Check for violations of basic duties."""
         violations = []
 
@@ -258,10 +258,10 @@ class UtilitarianAnalyzer(EthicalFramework):
     def analyze(
         self,
         action: str,
-        context: Dict[str, Any],
-        stakeholders: List[Dict[str, Any]],
-        principles: List[str],
-        consequences: Dict[str, Any],
+        context: dict[str, Any],
+        stakeholders: list[dict[str, Any]],
+        principles: list[str],
+        consequences: dict[str, Any],
     ) -> FrameworkAnalysis:
         """Analyze through utilitarian lens."""
         conclusion = EthicalConclusion.ALLOWED
@@ -310,7 +310,7 @@ class UtilitarianAnalyzer(EthicalFramework):
         )
 
     def _extreme_harm_to_minorities(
-        self, stakeholders: List[Dict[str, Any]], consequences: Dict[str, Any]
+        self, stakeholders: list[dict[str, Any]], consequences: dict[str, Any]
     ) -> bool:
         """Check if harm is concentrated on small vulnerable groups."""
         if not stakeholders or len(stakeholders) < 2:
@@ -352,10 +352,10 @@ class VirtueAnalyzer(EthicalFramework):
     def analyze(
         self,
         action: str,
-        context: Dict[str, Any],
-        stakeholders: List[Dict[str, Any]],
-        principles: List[str],
-        consequences: Dict[str, Any],
+        context: dict[str, Any],
+        stakeholders: list[dict[str, Any]],
+        principles: list[str],
+        consequences: dict[str, Any],
     ) -> FrameworkAnalysis:
         """Analyze through virtue ethics lens."""
         conclusion = EthicalConclusion.ALLOWED
@@ -404,7 +404,7 @@ class VirtueAnalyzer(EthicalFramework):
             affected_principles=principles,
         )
 
-    def _identify_vices(self, action: str) -> List[str]:
+    def _identify_vices(self, action: str) -> list[str]:
         """Identify vices the action demonstrates."""
         vices = []
         action_lower = action.lower()
@@ -426,7 +426,7 @@ class VirtueAnalyzer(EthicalFramework):
 
         return vices
 
-    def _identify_virtues(self, action: str, context: Dict[str, Any]) -> List[str]:
+    def _identify_virtues(self, action: str, context: dict[str, Any]) -> list[str]:
         """Identify virtues the action demonstrates."""
         virtues = []
         action_lower = action.lower()
@@ -457,7 +457,7 @@ class VirtueAnalyzer(EthicalFramework):
         return virtues
 
     def _promotes_flourishing(
-        self, stakeholders: List[Dict[str, Any]], consequences: Dict[str, Any]
+        self, stakeholders: list[dict[str, Any]], consequences: dict[str, Any]
     ) -> bool:
         """Check if action promotes human flourishing."""
         if not stakeholders:
@@ -506,10 +506,10 @@ class RightsAnalyzer(EthicalFramework):
     def analyze(
         self,
         action: str,
-        context: Dict[str, Any],
-        stakeholders: List[Dict[str, Any]],
-        principles: List[str],
-        consequences: Dict[str, Any],
+        context: dict[str, Any],
+        stakeholders: list[dict[str, Any]],
+        principles: list[str],
+        consequences: dict[str, Any],
     ) -> FrameworkAnalysis:
         """Analyze through rights-based lens."""
         conclusion = EthicalConclusion.ALLOWED
@@ -556,8 +556,8 @@ class RightsAnalyzer(EthicalFramework):
         )
 
     def _identify_rights_violations(
-        self, action: str, stakeholders: List[Dict[str, Any]], context: Dict[str, Any]
-    ) -> List[str]:
+        self, action: str, stakeholders: list[dict[str, Any]], context: dict[str, Any]
+    ) -> list[str]:
         """Identify fundamental rights violations."""
         violations = []
         action_lower = action.lower()
@@ -580,7 +580,7 @@ class RightsAnalyzer(EthicalFramework):
         return violations
 
     def _consent_obtained(
-        self, stakeholders: List[Dict[str, Any]], context: Dict[str, Any]
+        self, stakeholders: list[dict[str, Any]], context: dict[str, Any]
     ) -> bool:
         """Check if informed consent obtained from affected parties."""
         # Check if consent was explicitly denied or not given
@@ -604,7 +604,7 @@ class RightsAnalyzer(EthicalFramework):
         # For general system improvements, assume reasonable consent
         return True
 
-    def _protects_vulnerable(self, stakeholders: List[Dict[str, Any]]) -> bool:
+    def _protects_vulnerable(self, stakeholders: list[dict[str, Any]]) -> bool:
         """Check if vulnerable populations are protected."""
         if not stakeholders:
             return True

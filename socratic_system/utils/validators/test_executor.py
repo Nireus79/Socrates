@@ -28,7 +28,7 @@ class TestExecutor:
         "javascript": ["jest", "mocha"],
     }
 
-    def validate(self, target: str, timeout: int = DEFAULT_TIMEOUT) -> Dict[str, Any]:
+    def validate(self, target: str, timeout: int = DEFAULT_TIMEOUT) -> dict[str, Any]:
         """
         Execute tests in project
 
@@ -89,7 +89,7 @@ class TestExecutor:
                 "output": "No test framework detected",
             }
 
-    def _detect_project_type(self, project_dir: str) -> Optional[str]:
+    def _detect_project_type(self, project_dir: str) -> str | None:
         """Detect project type from key files"""
         project_path = Path(project_dir)
 
@@ -115,7 +115,7 @@ class TestExecutor:
 
         return None
 
-    def _execute_python_tests(self, project_dir: str, timeout: int) -> Dict[str, Any]:
+    def _execute_python_tests(self, project_dir: str, timeout: int) -> dict[str, Any]:
         """Execute Python tests using pytest or unittest"""
         try:
             # Try pytest first
@@ -163,7 +163,7 @@ class TestExecutor:
                 "output": str(e),
             }
 
-    def _parse_pytest_output(self, result: subprocess.CompletedProcess) -> Dict[str, Any]:
+    def _parse_pytest_output(self, result: subprocess.CompletedProcess) -> dict[str, Any]:
         """Parse pytest output"""
         output = result.stdout + result.stderr
 
@@ -202,7 +202,7 @@ class TestExecutor:
             "output": output if result.returncode != 0 else "All tests passed",
         }
 
-    def _execute_javascript_tests(self, project_dir: str, timeout: int) -> Dict[str, Any]:
+    def _execute_javascript_tests(self, project_dir: str, timeout: int) -> dict[str, Any]:
         """Execute JavaScript tests using jest or mocha"""
         try:
             # Try npm test or jest
@@ -274,7 +274,7 @@ class TestExecutor:
                 "output": str(e),
             }
 
-    def _parse_jest_output(self, result: subprocess.CompletedProcess) -> Dict[str, Any]:
+    def _parse_jest_output(self, result: subprocess.CompletedProcess) -> dict[str, Any]:
         """Parse jest output"""
         output = result.stdout + result.stderr
 
@@ -335,7 +335,7 @@ class TestExecutor:
             "output": output,
         }
 
-    def detect_test_framework(self, project_dir: str) -> Optional[str]:
+    def detect_test_framework(self, project_dir: str) -> str | None:
         """Detect test framework used in project"""
         project_path = Path(project_dir)
 

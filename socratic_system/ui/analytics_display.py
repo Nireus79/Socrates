@@ -12,7 +12,7 @@ class AnalyticsDisplay:
     """CLI display utilities for analytics reports."""
 
     @staticmethod
-    def display_category_analysis(analysis: Dict, phase: str) -> None:
+    def display_category_analysis(analysis: dict, phase: str) -> None:
         """
         Display detailed category analysis for a phase.
 
@@ -66,7 +66,7 @@ class AnalyticsDisplay:
         print()
 
     @staticmethod
-    def display_recommendations(recommendations: List[Dict], questions: List[str]) -> None:
+    def display_recommendations(recommendations: list[dict], questions: list[str]) -> None:
         """
         Display actionable recommendations for improvement.
 
@@ -107,7 +107,7 @@ class AnalyticsDisplay:
         print()
 
     @staticmethod
-    def display_trends(trends: Dict, history: List[Dict]) -> None:
+    def display_trends(trends: dict, history: list[dict]) -> None:
         """
         Display maturity progression trends with ASCII chart.
 
@@ -143,7 +143,7 @@ class AnalyticsDisplay:
         print()
 
     @staticmethod
-    def display_summary(metrics: Dict, project: Any) -> None:
+    def display_summary(metrics: dict, project: Any) -> None:
         """
         Display quick overview of all analytics metrics.
 
@@ -202,7 +202,7 @@ class AnalyticsDisplay:
         return "[" + "=" * filled + "-" * empty + "]"
 
     @staticmethod
-    def _create_trend_chart(qa_events: List[Dict], height: int = 8) -> str:
+    def _create_trend_chart(qa_events: list[dict], height: int = 8) -> str:
         """
         Create ASCII line chart of maturity progression.
 

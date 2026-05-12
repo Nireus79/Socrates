@@ -20,7 +20,7 @@ class LLMProviderConfig:
     updated_at: datetime = field(default_factory=lambda: datetime.now())
 
     # Provider-specific settings
-    settings: Dict[str, Any] = field(default_factory=dict)
+    settings: dict[str, Any] = field(default_factory=dict)
     # Example settings: {
     #   "model": "claude-3-sonnet-20240229",
     #   "max_tokens": 4096,
@@ -28,7 +28,7 @@ class LLMProviderConfig:
     #   "api_endpoint": "https://api.openai.com/v1"  (for custom endpoints)
     # }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         data = asdict(self)
         data["created_at"] = self.created_at.isoformat()
@@ -36,7 +36,7 @@ class LLMProviderConfig:
         return data
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "LLMProviderConfig":
+    def from_dict(data: dict[str, Any]) -> "LLMProviderConfig":
         """Create from dictionary."""
         if isinstance(data.get("created_at"), str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
@@ -56,9 +56,9 @@ class APIKeyRecord:
     key_hash: str  # Hash for verification without decryption
     created_at: datetime = field(default_factory=lambda: datetime.now())
     updated_at: datetime = field(default_factory=lambda: datetime.now())
-    last_used_at: Optional[datetime] = None
+    last_used_at: datetime | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary (never include encrypted_key in output)."""
         return {
             "id": self.id,
@@ -70,7 +70,7 @@ class APIKeyRecord:
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "APIKeyRecord":
+    def from_dict(data: dict[str, Any]) -> "APIKeyRecord":
         """Create from dictionary."""
         if isinstance(data.get("created_at"), str):
             data["created_at"] = datetime.fromisoformat(data["created_at"])
@@ -96,10 +96,10 @@ class LLMUsageRecord:
     latency_ms: float = 0.0
     cost: float = 0.0
     success: bool = True
-    error_message: Optional[str] = None
-    request_id: Optional[str] = None  # For tracking
+    error_message: str | None = None
+    request_id: str | None = None  # For tracking
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
             "id": self.id,
@@ -117,7 +117,7 @@ class LLMUsageRecord:
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "LLMUsageRecord":
+    def from_dict(data: dict[str, Any]) -> "LLMUsageRecord":
         """Create from dictionary."""
         if isinstance(data.get("timestamp"), str):
             data["timestamp"] = datetime.fromisoformat(data["timestamp"])
@@ -130,7 +130,7 @@ class ProviderMetadata:
 
     provider: str
     display_name: str
-    models: List[str]
+    models: list[str]
     requires_api_key: bool
     cost_per_1k_input_tokens: float
     cost_per_1k_output_tokens: float
@@ -139,15 +139,15 @@ class ProviderMetadata:
     supports_vision: bool = False
     available: bool = True
     description: str = ""
-    base_url: Optional[str] = None
-    auth_methods: List[str] = field(default_factory=list)
+    base_url: str | None = None
+    auth_methods: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return asdict(self)
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "ProviderMetadata":
+    def from_dict(data: dict[str, Any]) -> "ProviderMetadata":
         """Create from dictionary."""
         return ProviderMetadata(**data)
 
@@ -218,11 +218,11 @@ PROVIDER_METADATA = {
 }
 
 
-def get_provider_metadata(provider: str) -> Optional[ProviderMetadata]:
+def get_provider_metadata(provider: str) -> ProviderMetadata | None:
     """Get metadata for a provider."""
     return PROVIDER_METADATA.get(provider.lower())
 
 
-def list_available_providers() -> List[ProviderMetadata]:
+def list_available_providers() -> list[ProviderMetadata]:
     """Get all available providers."""
     return list(PROVIDER_METADATA.values())

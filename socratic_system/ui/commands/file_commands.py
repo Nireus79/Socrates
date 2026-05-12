@@ -17,7 +17,7 @@ class FileDeleteCommand(BaseCommand):
             usage="file delete <file_name>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute file delete command"""
         # Check if user is logged in
         if not self.require_user(context):

@@ -9,7 +9,8 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
+from collections.abc import Callable
 
 
 @dataclass
@@ -18,7 +19,7 @@ class MetricPoint:
 
     timestamp: datetime
     value: float
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -27,8 +28,8 @@ class HealthStatus:
 
     status: str  # "healthy", "degraded", "unhealthy"
     timestamp: datetime
-    checks: Dict[str, bool]
-    details: Dict[str, str] = field(default_factory=dict)
+    checks: dict[str, bool]
+    details: dict[str, str] = field(default_factory=dict)
 
 
 class MetricsCollector:
@@ -42,12 +43,12 @@ class MetricsCollector:
             retention_hours: How long to retain historical metrics
         """
         self.retention_hours = retention_hours
-        self.metrics: Dict[str, List[MetricPoint]] = defaultdict(list)
-        self.counters: Dict[str, int] = defaultdict(int)
-        self.gauges: Dict[str, float] = {}
+        self.metrics: dict[str, list[MetricPoint]] = defaultdict(list)
+        self.counters: dict[str, int] = defaultdict(int)
+        self.gauges: dict[str, float] = {}
         self.last_cleanup = datetime.now()
 
-    def record_metric(self, name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def record_metric(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
         """
         Record a metric value.
 
@@ -85,7 +86,7 @@ class MetricsCollector:
         """
         self.gauges[name] = value
 
-    def get_metric_stats(self, name: str, minutes: int = 60) -> Optional[Dict[str, Any]]:
+    def get_metric_stats(self, name: str, minutes: int = 60) -> dict[str, Any] | None:
         """
         Get statistics for a metric over time period.
 
@@ -116,11 +117,11 @@ class MetricsCollector:
             "timestamp": recent[-1].timestamp.isoformat(),
         }
 
-    def get_all_counters(self) -> Dict[str, int]:
+    def get_all_counters(self) -> dict[str, int]:
         """Get all counter values."""
         return dict(self.counters)
 
-    def get_all_gauges(self) -> Dict[str, float]:
+    def get_all_gauges(self) -> dict[str, float]:
         """Get all gauge values."""
         return dict(self.gauges)
 
@@ -148,7 +149,7 @@ class HealthChecker:
 
     def __init__(self):
         """Initialize health checker."""
-        self.checks: Dict[str, Callable[[], bool]] = {}
+        self.checks: dict[str, Callable[[], bool]] = {}
 
     def register_check(self, name: str, check_fn: Callable[[], bool]) -> None:
         """
@@ -200,7 +201,7 @@ class RequestMetrics:
     def __init__(self, collector: MetricsCollector):
         """Initialize request metrics."""
         self.collector = collector
-        self.active_requests: Dict[str, float] = {}
+        self.active_requests: dict[str, float] = {}
 
     def start_request(self, request_id: str) -> None:
         """Track start of a request."""
@@ -214,7 +215,7 @@ class RequestMetrics:
         method: str,
         path: str,
         status_code: int,
-        error: Optional[str] = None,
+        error: str | None = None,
     ) -> None:
         """Track end of a request."""
         if request_id in self.active_requests:
@@ -333,7 +334,7 @@ class ExportMetrics:
         project_id: str,
         success: bool,
         duration_ms: float,
-        error_type: Optional[str] = None,
+        error_type: str | None = None,
     ) -> None:
         """
         Record GitHub publish metrics.
@@ -356,8 +357,8 @@ class ExportMetrics:
 
 
 # Global metrics instance
-_metrics_collector: Optional[MetricsCollector] = None
-_health_checker: Optional[HealthChecker] = None
+_metrics_collector: MetricsCollector | None = None
+_health_checker: HealthChecker | None = None
 
 
 def initialize_metrics() -> MetricsCollector:

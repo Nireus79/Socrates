@@ -62,7 +62,8 @@ from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from enum import Enum
 from functools import wraps
-from typing import Any, AsyncContextManager, Callable
+from typing import Any, AsyncContextManager
+from collections.abc import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -37,7 +37,7 @@ class SandboxConfig:
 
     # File system
     allow_file_write: bool = True
-    project_dir: Optional[str] = None
+    project_dir: str | None = None
     allow_network: bool = False
 
     # Execution
@@ -73,7 +73,7 @@ class ExecutionResult:
     error: str  # stderr
     return_code: int
     execution_time_seconds: float
-    peak_memory_mb: Optional[float] = None
+    peak_memory_mb: float | None = None
     timed_out: bool = False
     resource_exceeded: bool = False
     exit_reason: str = "normal"  # normal, timeout, resource_limit, signal
@@ -91,7 +91,7 @@ class Sandbox:
     """
 
     def __init__(
-        self, config: Optional[SandboxConfig] = None, logger: Optional[logging.Logger] = None
+        self, config: SandboxConfig | None = None, logger: logging.Logger | None = None
     ):
         """Initialize sandbox.
 
@@ -115,8 +115,8 @@ class Sandbox:
     def execute_python_code(
         self,
         code: str,
-        globals_dict: Optional[Dict[str, Any]] = None,
-        locals_dict: Optional[Dict[str, Any]] = None,
+        globals_dict: dict[str, Any] | None = None,
+        locals_dict: dict[str, Any] | None = None,
         agent_name: str = "unknown",
     ) -> ExecutionResult:
         """Execute Python code in sandbox.
@@ -204,8 +204,8 @@ class Sandbox:
     def _wrap_code_for_execution(
         self,
         code: str,
-        globals_dict: Optional[Dict[str, Any]],
-        locals_dict: Optional[Dict[str, Any]],
+        globals_dict: dict[str, Any] | None,
+        locals_dict: dict[str, Any] | None,
     ) -> str:
         """Wrap user code with safety measures.
 
@@ -331,7 +331,7 @@ finally:
         except Exception as e:
             raise SandboxExecutionError(f"Subprocess execution failed: {e}")
 
-    def validate_code_safety(self, code: str) -> Tuple[bool, list]:
+    def validate_code_safety(self, code: str) -> tuple[bool, list]:
         """Check code for dangerous patterns.
 
         Args:

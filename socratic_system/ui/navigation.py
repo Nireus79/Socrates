@@ -13,10 +13,10 @@ class NavigationStack:
 
     def __init__(self):
         """Initialize navigation stack."""
-        self.stack: List[Tuple[str, Dict[str, Any]]] = []
+        self.stack: list[tuple[str, dict[str, Any]]] = []
         self.home = "main_menu"  # Default home context
 
-    def push(self, context_name: str, state: Optional[Dict[str, Any]] = None) -> None:
+    def push(self, context_name: str, state: dict[str, Any] | None = None) -> None:
         """
         Push a new context onto the stack.
 
@@ -29,7 +29,7 @@ class NavigationStack:
 
         self.stack.append((context_name, state.copy()))
 
-    def pop(self) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+    def pop(self) -> tuple[str | None, dict[str, Any] | None]:
         """
         Pop the current context from the stack.
 
@@ -42,7 +42,7 @@ class NavigationStack:
         context_name, state = self.stack.pop()
         return context_name, state
 
-    def peek(self) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+    def peek(self) -> tuple[str | None, dict[str, Any] | None]:
         """
         Look at the current context without popping it.
 
@@ -55,7 +55,7 @@ class NavigationStack:
         context_name, state = self.stack[-1]
         return context_name, state.copy()
 
-    def go_back(self) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+    def go_back(self) -> tuple[str | None, dict[str, Any] | None]:
         """
         Go back to the previous context (alias for pop).
 
@@ -64,7 +64,7 @@ class NavigationStack:
         """
         return self.pop()
 
-    def go_home(self) -> Tuple[str, Dict[str, Any]]:
+    def go_home(self) -> tuple[str, dict[str, Any]]:
         """
         Clear stack and return to home context.
 
@@ -103,7 +103,7 @@ class NavigationStack:
 
         return breadcrumb
 
-    def history(self) -> List[str]:
+    def history(self) -> list[str]:
         """
         Get list of context names in order from bottom to top.
 
@@ -112,7 +112,7 @@ class NavigationStack:
         """
         return [context_name for context_name, _ in self.stack]
 
-    def update_current_state(self, state_updates: Dict[str, Any]) -> None:
+    def update_current_state(self, state_updates: dict[str, Any]) -> None:
         """
         Update the state of the current context without popping.
 
@@ -126,7 +126,7 @@ class NavigationStack:
         current_state.update(state_updates)
         self.stack[-1] = (context_name, current_state)
 
-    def get_current_state(self) -> Dict[str, Any]:
+    def get_current_state(self) -> dict[str, Any]:
         """
         Get the state of the current context.
 

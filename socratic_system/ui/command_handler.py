@@ -27,10 +27,10 @@ class CommandHandler:
 
     def __init__(self):
         """Initialize command handler and command registry."""
-        self.commands: Dict[str, BaseCommand] = {}
-        self.aliases: Dict[str, str] = {}  # Map alias to command name
+        self.commands: dict[str, BaseCommand] = {}
+        self.aliases: dict[str, str] = {}  # Map alias to command name
 
-    def register_command(self, command: BaseCommand, aliases: Optional[List[str]] = None) -> None:
+    def register_command(self, command: BaseCommand, aliases: list[str] | None = None) -> None:
         """
         Register a command with the handler.
 
@@ -44,7 +44,7 @@ class CommandHandler:
             for alias in aliases:
                 self.aliases[alias] = command.name
 
-    def register_commands(self, commands: List[BaseCommand]) -> None:
+    def register_commands(self, commands: list[BaseCommand]) -> None:
         """
         Register multiple commands at once.
 
@@ -54,7 +54,7 @@ class CommandHandler:
         for command in commands:
             self.register_command(command)
 
-    def execute(self, user_input: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, user_input: str, context: dict[str, Any]) -> dict[str, Any]:
         """
         Parse and execute a command from user input.
 
@@ -80,7 +80,7 @@ class CommandHandler:
 
         return self._execute_command(user_input[1:], context)
 
-    def _match_command(self, parts: List[str]) -> tuple:
+    def _match_command(self, parts: list[str]) -> tuple:
         """
         Match user input parts to a registered command.
 
@@ -107,7 +107,7 @@ class CommandHandler:
         args = parts[1:]
         return command_name, args
 
-    def _execute_command(self, command_input: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _execute_command(self, command_input: str, context: dict[str, Any]) -> dict[str, Any]:
         """
         Internal method to parse and execute a command.
 
@@ -170,7 +170,7 @@ class CommandHandler:
                 "message": f"{Fore.RED}Command error: {str(e)}{Style.RESET_ALL}",
             }
 
-    def get_command(self, name: str) -> Optional[BaseCommand]:
+    def get_command(self, name: str) -> BaseCommand | None:
         """
         Get a command by name.
 
@@ -185,7 +185,7 @@ class CommandHandler:
 
         return self.commands.get(name)
 
-    def get_all_commands(self) -> Dict[str, BaseCommand]:
+    def get_all_commands(self) -> dict[str, BaseCommand]:
         """
         Get all registered commands.
 
@@ -194,7 +194,7 @@ class CommandHandler:
         """
         return self.commands.copy()
 
-    def get_commands_by_prefix(self, prefix: str) -> Dict[str, BaseCommand]:
+    def get_commands_by_prefix(self, prefix: str) -> dict[str, BaseCommand]:
         """
         Get all commands starting with a prefix.
 
@@ -207,7 +207,7 @@ class CommandHandler:
         prefix = prefix.lower()
         return {name: cmd for name, cmd in self.commands.items() if name.startswith(prefix)}
 
-    def print_help(self, command_name: Optional[str] = None) -> None:
+    def print_help(self, command_name: str | None = None) -> None:
         """
         Print help for a specific command or all commands.
 
@@ -229,7 +229,7 @@ class CommandHandler:
             # Print all commands organized by category
             self._print_all_help()
 
-    def _print_help_category(self, category: str, commands_in_category: List[str]) -> None:
+    def _print_help_category(self, category: str, commands_in_category: list[str]) -> None:
         """
         Print help for a single command category.
 
@@ -258,7 +258,7 @@ class CommandHandler:
         print(f"{Style.RESET_ALL}")
 
         # Organize commands by first part of name (category)
-        categories: Dict[str, List[str]] = {}
+        categories: dict[str, list[str]] = {}
         category_order = [
             "user",
             "project",

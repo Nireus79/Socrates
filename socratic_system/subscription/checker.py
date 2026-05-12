@@ -16,7 +16,7 @@ class SubscriptionChecker:
     """Checks subscription status and enforces tier limits."""
 
     @staticmethod
-    def check_command_access(user: User, command_name: str) -> Tuple[bool, Optional[str]]:
+    def check_command_access(user: User, command_name: str) -> tuple[bool, str | None]:
         """
         Check if user has access to a command.
 
@@ -62,7 +62,7 @@ class SubscriptionChecker:
     @staticmethod
     def check_project_limit(
         user: User, current_project_count: int, testing_mode: bool = False
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Check if user can create another project.
 
@@ -105,7 +105,7 @@ class SubscriptionChecker:
     @staticmethod
     def check_team_member_limit(
         user: User, current_team_size: int, testing_mode: bool = False
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Check if user can add another team member.
 
@@ -155,7 +155,7 @@ class SubscriptionChecker:
         return True, None
 
     @staticmethod
-    def check_question_limit(user: User) -> Tuple[bool, Optional[str]]:
+    def check_question_limit(user: User) -> tuple[bool, str | None]:
         """
         Check if user can ask another question this month.
 

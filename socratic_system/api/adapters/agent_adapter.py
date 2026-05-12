@@ -41,7 +41,7 @@ class AgentAdapter:
         self.orchestrator = orchestrator
         self.logger = logging.getLogger(__name__)
 
-    def get_schema(self, agent_name: str) -> Dict[str, Any]:
+    def get_schema(self, agent_name: str) -> dict[str, Any]:
         """Get request schema for agent.
 
         Args:
@@ -55,7 +55,7 @@ class AgentAdapter:
             "required_fields": self.AGENT_SCHEMAS.get(agent_name, []),
         }
 
-    def validate_request(self, agent_name: str, request_data: Dict) -> bool:
+    def validate_request(self, agent_name: str, request_data: dict) -> bool:
         """Validate request against agent schema.
 
         Args:
@@ -76,7 +76,7 @@ class AgentAdapter:
 
         return True
 
-    def serialize_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+    def serialize_response(self, response: dict[str, Any]) -> dict[str, Any]:
         """Serialize agent response for API.
 
         Args:
@@ -91,7 +91,7 @@ class AgentAdapter:
             "timestamp": self._get_timestamp(),
         }
 
-    def serialize_error(self, error_code: str, message: str) -> Dict[str, Any]:
+    def serialize_error(self, error_code: str, message: str) -> dict[str, Any]:
         """Serialize error response for API.
 
         Args:
@@ -108,7 +108,7 @@ class AgentAdapter:
             "timestamp": self._get_timestamp(),
         }
 
-    async def handle_request(self, agent_name: str, request_data: Dict) -> Dict[str, Any]:
+    async def handle_request(self, agent_name: str, request_data: dict) -> dict[str, Any]:
         """Handle external API request.
 
         Args:

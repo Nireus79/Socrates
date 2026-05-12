@@ -31,7 +31,7 @@ class MaturityCalculator:
     - Support multiple project types with appropriate categories
     """
 
-    def __init__(self, project_type: str = "software", claude_client: Optional[Any] = None):
+    def __init__(self, project_type: str = "software", claude_client: Any | None = None):
         """
         Initialize with phase categories based on project type.
 
@@ -52,7 +52,7 @@ class MaturityCalculator:
         logger.info(f"Loaded {len(self.phase_categories)} phases for project type: {project_type}")
 
         # Initialize categorizer if Claude client provided
-        self.categorizer: Optional[InsightCategorizer] = None
+        self.categorizer: InsightCategorizer | None = None
         if claude_client:
             self.categorizer = InsightCategorizer(claude_client)
             logger.info(
@@ -74,7 +74,7 @@ class MaturityCalculator:
         self.categorizer = InsightCategorizer(claude_client)
         logger.debug("Claude client set successfully")
 
-    def calculate_phase_maturity(self, phase_specs: List[Dict], phase: str) -> PhaseMaturity:
+    def calculate_phase_maturity(self, phase_specs: list[dict], phase: str) -> PhaseMaturity:
         """
         Calculate maturity for a phase using confidence-weighted, capped algorithm.
 
@@ -106,7 +106,7 @@ class MaturityCalculator:
         category_targets = self.phase_categories[phase]
 
         # Initialize tracking
-        category_scores: Dict[str, CategoryScore] = {}
+        category_scores: dict[str, CategoryScore] = {}
         total_score = 0.0
         total_specs = len(phase_specs)
 
@@ -190,7 +190,7 @@ class MaturityCalculator:
 
         return maturity
 
-    def _calculate_category_confidence(self, specs: List[Dict]) -> float:
+    def _calculate_category_confidence(self, specs: list[dict]) -> float:
         """Calculate average confidence for a category's specs"""
         if not specs:
             logger.debug("No specs provided for confidence calculation, returning 0.0")
@@ -203,8 +203,8 @@ class MaturityCalculator:
         return avg_confidence
 
     def generate_warnings(
-        self, score: float, category_scores: Dict[str, CategoryScore], missing: List[str]
-    ) -> List[str]:
+        self, score: float, category_scores: dict[str, CategoryScore], missing: list[str]
+    ) -> list[str]:
         """
         Generate actionable warnings based on maturity state.
 
@@ -259,7 +259,7 @@ class MaturityCalculator:
         logger.info(f"Generated {len(warnings)} warnings (limited to top 3)")
         return warnings[:3]  # Return top 3 warnings
 
-    def categorize_insights(self, insights: Dict, phase: str, user_id: str = None) -> List[Dict]:
+    def categorize_insights(self, insights: dict, phase: str, user_id: str = None) -> list[dict]:
         """
         Categorize extracted insights into phase categories.
 
@@ -297,7 +297,7 @@ class MaturityCalculator:
         logger.info(f"Heuristic categorization produced {len(categorized)} specs")
         return categorized
 
-    def _simple_categorization(self, insights: Dict, phase: str) -> List[Dict]:
+    def _simple_categorization(self, insights: dict, phase: str) -> list[dict]:
         """
         Simple heuristic-based categorization (fallback when Claude unavailable).
 
@@ -407,13 +407,13 @@ class MaturityCalculator:
         )
         return is_ready
 
-    def get_phase_categories(self, phase: str) -> Dict[str, int]:
+    def get_phase_categories(self, phase: str) -> dict[str, int]:
         """Get category targets for a specific phase"""
         categories = self.phase_categories.get(phase, {})
         logger.debug(f"Retrieved {len(categories)} categories for phase: {phase}")
         return categories
 
-    def get_all_phases(self) -> List[str]:
+    def get_all_phases(self) -> list[str]:
         """Get list of all valid phases"""
         phases = list(self.phase_categories.keys())
         logger.debug(f"Retrieved all phases: {phases}")

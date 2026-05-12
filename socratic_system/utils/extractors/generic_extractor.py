@@ -22,7 +22,7 @@ class GenericExtractor(BaseLanguageExtractor):
     Provides graceful fallback for unsupported languages.
     """
 
-    def __init__(self, language: str, extensions: List[str], fences: List[str]):
+    def __init__(self, language: str, extensions: list[str], fences: list[str]):
         """
         Initialize generic extractor for a language.
 
@@ -36,11 +36,11 @@ class GenericExtractor(BaseLanguageExtractor):
         self._fences = fences
         self.logger.debug(f"Initialized GenericExtractor for {language}")
 
-    def get_file_extensions(self) -> List[str]:
+    def get_file_extensions(self) -> list[str]:
         """Return file extensions for this language"""
         return self._extensions
 
-    def get_code_fence_identifiers(self) -> List[str]:
+    def get_code_fence_identifiers(self) -> list[str]:
         """Return markdown fence identifiers for this language"""
         return self._fences
 
@@ -65,7 +65,7 @@ class GenericExtractor(BaseLanguageExtractor):
 
         return ValidationResult(is_valid=True, warnings=warnings)
 
-    def get_import_statements(self, code: str) -> List[str]:
+    def get_import_statements(self, code: str) -> list[str]:
         """
         Extract import/require/use statements from code.
 

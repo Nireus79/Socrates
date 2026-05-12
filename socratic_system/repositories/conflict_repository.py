@@ -32,7 +32,7 @@ class ConflictRepository(BaseRepository):
         """
         super().__init__(database)
 
-    def get_project_conflicts(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_project_conflicts(self, project_id: str) -> list[dict[str, Any]]:
         """
         Get all conflicts for a project.
 
@@ -58,7 +58,7 @@ class ConflictRepository(BaseRepository):
         conflict_type: str,
         severity: str,
         description: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> bool:
         """
         Add a detected conflict to project.
@@ -113,7 +113,7 @@ class ConflictRepository(BaseRepository):
         project_id: str,
         conflict_index: int,
         resolution: str,
-        resolution_details: Optional[Dict[str, Any]] = None,
+        resolution_details: dict[str, Any] | None = None,
     ) -> bool:
         """
         Mark a conflict as resolved.
@@ -154,7 +154,7 @@ class ConflictRepository(BaseRepository):
             self.logger.error(f"Failed to resolve conflict for {project_id}: {e}")
             return False
 
-    def get_unresolved_conflicts(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_unresolved_conflicts(self, project_id: str) -> list[dict[str, Any]]:
         """
         Get all unresolved conflicts for a project.
 
@@ -174,7 +174,7 @@ class ConflictRepository(BaseRepository):
             self.logger.error(f"Failed to get unresolved conflicts for {project_id}: {e}")
             return []
 
-    def get_conflicts_by_type(self, project_id: str, conflict_type: str) -> List[Dict[str, Any]]:
+    def get_conflicts_by_type(self, project_id: str, conflict_type: str) -> list[dict[str, Any]]:
         """
         Get conflicts of a specific type.
 
@@ -198,7 +198,7 @@ class ConflictRepository(BaseRepository):
             self.logger.error(f"Failed to get {conflict_type} conflicts for {project_id}: {e}")
             return []
 
-    def get_high_severity_conflicts(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_high_severity_conflicts(self, project_id: str) -> list[dict[str, Any]]:
         """
         Get high severity conflicts (high and critical).
 
@@ -249,7 +249,7 @@ class ConflictRepository(BaseRepository):
         """Save conflict entity (no-op for conflicts)."""
         return True
 
-    def load(self, entity_id: str) -> Optional[Any]:
+    def load(self, entity_id: str) -> Any | None:
         """Load conflict entity (no-op for conflicts)."""
         return None
 
@@ -257,6 +257,6 @@ class ConflictRepository(BaseRepository):
         """Delete conflict entity (no-op for conflicts)."""
         return False
 
-    def list_all(self) -> List[Any]:
+    def list_all(self) -> list[Any]:
         """List all conflicts (no-op for conflicts)."""
         return []

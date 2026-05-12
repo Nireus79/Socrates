@@ -9,7 +9,7 @@ import json
 import logging
 import logging.handlers
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from pathlib import Path
 from typing import Optional
 
@@ -20,7 +20,7 @@ class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON for better parsing and analysis."""
         log_data = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -213,7 +213,7 @@ class LoggingConfig:
     def _get_file_handler(
         self,
         filename: str,
-        level: Optional[int] = None,
+        level: int | None = None,
         max_bytes: int = 10485760,  # 10MB default
         backup_count: int = 5,
     ) -> logging.handlers.RotatingFileHandler:
@@ -340,7 +340,7 @@ class PerformanceMonitor:
 
 
 # Global logging instance
-_logging_config: Optional[LoggingConfig] = None
+_logging_config: LoggingConfig | None = None
 
 
 def initialize_logging(

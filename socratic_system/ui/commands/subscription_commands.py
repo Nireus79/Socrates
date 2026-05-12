@@ -19,7 +19,7 @@ class SubscriptionStatusCommand(BaseCommand):
             usage="subscription status",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute subscription status command."""
         user = context.get("user")
         orchestrator = context.get("orchestrator")
@@ -101,7 +101,7 @@ class SubscriptionUpgradeCommand(BaseCommand):
             usage="subscription upgrade <pro|enterprise>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute subscription upgrade command."""
         user = context.get("user")
         orchestrator = context.get("orchestrator")
@@ -176,7 +176,7 @@ class SubscriptionDowngradeCommand(BaseCommand):
             usage="subscription downgrade",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute subscription downgrade command."""
         user = context.get("user")
         orchestrator = context.get("orchestrator")
@@ -221,7 +221,7 @@ class SubscriptionCompareCommand(BaseCommand):
             usage="subscription compare",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute subscription compare command."""
         print(f"\n{Fore.CYAN}{'━' * 80}{Style.RESET_ALL}")
         print(f"{Fore.GREEN}Subscription Tier Comparison{Style.RESET_ALL}\n")
@@ -268,7 +268,7 @@ class SubscriptionTestingModeCommand(BaseCommand):
         # Mark this command as hidden from help/regular users
         self.hidden = True
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute testing mode command."""
         user = context.get("user")
         orchestrator = context.get("orchestrator")

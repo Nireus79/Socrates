@@ -9,7 +9,8 @@ import logging
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
+from collections.abc import Callable
 
 
 @dataclass
@@ -17,12 +18,12 @@ class AgentMetadata:
     """Metadata about a registered agent."""
 
     name: str
-    capabilities: List[str] = field(default_factory=list)
+    capabilities: list[str] = field(default_factory=list)
     status: str = "active"  # "active", "busy", "offline"
     registered_at: datetime = field(default_factory=datetime.now)
     last_heartbeat: datetime = field(default_factory=datetime.now)
     version: str = "1.0"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def update_heartbeat(self) -> None:
         """Update last heartbeat timestamp."""
@@ -71,8 +72,8 @@ class AgentRegistry:
         Args:
             health_check_timeout: Seconds before agent considered unhealthy
         """
-        self._agents: Dict[str, AgentMetadata] = {}
-        self._handlers: Dict[str, AgentHandler] = {}
+        self._agents: dict[str, AgentMetadata] = {}
+        self._handlers: dict[str, AgentHandler] = {}
         self._lock = threading.RLock()
         self._health_check_timeout = health_check_timeout
         self.logger = logging.getLogger("socrates.messaging.registry")
@@ -81,8 +82,8 @@ class AgentRegistry:
         self,
         agent_name: str,
         handler: Callable,
-        capabilities: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        capabilities: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         supports_sync: bool = True,
         supports_async: bool = True,
     ) -> None:
@@ -139,7 +140,7 @@ class AgentRegistry:
             self.logger.info(f"Unregistered agent {agent_name}")
             return True
 
-    def get_agent(self, agent_name: str) -> Optional[AgentMetadata]:
+    def get_agent(self, agent_name: str) -> AgentMetadata | None:
         """Get agent metadata.
 
         Args:
@@ -151,7 +152,7 @@ class AgentRegistry:
         with self._lock:
             return self._agents.get(agent_name)
 
-    def get_handler(self, agent_name: str) -> Optional[AgentHandler]:
+    def get_handler(self, agent_name: str) -> AgentHandler | None:
         """Get agent's message handler.
 
         Args:
@@ -163,7 +164,7 @@ class AgentRegistry:
         with self._lock:
             return self._handlers.get(agent_name)
 
-    def list_agents(self, capability: Optional[str] = None) -> List[str]:
+    def list_agents(self, capability: str | None = None) -> list[str]:
         """List all registered agents, optionally filtered by capability.
 
         Args:
@@ -233,7 +234,7 @@ class AgentRegistry:
             agent.status = status
             return True
 
-    def get_status(self, agent_name: str) -> Optional[str]:
+    def get_status(self, agent_name: str) -> str | None:
         """Get agent's current status.
 
         Args:
@@ -246,7 +247,7 @@ class AgentRegistry:
             agent = self._agents.get(agent_name)
             return agent.status if agent else None
 
-    def get_capabilities(self, agent_name: str) -> List[str]:
+    def get_capabilities(self, agent_name: str) -> list[str]:
         """Get agent's capabilities.
 
         Args:
@@ -259,7 +260,7 @@ class AgentRegistry:
             agent = self._agents.get(agent_name)
             return agent.capabilities if agent else []
 
-    def find_by_capability(self, capability: str) -> List[str]:
+    def find_by_capability(self, capability: str) -> list[str]:
         """Find all agents with a specific capability.
 
         Args:
@@ -279,7 +280,7 @@ class AgentRegistry:
         with self._lock:
             return len(self._agents)
 
-    def get_all_metadata(self) -> Dict[str, AgentMetadata]:
+    def get_all_metadata(self) -> dict[str, AgentMetadata]:
         """Get metadata for all registered agents.
 
         Returns:

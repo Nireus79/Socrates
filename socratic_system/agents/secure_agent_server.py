@@ -7,7 +7,8 @@ Provides TLS-secured server for receiving encrypted requests from other agents.
 import json
 import logging
 from datetime import UTC, datetime
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
+from collections.abc import Callable
 
 
 class SecureAgentServer:
@@ -26,7 +27,7 @@ class SecureAgentServer:
         ca_certificate_pem: str,
         host: str = "localhost",
         port: int = 8443,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize secure agent server.
@@ -50,8 +51,8 @@ class SecureAgentServer:
 
         # Server state
         self.is_running = False
-        self.request_handlers: Dict[str, Callable] = {}
-        self.received_requests: Dict[str, Any] = {}
+        self.request_handlers: dict[str, Callable] = {}
+        self.received_requests: dict[str, Any] = {}
 
     def start(self) -> bool:
         """
@@ -94,7 +95,7 @@ class SecureAgentServer:
     def register_handler(
         self,
         action: str,
-        handler: Callable[[Dict[str, Any]], Dict[str, Any]],
+        handler: Callable[[dict[str, Any]], dict[str, Any]],
     ) -> None:
         """
         Register handler for an action.
@@ -111,8 +112,8 @@ class SecureAgentServer:
         request_id: str,
         source_agent: str,
         action: str,
-        parameters: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        parameters: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Handle incoming request.
 
@@ -174,7 +175,7 @@ class SecureAgentServer:
                 "error": error_msg,
             }
 
-    def encrypt_response(self, response: Dict[str, Any]) -> str:
+    def encrypt_response(self, response: dict[str, Any]) -> str:
         """
         Encrypt response for transmission.
 
@@ -197,7 +198,7 @@ class SecureAgentServer:
         """Get server certificate for presentation during TLS handshake."""
         return self.server_certificate_pem
 
-    def get_server_status(self) -> Dict[str, Any]:
+    def get_server_status(self) -> dict[str, Any]:
         """Get server status."""
         return {
             "agent_id": self.agent_id,
@@ -208,6 +209,6 @@ class SecureAgentServer:
             "requests_handled": len(self.received_requests),
         }
 
-    def get_request_log(self) -> Dict[str, Any]:
+    def get_request_log(self) -> dict[str, Any]:
         """Get log of all received requests."""
         return self.received_requests.copy()

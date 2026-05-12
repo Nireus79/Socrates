@@ -11,7 +11,8 @@ Provides:
 import asyncio
 import logging
 import random
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, Dict, Optional, TypeVar, Union
+from collections.abc import Callable
 
 from socratic_system.messaging.exceptions import AgentError, AgentTimeoutError
 
@@ -88,12 +89,12 @@ class RetryPolicy:
             AgentTimeoutError: If all retry attempts fail
         """
         logger = logging.getLogger(__name__)
-        last_error: Optional[Union[AgentTimeoutError, asyncio.TimeoutError]] = None
+        last_error: AgentTimeoutError | asyncio.TimeoutError | None = None
 
         for attempt in range(self.max_retries + 1):
             try:
                 return await func(*args, **kwargs)
-            except (AgentTimeoutError, asyncio.TimeoutError) as e:
+            except (TimeoutError, AgentTimeoutError) as e:
                 last_error = e
                 if attempt < self.max_retries:
                     delay = self.calculate_delay(attempt)
@@ -115,7 +116,7 @@ class Fallback:
 
     def __init__(self):
         """Initialize fallback"""
-        self.fallbacks: Dict[type, Callable] = {}
+        self.fallbacks: dict[type, Callable] = {}
         self.logger = logging.getLogger(__name__)
 
     def register(self, error_type: type, handler: Callable) -> None:
@@ -203,7 +204,7 @@ class TimeoutPolicy:
             default_timeout: Default timeout in seconds
         """
         self.default_timeout = default_timeout
-        self.timeouts: Dict[str, float] = {}
+        self.timeouts: dict[str, float] = {}
         self.logger = logging.getLogger(__name__)
 
     def set_timeout(self, agent_name: str, timeout: float) -> None:
@@ -252,7 +253,7 @@ class TimeoutPolicy:
 
         try:
             return await asyncio.wait_for(func(*args, **kwargs), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.logger.error(f"Request to {agent_name} timed out after {timeout}s")
             raise AgentTimeoutError(agent_name, timeout)
 
@@ -262,9 +263,9 @@ class ResilientAgentCaller:
 
     def __init__(
         self,
-        retry_policy: Optional[RetryPolicy] = None,
-        bulkhead: Optional[BulkheadPolicy] = None,
-        timeout_policy: Optional[TimeoutPolicy] = None,
+        retry_policy: RetryPolicy | None = None,
+        bulkhead: BulkheadPolicy | None = None,
+        timeout_policy: TimeoutPolicy | None = None,
     ):
         """
         Initialize resilient caller.

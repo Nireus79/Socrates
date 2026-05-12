@@ -37,7 +37,7 @@ class QualityService(Service):
 
     def calculate_phase_maturity(
         self, project_id: str, project: "ProjectContext"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calculate phase maturity for project.
 
         Args:
@@ -73,9 +73,9 @@ class QualityService(Service):
         self,
         project_id: str,
         project: "ProjectContext",
-        insights: Optional[Dict] = None,
+        insights: dict | None = None,
         user_id: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Update maturity after processing user response.
 
         Args:
@@ -133,7 +133,7 @@ class QualityService(Service):
 
     def get_maturity_summary(
         self, project_id: str, project: "ProjectContext" = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get complete maturity summary for project.
 
         Args:
@@ -166,7 +166,7 @@ class QualityService(Service):
             "summary": summary,
         }
 
-    def get_maturity_history(self, project_id: str) -> Dict[str, Any]:
+    def get_maturity_history(self, project_id: str) -> dict[str, Any]:
         """Get maturity history for project.
 
         Args:
@@ -203,7 +203,7 @@ class QualityService(Service):
             self.logger.error(f"Failed to update analytics metrics for {project_id}: {e}")
             return False
 
-    def _calculate_analytics_metrics(self, project: "ProjectContext") -> Dict[str, Any]:
+    def _calculate_analytics_metrics(self, project: "ProjectContext") -> dict[str, Any]:
         """Calculate analytics metrics from project data.
 
         Args:

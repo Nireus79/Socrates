@@ -20,15 +20,15 @@ class LanguageExtractorMetadata:
 
     language: str  # Canonical name: 'python', 'javascript', 'typescript'
     display_name: str  # Human-readable name: 'Python', 'JavaScript'
-    file_extensions: List[str]  # File extensions: ['.py', '.pyw']
-    fence_identifiers: List[str]  # Markdown fence IDs: ['python', 'py']
-    extractor_class: Optional[Type[BaseLanguageExtractor]] = None  # Extractor class
+    file_extensions: list[str]  # File extensions: ['.py', '.pyw']
+    fence_identifiers: list[str]  # Markdown fence IDs: ['python', 'py']
+    extractor_class: type[BaseLanguageExtractor] | None = None  # Extractor class
     supports_ast: bool = False  # Can parse AST for advanced analysis
     supports_linting: bool = False  # Can run linting checks
     available: bool = True  # Is the validator available?
     description: str = ""  # Description of the extractor
     requires_external_tool: bool = False  # Needs external command-line tools?
-    dependencies: List[str] = field(default_factory=list)  # Required Python packages
+    dependencies: list[str] = field(default_factory=list)  # Required Python packages
 
 
 class LanguageExtractorRegistry:
@@ -39,9 +39,9 @@ class LanguageExtractorRegistry:
     Supports multiple lookup methods (by language, by extension, by fence identifier).
     """
 
-    _extractors: Dict[str, LanguageExtractorMetadata] = {}
-    _extension_map: Dict[str, str] = {}  # '.py' -> 'python'
-    _fence_map: Dict[str, str] = {}  # 'python' -> 'python'
+    _extractors: dict[str, LanguageExtractorMetadata] = {}
+    _extension_map: dict[str, str] = {}  # '.py' -> 'python'
+    _fence_map: dict[str, str] = {}  # 'python' -> 'python'
 
     @classmethod
     def register(cls, metadata: LanguageExtractorMetadata) -> None:
@@ -74,7 +74,7 @@ class LanguageExtractorRegistry:
         logger.debug(f"Registered extractor for language: {metadata.language}")
 
     @classmethod
-    def get_extractor(cls, language: str) -> Optional[BaseLanguageExtractor]:
+    def get_extractor(cls, language: str) -> BaseLanguageExtractor | None:
         """
         Get an extractor instance for a language.
 
@@ -104,7 +104,7 @@ class LanguageExtractorRegistry:
         return metadata.extractor_class(language)
 
     @classmethod
-    def get_by_extension(cls, file_extension: str) -> Optional[BaseLanguageExtractor]:
+    def get_by_extension(cls, file_extension: str) -> BaseLanguageExtractor | None:
         """
         Get an extractor by file extension.
 
@@ -124,7 +124,7 @@ class LanguageExtractorRegistry:
         return cls.get_extractor(language)
 
     @classmethod
-    def get_by_fence(cls, fence_identifier: str) -> Optional[BaseLanguageExtractor]:
+    def get_by_fence(cls, fence_identifier: str) -> BaseLanguageExtractor | None:
         """
         Get an extractor by markdown fence identifier.
 
@@ -144,7 +144,7 @@ class LanguageExtractorRegistry:
         return cls.get_extractor(language)
 
     @classmethod
-    def list_available(cls) -> List[LanguageExtractorMetadata]:
+    def list_available(cls) -> list[LanguageExtractorMetadata]:
         """
         List all available (installed) extractors.
 
@@ -154,7 +154,7 @@ class LanguageExtractorRegistry:
         return [m for m in cls._extractors.values() if m.available]
 
     @classmethod
-    def list_all(cls) -> List[LanguageExtractorMetadata]:
+    def list_all(cls) -> list[LanguageExtractorMetadata]:
         """
         List all registered extractors (available and unavailable).
 
@@ -164,7 +164,7 @@ class LanguageExtractorRegistry:
         return list(cls._extractors.values())
 
     @classmethod
-    def get_metadata(cls, language: str) -> Optional[LanguageExtractorMetadata]:
+    def get_metadata(cls, language: str) -> LanguageExtractorMetadata | None:
         """
         Get metadata for a language without instantiating the extractor.
 

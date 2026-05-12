@@ -8,7 +8,8 @@ import asyncio
 import logging
 import threading
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
+from collections.abc import Callable
 
 from .event_types import EventType
 
@@ -33,7 +34,7 @@ class EventEmitter:
 
     def __init__(self):
         """Initialize the event emitter"""
-        self._listeners: Dict[Union[EventType, str], List[Callable]] = {}
+        self._listeners: dict[EventType | str, list[Callable]] = {}
         self._logger = logging.getLogger("socrates.events")
         self._lock = threading.RLock()
 
@@ -94,7 +95,7 @@ class EventEmitter:
             except ValueError:
                 return False
 
-    def remove_all_listeners(self, event_type: Optional[EventType] = None) -> None:
+    def remove_all_listeners(self, event_type: EventType | None = None) -> None:
         """
         Remove all listeners for a specific event type, or all listeners if no type specified.
 
@@ -109,8 +110,8 @@ class EventEmitter:
 
     def emit(
         self,
-        event_type: Union[EventType, str],
-        data: Optional[Dict[str, Any]] = None,
+        event_type: EventType | str,
+        data: dict[str, Any] | None = None,
         skip_logging: bool = False,
     ) -> None:
         """
@@ -151,7 +152,7 @@ class EventEmitter:
             except Exception as e:
                 self._logger.error(f"Error in event listener for {event_name}: {e}", exc_info=e)
 
-    def listener_count(self, event_type: Optional[EventType] = None) -> int:
+    def listener_count(self, event_type: EventType | None = None) -> int:
         """
         Get the number of listeners for a specific event type or total.
 
@@ -166,7 +167,7 @@ class EventEmitter:
                 return sum(len(listeners) for listeners in self._listeners.values())
             return len(self._listeners.get(event_type, []))
 
-    def get_event_names(self) -> List[Union[EventType, str]]:
+    def get_event_names(self) -> list[EventType | str]:
         """
         Get all event types that have at least one listener.
 
@@ -189,7 +190,7 @@ class EventEmitter:
     async def emit_async(
         self,
         event_type: EventType,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
         skip_logging: bool = False,
     ) -> None:
         """
@@ -242,7 +243,7 @@ class EventEmitter:
             await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _execute_async_callback(
-        self, callback: Callable, event_name: str, data: Dict[str, Any]
+        self, callback: Callable, event_name: str, data: dict[str, Any]
     ) -> None:
         """Execute an async callback safely."""
         try:
@@ -251,7 +252,7 @@ class EventEmitter:
             self._logger.error(f"Error in async event listener for {event_name}: {e}", exc_info=e)
 
     async def _execute_sync_callback_async(
-        self, callback: Callable, event_name: str, data: Dict[str, Any]
+        self, callback: Callable, event_name: str, data: dict[str, Any]
     ) -> None:
         """Execute a sync callback in an async context via thread pool."""
         try:

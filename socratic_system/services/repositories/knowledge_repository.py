@@ -50,7 +50,7 @@ class KnowledgeRepository(Repository[KnowledgeEntry]):
 
         return knowledge
 
-    def find_by_id(self, knowledge_id: str) -> Optional[KnowledgeEntry]:
+    def find_by_id(self, knowledge_id: str) -> KnowledgeEntry | None:
         """
         Find knowledge entry by ID.
 
@@ -62,7 +62,7 @@ class KnowledgeRepository(Repository[KnowledgeEntry]):
         """
         return self.project_db.get_knowledge_document(knowledge_id)
 
-    def find_all(self, limit: Optional[int] = None, offset: int = 0) -> List[KnowledgeEntry]:
+    def find_all(self, limit: int | None = None, offset: int = 0) -> list[KnowledgeEntry]:
         """
         Find all knowledge entries with optional pagination.
 
@@ -112,7 +112,7 @@ class KnowledgeRepository(Repository[KnowledgeEntry]):
 
     def search(
         self, query: str, project_id: str, top_k: int = 5
-    ) -> List[tuple[KnowledgeEntry, float]]:
+    ) -> list[tuple[KnowledgeEntry, float]]:
         """
         Search knowledge using vector similarity.
 
@@ -126,7 +126,7 @@ class KnowledgeRepository(Repository[KnowledgeEntry]):
         """
         return self.vector_db.search_similar(query, top_k, project_id)  # type: ignore
 
-    def find_by_project(self, project_id: str) -> List[KnowledgeEntry]:
+    def find_by_project(self, project_id: str) -> list[KnowledgeEntry]:
         """
         Find all knowledge entries for a project.
 

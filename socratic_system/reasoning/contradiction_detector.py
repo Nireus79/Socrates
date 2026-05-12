@@ -36,9 +36,9 @@ class Contradiction:
     contradiction_type: ContradictionType
     severity: float  # 0.0-1.0 (how serious is this contradiction)
     description: str
-    affected_frameworks: List[str] = field(default_factory=list)
-    affected_principles: List[str] = field(default_factory=list)
-    evidence: Dict[str, Any] = field(default_factory=dict)
+    affected_frameworks: list[str] = field(default_factory=list)
+    affected_principles: list[str] = field(default_factory=list)
+    evidence: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def __hash__(self):
@@ -51,11 +51,11 @@ class ContradictionAnalysis:
     """Complete analysis of contradictions in a deliberation result."""
 
     action: str
-    contradictions: List[Contradiction] = field(default_factory=list)
+    contradictions: list[Contradiction] = field(default_factory=list)
     has_major_contradictions: bool = False
     total_severity: float = 0.0
     consistency_score: float = 1.0  # 1.0 = fully consistent, 0.0 = highly inconsistent
-    coherence_issues: List[str] = field(default_factory=list)
+    coherence_issues: list[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -72,7 +72,7 @@ class ContradictionDetector:
     - Stakeholder impact conflicts
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """Initialize contradiction detector.
 
         Args:
@@ -130,9 +130,9 @@ class ContradictionDetector:
 
         return analysis
 
-    def _detect_framework_disagreement(self, result: DeliberationResult) -> List[Contradiction]:
+    def _detect_framework_disagreement(self, result: DeliberationResult) -> list[Contradiction]:
         """Detect when ethical frameworks disagree on conclusion."""
-        contradictions: List[Contradiction] = []
+        contradictions: list[Contradiction] = []
 
         if not result.framework_analyses or len(result.framework_analyses) < 2:
             return contradictions
@@ -185,9 +185,9 @@ class ContradictionDetector:
 
         return contradictions
 
-    def _detect_principle_conflicts(self, result: DeliberationResult) -> List[Contradiction]:
+    def _detect_principle_conflicts(self, result: DeliberationResult) -> list[Contradiction]:
         """Detect when action violates some principles but follows others."""
-        contradictions: List[Contradiction] = []
+        contradictions: list[Contradiction] = []
 
         if not result.framework_analyses:
             return contradictions
@@ -237,9 +237,9 @@ class ContradictionDetector:
 
         return contradictions
 
-    def _detect_temporal_contradictions(self, result: DeliberationResult) -> List[Contradiction]:
+    def _detect_temporal_contradictions(self, result: DeliberationResult) -> list[Contradiction]:
         """Detect contradictions between short-term and long-term consequences."""
-        contradictions: List[Contradiction] = []
+        contradictions: list[Contradiction] = []
 
         # This is a simplified check - in practice we'd have consequence data
 
@@ -285,9 +285,9 @@ class ContradictionDetector:
 
         return contradictions
 
-    def _detect_consequence_mismatches(self, result: DeliberationResult) -> List[Contradiction]:
+    def _detect_consequence_mismatches(self, result: DeliberationResult) -> list[Contradiction]:
         """Detect mismatches between claimed consequences and framework conclusions."""
-        contradictions: List[Contradiction] = []
+        contradictions: list[Contradiction] = []
 
         util_analysis = result.framework_analyses.get(EthicalFrameworkType.UTILITARIAN)
         if not util_analysis or not util_analysis.reasoning:
@@ -313,9 +313,9 @@ class ContradictionDetector:
 
         return contradictions
 
-    def _detect_confidence_inconsistencies(self, result: DeliberationResult) -> List[Contradiction]:
+    def _detect_confidence_inconsistencies(self, result: DeliberationResult) -> list[Contradiction]:
         """Detect inconsistencies between confidence and conclusion uncertainty."""
-        contradictions: List[Contradiction] = []
+        contradictions: list[Contradiction] = []
 
         if result.final_conclusion == EthicalConclusion.ESCALATE and result.confidence > 0.85:
             # High confidence in escalation is contradictory
@@ -333,9 +333,9 @@ class ContradictionDetector:
 
         return contradictions
 
-    def _detect_stakeholder_conflicts(self, result: DeliberationResult) -> List[Contradiction]:
+    def _detect_stakeholder_conflicts(self, result: DeliberationResult) -> list[Contradiction]:
         """Detect conflicts in how stakeholders are affected."""
-        contradictions: List[Contradiction] = []
+        contradictions: list[Contradiction] = []
 
         if not result.stakeholder_analysis:
             return contradictions
@@ -383,7 +383,7 @@ class ContradictionDetector:
 
     def _identify_coherence_issues(
         self, result: DeliberationResult, analysis: ContradictionAnalysis
-    ) -> List[str]:
+    ) -> list[str]:
         """Identify specific coherence issues in the reasoning."""
         issues = []
 

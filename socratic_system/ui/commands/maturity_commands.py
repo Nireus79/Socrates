@@ -35,7 +35,7 @@ class MaturityCommand(BaseCommand):
             usage="maturity [phase]",
         )
 
-    def execute(self, args: list, context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list, context: dict[str, Any]) -> dict[str, Any]:
         """Execute the maturity command"""
         project = context.get("project")
         orchestrator = context.get("orchestrator")
@@ -88,7 +88,7 @@ class MaturitySummaryCommand(BaseCommand):
             usage="maturity summary",
         )
 
-    def execute(self, args: list, context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list, context: dict[str, Any]) -> dict[str, Any]:
         """Execute the maturity summary command"""
         project = context.get("project")
         orchestrator = context.get("orchestrator")
@@ -129,7 +129,7 @@ class MaturityHistoryCommand(BaseCommand):
             usage="maturity history",
         )
 
-    def execute(self, args: list, context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list, context: dict[str, Any]) -> dict[str, Any]:
         """Execute the maturity history command"""
         project = context.get("project")
         orchestrator = context.get("orchestrator")
@@ -177,7 +177,7 @@ class MaturityStatusCommand(BaseCommand):
             usage="maturity status",
         )
 
-    def execute(self, args: list, context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list, context: dict[str, Any]) -> dict[str, Any]:
         """Execute the maturity status command"""
         project = context.get("project")
 

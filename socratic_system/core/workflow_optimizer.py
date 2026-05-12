@@ -130,7 +130,7 @@ class WorkflowOptimizer:
 
         return approval_request
 
-    def _find_all_paths(self, workflow: WorkflowDefinition) -> List[WorkflowPath]:
+    def _find_all_paths(self, workflow: WorkflowDefinition) -> list[WorkflowPath]:
         """
         Find all valid paths through workflow graph.
 
@@ -154,10 +154,10 @@ class WorkflowOptimizer:
 
     def _calculate_path_metrics(
         self,
-        paths: List[WorkflowPath],
+        paths: list[WorkflowPath],
         workflow: WorkflowDefinition,
         project: ProjectContext,
-    ) -> List[WorkflowPath]:
+    ) -> list[WorkflowPath]:
         """
         Calculate cost, risk, and quality metrics for all paths.
 
@@ -199,7 +199,7 @@ class WorkflowOptimizer:
         return paths
 
     def _select_optimal_path(
-        self, paths: List[WorkflowPath], strategy: PathDecisionStrategy
+        self, paths: list[WorkflowPath], strategy: PathDecisionStrategy
     ) -> WorkflowPath:
         """
         Select best path based on strategy.
@@ -339,7 +339,7 @@ class WorkflowOptimizer:
         return round(roi, 2)
 
     @staticmethod
-    def _normalize_value(value: float, all_values: List[float], invert: bool = False) -> float:
+    def _normalize_value(value: float, all_values: list[float], invert: bool = False) -> float:
         """
         Normalize a value to 0-1 range based on min/max of all values.
 

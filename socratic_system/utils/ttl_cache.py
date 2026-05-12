@@ -8,7 +8,8 @@ import functools
 import logging
 import threading
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Dict, Tuple
+from collections.abc import Callable
 
 
 class TTLCache:
@@ -36,7 +37,7 @@ class TTLCache:
             ttl_minutes: Time-to-live for cached results in minutes (default: 5)
         """
         self._ttl = timedelta(minutes=ttl_minutes)
-        self._cache: Dict[Any, Tuple[Any, datetime]] = {}
+        self._cache: dict[Any, tuple[Any, datetime]] = {}
         self._hits = 0
         self._misses = 0
         self._lock = threading.RLock()
@@ -138,7 +139,7 @@ class TTLCache:
 
         return count
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 

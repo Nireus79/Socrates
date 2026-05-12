@@ -80,8 +80,8 @@ class SocratesAgentClient:
 
     def __init__(
         self,
-        api_url: Optional[str] = None,
-        auth_token: Optional[str] = None,
+        api_url: str | None = None,
+        auth_token: str | None = None,
         timeout: int = DEFAULT_TIMEOUT,
     ):
         """
@@ -105,7 +105,7 @@ class SocratesAgentClient:
         if auth_token:
             self.base_headers["Authorization"] = f"Bearer {auth_token}"
 
-        self._http_client: Optional[httpx.AsyncClient] = None
+        self._http_client: httpx.AsyncClient | None = None
 
     @property
     def http_client(self) -> httpx.AsyncClient:
@@ -118,7 +118,7 @@ class SocratesAgentClient:
             )
         return self._http_client
 
-    async def list_agents(self) -> Dict[str, str]:
+    async def list_agents(self) -> dict[str, str]:
         """
         List all available agents.
 
@@ -141,7 +141,7 @@ class SocratesAgentClient:
         self,
         agent_name: str,
         action: str = "process",
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         **kwargs,
     ) -> str:
         """
@@ -194,9 +194,9 @@ class SocratesAgentClient:
         self,
         agent_name: str,
         action: str = "process",
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Invoke agent synchronously and wait for response.
 
@@ -242,7 +242,7 @@ class SocratesAgentClient:
                 raise AgentTimeoutError(f"Agent '{agent_name}' request timed out")
             raise SocratesAgentClientError(f"Failed to invoke agent '{agent_name}': {e}")
 
-    async def get_job_status(self, job_id: str) -> Dict[str, Any]:
+    async def get_job_status(self, job_id: str) -> dict[str, Any]:
         """
         Get status of an async job.
 
@@ -281,9 +281,9 @@ class SocratesAgentClient:
     async def wait_for_result(
         self,
         job_id: str,
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
         poll_interval: float = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Wait for async job to complete and return result.
 
@@ -325,7 +325,7 @@ class SocratesAgentClient:
             # Still pending, wait before checking again
             await asyncio.sleep(min(poll_interval, timeout - elapsed))
 
-    async def get_batch_job_status(self, job_ids: list) -> Dict[str, Dict[str, Any]]:
+    async def get_batch_job_status(self, job_ids: list) -> dict[str, dict[str, Any]]:
         """
         Get status for multiple jobs at once.
 
@@ -390,13 +390,13 @@ class SocratesAgentClientSync:
 
     def __init__(
         self,
-        api_url: Optional[str] = None,
-        auth_token: Optional[str] = None,
+        api_url: str | None = None,
+        auth_token: str | None = None,
         timeout: int = SocratesAgentClient.DEFAULT_TIMEOUT,
     ):
         """Initialize synchronous client wrapper"""
         self._client = SocratesAgentClient(api_url, auth_token, timeout)
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     def _get_loop(self) -> asyncio.AbstractEventLoop:
         """Get or create event loop"""
@@ -408,7 +408,7 @@ class SocratesAgentClientSync:
                 asyncio.set_event_loop(self._loop)
         return self._loop
 
-    def list_agents(self) -> Dict[str, str]:
+    def list_agents(self) -> dict[str, str]:
         """Synchronously list available agents"""
         loop = self._get_loop()
         if loop.is_running():
@@ -419,9 +419,9 @@ class SocratesAgentClientSync:
         self,
         agent_name: str,
         action: str = "process",
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Synchronously invoke agent and wait for response"""
         loop = self._get_loop()
         if loop.is_running():
@@ -434,7 +434,7 @@ class SocratesAgentClientSync:
         self,
         agent_name: str,
         action: str = "process",
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         **kwargs,
     ) -> str:
         """Synchronously submit async job"""
@@ -445,7 +445,7 @@ class SocratesAgentClientSync:
             self._client.invoke_agent_async(agent_name, action, project_id, **kwargs)
         )
 
-    def get_job_status(self, job_id: str) -> Dict[str, Any]:
+    def get_job_status(self, job_id: str) -> dict[str, Any]:
         """Synchronously get job status"""
         loop = self._get_loop()
         if loop.is_running():
@@ -455,9 +455,9 @@ class SocratesAgentClientSync:
     def wait_for_result(
         self,
         job_id: str,
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
         poll_interval: float = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Synchronously wait for job result"""
         loop = self._get_loop()
         if loop.is_running():

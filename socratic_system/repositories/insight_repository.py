@@ -20,7 +20,7 @@ class InsightRepository(BaseRepository):
         """Initialize insight repository."""
         super().__init__(database)
 
-    def get_project_insights(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_project_insights(self, project_id: str) -> list[dict[str, Any]]:
         """Get all insights for a project."""
         self._log_operation("get_project_insights", {"project_id": project_id})
         try:
@@ -38,7 +38,7 @@ class InsightRepository(BaseRepository):
         content: str,
         category: str,
         confidence: float = 0.9,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """Add an insight to project."""
         self._log_operation("add_insight", {"project_id": project_id, "category": category})
@@ -67,7 +67,7 @@ class InsightRepository(BaseRepository):
             self.logger.error(f"Failed to add insight for {project_id}: {e}")
             return False
 
-    def get_insights_by_category(self, project_id: str, category: str) -> List[Dict[str, Any]]:
+    def get_insights_by_category(self, project_id: str, category: str) -> list[dict[str, Any]]:
         """Get insights filtered by category."""
         self._log_operation(
             "get_insights_by_category", {"project_id": project_id, "category": category}
@@ -82,7 +82,7 @@ class InsightRepository(BaseRepository):
 
     def get_high_confidence_insights(
         self, project_id: str, min_confidence: float = 0.8
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get insights above confidence threshold."""
         self._log_operation("get_high_confidence_insights", {"project_id": project_id})
         try:
@@ -93,7 +93,7 @@ class InsightRepository(BaseRepository):
             self.logger.error(f"Failed to get high confidence insights: {e}")
             return []
 
-    def get_insight_statistics(self, project_id: str) -> Dict[str, Any]:
+    def get_insight_statistics(self, project_id: str) -> dict[str, Any]:
         """Get statistics about project insights."""
         self._log_operation("get_insight_statistics", {"project_id": project_id})
         try:
@@ -139,7 +139,7 @@ class InsightRepository(BaseRepository):
         """Save insight entity (no-op for insights)."""
         return True
 
-    def load(self, entity_id: str) -> Optional[Any]:
+    def load(self, entity_id: str) -> Any | None:
         """Load insight entity (no-op for insights)."""
         return None
 
@@ -147,6 +147,6 @@ class InsightRepository(BaseRepository):
         """Delete insight entity (no-op for insights)."""
         return False
 
-    def list_all(self) -> List[Any]:
+    def list_all(self) -> list[Any]:
         """List all insights (no-op for insights)."""
         return []

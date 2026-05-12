@@ -228,7 +228,7 @@ def add_audit_log_methods_to_db(db_class) -> None:
         db_class: Database class to extend
     """
 
-    def insert_audit_log(self, entry_data: dict) -> Optional[int]:
+    def insert_audit_log(self, entry_data: dict) -> int | None:
         """Insert audit log entry.
 
         Args:

@@ -17,7 +17,7 @@ class ProjectNote:
     note_type: str = "general"  # 'design', 'bug', 'idea', 'task', 'general'
     created_at: datetime.datetime = field(default_factory=datetime.datetime.now)
     created_by: str = "system"
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     @classmethod
     def create(
@@ -27,7 +27,7 @@ class ProjectNote:
         title: str,
         content: str,
         created_by: str,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> "ProjectNote":
         """Create a new project note with auto-generated ID"""
         return cls(

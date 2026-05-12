@@ -11,7 +11,7 @@ class MaturityDisplay:
     """Display maturity information to users in the terminal"""
 
     @staticmethod
-    def display_maturity_update(maturity: Dict) -> None:
+    def display_maturity_update(maturity: dict) -> None:
         """
         Display maturity update after each question/response.
 
@@ -65,7 +65,7 @@ class MaturityDisplay:
             )
 
     @staticmethod
-    def display_detailed_maturity(maturity: Dict) -> None:
+    def display_detailed_maturity(maturity: dict) -> None:
         """
         Display detailed maturity breakdown for /maturity command.
 
@@ -108,7 +108,7 @@ class MaturityDisplay:
         print("Threshold for Advancement: 20%\n")
 
     @staticmethod
-    def _format_category_breakdown(category_scores: Dict) -> None:
+    def _format_category_breakdown(category_scores: dict) -> None:
         """Display category breakdown with progress bars."""
         print(f"{Fore.CYAN}Category Breakdown:{Style.RESET_ALL}")
         print(f"{'Category':<25} {'Progress':<35} {'Score':<15} {'Specs':<6}")
@@ -142,7 +142,7 @@ class MaturityDisplay:
         return Fore.RED
 
     @staticmethod
-    def _display_strengths(strongest: List[str], category_scores: Dict) -> None:
+    def _display_strengths(strongest: list[str], category_scores: dict) -> None:
         """Display strongest areas."""
         if strongest:
             print(f"\n{Fore.GREEN}Strongest Areas (>80% complete):{Style.RESET_ALL}")
@@ -152,7 +152,7 @@ class MaturityDisplay:
                     print(f"  {Fore.GREEN}✓{Style.RESET_ALL} {category} ({pct:.1f}%)")
 
     @staticmethod
-    def _display_weaknesses(weakest: List[str], category_scores: Dict) -> None:
+    def _display_weaknesses(weakest: list[str], category_scores: dict) -> None:
         """Display weakest areas."""
         if weakest:
             print(f"\n{Fore.YELLOW}Areas Needing Attention (<50% complete):{Style.RESET_ALL}")
@@ -162,7 +162,7 @@ class MaturityDisplay:
                     print(f"  {Fore.YELLOW}•{Style.RESET_ALL} {category} ({pct:.1f}%)")
 
     @staticmethod
-    def _display_missing_coverage(missing: List[str]) -> None:
+    def _display_missing_coverage(missing: list[str]) -> None:
         """Display missing coverage."""
         if missing:
             print(f"\n{Fore.RED}Missing Coverage (no specifications):{Style.RESET_ALL}")
@@ -171,7 +171,7 @@ class MaturityDisplay:
                 print(f"  {Fore.RED}✗{Style.RESET_ALL} " + ", ".join(categories))
 
     @staticmethod
-    def _display_recommendations(score: float, missing: List[str], weakest: List[str]) -> None:
+    def _display_recommendations(score: float, missing: list[str], weakest: list[str]) -> None:
         """Display recommendations based on maturity scores."""
         print(f"\n{Fore.CYAN}Recommendations:{Style.RESET_ALL}")
         MaturityDisplay._print_score_recommendation(score)
@@ -205,7 +205,7 @@ class MaturityDisplay:
         print(f"\n{Fore.CYAN}{'=' * 65}{Style.RESET_ALL}\n")
 
     @staticmethod
-    def display_maturity_summary_all_phases(summary: Dict) -> None:
+    def display_maturity_summary_all_phases(summary: dict) -> None:
         """
         Display maturity summary across all phases.
 
@@ -251,7 +251,7 @@ class MaturityDisplay:
         print(f"\n{Fore.CYAN}{'=' * 65}{Style.RESET_ALL}\n")
 
     @staticmethod
-    def display_maturity_history(history: List[Dict]) -> None:
+    def display_maturity_history(history: list[dict]) -> None:
         """
         Display maturity progression history.
 
@@ -302,7 +302,7 @@ class MaturityDisplay:
 
     @staticmethod
     def display_phase_completion_status(
-        all_maturity_scores: Dict[str, float],
+        all_maturity_scores: dict[str, float],
     ) -> None:
         """
         Display which phases are complete and eligible for advancement.

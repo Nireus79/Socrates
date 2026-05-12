@@ -24,7 +24,7 @@ class AdapterError(Exception):
 class AdapterValidationError(AdapterError):
     """Request validation error"""
 
-    def __init__(self, message: str, validation_errors: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, validation_errors: dict[str, Any] | None = None):
         super().__init__(message, "VALIDATION_ERROR")
         self.validation_errors = validation_errors or {}
 
@@ -61,9 +61,9 @@ class BaseAdapter(ABC):
 
     def validate_request(
         self,
-        request_data: Dict[str, Any],
+        request_data: dict[str, Any],
         required_fields: list[str],
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate request data.
 
@@ -124,8 +124,8 @@ class BaseAdapter(ABC):
         self,
         data: Any,
         status: str = "success",
-        message: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        message: str | None = None,
+    ) -> dict[str, Any]:
         """
         Transform service result to API response.
 
@@ -153,7 +153,7 @@ class BaseAdapter(ABC):
         self,
         error: Exception,
         status_code: int = 400,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Transform exception to error response.
 
@@ -164,7 +164,7 @@ class BaseAdapter(ABC):
         Returns:
             Error response dictionary
         """
-        error_dict: Dict[str, Any] = {
+        error_dict: dict[str, Any] = {
             "type": error.__class__.__name__,
             "message": str(error),
         }
@@ -174,7 +174,7 @@ class BaseAdapter(ABC):
             if isinstance(error, AdapterValidationError):
                 error_dict["validation_errors"] = error.validation_errors
 
-        error_response: Dict[str, Any] = {
+        error_response: dict[str, Any] = {
             "status": "error",
             "service": self.service_name,
             "version": self.version,
@@ -189,9 +189,9 @@ class BaseAdapter(ABC):
     @abstractmethod
     async def handle_request(
         self,
-        request_data: Dict[str, Any],
+        request_data: dict[str, Any],
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Handle incoming request.
 
@@ -206,7 +206,7 @@ class BaseAdapter(ABC):
         """
         pass
 
-    def get_adapter_info(self) -> Dict[str, Any]:
+    def get_adapter_info(self) -> dict[str, Any]:
         """
         Get adapter information.
 

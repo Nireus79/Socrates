@@ -38,7 +38,7 @@ class ProjectRepository(BaseRepository):
         """Save project entity (delegates to save_project)."""
         return self.save_project(entity)
 
-    def load(self, entity_id: str) -> Optional[Any]:
+    def load(self, entity_id: str) -> Any | None:
         """Load project entity (delegates to load_project)."""
         return self.load_project(entity_id)
 
@@ -46,7 +46,7 @@ class ProjectRepository(BaseRepository):
         """Delete project entity (delegates to delete_project)."""
         return self.delete_project(entity_id)
 
-    def list_all(self) -> List[Any]:
+    def list_all(self) -> list[Any]:
         """List all projects (delegates to get_all_projects)."""
         return self.get_all_projects()
 
@@ -68,7 +68,7 @@ class ProjectRepository(BaseRepository):
             self.logger.error(f"Failed to save project {project.project_id}: {e}")
             return False
 
-    def load_project(self, project_id: str) -> Optional[ProjectContext]:
+    def load_project(self, project_id: str) -> ProjectContext | None:
         """
         Load a project by ID.
 
@@ -90,7 +90,7 @@ class ProjectRepository(BaseRepository):
             self.logger.error(f"Failed to load project {project_id}: {e}")
             return None
 
-    def get_all_projects(self, user_id: str = None) -> List[ProjectContext]:
+    def get_all_projects(self, user_id: str = None) -> list[ProjectContext]:
         """
         Get all projects, optionally filtered by user.
 

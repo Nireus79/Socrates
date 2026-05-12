@@ -20,7 +20,7 @@ class ChatCommand(BaseCommand):
             usage="chat",
         )
 
-    def _confirm_insights_interactive(self, insights: Dict, orchestrator) -> Dict:
+    def _confirm_insights_interactive(self, insights: dict, orchestrator) -> dict:
         """Interactive confirmation dialog for insights with detailed options
 
         Returns:
@@ -111,7 +111,7 @@ class ChatCommand(BaseCommand):
             return [item.strip() for item in custom_input.split(",") if item.strip()]
         return None
 
-    def _return_confirmed_insights(self, confirmed_insights: Dict):
+    def _return_confirmed_insights(self, confirmed_insights: dict):
         """Return confirmed insights or None if empty"""
         if not confirmed_insights:
             return None
@@ -142,7 +142,7 @@ Focus on the connection between the user's statement and these insights."""
         except Exception as e:
             return f"Could not generate explanation: {str(e)}"
 
-    def _handle_command(self, response: str, context: Dict[str, Any]) -> tuple:
+    def _handle_command(self, response: str, context: dict[str, Any]) -> tuple:
         """Handle / commands. Returns (should_continue, continue_session)"""
         app = context.get("app")
         project = context.get("project")
@@ -407,7 +407,7 @@ If you don't have enough information, say so."""
         except Exception as e:
             return f"Error generating answer: {str(e)}"
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute chat command"""
         if not self.require_project(context):
             return self.error("No project loaded. Use /project load to select one.")
@@ -585,7 +585,7 @@ class DoneCommand(BaseCommand):
             name="done", description="Finish the current interactive session", usage="done"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute done command"""
         project = context.get("project")
 
@@ -605,7 +605,7 @@ class AdvanceCommand(BaseCommand):
             name="advance", description="Advance current project to the next phase", usage="advance"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute advance command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -650,7 +650,7 @@ class RollbackCommand(BaseCommand):
             usage="rollback",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute rollback command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -696,7 +696,7 @@ class ModeCommand(BaseCommand):
             usage="mode <socratic|direct>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute mode command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -746,7 +746,7 @@ class HintCommand(BaseCommand):
             usage="hint",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute hint command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -794,7 +794,7 @@ class SkippedCommand(BaseCommand):
             usage="skipped [reopen <question_id>]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute skipped command"""
         if not self.require_project(context):
             return self.error("No project loaded")

@@ -34,12 +34,12 @@ class DeliberationResult:
     final_conclusion: EthicalConclusion
     confidence: float  # 0.0-1.0
     overall_reasoning: str
-    framework_analyses: Dict[EthicalFrameworkType, FrameworkAnalysis] = field(default_factory=dict)
-    stakeholder_analysis: Optional[StakeholderAnalysis] = None
-    concerns: List[str] = field(default_factory=list)
+    framework_analyses: dict[EthicalFrameworkType, FrameworkAnalysis] = field(default_factory=dict)
+    stakeholder_analysis: StakeholderAnalysis | None = None
+    concerns: list[str] = field(default_factory=list)
     reasoning_summary: str = ""
     escalation_required: bool = False
-    escalation_reason: Optional[str] = None
+    escalation_reason: str | None = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def __hash__(self):
@@ -58,9 +58,9 @@ class EthicalDeliberation:
 
     def __init__(
         self,
-        frameworks: Optional[List[EthicalFramework]] = None,
+        frameworks: list[EthicalFramework] | None = None,
         escalation_threshold: float = 0.6,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize deliberation engine.
@@ -86,10 +86,10 @@ class EthicalDeliberation:
     def deliberate(
         self,
         action: str,
-        context: Dict[str, Any],
-        constitutional_principles: Optional[List[str]] = None,
-        consequences: Optional[Dict[str, Any]] = None,
-        additional_stakeholders: Optional[List[Dict[str, Any]]] = None,
+        context: dict[str, Any],
+        constitutional_principles: list[str] | None = None,
+        consequences: dict[str, Any] | None = None,
+        additional_stakeholders: list[dict[str, Any]] | None = None,
     ) -> DeliberationResult:
         """
         Deliberate on whether action should be taken.
@@ -213,8 +213,8 @@ class EthicalDeliberation:
 
     def _synthesize_conclusions(
         self,
-        conclusions: List[EthicalConclusion],
-        confidences: List[float],
+        conclusions: list[EthicalConclusion],
+        confidences: list[float],
         stakeholder_analysis: StakeholderAnalysis,
     ) -> tuple:
         """
@@ -272,7 +272,7 @@ class EthicalDeliberation:
 
     def _generate_reasoning(
         self,
-        framework_analyses: Dict[EthicalFrameworkType, FrameworkAnalysis],
+        framework_analyses: dict[EthicalFrameworkType, FrameworkAnalysis],
         stakeholder_analysis: StakeholderAnalysis,
         final_conclusion: EthicalConclusion,
     ) -> str:
@@ -325,7 +325,7 @@ class EthicalDeliberation:
 
     def _infer_consequences(
         self, action: str, stakeholder_analysis: StakeholderAnalysis
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Infer consequences from action description and stakeholder analysis."""
         consequences = {
             "short_term": {

@@ -10,7 +10,7 @@ class StorageQuotaManager:
     """Manages storage quotas and tracking for subscription tiers."""
 
     @staticmethod
-    def get_storage_limit_gb(tier: str) -> Optional[float]:
+    def get_storage_limit_gb(tier: str) -> float | None:
         """
         Get storage limit in GB for a tier.
 
@@ -41,7 +41,7 @@ class StorageQuotaManager:
         database,
         document_size_bytes: int,
         testing_mode: bool = False,
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Check if user can upload a document based on storage quota.
 

@@ -92,15 +92,15 @@ class AuditEntry:
     action: str  # What was done
     resource: str  # What was affected
     resource_type: str  # "project", "user", "data", etc.
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
+    ip_address: str | None = None
+    user_agent: str | None = None
     status: str = "success"  # success, failure, denied
-    result_code: Optional[str] = None  # e.g., "governance_denied", "unauthorized"
-    details: Dict[str, Any] = field(default_factory=dict)  # Additional context
-    request_id: Optional[str] = None  # For tracing
-    session_id: Optional[str] = None  # For session tracking
+    result_code: str | None = None  # e.g., "governance_denied", "unauthorized"
+    details: dict[str, Any] = field(default_factory=dict)  # Additional context
+    request_id: str | None = None  # For tracing
+    session_id: str | None = None  # For session tracking
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for storage."""
         data = asdict(self)
         data["details"] = data["details"] or {}
@@ -127,7 +127,7 @@ class AuditLogger:
     def __init__(
         self,
         db_connection=None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         retention_days: int = 730,  # 2 years default
         encrypt_at_rest: bool = True,
     ):
@@ -154,12 +154,12 @@ class AuditLogger:
         resource_type: str,
         severity: str = AuditSeverity.INFO.value,
         status: str = "success",
-        result_code: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        request_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        result_code: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        request_id: str | None = None,
+        session_id: str | None = None,
+        details: dict[str, Any] | None = None,
     ) -> str:
         """Log an audit event.
 
@@ -221,9 +221,9 @@ class AuditLogger:
         agent_name: str,
         action: str,
         allowed: bool,
-        denial_reason: Optional[str] = None,
-        request_id: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        denial_reason: str | None = None,
+        request_id: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> str:
         """Log an agent action request (allow or deny).
 
@@ -243,7 +243,7 @@ class AuditLogger:
         status = "success" if allowed else "denied"
         result_code = None if allowed else "governance_denied"
 
-        details: Dict[str, Any] = {
+        details: dict[str, Any] = {
             "agent": agent_name,
             "action_requested": action,
         }
@@ -271,10 +271,10 @@ class AuditLogger:
         user_id: str,
         resource_type: str,
         resource_id: str,
-        fields_accessed: List[str],
+        fields_accessed: list[str],
         access_type: str = "read",
-        request_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
+        request_id: str | None = None,
+        ip_address: str | None = None,
     ) -> str:
         """Log data access at field level.
 
@@ -314,8 +314,8 @@ class AuditLogger:
         alert_type: str,
         severity: str,
         description: str,
-        affected_resources: Optional[List[str]] = None,
-        remediation: Optional[str] = None,
+        affected_resources: list[str] | None = None,
+        remediation: str | None = None,
     ) -> str:
         """Log security alert.
 
@@ -329,7 +329,7 @@ class AuditLogger:
         Returns:
             Audit entry ID
         """
-        details: Dict[str, Any] = {
+        details: dict[str, Any] = {
             "alert_type": alert_type,
             "description": description,
         }
@@ -399,11 +399,11 @@ class AuditLogger:
 
     def query_events(
         self,
-        event_type: Optional[str] = None,
-        actor_id: Optional[str] = None,
-        resource: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        event_type: str | None = None,
+        actor_id: str | None = None,
+        resource: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         limit: int = 100,
     ) -> list:
         """Query audit log events.
@@ -466,8 +466,8 @@ class AuditLogger:
             return 0
 
     def generate_compliance_report(
-        self, start_date: datetime, end_date: datetime, include_fields: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self, start_date: datetime, end_date: datetime, include_fields: list[str] | None = None
+    ) -> dict[str, Any]:
         """Generate compliance report for date range.
 
         Args:
@@ -480,7 +480,7 @@ class AuditLogger:
         """
         events = self.query_events(start_date=start_date, end_date=end_date, limit=10000)
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "period": {
                 "start": start_date.isoformat(),
                 "end": end_date.isoformat(),

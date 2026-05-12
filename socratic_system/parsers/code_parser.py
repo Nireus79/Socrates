@@ -52,7 +52,7 @@ class CodeParser:
 
             return logging.getLogger("code_parser")
 
-    def parse_file(self, file_path: str, content: str) -> Dict[str, Any]:
+    def parse_file(self, file_path: str, content: str) -> dict[str, Any]:
         """
         Parse a code file and extract structure information.
 
@@ -116,7 +116,7 @@ class CodeParser:
             self.logger.warning(f"Error parsing file {file_path}: {e}")
             return self._create_error_response(file_path, str(e))
 
-    def _parse_python(self, file_path: str, content: str) -> Dict[str, Any]:
+    def _parse_python(self, file_path: str, content: str) -> dict[str, Any]:
         """Parse Python code using ast module."""
         try:
             tree = ast.parse(content)
@@ -149,7 +149,7 @@ class CodeParser:
             },
         }
 
-    def _extract_python_functions(self, tree: ast.AST) -> List[Dict]:
+    def _extract_python_functions(self, tree: ast.AST) -> list[dict]:
         """Extract top-level functions from Python AST."""
         functions = []
         for node in ast.walk(tree):
@@ -163,7 +163,7 @@ class CodeParser:
                 functions.append(func_info)
         return functions
 
-    def _extract_python_classes(self, tree: ast.AST) -> List[Dict]:
+    def _extract_python_classes(self, tree: ast.AST) -> list[dict]:
         """Extract classes from Python AST."""
         classes = []
         for node in ast.walk(tree):
@@ -193,7 +193,7 @@ class CodeParser:
                 classes.append(class_info)
         return classes
 
-    def _extract_python_imports(self, tree: ast.AST) -> List[str]:
+    def _extract_python_imports(self, tree: ast.AST) -> list[str]:
         """Extract imports from Python AST."""
         imports = []
         for node in ast.walk(tree):
@@ -207,7 +207,7 @@ class CodeParser:
                     imports.append(f"{node.module}.{alias.name}" if node.module else alias.name)
         return list(set(imports))  # Remove duplicates
 
-    def _parse_javascript(self, file_path: str, content: str) -> Dict[str, Any]:
+    def _parse_javascript(self, file_path: str, content: str) -> dict[str, Any]:
         """Parse JavaScript code using regex-based extraction."""
         lines = content.split("\n")
         functions = self._extract_js_functions(lines)
@@ -234,7 +234,7 @@ class CodeParser:
             },
         }
 
-    def _extract_js_functions(self, lines: List[str]) -> List[Dict]:
+    def _extract_js_functions(self, lines: list[str]) -> list[dict]:
         """Extract function declarations from JavaScript."""
         functions = []
         func_patterns = [
@@ -262,7 +262,7 @@ class CodeParser:
                         seen_functions.add(func_name)
         return functions
 
-    def _extract_js_classes(self, content: str, lines: List[str]) -> List[Dict]:
+    def _extract_js_classes(self, content: str, lines: list[str]) -> list[dict]:
         """Extract class declarations from JavaScript."""
         classes = []
         class_pattern = r"class\s+(\w+)(?:\s+extends\s+(\w+))?"
@@ -288,7 +288,7 @@ class CodeParser:
                     seen_classes.add(class_name)
         return classes
 
-    def _extract_js_imports(self, lines: List[str]) -> List[str]:
+    def _extract_js_imports(self, lines: list[str]) -> list[str]:
         """Extract imports from JavaScript."""
         imports = []
         import_patterns = [
@@ -305,7 +305,7 @@ class CodeParser:
                         imports.append(module)
         return imports
 
-    def _parse_java(self, file_path: str, content: str) -> Dict[str, Any]:
+    def _parse_java(self, file_path: str, content: str) -> dict[str, Any]:
         """Parse Java code using regex-based extraction."""
         functions = []
         classes = []
@@ -384,11 +384,11 @@ class CodeParser:
             },
         }
 
-    def _parse_cpp(self, file_path: str, content: str) -> Dict[str, Any]:
+    def _parse_cpp(self, file_path: str, content: str) -> dict[str, Any]:
         """Parse C++ code using regex-based extraction."""
-        functions: List[Dict[str, Any]] = []
-        classes: List[Dict[str, Any]] = []
-        imports: List[str] = []
+        functions: list[dict[str, Any]] = []
+        classes: list[dict[str, Any]] = []
+        imports: list[str] = []
 
         lines = content.split("\n")
 
@@ -464,7 +464,7 @@ class CodeParser:
             },
         }
 
-    def _parse_c(self, file_path: str, content: str) -> Dict[str, Any]:
+    def _parse_c(self, file_path: str, content: str) -> dict[str, Any]:
         """Parse C code using regex-based extraction."""
         # C parsing is similar to C++ but without classes
         functions = []
@@ -520,7 +520,7 @@ class CodeParser:
 
     # Helper methods
 
-    def _extract_python_params(self, node: ast.FunctionDef) -> List[str]:
+    def _extract_python_params(self, node: ast.FunctionDef) -> list[str]:
         """Extract parameter names from Python function node."""
         params = []
         if node.args.args:
@@ -535,7 +535,7 @@ class CodeParser:
             return f"{self._get_node_name(node.value)}.{node.attr}"
         return ""
 
-    def _extract_js_methods(self, content: str, class_name: str) -> List[Dict]:
+    def _extract_js_methods(self, content: str, class_name: str) -> list[dict]:
         """Extract methods from a JavaScript class."""
         methods = []
         # Simple extraction - find method patterns within class
@@ -562,7 +562,7 @@ class CodeParser:
 
         return methods
 
-    def _extract_java_methods(self, content: str) -> List[Dict]:
+    def _extract_java_methods(self, content: str) -> list[dict]:
         """Extract methods from Java class."""
         methods = []
         method_pattern = (
@@ -585,7 +585,7 @@ class CodeParser:
         return methods
 
     def _generate_structure_summary(
-        self, language: str, functions: List[Dict], classes: List[Dict], imports: List[str]
+        self, language: str, functions: list[dict], classes: list[dict], imports: list[str]
     ) -> str:
         """Generate human-readable structure summary."""
         parts = []
@@ -619,7 +619,7 @@ class CodeParser:
             return "." + file_path.split(".")[-1]
         return ""
 
-    def _create_unsupported_response(self, file_path: str) -> Dict[str, Any]:
+    def _create_unsupported_response(self, file_path: str) -> dict[str, Any]:
         """Create response for unsupported file types."""
         return {
             "language": "unknown",
@@ -636,7 +636,7 @@ class CodeParser:
             },
         }
 
-    def _create_error_response(self, file_path: str, error_msg: str) -> Dict[str, Any]:
+    def _create_error_response(self, file_path: str, error_msg: str) -> dict[str, Any]:
         """Create response when parsing fails."""
         return {
             "language": "unknown",

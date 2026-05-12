@@ -36,7 +36,7 @@ class QualityRepository(BaseRepository):
         """Save quality entity (not used - quality data is saved via projects)."""
         return entity
 
-    def load(self, entity_id: str) -> Optional[Any]:
+    def load(self, entity_id: str) -> Any | None:
         """Load quality entity (not used - quality data is loaded via projects)."""
         return None
 
@@ -44,11 +44,11 @@ class QualityRepository(BaseRepository):
         """Delete quality entity (not used - quality data is deleted via projects)."""
         return False
 
-    def list_all(self) -> List[Any]:
+    def list_all(self) -> list[Any]:
         """List all quality entities (not used - quality data is accessed via projects)."""
         return []
 
-    def get_phase_maturity_scores(self, project_id: str) -> Dict[str, float]:
+    def get_phase_maturity_scores(self, project_id: str) -> dict[str, float]:
         """
         Get all phase maturity scores for a project.
 
@@ -107,7 +107,7 @@ class QualityRepository(BaseRepository):
             self.logger.error(f"Failed to update phase maturity for {project_id}/{phase}: {e}")
             return False
 
-    def get_category_scores(self, project_id: str) -> Dict[str, Dict[str, Any]]:
+    def get_category_scores(self, project_id: str) -> dict[str, dict[str, Any]]:
         """
         Get category scores for all phases.
 
@@ -128,7 +128,7 @@ class QualityRepository(BaseRepository):
             return {}
 
     def update_category_scores(
-        self, project_id: str, phase: str, category_scores: Dict[str, Any]
+        self, project_id: str, phase: str, category_scores: dict[str, Any]
     ) -> bool:
         """
         Update category scores for a phase.
@@ -159,7 +159,7 @@ class QualityRepository(BaseRepository):
             self.logger.error(f"Failed to update category scores for {project_id}: {e}")
             return False
 
-    def get_analytics_metrics(self, project_id: str) -> Dict[str, Any]:
+    def get_analytics_metrics(self, project_id: str) -> dict[str, Any]:
         """
         Get analytics metrics for a project.
 
@@ -179,7 +179,7 @@ class QualityRepository(BaseRepository):
             self.logger.error(f"Failed to get analytics metrics for {project_id}: {e}")
             return {}
 
-    def update_analytics_metrics(self, project_id: str, metrics: Dict[str, Any]) -> bool:
+    def update_analytics_metrics(self, project_id: str, metrics: dict[str, Any]) -> bool:
         """
         Update analytics metrics for a project.
 
@@ -205,7 +205,7 @@ class QualityRepository(BaseRepository):
             self.logger.error(f"Failed to update analytics metrics for {project_id}: {e}")
             return False
 
-    def get_maturity_history(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_maturity_history(self, project_id: str) -> list[dict[str, Any]]:
         """
         Get maturity history for a project.
 
@@ -225,7 +225,7 @@ class QualityRepository(BaseRepository):
             self.logger.error(f"Failed to get maturity history for {project_id}: {e}")
             return []
 
-    def add_maturity_event(self, project_id: str, event: Dict[str, Any]) -> bool:
+    def add_maturity_event(self, project_id: str, event: dict[str, Any]) -> bool:
         """
         Add a maturity event to history.
 
@@ -251,7 +251,7 @@ class QualityRepository(BaseRepository):
             self.logger.error(f"Failed to add maturity event for {project_id}: {e}")
             return False
 
-    def get_categorized_specs(self, project_id: str) -> Dict[str, List[Dict]]:
+    def get_categorized_specs(self, project_id: str) -> dict[str, list[dict]]:
         """
         Get categorized specs for all phases.
 
@@ -272,7 +272,7 @@ class QualityRepository(BaseRepository):
             return {}
 
     def add_categorized_specs(
-        self, project_id: str, phase: str, specs: List[Dict[str, Any]]
+        self, project_id: str, phase: str, specs: list[dict[str, Any]]
     ) -> bool:
         """
         Add categorized specs to a phase.

@@ -6,7 +6,8 @@ getting recommendations, and viewing progression trends.
 """
 
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
+from collections.abc import Callable
 
 from socratic_system.core.analytics_calculator import AnalyticsCalculator
 from socratic_system.ui.analytics_display import AnalyticsDisplay
@@ -50,7 +51,7 @@ class AnalyticsAnalyzeCommand(BaseCommand):
         self.orchestrator = orchestrator
         logger.debug("AnalyticsAnalyzeCommand initialized")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute category analysis command."""
         logger.debug(f"AnalyticsAnalyzeCommand.execute called with args: {args}")
         try:
@@ -105,7 +106,7 @@ class AnalyticsRecommendCommand(BaseCommand):
         self.orchestrator = orchestrator
         logger.debug("AnalyticsRecommendCommand initialized")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute recommendations command."""
         logger.debug("AnalyticsRecommendCommand.execute called")
         try:
@@ -152,7 +153,7 @@ class AnalyticsTrendsCommand(BaseCommand):
         self.orchestrator = orchestrator
         logger.debug("AnalyticsTrendsCommand initialized")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute trends analysis command."""
         logger.debug("AnalyticsTrendsCommand.execute called")
         try:
@@ -194,7 +195,7 @@ class AnalyticsSummaryCommand(BaseCommand):
         self.orchestrator = orchestrator
         logger.debug("AnalyticsSummaryCommand initialized")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute summary command."""
         logger.debug("AnalyticsSummaryCommand.execute called")
         try:
@@ -234,7 +235,7 @@ class AnalyticsBreakdownCommand(BaseCommand):
         self.orchestrator = orchestrator
         logger.debug("AnalyticsBreakdownCommand initialized")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute breakdown command."""
         logger.debug("AnalyticsBreakdownCommand.execute called")
         try:
@@ -269,7 +270,7 @@ class AnalyticsStatusCommand(BaseCommand):
         self.orchestrator = orchestrator
         logger.debug("AnalyticsStatusCommand initialized")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute status command."""
         logger.debug("AnalyticsStatusCommand.execute called")
         try:

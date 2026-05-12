@@ -27,7 +27,7 @@ class BaseRepository(ABC, Generic[T]):
         self.database = database
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def _log_operation(self, operation: str, details: Dict = None) -> None:
+    def _log_operation(self, operation: str, details: dict = None) -> None:
         """Log a repository operation.
 
         Args:
@@ -52,7 +52,7 @@ class BaseRepository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    def load(self, entity_id: str) -> Optional[T]:
+    def load(self, entity_id: str) -> T | None:
         """Load entity from database.
 
         Args:
@@ -76,7 +76,7 @@ class BaseRepository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    def list_all(self) -> List[T]:
+    def list_all(self) -> list[T]:
         """List all entities.
 
         Returns:
@@ -93,7 +93,7 @@ class ProjectRepository(BaseRepository):
         self.database.save_project(entity)
         return entity
 
-    def load(self, entity_id: str) -> Optional[Any]:
+    def load(self, entity_id: str) -> Any | None:
         """Load project from database."""
         return self.database.load_project(entity_id)
 
@@ -105,7 +105,7 @@ class ProjectRepository(BaseRepository):
         except Exception:
             return False
 
-    def list_all(self) -> List[Any]:
+    def list_all(self) -> list[Any]:
         """List all projects."""
         return self.database.list_projects()
 
@@ -118,7 +118,7 @@ class UserRepository(BaseRepository):
         self.database.save_user(entity)
         return entity
 
-    def load(self, entity_id: str) -> Optional[Any]:
+    def load(self, entity_id: str) -> Any | None:
         """Load user from database."""
         return self.database.load_user(entity_id)
 
@@ -130,7 +130,7 @@ class UserRepository(BaseRepository):
         except Exception:
             return False
 
-    def list_all(self) -> List[Any]:
+    def list_all(self) -> list[Any]:
         """List all users."""
         return self.database.list_users()
 
@@ -142,7 +142,7 @@ class KnowledgeRepository(BaseRepository):
         """Save knowledge document."""
         return entity
 
-    def load(self, entity_id: str) -> Optional[Any]:
+    def load(self, entity_id: str) -> Any | None:
         """Load knowledge document."""
         return None
 
@@ -150,6 +150,6 @@ class KnowledgeRepository(BaseRepository):
         """Delete knowledge document."""
         return False
 
-    def list_all(self) -> List[Any]:
+    def list_all(self) -> list[Any]:
         """List all knowledge documents."""
         return []

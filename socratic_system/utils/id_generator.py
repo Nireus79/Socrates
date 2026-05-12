@@ -6,7 +6,7 @@ Used by project_manager agent, API endpoints, and any other components.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from typing import Optional
 
 
@@ -19,7 +19,7 @@ class ProjectIDGenerator:
     # - "timestamp": Owner-prefixed timestamp format for sortability
 
     @classmethod
-    def generate(cls, owner: Optional[str] = None) -> str:
+    def generate(cls, owner: str | None = None) -> str:
         """
         Generate a project ID consistently across all systems.
 
@@ -47,9 +47,9 @@ class ProjectIDGenerator:
         return f"proj_{str(uuid.uuid4())}"
 
     @staticmethod
-    def _generate_timestamp(owner: Optional[str] = None) -> str:
+    def _generate_timestamp(owner: str | None = None) -> str:
         """Generate timestamp-based project ID"""
-        timestamp = int(datetime.now(timezone.utc).timestamp() * 1000)
+        timestamp = int(datetime.now(UTC).timestamp() * 1000)
         if owner:
             return f"proj_{owner}_{timestamp}"
         return f"proj_{timestamp}"
@@ -59,7 +59,7 @@ class UserIDGenerator:
     """Unified user ID generation"""
 
     @staticmethod
-    def generate(username: Optional[str] = None) -> str:
+    def generate(username: str | None = None) -> str:
         """
         Generate a user ID consistently.
 

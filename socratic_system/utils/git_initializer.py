@@ -56,10 +56,10 @@ class GitInitializer:
     @staticmethod
     def initialize_repository(
         project_root: Path,
-        initial_commit_message: Optional[str] = None,
+        initial_commit_message: str | None = None,
         author_name: str = "Socrates AI",
         author_email: str = "noreply@socrates.ai",
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Initialize git repository in project directory.
 
@@ -166,7 +166,7 @@ class GitInitializer:
         description: str,
         private: bool,
         github_token: str,
-    ) -> Tuple[bool, Dict[str, Any]]:
+    ) -> tuple[bool, dict[str, Any]]:
         """
         Create GitHub repository via GitHub API.
 
@@ -236,7 +236,7 @@ class GitInitializer:
         remote_url: str,
         branch: str = "main",
         force: bool = False,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Push local git repository to GitHub.
 
@@ -357,7 +357,7 @@ class GitInitializer:
             return False, msg
 
     @staticmethod
-    def get_repository_status(project_root: Path) -> Dict[str, Any]:
+    def get_repository_status(project_root: Path) -> dict[str, Any]:
         """
         Get current git repository status.
 
@@ -370,7 +370,7 @@ class GitInitializer:
         if not isinstance(project_root, Path):
             project_root = Path(project_root)
 
-        status: Dict[str, Any] = {
+        status: dict[str, Any] = {
             "is_git_repo": False,
             "branch": None,
             "remotes": [],
@@ -442,7 +442,7 @@ class GitInitializer:
             return status
 
     @staticmethod
-    def get_github_user_info(github_token: str) -> Tuple[bool, Dict[str, Any]]:
+    def get_github_user_info(github_token: str) -> tuple[bool, dict[str, Any]]:
         """
         Get authenticated GitHub user information.
 

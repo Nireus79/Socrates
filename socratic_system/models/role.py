@@ -25,7 +25,7 @@ class TeamMemberRole:
     role: (
         str  # Universal roles: "lead", "creator", "specialist", "analyst", "coordinator", "tester"
     )
-    skills: List[str]  # Domain-specific skills (e.g., "python", "ui-design", "copywriting")
+    skills: list[str]  # Domain-specific skills (e.g., "python", "ui-design", "copywriting")
     joined_at: datetime
 
     def to_dict(self):

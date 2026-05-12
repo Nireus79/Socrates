@@ -21,7 +21,7 @@ class CommandSuggestion:
     """Represents a suggested command interpretation"""
 
     def __init__(
-        self, command: str, confidence: float, reasoning: str, args: Optional[List[str]] = None
+        self, command: str, confidence: float, reasoning: str, args: list[str] | None = None
     ):
         """
         Initialize a command suggestion.
@@ -37,7 +37,7 @@ class CommandSuggestion:
         self.reasoning = reasoning
         self.args = args or []
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert suggestion to dictionary"""
         return {
             "command": self.command,
@@ -74,10 +74,10 @@ class NLUHandler:
         self.enabled = True  # NLU is enabled by default after login
 
         # Cache for command metadata (populated lazily)
-        self._command_metadata: Optional[str] = None
+        self._command_metadata: str | None = None
 
         # Cache for interpretations (avoids repeated API calls)
-        self._interpretation_cache: Dict[str, Dict[str, Any]] = {}
+        self._interpretation_cache: dict[str, dict[str, Any]] = {}
         self._cache_max_size = 50
 
         # Simple phrase patterns for common commands (avoids API calls)
@@ -128,7 +128,7 @@ class NLUHandler:
 
         return False
 
-    def try_quick_match(self, user_input: str) -> Optional[str]:
+    def try_quick_match(self, user_input: str) -> str | None:
         """
         Try to match input against quick pattern rules.
 
@@ -148,12 +148,12 @@ class NLUHandler:
 
         return None
 
-    def _get_cached_interpretation(self, user_input: str) -> Optional[Dict[str, Any]]:
+    def _get_cached_interpretation(self, user_input: str) -> dict[str, Any] | None:
         """Get cached interpretation if available"""
         normalized = user_input.lower().strip()
         return self._interpretation_cache.get(normalized)
 
-    def _cache_interpretation(self, user_input: str, result: Dict[str, Any]) -> None:
+    def _cache_interpretation(self, user_input: str, result: dict[str, Any]) -> None:
         """Cache interpretation result for future use"""
         normalized = user_input.lower().strip()
 
@@ -166,7 +166,7 @@ class NLUHandler:
 
             self._interpretation_cache[normalized] = result
 
-    def interpret(self, user_input: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def interpret(self, user_input: str, context: dict[str, Any]) -> dict[str, Any]:
         """
         Interpret natural language input and return command suggestions.
 
@@ -340,7 +340,7 @@ class NLUHandler:
         self._command_metadata = "\n".join(metadata_parts)
         return self._command_metadata
 
-    def _build_context_summary(self, context: Dict[str, Any]) -> str:
+    def _build_context_summary(self, context: dict[str, Any]) -> str:
         """
         Build a summary of current application context.
 
@@ -419,7 +419,7 @@ Examples:
 
 Return only the JSON response, no additional text."""
 
-    def _parse_nlu_response(self, response_text: str) -> Optional[Dict[str, Any]]:
+    def _parse_nlu_response(self, response_text: str) -> dict[str, Any] | None:
         """
         Parse Claude's JSON response into structured data.
 
@@ -459,7 +459,7 @@ class SuggestionDisplay:
     """Helper class for displaying command suggestions to the user"""
 
     @staticmethod
-    def show_suggestions(suggestions: List[CommandSuggestion]) -> Optional[str]:
+    def show_suggestions(suggestions: list[CommandSuggestion]) -> str | None:
         """
         Display suggestions to user and get their selection.
 

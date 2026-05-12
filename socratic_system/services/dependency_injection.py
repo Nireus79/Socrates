@@ -64,7 +64,7 @@ class ServiceContainer:
         self.event_emitter = event_emitter
 
         # Service cache (holds both services and repositories)
-        self._services: Dict[str, Any] = {}
+        self._services: dict[str, Any] = {}
 
     # Repository accessors
 
@@ -142,7 +142,7 @@ class ServiceContainer:
 
     # Utility methods
 
-    def get_service(self, service_name: str) -> Optional[Service]:
+    def get_service(self, service_name: str) -> Service | None:
         """
         Get service by name.
 
@@ -171,7 +171,7 @@ class ServiceContainer:
         """Clear all cached service instances."""
         self._services.clear()
 
-    def get_service_stats(self) -> Dict[str, Any]:
+    def get_service_stats(self) -> dict[str, Any]:
         """Get statistics about cached services."""
         return {
             "cached_services": len(self._services),
@@ -180,7 +180,7 @@ class ServiceContainer:
 
 
 # Global singleton instance
-_container: Optional[ServiceContainer] = None
+_container: ServiceContainer | None = None
 
 
 def initialize_container(
@@ -208,7 +208,7 @@ def initialize_container(
     return _container
 
 
-def get_service_container() -> Optional[ServiceContainer]:
+def get_service_container() -> ServiceContainer | None:
     """
     Get the global service container.
 

@@ -13,9 +13,9 @@ class ValidationResult:
     """Result of code syntax validation"""
 
     is_valid: bool
-    error_message: Optional[str] = None
-    warnings: List[str] = field(default_factory=list)
-    line_number: Optional[int] = None
+    error_message: str | None = None
+    warnings: list[str] = field(default_factory=list)
+    line_number: int | None = None
 
     def __post_init__(self):
         """Ensure warnings is always a list"""
@@ -29,7 +29,7 @@ class ExtractionResult:
 
     extracted_code: str
     is_valid: bool
-    validation_error: Optional[str] = None
+    validation_error: str | None = None
     was_markdown: bool = False
     code_blocks_found: int = 0
 

@@ -36,7 +36,8 @@ Example:
 """
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
+from collections.abc import Callable
 
 try:
     from langchain.schema import AIMessage, BaseMessage, HumanMessage
@@ -65,10 +66,10 @@ class SocratesState(TypedDict):
     """
 
     query: str
-    project_id: Optional[str]
-    agent_results: Dict[str, Any]
-    messages: List[BaseMessage]
-    metadata: Dict[str, Any]
+    project_id: str | None
+    agent_results: dict[str, Any]
+    messages: list[BaseMessage]
+    metadata: dict[str, Any]
 
 
 class SocratesNode:
@@ -78,7 +79,7 @@ class SocratesNode:
         self,
         agent_name: str,
         api_url: str = "http://localhost:8000",
-        auth_token: Optional[str] = None,
+        auth_token: str | None = None,
         action: str = "process",
     ):
         """Initialize Socrates node.
@@ -170,7 +171,7 @@ class SocratesNode:
         return state
 
     @staticmethod
-    def _format_result_message(result: Dict[str, Any]) -> AIMessage:
+    def _format_result_message(result: dict[str, Any]) -> AIMessage:
         """Format agent result as AIMessage.
 
         Args:
@@ -196,9 +197,9 @@ class SocratesNode:
 
 def create_socrates_nodes(
     api_url: str = "http://localhost:8000",
-    auth_token: Optional[str] = None,
-    agents: Optional[List[str]] = None,
-) -> Dict[str, Callable[[SocratesState], SocratesState]]:
+    auth_token: str | None = None,
+    agents: list[str] | None = None,
+) -> dict[str, Callable[[SocratesState], SocratesState]]:
     """Create LangGraph nodes for Socrates agents.
 
     Args:
@@ -230,8 +231,8 @@ def create_socrates_nodes(
 
 def create_initial_state(
     query: str,
-    project_id: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None,
+    project_id: str | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> SocratesState:
     """Create initial state for LangGraph workflow.
 
@@ -258,7 +259,7 @@ class SocratesGraphBuilder:
     def __init__(
         self,
         api_url: str = "http://localhost:8000",
-        auth_token: Optional[str] = None,
+        auth_token: str | None = None,
     ):
         """Initialize graph builder.
 
@@ -268,12 +269,12 @@ class SocratesGraphBuilder:
         """
         self.api_url = api_url
         self.auth_token = auth_token
-        self.nodes: Dict[str, SocratesNode] = {}
+        self.nodes: dict[str, SocratesNode] = {}
 
     def add_agent(
         self,
         agent_name: str,
-        node_name: Optional[str] = None,
+        node_name: str | None = None,
         action: str = "process",
     ) -> "SocratesGraphBuilder":
         """Add a Socrates agent as a node.
@@ -309,7 +310,7 @@ class SocratesGraphBuilder:
             raise ValueError(f"Node '{name}' not found")
         return self.nodes[name]
 
-    def get_all_nodes(self) -> Dict[str, Callable[[SocratesState], SocratesState]]:
+    def get_all_nodes(self) -> dict[str, Callable[[SocratesState], SocratesState]]:
         """Get all built nodes.
 
         Returns:

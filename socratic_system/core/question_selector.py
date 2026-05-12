@@ -36,7 +36,7 @@ class QuestionSelector:
         workflow: WorkflowDefinition,
         execution: WorkflowExecutionState,
         max_questions: int = 1,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Select next questions based on current node in approved workflow path.
 
@@ -100,7 +100,7 @@ class QuestionSelector:
 
         return questions
 
-    def _get_covered_categories(self, project: ProjectContext) -> Set[str]:
+    def _get_covered_categories(self, project: ProjectContext) -> set[str]:
         """
         Identify which categories have been covered in the current phase.
 
@@ -113,7 +113,7 @@ class QuestionSelector:
         covered = set()
 
         # Check categorized_specs for current phase
-        phase_specs: Union[Dict[str, Any], Any] = project.categorized_specs.get(project.phase, {})
+        phase_specs: dict[str, Any] | Any = project.categorized_specs.get(project.phase, {})
 
         if isinstance(phase_specs, dict):
             for category_specs in phase_specs.values():
@@ -130,8 +130,8 @@ class QuestionSelector:
         return covered
 
     def _generate_category_targeted_questions(
-        self, project: ProjectContext, categories: List[str], node, max_questions: int = 1
-    ) -> List[str]:
+        self, project: ProjectContext, categories: list[str], node, max_questions: int = 1
+    ) -> list[str]:
         """
         Generate questions targeting specific uncovered categories.
 
@@ -191,7 +191,7 @@ class QuestionSelector:
 
     def get_next_node(
         self, workflow: WorkflowDefinition, execution: WorkflowExecutionState
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Get the next node ID to advance to after current node completes.
 

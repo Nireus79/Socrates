@@ -11,7 +11,7 @@ from socratic_system.database import ProjectDatabase
 from socratic_system.services.repositories.base import Repository
 
 
-class MaturityRepository(Repository[Dict[str, Any]]):
+class MaturityRepository(Repository[dict[str, Any]]):
     """
     Repository for maturity and quality metrics persistence.
 
@@ -28,7 +28,7 @@ class MaturityRepository(Repository[Dict[str, Any]]):
         """
         self.database = database
 
-    def save(self, maturity_data: Dict[str, Any]) -> Dict[str, Any]:
+    def save(self, maturity_data: dict[str, Any]) -> dict[str, Any]:
         """
         Save maturity/quality metrics.
 
@@ -45,7 +45,7 @@ class MaturityRepository(Repository[Dict[str, Any]]):
         self.database.save_maturity_metrics(project_id, maturity_data)  # type: ignore
         return maturity_data
 
-    def find_by_id(self, project_id: str) -> Optional[Dict[str, Any]]:
+    def find_by_id(self, project_id: str) -> dict[str, Any] | None:
         """
         Find maturity metrics by project ID.
 
@@ -57,7 +57,7 @@ class MaturityRepository(Repository[Dict[str, Any]]):
         """
         return self.database.get_maturity_metrics(project_id)  # type: ignore
 
-    def find_all(self, limit: Optional[int] = None, offset: int = 0) -> List[Dict[str, Any]]:
+    def find_all(self, limit: int | None = None, offset: int = 0) -> list[dict[str, Any]]:
         """
         Find all maturity records with optional pagination.
 
@@ -112,7 +112,7 @@ class MaturityRepository(Repository[Dict[str, Any]]):
         """
         return self.find_by_id(project_id) is not None
 
-    def get_category_scores(self, project_id: str) -> Optional[Dict[str, float]]:
+    def get_category_scores(self, project_id: str) -> dict[str, float] | None:
         """
         Get category-specific maturity scores.
 
@@ -127,7 +127,7 @@ class MaturityRepository(Repository[Dict[str, Any]]):
             return metrics.get("category_scores", {})
         return None
 
-    def get_overall_score(self, project_id: str) -> Optional[float]:
+    def get_overall_score(self, project_id: str) -> float | None:
         """
         Get overall maturity score.
 

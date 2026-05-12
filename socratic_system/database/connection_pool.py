@@ -11,7 +11,8 @@ Features:
 
 import logging
 import time
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any, Dict, Optional
+from collections.abc import AsyncGenerator
 
 from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
@@ -157,7 +158,7 @@ class DatabaseConnectionPool:
             finally:
                 await session.close()
 
-    async def get_pool_status(self) -> Dict[str, Any]:
+    async def get_pool_status(self) -> dict[str, Any]:
         """Get detailed connection pool statistics.
 
         Returns:
@@ -217,7 +218,7 @@ class DatabaseConnectionPool:
             "slow_query_count": self._slow_query_count,
         }
 
-    async def get_pool_health(self) -> Dict[str, Any]:
+    async def get_pool_health(self) -> dict[str, Any]:
         """Get health status of connection pool.
 
         Checks:
@@ -319,7 +320,7 @@ class DatabaseConnectionPool:
 
 
 # Singleton instance for application use
-_pool: Optional[DatabaseConnectionPool] = None
+_pool: DatabaseConnectionPool | None = None
 
 
 async def initialize_pool(

@@ -26,7 +26,7 @@ class CodeGenerateCommand(BaseCommand):
             usage="code generate",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute code generate command"""
         # Validate context
         validation_error = self._validate_code_context(context)
@@ -64,7 +64,7 @@ class CodeGenerateCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _validate_code_context(self, context: Dict[str, Any]) -> Dict:
+    def _validate_code_context(self, context: dict[str, Any]) -> dict:
         """Validate required context for code generation"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -156,7 +156,7 @@ class CodeDocsCommand(BaseCommand):
             usage="code docs",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute code docs command"""
         if not self.require_project(context):
             return self.error("No project loaded")

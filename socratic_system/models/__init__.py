@@ -24,8 +24,8 @@ except ImportError as e:
         id: str
         content: str
         category: str
-        embedding: Optional[List[float]] = None
-        metadata: Optional[Dict[str, Any]] = None
+        embedding: list[float] | None = None
+        metadata: dict[str, Any] | None = None
 
 
 try:

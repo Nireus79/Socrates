@@ -61,8 +61,8 @@ class DocumentService(BaseService):
         self,
         project_id: str,
         file_path: str,
-        original_filename: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        original_filename: str | None = None,
+    ) -> dict[str, Any]:
         """
         Import a single file and extract its content.
 
@@ -171,7 +171,7 @@ class DocumentService(BaseService):
         project_id: str,
         directory_path: str,
         recursive: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Import all files from a directory.
 
@@ -262,8 +262,8 @@ class DocumentService(BaseService):
         project_id: str,
         text_content: str,
         title: str = "pasted_text",
-        document_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        document_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Import pasted or inline text.
 
@@ -332,7 +332,7 @@ class DocumentService(BaseService):
             self.logger.error(f"Error importing text: {e}")
             return {"status": "error", "message": f"Failed to import text: {str(e)}"}
 
-    def get_project_documents(self, project_id: str) -> Dict[str, Any]:
+    def get_project_documents(self, project_id: str) -> dict[str, Any]:
         """
         Get all documents for a project.
 
@@ -361,7 +361,7 @@ class DocumentService(BaseService):
             self.logger.error(f"Error getting documents: {e}")
             return {"status": "error", "message": str(e)}
 
-    def delete_document(self, project_id: str, file_name: str) -> Dict[str, Any]:
+    def delete_document(self, project_id: str, file_name: str) -> dict[str, Any]:
         """
         Delete a document record.
 
@@ -396,7 +396,7 @@ class DocumentService(BaseService):
             self.logger.error(f"Error deleting document: {e}")
             return {"status": "error", "message": str(e)}
 
-    def _read_file(self, file_path: str) -> Optional[str]:
+    def _read_file(self, file_path: str) -> str | None:
         """
         Read file content based on file type.
 
@@ -413,7 +413,7 @@ class DocumentService(BaseService):
             self.logger.warning(f"Failed to read file {file_path}: {e}")
             return None
 
-    def _chunk_content(self, content: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
+    def _chunk_content(self, content: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
         """
         Split content into overlapping chunks.
 

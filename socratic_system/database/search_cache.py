@@ -38,7 +38,7 @@ class SearchResultCache:
         Args:
             ttl_seconds: Time-to-live for cached results in seconds (default: 300 = 5 minutes)
         """
-        self._cache: Dict[str, Tuple[List[Dict], float]] = {}
+        self._cache: dict[str, tuple[list[dict], float]] = {}
         self._ttl = ttl_seconds
         self._hits = 0
         self._misses = 0
@@ -46,7 +46,7 @@ class SearchResultCache:
         self._lock = threading.RLock()
         self._logger = logging.getLogger("search_cache")
 
-    def get(self, query: str, top_k: int, project_id: Optional[str] = None) -> Optional[List[Dict]]:
+    def get(self, query: str, top_k: int, project_id: str | None = None) -> list[dict] | None:
         """
         Retrieve cached search results.
 
@@ -85,7 +85,7 @@ class SearchResultCache:
             self._misses += 1
             return None
 
-    def put(self, query: str, top_k: int, project_id: Optional[str], results: List[Dict]) -> None:
+    def put(self, query: str, top_k: int, project_id: str | None, results: list[dict]) -> None:
         """
         Store search results in cache.
 
@@ -106,7 +106,7 @@ class SearchResultCache:
                 f"Cached search results: {query[:30]}... " f"(cache size: {len(self._cache)})"
             )
 
-    def invalidate_query(self, query: str, top_k: Optional[int] = None) -> int:
+    def invalidate_query(self, query: str, top_k: int | None = None) -> int:
         """
         Invalidate cache entries for a specific query.
 
@@ -238,7 +238,7 @@ class SearchResultCache:
 
         return count
 
-    def stats(self) -> Dict[str, any]:
+    def stats(self) -> dict[str, any]:
         """
         Get cache statistics.
 
@@ -275,7 +275,7 @@ class SearchResultCache:
         return total_bytes / (1024 * 1024)
 
     @staticmethod
-    def _make_key(query: str, top_k: int, project_id: Optional[str]) -> str:
+    def _make_key(query: str, top_k: int, project_id: str | None) -> str:
         """Create cache key from query parameters."""
         return f"{query}:{top_k}:{project_id}"
 

@@ -28,7 +28,7 @@ class KnowledgeService(Service):
         self.project_db = project_db
         self.vector_db = vector_db
 
-    def search_knowledge(self, query: str, project_id: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def search_knowledge(self, query: str, project_id: str, top_k: int = 5) -> list[dict[str, Any]]:
         """Search knowledge base for similar documents.
 
         Args:
@@ -42,7 +42,7 @@ class KnowledgeService(Service):
         self.logger.debug(f"Searching knowledge for: {query}")
         return self.vector_db.search_similar(query, top_k, project_id)
 
-    def add_knowledge(self, project_id: str, content: str, metadata: Dict) -> str:
+    def add_knowledge(self, project_id: str, content: str, metadata: dict) -> str:
         """Add knowledge document to vector database.
 
         Args:
@@ -57,7 +57,7 @@ class KnowledgeService(Service):
         doc_id = self.vector_db.add_document(content, metadata, project_id)  # type: ignore
         return doc_id
 
-    def get_project_knowledge(self, project_id: str) -> List[Dict]:
+    def get_project_knowledge(self, project_id: str) -> list[dict]:
         """Get all knowledge documents for project.
 
         Args:

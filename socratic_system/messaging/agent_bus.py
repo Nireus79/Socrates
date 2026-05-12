@@ -8,7 +8,8 @@ import asyncio
 import logging
 import time
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
+from collections.abc import Callable
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ class CircuitBreaker:
         self.state = CircuitBreakerState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time: Optional[float] = None
+        self.last_failure_time: float | None = None
         self.logger = logging.getLogger(__name__)
 
     def record_success(self) -> None:
@@ -189,12 +190,12 @@ class AgentBus:
         self.default_timeout = default_timeout
         self.enable_circuit_breaker = enable_circuit_breaker
         self.enable_retry = enable_retry
-        self.request_queue: Dict[str, asyncio.Future] = {}
-        self.response_listeners: Dict[str, List[Callable]] = {}
+        self.request_queue: dict[str, asyncio.Future] = {}
+        self.response_listeners: dict[str, list[Callable]] = {}
         self.logger = logger or logging.getLogger(__name__)
 
         # Circuit breakers per agent
-        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self.circuit_breakers: dict[str, CircuitBreaker] = {}
 
         # Retry policies
         self.retry_policy = RetryPolicy(
@@ -218,7 +219,7 @@ class AgentBus:
         # Set up event routing for agent requests
         self._setup_event_routing()
 
-    def _check_capability(self, agent_name: str, action: str) -> tuple[bool, Optional[str]]:
+    def _check_capability(self, agent_name: str, action: str) -> tuple[bool, str | None]:
         """Check if agent has capability to perform action.
 
         Args:
@@ -262,8 +263,8 @@ class AgentBus:
             return False, f"Capability check error: {str(e)}"
 
     async def _check_governance(
-        self, agent_name: str, action: str, request_data: Dict[str, Any]
-    ) -> tuple[bool, Optional[str]]:
+        self, agent_name: str, action: str, request_data: dict[str, Any]
+    ) -> tuple[bool, str | None]:
         """Check if action is allowed under constitutional governance.
 
         Args:
@@ -357,7 +358,7 @@ class AgentBus:
         # Replace the emit method with the wrapper
         self.event_emitter.emit = wrapped_emit
 
-    async def _handle_agent_request(self, agent_name: str, request_data: Dict[str, Any]) -> None:
+    async def _handle_agent_request(self, agent_name: str, request_data: dict[str, Any]) -> None:
         """Handle an incoming agent request by invoking the registered handler.
 
         Routes the request to the appropriate agent handler via the registry,
@@ -486,10 +487,10 @@ class AgentBus:
     async def send_request(
         self,
         target_agent: str,
-        request: Dict[str, Any],
-        timeout: Optional[float] = None,
+        request: dict[str, Any],
+        timeout: float | None = None,
         fire_and_forget: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Send request to another agent with resilience patterns.
 
         Replaces orchestrator.process_request() calls.
@@ -538,7 +539,7 @@ class AgentBus:
             return {"request_id": request_id, "status": "queued"}
 
         # Request-response with retry
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         retry_count = 0
         max_retries = self.retry_policy.max_retries if self.enable_retry else 0
 
@@ -574,7 +575,7 @@ class AgentBus:
                 self.metrics["successful_requests"] += 1
                 return response
 
-            except asyncio.TimeoutError as e:
+            except TimeoutError as e:
                 last_error = e
                 self.metrics["timeouts"] += 1
                 self.logger.warning(
@@ -620,7 +621,7 @@ class AgentBus:
         else:
             raise AgentError(f"Agent {target_agent} request failed: {last_error}")
 
-    def handle_response(self, request_id: str, response: Dict[str, Any]) -> None:
+    def handle_response(self, request_id: str, response: dict[str, Any]) -> None:
         """Handle response from agent.
 
         Called by agents to send responses back.
@@ -649,7 +650,7 @@ class AgentBus:
         self.event_emitter.on(event_name, handler_func)
         self.logger.debug(f"[AgentBus] Handler registered for {agent_name}")
 
-    def emit_event(self, agent_name: str, event_type: str, data: Dict[str, Any]) -> None:
+    def emit_event(self, agent_name: str, event_type: str, data: dict[str, Any]) -> None:
         """Emit event from agent.
 
         Args:
@@ -663,11 +664,11 @@ class AgentBus:
     def send_request_sync(
         self,
         target_agent: str,
-        request: Dict[str, Any],
-        timeout: Optional[float] = None,
+        request: dict[str, Any],
+        timeout: float | None = None,
         fire_and_forget: bool = False,
         orchestrator=None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Send request to another agent synchronously.
 
         Routes through orchestrator if available (backward compatible),
@@ -711,7 +712,7 @@ class AgentBus:
                 "send_request_sync() called from async context. Use send_request() instead."
             )
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get agent bus statistics.
 
         Returns:
@@ -724,7 +725,7 @@ class AgentBus:
             ),
         }
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get agent bus metrics.
 
         Returns:
@@ -741,9 +742,9 @@ class AgentBus:
     async def broadcast(
         self,
         action: str,
-        payload: Optional[Dict[str, Any]] = None,
-        capability_filter: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        payload: dict[str, Any] | None = None,
+        capability_filter: str | None = None,
+    ) -> dict[str, Any]:
         """Broadcast message to multiple agents.
 
         Args:

@@ -42,8 +42,8 @@ class SocratesConfig:
     """
 
     # API Configuration
-    api_key: Optional[str] = None  # Optional for API server mode (uses per-user database keys)
-    subscription_token: Optional[str] = (
+    api_key: str | None = None  # Optional for API server mode (uses per-user database keys)
+    subscription_token: str | None = (
         None  # Alternative: use Claude subscription instead of API key
     )
 
@@ -53,9 +53,9 @@ class SocratesConfig:
 
     # Storage Configuration
     data_dir: Path = field(default_factory=lambda: Path.home() / ".socrates")
-    projects_db_path: Optional[Path] = None
-    vector_db_path: Optional[Path] = None
-    knowledge_base_path: Optional[Path] = None
+    projects_db_path: Path | None = None
+    vector_db_path: Path | None = None
+    knowledge_base_path: Path | None = None
 
     # Behavior Configuration
     max_context_length: int = 8000
@@ -66,13 +66,13 @@ class SocratesConfig:
 
     # Logging Configuration
     log_level: str = "INFO"
-    log_file: Optional[Path] = None
+    log_file: Path | None = None
 
     # Custom Knowledge
-    custom_knowledge: List[str] = field(default_factory=list)
+    custom_knowledge: list[str] = field(default_factory=list)
 
     # Encryption Configuration
-    encryption_key: Optional[str] = None  # Auto-generated if not provided
+    encryption_key: str | None = None  # Auto-generated if not provided
 
     def __post_init__(self) -> None:
         """Initialize derived paths and create directories"""
@@ -267,7 +267,7 @@ class SocratesConfig:
         return cls(**config_dict)
 
     @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "SocratesConfig":
+    def from_dict(cls, config_dict: dict[str, Any]) -> "SocratesConfig":
         """
         Create configuration from a dictionary.
 
@@ -285,7 +285,7 @@ class SocratesConfig:
 
         return cls(**config_dict)
 
-    def get_legacy_config_dict(self) -> Dict[str, Any]:
+    def get_legacy_config_dict(self) -> dict[str, Any]:
         """
         Get configuration in legacy dictionary format for backward compatibility.
 
@@ -317,7 +317,7 @@ class SocratesConfig:
 
 
 # Legacy CONFIG dictionary for backward compatibility with existing code
-def _get_legacy_config() -> Dict[str, Any]:
+def _get_legacy_config() -> dict[str, Any]:
     """Get legacy config dictionary - only works if environment is configured"""
     try:
         config = SocratesConfig.from_env()
@@ -349,9 +349,9 @@ class ConfigBuilder:
 
     def __init__(self, api_key: str) -> None:
         """Initialize builder with API key"""
-        self._config_dict: Dict[str, Any] = {"api_key": api_key}
+        self._config_dict: dict[str, Any] = {"api_key": api_key}
 
-    def with_data_dir(self, data_dir: Union[str, Path]) -> "ConfigBuilder":
+    def with_data_dir(self, data_dir: str | Path) -> "ConfigBuilder":
         """Set data directory"""
         self._config_dict["data_dir"] = data_dir
         return self
@@ -371,17 +371,17 @@ class ConfigBuilder:
         self._config_dict["log_level"] = level
         return self
 
-    def with_log_file(self, log_file: Union[str, Path]) -> "ConfigBuilder":
+    def with_log_file(self, log_file: str | Path) -> "ConfigBuilder":
         """Set log file path"""
         self._config_dict["log_file"] = log_file
         return self
 
-    def with_knowledge_base(self, kb_path: Union[str, Path]) -> "ConfigBuilder":
+    def with_knowledge_base(self, kb_path: str | Path) -> "ConfigBuilder":
         """Set knowledge base path"""
         self._config_dict["knowledge_base_path"] = kb_path
         return self
 
-    def with_custom_knowledge(self, knowledge: List[str]) -> "ConfigBuilder":
+    def with_custom_knowledge(self, knowledge: list[str]) -> "ConfigBuilder":
         """Set custom knowledge entries"""
         self._config_dict["custom_knowledge"] = knowledge
         return self

@@ -44,7 +44,7 @@ class Impact:
     timeframe: str  # "immediate", "short_term", "long_term"
     reversibility: str  # "reversible", "partially_reversible", "irreversible"
     description: str
-    affected_rights: List[str] = field(default_factory=list)
+    affected_rights: list[str] = field(default_factory=list)
 
     def __hash__(self):
         """Return hash of this object."""
@@ -61,9 +61,9 @@ class Stakeholder:
     vulnerability: float  # 0.0-1.0 (how vulnerable/protected)
     power: float  # 0.0-1.0 (ability to influence/resist)
     interest: float  # 0.0-1.0 (how much affected)
-    characteristics: Dict[str, Any] = field(default_factory=dict)
-    affected_interests: List[str] = field(default_factory=list)
-    affected_rights: List[str] = field(default_factory=list)
+    characteristics: dict[str, Any] = field(default_factory=dict)
+    affected_interests: list[str] = field(default_factory=list)
+    affected_rights: list[str] = field(default_factory=list)
 
     def is_vulnerable(self) -> bool:
         """Check if stakeholder is considered vulnerable."""
@@ -83,10 +83,10 @@ class StakeholderAnalysis:
     """Complete analysis of all stakeholders affected by an action."""
 
     action: str
-    stakeholders: List[Stakeholder] = field(default_factory=list)
-    impacts: List[Impact] = field(default_factory=list)
-    vulnerable_groups: List[Stakeholder] = field(default_factory=list)
-    powerless_affected: List[Stakeholder] = field(default_factory=list)
+    stakeholders: list[Stakeholder] = field(default_factory=list)
+    impacts: list[Impact] = field(default_factory=list)
+    vulnerable_groups: list[Stakeholder] = field(default_factory=list)
+    powerless_affected: list[Stakeholder] = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def has_vulnerable_affected(self) -> bool:
@@ -109,9 +109,9 @@ class StakeholderAnalysis:
         """Net impact (positive minus negative)."""
         return self.total_positive_impact() - self.total_negative_impact()
 
-    def affected_rights_summary(self) -> Dict[str, int]:
+    def affected_rights_summary(self) -> dict[str, int]:
         """Summary of affected rights and frequency."""
-        rights_count: Dict[str, int] = {}
+        rights_count: dict[str, int] = {}
         for stakeholder in self.stakeholders:
             for right in stakeholder.affected_rights:
                 rights_count[right] = rights_count.get(right, 0) + 1
@@ -126,7 +126,7 @@ class StakeholderAnalyzer:
     vulnerability to negative impacts.
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """Initialize stakeholder analyzer.
 
         Args:
@@ -137,8 +137,8 @@ class StakeholderAnalyzer:
     def analyze(
         self,
         action: str,
-        context: Dict[str, Any],
-        additional_stakeholders: Optional[List[Dict[str, Any]]] = None,
+        context: dict[str, Any],
+        additional_stakeholders: list[dict[str, Any]] | None = None,
     ) -> StakeholderAnalysis:
         """
         Analyze stakeholders affected by proposed action.
@@ -191,7 +191,7 @@ class StakeholderAnalyzer:
 
         return analysis
 
-    def _identify_stakeholders(self, action: str, context: Dict[str, Any]) -> List[Stakeholder]:
+    def _identify_stakeholders(self, action: str, context: dict[str, Any]) -> list[Stakeholder]:
         """Identify stakeholders from action and context."""
         stakeholders = []
 
@@ -284,7 +284,7 @@ class StakeholderAnalyzer:
 
         return stakeholders
 
-    def _parse_stakeholders(self, stakeholder_dicts: List[Dict[str, Any]]) -> List[Stakeholder]:
+    def _parse_stakeholders(self, stakeholder_dicts: list[dict[str, Any]]) -> list[Stakeholder]:
         """Parse stakeholder dictionaries into Stakeholder objects."""
         stakeholders = []
         for s_dict in stakeholder_dicts:
@@ -307,8 +307,8 @@ class StakeholderAnalyzer:
         return stakeholders
 
     def _analyze_impacts(
-        self, action: str, stakeholders: List[Stakeholder], context: Dict[str, Any]
-    ) -> List[Impact]:
+        self, action: str, stakeholders: list[Stakeholder], context: dict[str, Any]
+    ) -> list[Impact]:
         """Analyze impacts of action on stakeholders."""
         impacts = []
 
@@ -320,8 +320,8 @@ class StakeholderAnalyzer:
         return impacts
 
     def _assess_impact(
-        self, action: str, stakeholder: Stakeholder, context: Dict[str, Any]
-    ) -> Optional[Impact]:
+        self, action: str, stakeholder: Stakeholder, context: dict[str, Any]
+    ) -> Impact | None:
         """Assess impact of action on specific stakeholder."""
         action_lower = action.lower()
 
@@ -365,7 +365,7 @@ class StakeholderAnalyzer:
         )
 
     def _calculate_severity(
-        self, action: str, stakeholder: Stakeholder, context: Dict[str, Any]
+        self, action: str, stakeholder: Stakeholder, context: dict[str, Any]
     ) -> float:
         """Calculate severity of impact (0.0-1.0)."""
         base_severity = 0.5
@@ -386,7 +386,7 @@ class StakeholderAnalyzer:
         # Cap at 1.0
         return min(base_severity, 1.0)
 
-    def _assess_vulnerability(self, context: Dict[str, Any]) -> float:
+    def _assess_vulnerability(self, context: dict[str, Any]) -> float:
         """Assess vulnerability of user based on context."""
         vulnerability = 0.4  # Base
 
@@ -407,7 +407,7 @@ class StakeholderAnalyzer:
 
         return min(vulnerability, 1.0)
 
-    def _mentions_vulnerable_group(self, context: Dict[str, Any]) -> bool:
+    def _mentions_vulnerable_group(self, context: dict[str, Any]) -> bool:
         """Check if context mentions vulnerable populations."""
         vulnerable_keywords = [
             "minor",

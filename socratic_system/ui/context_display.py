@@ -16,13 +16,13 @@ class ContextDisplay:
 
     def __init__(self):
         """Initialize context display."""
-        self.current_user: Optional[User] = None
-        self.current_project: Optional[ProjectContext] = None
+        self.current_user: User | None = None
+        self.current_project: ProjectContext | None = None
 
     def set_context(
         self,
-        user: Optional[User] = None,
-        project: Optional[ProjectContext] = None,
+        user: User | None = None,
+        project: ProjectContext | None = None,
         clear_project: bool = False,
     ) -> None:
         """

@@ -33,7 +33,7 @@ class ResultPoller:
         self.result_cache = result_cache
         self.logger = logging.getLogger(__name__)
 
-    def get_result(self, job_id: str) -> Optional[Dict[str, Any]]:
+    def get_result(self, job_id: str) -> dict[str, Any] | None:
         """
         Get result for job.
 
@@ -65,7 +65,7 @@ class ResultPoller:
 
         return result.to_dict()
 
-    def get_status(self, job_id: str) -> Optional[str]:
+    def get_status(self, job_id: str) -> str | None:
         """
         Get job status.
 
@@ -103,8 +103,8 @@ class ResultPoller:
 
     def get_batch_results(
         self,
-        job_ids: List[str],
-    ) -> Dict[str, Dict[str, Any]]:
+        job_ids: list[str],
+    ) -> dict[str, dict[str, Any]]:
         """
         Get multiple results at once.
 
@@ -127,7 +127,7 @@ class ResultPoller:
         job_id: str,
         max_polls: int = 30,
         poll_interval: float = 1.0,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Wait for result with polling.
 
@@ -157,7 +157,7 @@ class ResultPoller:
     def get_poll_status(
         self,
         job_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get poll status for result.
 
@@ -185,7 +185,7 @@ class ResultPoller:
             "duration_ms": result.duration_ms,
         }
 
-    def get_active_jobs(self) -> Dict[str, Dict[str, Any]]:
+    def get_active_jobs(self) -> dict[str, dict[str, Any]]:
         """
         Get all active jobs.
 
@@ -203,7 +203,7 @@ class ResultPoller:
 
         return active
 
-    def get_completed_jobs(self) -> Dict[str, Dict[str, Any]]:
+    def get_completed_jobs(self) -> dict[str, dict[str, Any]]:
         """
         Get all completed jobs.
 
@@ -218,7 +218,7 @@ class ResultPoller:
 
         return completed
 
-    def get_failed_jobs(self) -> Dict[str, Dict[str, Any]]:
+    def get_failed_jobs(self) -> dict[str, dict[str, Any]]:
         """
         Get all failed jobs.
 

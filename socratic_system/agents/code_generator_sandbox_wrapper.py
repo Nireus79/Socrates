@@ -6,7 +6,7 @@ security validation, and audit logging.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from socratic_agents import CodeGeneratorAgent
 
@@ -28,10 +28,10 @@ class CodeGeneratorSandboxWrapper:
     def __init__(
         self,
         base_agent: CodeGeneratorAgent,
-        sandbox: Optional[Sandbox] = None,
-        audit_logger: Optional[AuditLogger] = None,
+        sandbox: Sandbox | None = None,
+        audit_logger: AuditLogger | None = None,
         validate_before_execution: bool = True,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize sandbox wrapper.
@@ -49,7 +49,7 @@ class CodeGeneratorSandboxWrapper:
         self.validate_before_execution = validate_before_execution
         self.logger = logger or logging.getLogger(__name__)
 
-    def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, request: dict[str, Any]) -> dict[str, Any]:
         """
         Process code generation request with sandbox integration.
 
@@ -82,7 +82,7 @@ class CodeGeneratorSandboxWrapper:
 
         return result
 
-    def _should_execute(self, request: Dict[str, Any]) -> bool:
+    def _should_execute(self, request: dict[str, Any]) -> bool:
         """
         Check if generated code should be executed.
 
@@ -99,8 +99,8 @@ class CodeGeneratorSandboxWrapper:
         return execute_flag and action == "generate_artifact"
 
     def _execute_generated_code(
-        self, request: Dict[str, Any], generation_result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, request: dict[str, Any], generation_result: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Execute generated code in sandbox.
 

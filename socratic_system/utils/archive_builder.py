@@ -28,8 +28,8 @@ class ArchiveBuilder:
     def create_zip_archive(
         project_root: Path,
         output_path: Path,
-        exclude_patterns: Optional[list] = None,
-    ) -> Tuple[bool, str]:
+        exclude_patterns: list | None = None,
+    ) -> tuple[bool, str]:
         """
         Create ZIP archive of entire project directory.
 
@@ -125,8 +125,8 @@ class ArchiveBuilder:
         project_root: Path,
         output_path: Path,
         compression: str = "gz",
-        exclude_patterns: Optional[list] = None,
-    ) -> Tuple[bool, str]:
+        exclude_patterns: list | None = None,
+    ) -> tuple[bool, str]:
         """
         Create TAR archive (optionally compressed) of project directory.
 
@@ -232,7 +232,7 @@ class ArchiveBuilder:
             return False, msg
 
     @staticmethod
-    def list_archive_contents(archive_path: Path) -> Tuple[bool, list]:
+    def list_archive_contents(archive_path: Path) -> tuple[bool, list]:
         """
         List contents of ZIP or TAR archive.
 
@@ -261,7 +261,7 @@ class ArchiveBuilder:
             return False, []
 
     @staticmethod
-    def verify_archive(archive_path: Path) -> Tuple[bool, str]:
+    def verify_archive(archive_path: Path) -> tuple[bool, str]:
         """
         Verify integrity of ZIP or TAR archive.
 

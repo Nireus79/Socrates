@@ -40,8 +40,8 @@ class InsightCategorizer:
         logger.info("InsightCategorizer initialized successfully")
 
     def categorize_insights(
-        self, insights: Dict, phase: str, project_type: str = "software", user_id: str = None
-    ) -> List[Dict]:
+        self, insights: dict, phase: str, project_type: str = "software", user_id: str = None
+    ) -> list[dict]:
         """
         Categorize insights using Claude intelligence.
 
@@ -111,7 +111,7 @@ class InsightCategorizer:
             logger.error(f"Claude categorization failed: {type(e).__name__}: {e}, using fallback")
             return self._fallback_categorization(insights, phase, project_type)
 
-    def _format_insights_for_claude(self, insights: Dict) -> str:
+    def _format_insights_for_claude(self, insights: dict) -> str:
         """Format insights dict into readable text for Claude"""
         logger.debug(f"Formatting {len(insights)} insight fields for Claude")
         lines = []
@@ -136,7 +136,7 @@ class InsightCategorizer:
         return result
 
     def _create_categorization_prompt(
-        self, insights_text: str, phase: str, project_type: str, valid_categories: List[str]
+        self, insights_text: str, phase: str, project_type: str, valid_categories: list[str]
     ) -> str:
         """Create Claude prompt for categorizing insights"""
         logger.debug(
@@ -184,7 +184,7 @@ Rules:
 
         return prompt
 
-    def _parse_claude_response(self, response: str, original_insights: Dict) -> List[Dict]:
+    def _parse_claude_response(self, response: str, original_insights: dict) -> list[dict]:
         """
         Parse Claude's JSON response into categorized specs.
 
@@ -258,7 +258,7 @@ Rules:
             logger.error(f"Error processing Claude response: {type(e).__name__}: {e}")
             return []
 
-    def _find_source_field(self, content: str, original_insights: Dict) -> str:
+    def _find_source_field(self, content: str, original_insights: dict) -> str:
         """Try to find which field this content came from"""
         logger.debug(f"Finding source field for content: {content[:50]}...")
         content_lower = content.lower()
@@ -280,7 +280,7 @@ Rules:
         logger.debug("No matching field found, returning 'unknown'")
         return "unknown"
 
-    def _fallback_categorization(self, insights: Dict, phase: str, project_type: str) -> List[Dict]:
+    def _fallback_categorization(self, insights: dict, phase: str, project_type: str) -> list[dict]:
         """
         Fallback simple categorization if Claude fails.
 

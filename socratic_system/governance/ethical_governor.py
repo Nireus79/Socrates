@@ -39,20 +39,20 @@ class EthicalDecision:
     decision_type: str  # ALLOW, DENY, ESCALATE, BLOCK
 
     # Reasoning components
-    deliberation: Optional[DeliberationResult] = None
-    contradictions: Optional[ContradictionAnalysis] = None
-    precedent: Optional[PrecedentAnalysis] = None
-    threat_analysis: Optional[ThreatAnalysis] = None
+    deliberation: DeliberationResult | None = None
+    contradictions: ContradictionAnalysis | None = None
+    precedent: PrecedentAnalysis | None = None
+    threat_analysis: ThreatAnalysis | None = None
 
     # Decision metadata
     confidence: float = 0.5
-    violations: List[str] = field(default_factory=list)
+    violations: list[str] = field(default_factory=list)
     reasoning: str = ""
     decision_id: str = ""
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     # Audit trail
-    reasoning_artifacts: Dict[str, Any] = field(default_factory=dict)
+    reasoning_artifacts: dict[str, Any] = field(default_factory=dict)
 
     def requires_escalation(self) -> bool:
         """Determine if decision requires human escalation."""
@@ -83,7 +83,7 @@ class EthicalGovernor:
 
     def __init__(
         self,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         enable_deliberation: bool = True,
         enable_precedent: bool = True,
         enable_threat_detection: bool = True,
@@ -109,8 +109,8 @@ class EthicalGovernor:
 
         # Decision tracking
         self.decision_count = 0
-        self.decisions: Dict[str, EthicalDecision] = {}
-        self.escalations: List[EthicalDecision] = []
+        self.decisions: dict[str, EthicalDecision] = {}
+        self.escalations: list[EthicalDecision] = []
 
         self.logger.info("[Ethical Governor] Initialized")
 
@@ -118,10 +118,10 @@ class EthicalGovernor:
         self,
         action: str,
         actor: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
         purpose: str = "",
         high_impact: bool = False,
-    ) -> Tuple[bool, str, EthicalDecision]:
+    ) -> tuple[bool, str, EthicalDecision]:
         """
         Evaluate an action through ethical reasoning.
 
@@ -331,7 +331,7 @@ class EthicalGovernor:
 
         return allowed, reasoning, decision
 
-    def get_decision_summary(self) -> Dict[str, Any]:
+    def get_decision_summary(self) -> dict[str, Any]:
         """Get summary of all decisions made."""
         return {
             "total_decisions": len(self.decisions),
@@ -350,11 +350,11 @@ class EthicalGovernor:
             },
         }
 
-    def get_escalations(self) -> List[EthicalDecision]:
+    def get_escalations(self) -> list[EthicalDecision]:
         """Get all decisions requiring escalation."""
         return self.escalations
 
-    def export_decision_trail(self, decision_id: str) -> Dict[str, Any]:
+    def export_decision_trail(self, decision_id: str) -> dict[str, Any]:
         """Export complete reasoning trail for a decision."""
         if decision_id not in self.decisions:
             return {}

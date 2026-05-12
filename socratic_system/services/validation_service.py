@@ -27,8 +27,8 @@ class ValidationService(Service):
     def run_tests(
         self,
         project_id: str,
-        user_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        user_id: str | None = None,
+    ) -> dict[str, Any]:
         """Run tests for a project.
 
         Args:
@@ -55,7 +55,7 @@ class ValidationService(Service):
         self,
         code: str,
         language: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Validate code syntax.
 
         Args:

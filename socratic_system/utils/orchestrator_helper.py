@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 def validate_orchestrator_result(
-    result: Dict[str, Any], operation: str, log_errors: bool = True
-) -> Dict[str, Any]:
+    result: dict[str, Any], operation: str, log_errors: bool = True
+) -> dict[str, Any]:
     """
     Validate orchestrator request result.
 
@@ -51,10 +51,10 @@ def validate_orchestrator_result(
 def safe_orchestrator_call(
     orchestrator: Any,
     agent: str,
-    request_data: Dict[str, Any],
+    request_data: dict[str, Any],
     operation_name: str,
     async_mode: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Execute orchestrator call with validation and error handling.
 
@@ -102,7 +102,7 @@ def safe_orchestrator_call(
 
 
 def get_or_default(
-    result: Dict[str, Any], key: str, default: Any = None, log_missing: bool = True
+    result: dict[str, Any], key: str, default: Any = None, log_missing: bool = True
 ) -> Any:
     """
     Safely extract value from orchestrator result with logging.

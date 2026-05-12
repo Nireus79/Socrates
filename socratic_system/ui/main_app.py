@@ -242,21 +242,21 @@ class SocraticRAGSystem:
         Args:
             start_frontend: If True, also start the React frontend dev server
         """
-        self.orchestrator: Optional[AgentOrchestrator] = None
-        self.current_user: Optional[User] = None
-        self.current_project: Optional[ProjectContext] = None
+        self.orchestrator: AgentOrchestrator | None = None
+        self.current_user: User | None = None
+        self.current_project: ProjectContext | None = None
         self.session_start: datetime.datetime = datetime.datetime.now()
 
         # Command system components
-        self.command_handler: Optional[CommandHandler] = None
-        self.nav_stack: Optional[NavigationStack] = None
-        self.context_display: Optional[ContextDisplay] = None
-        self.nlu_handler: Optional[NLUHandler] = None
+        self.command_handler: CommandHandler | None = None
+        self.nav_stack: NavigationStack | None = None
+        self.context_display: ContextDisplay | None = None
+        self.nlu_handler: NLUHandler | None = None
 
         # Frontend process management
         self.start_frontend = start_frontend
-        self.frontend_process: Optional[subprocess.Popen] = None
-        self.api_process: Optional[subprocess.Popen] = None
+        self.frontend_process: subprocess.Popen | None = None
+        self.api_process: subprocess.Popen | None = None
 
         # Initialize debug logger
         self.logger = get_debug_logger("main_app")
@@ -430,7 +430,7 @@ class SocraticRAGSystem:
         print("╚═══════════════════════════════════════════════╝")
         print(f"{Style.RESET_ALL}")
 
-    def _get_api_key(self) -> Optional[str]:
+    def _get_api_key(self) -> str | None:
         """Get Claude API key from environment or user input"""
         api_key = os.getenv("API_KEY_CLAUDE")
         if not api_key:
@@ -460,7 +460,7 @@ class SocraticRAGSystem:
                     os.environ["SOCRATES_SUBSCRIPTION_MODE"] = "0"
         return api_key
 
-    def _validate_api_key_or_subscription(self, api_key: Optional[str]) -> str:
+    def _validate_api_key_or_subscription(self, api_key: str | None) -> str:
         """
         Validate API key format or subscription mode before initialization.
 
@@ -565,7 +565,7 @@ class SocraticRAGSystem:
             else:
                 self.command_handler.register_command(command_instance)
 
-    def _handle_command_result(self, result: Dict[str, Any]) -> bool:
+    def _handle_command_result(self, result: dict[str, Any]) -> bool:
         """
         Handle command execution result and display appropriate messages.
 
@@ -599,7 +599,7 @@ class SocraticRAGSystem:
             return  # Don't duplicate unknown messages
         print(message)
 
-    def _handle_success_result(self, data: Dict[str, Any]) -> None:
+    def _handle_success_result(self, data: dict[str, Any]) -> None:
         """Handle success status data and navigation"""
         # Handle project entry (push to navigation stack)
         project = data.get("project")
@@ -657,7 +657,7 @@ class SocraticRAGSystem:
             except Exception as e:
                 print(f"{Fore.RED}Unexpected error: {e}{Style.RESET_ALL}")
 
-    def _process_input_with_nlu(self, user_input: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_input_with_nlu(self, user_input: str, context: dict[str, Any]) -> dict[str, Any]:
         """Process input with NLU support"""
         # Skip NLU if not initialized or input starts with /
         if not self.nlu_handler or self.nlu_handler.should_skip_nlu(user_input):
@@ -691,7 +691,7 @@ class SocraticRAGSystem:
                 "message": nlu_result.get("message", "Couldn't understand that."),
             }
 
-    def _get_context(self) -> Dict[str, Any]:
+    def _get_context(self) -> dict[str, Any]:
         """Get the current application context for commands"""
         return {
             "user": self.current_user,

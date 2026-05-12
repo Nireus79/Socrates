@@ -9,7 +9,7 @@ Defines:
 
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from enum import Enum
 from typing import Any, Dict, Optional
 
@@ -40,17 +40,17 @@ class AgentMessage:
     message_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     message_type: MessageType = MessageType.REQUEST
     sender: str = ""
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert message to dictionary"""
         data = asdict(self)
         data["message_type"] = self.message_type.value
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentMessage":
+    def from_dict(cls, data: dict[str, Any]) -> "AgentMessage":
         """Create message from dictionary"""
         data = data.copy()
         if isinstance(data.get("message_type"), str):
@@ -64,8 +64,8 @@ class RequestMessage(AgentMessage):
 
     target_agent: str = ""
     action: str = ""
-    payload: Dict[str, Any] = field(default_factory=dict)
-    reply_to: Optional[str] = None
+    payload: dict[str, Any] = field(default_factory=dict)
+    reply_to: str | None = None
     timeout: float = 30.0
     fire_and_forget: bool = False
 
@@ -73,7 +73,7 @@ class RequestMessage(AgentMessage):
         """Initialize after dataclass creation."""
         self.message_type = MessageType.REQUEST
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         data = asdict(self)
         data["message_type"] = self.message_type.value
@@ -86,14 +86,14 @@ class ResponseMessage(AgentMessage):
 
     request_id: str = ""
     status: MessageStatus = MessageStatus.SUCCESS
-    result: Dict[str, Any] = field(default_factory=dict)
-    error_message: Optional[str] = None
+    result: dict[str, Any] = field(default_factory=dict)
+    error_message: str | None = None
 
     def __post_init__(self):
         """Initialize after dataclass creation."""
         self.message_type = MessageType.RESPONSE
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         data = asdict(self)
         data["message_type"] = self.message_type.value
@@ -104,7 +104,7 @@ class ResponseMessage(AgentMessage):
     def success(
         cls,
         request_id: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         sender: str = "",
         **kwargs,
     ) -> "ResponseMessage":
@@ -142,13 +142,13 @@ class ErrorMessage(AgentMessage):
     request_id: str = ""
     error_code: str = ""
     error_message: str = ""
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         """Initialize after dataclass creation."""
         self.message_type = MessageType.ERROR
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         data = asdict(self)
         data["message_type"] = self.message_type.value

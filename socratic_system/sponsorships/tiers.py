@@ -32,7 +32,7 @@ SPONSORSHIP_TIER_MAP = {
 }
 
 
-def get_tier_from_sponsorship_amount(amount: int) -> Optional[str]:
+def get_tier_from_sponsorship_amount(amount: int) -> str | None:
     """
     Get Socrates tier based on GitHub sponsorship amount.
 
@@ -56,7 +56,7 @@ def get_tier_from_sponsorship_amount(amount: int) -> Optional[str]:
     return None
 
 
-def get_sponsorship_details(amount: int) -> Optional[SponsorshipTier]:
+def get_sponsorship_details(amount: int) -> SponsorshipTier | None:
     """
     Get detailed sponsorship tier information.
 

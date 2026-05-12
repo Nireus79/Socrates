@@ -20,7 +20,7 @@ class ConvSearchCommand(BaseCommand):
             usage="conv search <query>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute conversation search command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -91,7 +91,7 @@ class ConvSummaryCommand(BaseCommand):
             usage="conv summary [limit]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute conversation summary command"""
         if not self.require_project(context):
             return self.error("No project loaded")

@@ -21,7 +21,7 @@ class DocsCommand(BaseCommand):
             usage="docs [topic]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute docs command to retrieve documentation on a topic"""
         # Get topic from args
         if not args:
@@ -82,7 +82,7 @@ class DocImportCommand(BaseCommand):
             usage="docs import <path>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute docs import command"""
         if not self.validate_args(args, min_count=1):
             file_path = input(f"{Fore.WHITE}Enter file path: ").strip()
@@ -175,7 +175,7 @@ class DocImportDirCommand(BaseCommand):
             usage="docs import-dir <path>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute docs import-dir command"""
         if not self.validate_args(args, min_count=1):
             directory_path = input(f"{Fore.WHITE}Enter directory path: ").strip()
@@ -282,7 +282,7 @@ class DocPasteCommand(BaseCommand):
             usage="docs paste [title]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute docs paste command"""
         # Get title from arguments or user input
         title = self._get_title_from_input(args)
@@ -313,7 +313,7 @@ class DocPasteCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _get_title_from_input(self, args: List[str]) -> str:
+    def _get_title_from_input(self, args: list[str]) -> str:
         """Get document title from args or user input"""
         if args:
             return " ".join(args)
@@ -345,7 +345,7 @@ class DocPasteCommand(BaseCommand):
 
         return "\n".join(lines)
 
-    def _validate_doc_paste_context(self, context: Dict[str, Any]) -> Dict:
+    def _validate_doc_paste_context(self, context: dict[str, Any]) -> dict:
         """Validate required context for docs paste command"""
         if not context.get("orchestrator"):
             return self.error("Orchestrator not available")
@@ -364,7 +364,7 @@ class DocPasteCommand(BaseCommand):
 
     def _process_text_import(
         self, orchestrator, text_content: str, title: str, project_id: str
-    ) -> Dict:
+    ) -> dict:
         """Process text import request"""
         print(f"{Fore.YELLOW}Processing text...{Style.RESET_ALL}")
 
@@ -381,8 +381,8 @@ class DocPasteCommand(BaseCommand):
         )
 
     def _handle_import_success(
-        self, result: Dict, title: str, project_id: str, context: Dict, orchestrator
-    ) -> Dict:
+        self, result: dict, title: str, project_id: str, context: dict, orchestrator
+    ) -> dict:
         """Handle successful text import"""
         words = result.get("words_extracted", 0)
         chunks = result.get("chunks_created", 0)
@@ -410,7 +410,7 @@ class DocPasteCommand(BaseCommand):
         print(f"Stored in knowledge base: {entries} entries")
 
     def _emit_document_imported_event(
-        self, orchestrator, project_id: str, title: str, words: int, chunks: int, context: Dict
+        self, orchestrator, project_id: str, title: str, words: int, chunks: int, context: dict
     ) -> None:
         """Emit DOCUMENT_IMPORTED event to trigger knowledge analysis"""
         try:
@@ -444,7 +444,7 @@ class DocImportUrlCommand(BaseCommand):
             usage="docs import-url <url>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute docs import-url command"""
         if not self.validate_args(args, min_count=1):
             url = input(f"{Fore.WHITE}Enter URL: ").strip()
@@ -544,7 +544,7 @@ class DocListCommand(BaseCommand):
             usage="docs list [project-id]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute docs list command"""
         orchestrator = context.get("orchestrator")
         project = context.get("project")

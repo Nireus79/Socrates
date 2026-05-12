@@ -21,7 +21,7 @@ class CollabAddCommand(BaseCommand):
             usage="collab add <username> [role]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute collab add command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -68,7 +68,7 @@ class CollabAddCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _get_collaborator_inputs(self, args: List[str]) -> tuple:
+    def _get_collaborator_inputs(self, args: list[str]) -> tuple:
         """Get username and role from args or interactive input"""
         if self.validate_args(args, min_count=1):
             username = args[0]
@@ -137,7 +137,7 @@ class CollabRemoveCommand(BaseCommand):
         except ValueError:
             return None
 
-    def _remove_collaborator(self, username: str, project, user, orchestrator) -> Dict[str, Any]:
+    def _remove_collaborator(self, username: str, project, user, orchestrator) -> dict[str, Any]:
         """
         Remove a collaborator from the project after confirmation.
 
@@ -185,7 +185,7 @@ class CollabRemoveCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute collab remove command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -230,7 +230,7 @@ class CollabListCommand(BaseCommand):
             usage="collab list",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute collab list command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -299,7 +299,7 @@ class CollabRoleCommand(BaseCommand):
             usage="collab role <username> <new_role>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute collab role command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -350,7 +350,7 @@ class CollabRoleCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _get_username_and_role(self, args: List[str]) -> tuple:
+    def _get_username_and_role(self, args: list[str]) -> tuple:
         """Get username and role from args or interactive input"""
         if self.validate_args(args, min_count=2):
             username = args[0]

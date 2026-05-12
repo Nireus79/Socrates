@@ -44,8 +44,8 @@ class CertificateInfo:
     fingerprint: str  # Certificate fingerprint (SHA-256)
     public_key_bits: int  # RSA key size (2048, 4096, etc.)
     is_valid: bool = True
-    file_path: Optional[str] = None
-    key_path: Optional[str] = None
+    file_path: str | None = None
+    key_path: str | None = None
     created_date: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def is_expired(self) -> bool:
@@ -73,7 +73,7 @@ class TLSConfiguration:
     key_path: str
     ca_cert_path: str
     tls_version: TLSVersion = TLSVersion.TLS_1_3
-    cipher_suites: List[str] = field(
+    cipher_suites: list[str] = field(
         default_factory=lambda: [
             "TLS_AES_256_GCM_SHA384",
             "TLS_CHACHA20_POLY1305_SHA256",
@@ -83,7 +83,7 @@ class TLSConfiguration:
     verify_peer: bool = True
     require_client_cert: bool = True
     allow_self_signed: bool = False
-    certificate: Optional[CertificateInfo] = None
+    certificate: CertificateInfo | None = None
     created_date: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def is_valid(self) -> bool:
@@ -92,7 +92,7 @@ class TLSConfiguration:
             return False
         return not self.certificate.is_expired() and self.certificate.is_valid
 
-    def get_certificate_info(self) -> Optional[CertificateInfo]:
+    def get_certificate_info(self) -> CertificateInfo | None:
         """Get detailed certificate information."""
         return self.certificate
 
@@ -104,7 +104,7 @@ class MutualTLSPolicy:
     min_tls_version: TLSVersion = TLSVersion.TLS_1_3
     require_mutual_auth: bool = True
     certificate_validation_required: bool = True
-    allowed_cipher_suites: List[str] = field(
+    allowed_cipher_suites: list[str] = field(
         default_factory=lambda: [
             "TLS_AES_256_GCM_SHA384",
             "TLS_CHACHA20_POLY1305_SHA256",
@@ -127,7 +127,7 @@ class TLSSessionInfo:
     peer_agent_id: str
     tls_version: TLSVersion
     cipher_suite: str
-    peer_certificate: Optional[CertificateInfo] = None
+    peer_certificate: CertificateInfo | None = None
     established_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     last_activity: datetime = field(default_factory=lambda: datetime.now(UTC))
     is_active: bool = True
@@ -153,7 +153,7 @@ class MutualTLSManager:
     def __init__(
         self,
         cert_directory: str = "./certs",
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """Initialize Mutual TLS Manager.
 
@@ -165,9 +165,9 @@ class MutualTLSManager:
         self.cert_directory = Path(cert_directory)
         self.cert_directory.mkdir(parents=True, exist_ok=True)
 
-        self.certificates: Dict[str, CertificateInfo] = {}
-        self.configurations: Dict[str, TLSConfiguration] = {}
-        self.active_sessions: Dict[str, TLSSessionInfo] = {}
+        self.certificates: dict[str, CertificateInfo] = {}
+        self.configurations: dict[str, TLSConfiguration] = {}
+        self.active_sessions: dict[str, TLSSessionInfo] = {}
         self.policy: MutualTLSPolicy = MutualTLSPolicy()
 
     def set_policy(self, policy: MutualTLSPolicy) -> None:
@@ -267,7 +267,7 @@ class MutualTLSManager:
 
         return config
 
-    def validate_certificate(self, cert_info: CertificateInfo) -> Tuple[bool, str]:
+    def validate_certificate(self, cert_info: CertificateInfo) -> tuple[bool, str]:
         """Validate a certificate against policy.
 
         Args:
@@ -302,8 +302,8 @@ class MutualTLSManager:
         self,
         agent_id: str,
         peer_agent_id: str,
-        peer_certificate: Optional[CertificateInfo] = None,
-    ) -> Optional[TLSSessionInfo]:
+        peer_certificate: CertificateInfo | None = None,
+    ) -> TLSSessionInfo | None:
         """Establish a TLS session between agents.
 
         Args:
@@ -368,15 +368,15 @@ class MutualTLSManager:
 
         return False
 
-    def get_certificate_status(self) -> Dict[str, Any]:
+    def get_certificate_status(self) -> dict[str, Any]:
         """Get status of all certificates.
 
         Returns:
             Dictionary with certificate status information
         """
-        expired_list: List[Dict[str, Any]] = []
-        requires_renewal_list: List[Dict[str, Any]] = []
-        expiring_soon_list: List[Dict[str, Any]] = []
+        expired_list: list[dict[str, Any]] = []
+        requires_renewal_list: list[dict[str, Any]] = []
+        expiring_soon_list: list[dict[str, Any]] = []
         valid_count = 0
 
         for cert_info in self.certificates.values():
@@ -404,7 +404,7 @@ class MutualTLSManager:
             else:
                 valid_count += 1
 
-        status: Dict[str, Any] = {
+        status: dict[str, Any] = {
             "total_certificates": len(self.certificates),
             "valid_certificates": valid_count,
             "expiring_soon": expiring_soon_list,
@@ -413,7 +413,7 @@ class MutualTLSManager:
         }
         return status
 
-    def get_session_status(self) -> Dict[str, Any]:
+    def get_session_status(self) -> dict[str, Any]:
         """Get status of all active TLS sessions.
 
         Returns:
@@ -480,7 +480,7 @@ class MutualTLSManager:
             self.logger.error(f"[TLS Manager] Export failed: {e}")
             return False
 
-    def import_configuration(self, filepath: str) -> Optional[TLSConfiguration]:
+    def import_configuration(self, filepath: str) -> TLSConfiguration | None:
         """Import agent TLS configuration from file.
 
         Args:

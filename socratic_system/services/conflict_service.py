@@ -47,8 +47,8 @@ class ConflictService(Service):
         self,
         project_id: str,
         project: "ProjectContext" = None,
-        insights: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        insights: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Detect conflicts in project specifications.
 
         Args:
@@ -97,8 +97,8 @@ class ConflictService(Service):
         project_id: str,
         conflict_index: int,
         resolution: str,
-        resolution_details: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        resolution_details: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Resolve a specific conflict.
 
         Args:
@@ -131,7 +131,7 @@ class ConflictService(Service):
         )
         return {"status": "success" if result else "failed"}
 
-    def get_project_conflicts(self, project_id: str) -> Dict[str, Any]:
+    def get_project_conflicts(self, project_id: str) -> dict[str, Any]:
         """Get all conflicts for a project, organized by type.
 
         Args:
@@ -143,7 +143,7 @@ class ConflictService(Service):
         self.logger.info(f"Getting conflicts for project {project_id}")
 
         conflicts = self.repository.get_project_conflicts(project_id)
-        by_type: Dict[str, List[Dict[str, Any]]] = {}
+        by_type: dict[str, list[dict[str, Any]]] = {}
 
         for conflict in conflicts:
             conflict_type = conflict.get("conflict_type", "unknown")
@@ -158,7 +158,7 @@ class ConflictService(Service):
             "conflicts": conflicts,
         }
 
-    def get_unresolved_conflicts(self, project_id: str) -> Dict[str, Any]:
+    def get_unresolved_conflicts(self, project_id: str) -> dict[str, Any]:
         """Get unresolved conflicts for a project.
 
         Args:
@@ -176,7 +176,7 @@ class ConflictService(Service):
             "conflicts": conflicts,
         }
 
-    def get_high_severity_conflicts(self, project_id: str) -> Dict[str, Any]:
+    def get_high_severity_conflicts(self, project_id: str) -> dict[str, Any]:
         """Get high severity conflicts for a project.
 
         Args:
@@ -195,8 +195,8 @@ class ConflictService(Service):
         }
 
     def get_conflict_suggestions(
-        self, project_id: str, conflict_index: Optional[int] = None
-    ) -> Dict[str, Any]:
+        self, project_id: str, conflict_index: int | None = None
+    ) -> dict[str, Any]:
         """Get suggestions for resolving conflicts.
 
         Args:
@@ -228,7 +228,7 @@ class ConflictService(Service):
             "suggestions": suggestions,
         }
 
-    def clear_project_conflicts(self, project_id: str) -> Dict[str, Any]:
+    def clear_project_conflicts(self, project_id: str) -> dict[str, Any]:
         """Clear all conflicts for a project.
 
         Args:

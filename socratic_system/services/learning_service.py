@@ -55,7 +55,7 @@ class LearningService(Service):
             },
         )
 
-    def get_learning_metrics(self, user_id: str) -> Dict[str, Any]:
+    def get_learning_metrics(self, user_id: str) -> dict[str, Any]:
         """Get learning metrics for user.
 
         Args:

@@ -32,7 +32,7 @@ class DocumentRepository(BaseRepository):
         """
         super().__init__(database)
 
-    def get_project_documents(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_project_documents(self, project_id: str) -> list[dict[str, Any]]:
         """
         Get all documents for a project.
 
@@ -61,7 +61,7 @@ class DocumentRepository(BaseRepository):
         word_count: int,
         chunk_count: int,
         entries_stored: int,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """
         Add a document record to project.
@@ -113,7 +113,7 @@ class DocumentRepository(BaseRepository):
             self.logger.error(f"Failed to add document for {project_id}: {e}")
             return False
 
-    def get_document_by_name(self, project_id: str, file_name: str) -> Optional[Dict[str, Any]]:
+    def get_document_by_name(self, project_id: str, file_name: str) -> dict[str, Any] | None:
         """
         Get a document by file name.
 
@@ -138,7 +138,7 @@ class DocumentRepository(BaseRepository):
             self.logger.error(f"Failed to get document {file_name} for {project_id}: {e}")
             return None
 
-    def get_documents_by_type(self, project_id: str, content_type: str) -> List[Dict[str, Any]]:
+    def get_documents_by_type(self, project_id: str, content_type: str) -> list[dict[str, Any]]:
         """
         Get all documents of a specific type.
 
@@ -162,7 +162,7 @@ class DocumentRepository(BaseRepository):
             self.logger.error(f"Failed to get {content_type} documents for {project_id}: {e}")
             return []
 
-    def get_document_statistics(self, project_id: str) -> Dict[str, Any]:
+    def get_document_statistics(self, project_id: str) -> dict[str, Any]:
         """
         Get statistics about all documents for a project.
 
@@ -273,7 +273,7 @@ class DocumentRepository(BaseRepository):
         """Save document entity (no-op for documents)."""
         return True
 
-    def load(self, entity_id: str) -> Optional[Any]:
+    def load(self, entity_id: str) -> Any | None:
         """Load document entity (no-op for documents)."""
         return None
 
@@ -281,6 +281,6 @@ class DocumentRepository(BaseRepository):
         """Delete document entity (no-op for documents)."""
         return False
 
-    def list_all(self) -> List[Any]:
+    def list_all(self) -> list[Any]:
         """List all documents (no-op for documents)."""
         return []

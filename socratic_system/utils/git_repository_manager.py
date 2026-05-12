@@ -31,7 +31,7 @@ class GitRepositoryManager:
     CLONE_TIMEOUT = 300  # 5 minutes
     PUSH_PULL_TIMEOUT = 300  # 5 minutes
 
-    def __init__(self, temp_base_dir: Optional[str] = None, github_token: Optional[str] = None):
+    def __init__(self, temp_base_dir: str | None = None, github_token: str | None = None):
         """
         Initialize GitRepositoryManager
 
@@ -43,7 +43,7 @@ class GitRepositoryManager:
         self.github_token = github_token or os.getenv("GITHUB_TOKEN")
         self.logger = logging.getLogger("socrates.utils.git_repo_manager")
 
-    def validate_github_url(self, url: str) -> Dict[str, Any]:
+    def validate_github_url(self, url: str) -> dict[str, Any]:
         """
         Validate GitHub URL format and extract metadata
 
@@ -104,7 +104,7 @@ class GitRepositoryManager:
             "message": "URL must be a valid GitHub repository (https or SSH)",
         }
 
-    def clone_repository(self, github_url: str) -> Dict[str, Any]:
+    def clone_repository(self, github_url: str) -> dict[str, Any]:
         """
         Clone repository to isolated temporary directory
 
@@ -214,8 +214,8 @@ class GitRepositoryManager:
             }
 
     def extract_repository_metadata(
-        self, clone_path: str, url_info: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, clone_path: str, url_info: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Extract metadata from cloned repository
 
@@ -307,7 +307,7 @@ class GitRepositoryManager:
                 "default_branch": "main",
             }
 
-    def _detect_languages(self, repo_path: Path) -> List[str]:
+    def _detect_languages(self, repo_path: Path) -> list[str]:
         """Detect programming languages in repository"""
         language_extensions = {
             "Python": [".py"],
@@ -339,7 +339,7 @@ class GitRepositoryManager:
 
         return sorted(found_languages) if found_languages else []
 
-    def _count_files_and_size(self, repo_path: Path) -> Tuple[int, int]:
+    def _count_files_and_size(self, repo_path: Path) -> tuple[int, int]:
         """Count total files and calculate total size (excluding .git)"""
         file_count = 0
         total_size = 0
@@ -411,8 +411,8 @@ class GitRepositoryManager:
         return "main"  # Default fallback
 
     def get_file_tree(
-        self, clone_path: str, exclude_patterns: Optional[List[str]] = None
-    ) -> List[Dict[str, Any]]:
+        self, clone_path: str, exclude_patterns: list[str] | None = None
+    ) -> list[dict[str, Any]]:
         """
         Get structured file tree excluding common patterns
 
@@ -511,7 +511,7 @@ class GitRepositoryManager:
             self.logger.error(f"Error cleaning up directory {clone_path}: {e}")
             return False
 
-    def pull_repository(self, clone_path: str, branch: Optional[str] = None) -> Dict[str, Any]:
+    def pull_repository(self, clone_path: str, branch: str | None = None) -> dict[str, Any]:
         """
         Pull latest changes from remote repository
 
@@ -572,8 +572,8 @@ class GitRepositoryManager:
             return {"status": "error", "message": str(e), "changes": {}}
 
     def push_repository(
-        self, clone_path: str, message: str, branch: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, clone_path: str, message: str, branch: str | None = None
+    ) -> dict[str, Any]:
         """
         Push changes back to remote repository
 

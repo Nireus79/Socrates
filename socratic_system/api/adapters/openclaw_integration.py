@@ -26,7 +26,8 @@ Example:
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
+from collections.abc import Callable
 
 from socratic_system.clients.socrates_agent_client import (
     SocratesAgentClient,
@@ -44,7 +45,7 @@ class ClawAction(ABC):
         agent_name: str,
         action: str = "process",
         api_url: str = "http://localhost:8000",
-        auth_token: Optional[str] = None,
+        auth_token: str | None = None,
     ):
         """Initialize action.
 
@@ -59,7 +60,7 @@ class ClawAction(ABC):
         self.client = SocratesAgentClientSync(api_url, auth_token)
 
     @abstractmethod
-    def execute(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         """Execute the action.
 
         Args:
@@ -70,7 +71,7 @@ class ClawAction(ABC):
         """
         pass
 
-    def _invoke_agent(self, **kwargs) -> Dict[str, Any]:
+    def _invoke_agent(self, **kwargs) -> dict[str, Any]:
         """Invoke the Socrates agent.
 
         Args:
@@ -89,10 +90,10 @@ class ClawAction(ABC):
 class CodeGenerationAction(ClawAction):
     """OpenClaw action for code generation via Socrates."""
 
-    def __init__(self, api_url: str = "http://localhost:8000", auth_token: Optional[str] = None):
+    def __init__(self, api_url: str = "http://localhost:8000", auth_token: str | None = None):
         super().__init__("code_generator", "process", api_url, auth_token)
 
-    def execute(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         """Generate code.
 
         Args:
@@ -127,10 +128,10 @@ class CodeGenerationAction(ClawAction):
 class ValidationAction(ClawAction):
     """OpenClaw action for code validation via Socrates."""
 
-    def __init__(self, api_url: str = "http://localhost:8000", auth_token: Optional[str] = None):
+    def __init__(self, api_url: str = "http://localhost:8000", auth_token: str | None = None):
         super().__init__("code_validation", "process", api_url, auth_token)
 
-    def execute(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         """Validate code.
 
         Args:
@@ -163,10 +164,10 @@ class ValidationAction(ClawAction):
 class QualityAction(ClawAction):
     """OpenClaw action for quality assessment via Socrates."""
 
-    def __init__(self, api_url: str = "http://localhost:8000", auth_token: Optional[str] = None):
+    def __init__(self, api_url: str = "http://localhost:8000", auth_token: str | None = None):
         super().__init__("quality_controller", "process", api_url, auth_token)
 
-    def execute(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         """Assess quality.
 
         Args:
@@ -196,10 +197,10 @@ class QualityAction(ClawAction):
 class ConflictDetectionAction(ClawAction):
     """OpenClaw action for conflict detection via Socrates."""
 
-    def __init__(self, api_url: str = "http://localhost:8000", auth_token: Optional[str] = None):
+    def __init__(self, api_url: str = "http://localhost:8000", auth_token: str | None = None):
         super().__init__("conflict_detector", "process", api_url, auth_token)
 
-    def execute(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, params: dict[str, Any]) -> dict[str, Any]:
         """Detect conflicts.
 
         Args:
@@ -236,7 +237,7 @@ class SocratesClawAdapter:
     def __init__(
         self,
         api_url: str = "http://localhost:8000",
-        auth_token: Optional[str] = None,
+        auth_token: str | None = None,
     ):
         """Initialize adapter.
 
@@ -253,7 +254,7 @@ class SocratesClawAdapter:
         self.quality_handler = QualityAction(api_url, auth_token)
         self.conflict_handler = ConflictDetectionAction(api_url, auth_token)
 
-    def get_actions(self) -> Dict[str, ClawAction]:
+    def get_actions(self) -> dict[str, ClawAction]:
         """Get all registered actions.
 
         Returns:
@@ -279,8 +280,8 @@ class SocratesClawAdapter:
     def execute_action(
         self,
         action_name: str,
-        params: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        params: dict[str, Any],
+    ) -> dict[str, Any]:
         """Execute an action directly.
 
         Args:
@@ -302,8 +303,8 @@ class SocratesClawAdapter:
     async def execute_action_async(
         self,
         action_name: str,
-        params: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        params: dict[str, Any],
+    ) -> dict[str, Any]:
         """Execute an action asynchronously.
 
         Args:
@@ -345,7 +346,7 @@ class ClawEventListener:
     def __init__(
         self,
         api_url: str = "http://localhost:8000",
-        auth_token: Optional[str] = None,
+        auth_token: str | None = None,
     ):
         """Initialize listener.
 
@@ -354,7 +355,7 @@ class ClawEventListener:
             auth_token: Optional authentication token
         """
         self.adapter = SocratesClawAdapter(api_url, auth_token)
-        self.handlers: Dict[str, Callable] = {}
+        self.handlers: dict[str, Callable] = {}
 
     def on(self, event_name: str, action_name: str) -> Callable:
         """Register handler for an OpenClaw event.
@@ -367,7 +368,7 @@ class ClawEventListener:
             Handler function
         """
 
-        def handler(params: Dict[str, Any]) -> Dict[str, Any]:
+        def handler(params: dict[str, Any]) -> dict[str, Any]:
             logger.info(
                 f"[EventListener] Event '{event_name}' triggered, executing '{action_name}'"
             )

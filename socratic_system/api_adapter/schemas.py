@@ -22,16 +22,16 @@ class ResponseDTO(BaseModel):
     status: str = Field(..., description="Response status (success/error)")
     service: str = Field(..., description="Service name")
     version: str = Field(default="v1", description="API version")
-    data: Optional[Dict[str, Any]] = Field(None, description="Response data")
-    message: Optional[str] = Field(None, description="Response message")
+    data: dict[str, Any] | None = Field(None, description="Response data")
+    message: str | None = Field(None, description="Response message")
     timestamp: datetime = Field(default_factory=datetime.now, description="Response timestamp")
 
     @classmethod
     def success(
         cls,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         service: str,
-        message: Optional[str] = None,
+        message: str | None = None,
     ) -> "ResponseDTO":
         """
         Create success response.
@@ -56,7 +56,7 @@ class ResponseDTO(BaseModel):
         cls,
         error_message: str,
         service: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
     ) -> "ResponseDTO":
         """
         Create error response.
@@ -90,9 +90,9 @@ class AsyncJobRequest(BaseModel):
 
     service: str = Field(..., description="Target service name")
     method: str = Field(..., description="Service method to call")
-    params: Dict[str, Any] = Field(default_factory=dict, description="Method parameters")
+    params: dict[str, Any] = Field(default_factory=dict, description="Method parameters")
     timeout: float = Field(default=300.0, description="Job timeout in seconds", ge=1.0, le=3600.0)
-    name: Optional[str] = Field(None, description="Job name for tracking")
+    name: str | None = Field(None, description="Job name for tracking")
 
 
 class AsyncJobResponse(BaseModel):
@@ -116,12 +116,12 @@ class JobStatusResponse(BaseModel):
     job_id: str = Field(..., description="Job ID")
     status: str = Field(..., description="Job status")
     ready: bool = Field(..., description="Whether result is ready")
-    result: Optional[Dict[str, Any]] = Field(None, description="Job result")
-    error: Optional[str] = Field(None, description="Error message if failed")
+    result: dict[str, Any] | None = Field(None, description="Job result")
+    error: str | None = Field(None, description="Error message if failed")
     duration_ms: int = Field(..., description="Job execution duration in ms")
-    created_at: Optional[datetime] = Field(None, description="Job creation time")
-    started_at: Optional[datetime] = Field(None, description="Job start time")
-    completed_at: Optional[datetime] = Field(None, description="Job completion time")
+    created_at: datetime | None = Field(None, description="Job creation time")
+    started_at: datetime | None = Field(None, description="Job start time")
+    completed_at: datetime | None = Field(None, description="Job completion time")
 
 
 class ServiceInfoRequest(BaseModel):
@@ -129,7 +129,7 @@ class ServiceInfoRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    service_name: Optional[str] = Field(None, description="Specific service name")
+    service_name: str | None = Field(None, description="Specific service name")
 
 
 class ServiceInfoResponse(BaseModel):
@@ -140,7 +140,7 @@ class ServiceInfoResponse(BaseModel):
     name: str = Field(..., description="Service name")
     methods: list[str] = Field(..., description="Available methods")
     version: str = Field(..., description="Service version")
-    description: Optional[str] = Field(None, description="Service description")
+    description: str | None = Field(None, description="Service description")
 
 
 class BatchJobStatusRequest(BaseModel):
@@ -160,4 +160,4 @@ class BatchJobStatusResponse(BaseModel):
     completed: int = Field(..., description="Completed jobs")
     pending: int = Field(..., description="Pending jobs")
     failed: int = Field(..., description="Failed jobs")
-    jobs: Dict[str, JobStatusResponse] = Field(..., description="Job statuses")
+    jobs: dict[str, JobStatusResponse] = Field(..., description="Job statuses")

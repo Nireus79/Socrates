@@ -61,7 +61,7 @@ class SocratesTool(BaseTool):
     agent_name: str
     client: SocratesAgentClientSync
     action: str = "process"
-    project_id: Optional[str] = None
+    project_id: str | None = None
 
     class Config:
         """Pydantic config for SocratesTool."""
@@ -71,7 +71,7 @@ class SocratesTool(BaseTool):
     def _run(
         self,
         query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: CallbackManagerForToolRun | None = None,
         **kwargs,
     ) -> str:
         """Run tool synchronously."""
@@ -104,7 +104,7 @@ class SocratesTool(BaseTool):
     async def _arun(
         self,
         query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        run_manager: AsyncCallbackManagerForToolRun | None = None,
         **kwargs,
     ) -> str:
         """Run tool asynchronously."""
@@ -144,10 +144,10 @@ class SocratesTool(BaseTool):
 
 def create_socrates_tools(
     api_url: str = "http://localhost:8000",
-    auth_token: Optional[str] = None,
-    agent_names: Optional[List[str]] = None,
-    project_id: Optional[str] = None,
-) -> List[SocratesTool]:
+    auth_token: str | None = None,
+    agent_names: list[str] | None = None,
+    project_id: str | None = None,
+) -> list[SocratesTool]:
     """Create LangChain tools for Socrates agents.
 
     Args:
@@ -228,7 +228,7 @@ class SocratesAgentExecutor:
     def __init__(
         self,
         api_url: str = "http://localhost:8000",
-        auth_token: Optional[str] = None,
+        auth_token: str | None = None,
         timeout: int = 300,
     ):
         """Initialize executor.
@@ -247,9 +247,9 @@ class SocratesAgentExecutor:
         self,
         agent_name: str,
         action: str = "process",
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute a Socrates agent.
 
         Args:
@@ -267,9 +267,9 @@ class SocratesAgentExecutor:
         self,
         agent_name: str,
         action: str = "process",
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute a Socrates agent asynchronously.
 
         Args:

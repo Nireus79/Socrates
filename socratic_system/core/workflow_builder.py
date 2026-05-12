@@ -36,7 +36,7 @@ class WorkflowBuilder:
 
     def __init__(
         self,
-        workflow_id: Optional[str] = None,
+        workflow_id: str | None = None,
         name: str = "Unnamed Workflow",
         phase: str = "discovery",
     ):
@@ -51,12 +51,12 @@ class WorkflowBuilder:
         self.workflow_id = workflow_id or f"wf_{uuid.uuid4().hex[:8]}"
         self.name = name
         self.phase = phase
-        self.nodes: Dict[str, WorkflowNode] = {}
-        self.edges: List[WorkflowEdge] = []
-        self.start_node: Optional[str] = None
-        self.end_nodes: List[str] = []
+        self.nodes: dict[str, WorkflowNode] = {}
+        self.edges: list[WorkflowEdge] = []
+        self.start_node: str | None = None
+        self.end_nodes: list[str] = []
         self.strategy = "balanced"
-        self.metadata: Dict = {}
+        self.metadata: dict = {}
 
         logger.debug(f"WorkflowBuilder initialized: {self.workflow_id} ({name}, {phase})")
 
@@ -66,8 +66,8 @@ class WorkflowBuilder:
         node_type: WorkflowNodeType,
         label: str,
         estimated_tokens: int = 0,
-        questions: Optional[List[str]] = None,
-        metadata: Optional[Dict] = None,
+        questions: list[str] | None = None,
+        metadata: dict | None = None,
     ) -> "WorkflowBuilder":
         """
         Add a node to the workflow.
@@ -105,7 +105,7 @@ class WorkflowBuilder:
         from_node: str,
         to_node: str,
         probability: float = 1.0,
-        condition: Optional[str] = None,
+        condition: str | None = None,
         cost: int = 0,
     ) -> "WorkflowBuilder":
         """

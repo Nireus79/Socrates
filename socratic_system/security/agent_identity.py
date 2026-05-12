@@ -33,11 +33,11 @@ class AgentIdentity:
     agent_id: str
     public_key: str
     issued_at: datetime
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     is_active: bool = True
-    capabilities: List[str] = field(default_factory=list)
-    resource_limits: Dict[str, Any] = field(default_factory=dict)
-    signature: Optional[str] = None
+    capabilities: list[str] = field(default_factory=list)
+    resource_limits: dict[str, Any] = field(default_factory=dict)
+    signature: str | None = None
 
     def __post_init__(self):
         """Initialize after dataclass creation."""
@@ -50,7 +50,7 @@ class AgentIdentity:
             return False
         return True
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         data = asdict(self)
         data["issued_at"] = data["issued_at"].isoformat()
@@ -66,15 +66,15 @@ class CapabilityToken:
     token_id: str
     agent_id: str
     agent_name: str
-    capabilities: List[str]  # Actions agent can perform
-    resource_access: Dict[str, str]  # Resources and access types
-    resource_limits: Dict[str, Any]  # Limits (timeout, memory, etc.)
+    capabilities: list[str]  # Actions agent can perform
+    resource_access: dict[str, str]  # Resources and access types
+    resource_limits: dict[str, Any]  # Limits (timeout, memory, etc.)
     issued_at: datetime
     expires_at: datetime
     is_active: bool = True
     is_revoked: bool = False
-    signature: Optional[str] = None
-    last_used: Optional[datetime] = None
+    signature: str | None = None
+    last_used: datetime | None = None
     use_count: int = 0
 
     def is_valid(self) -> bool:
@@ -89,11 +89,11 @@ class CapabilityToken:
         """Check if token grants a specific capability."""
         return capability in self.capabilities
 
-    def get_resource_limit(self, resource_type: str) -> Optional[Any]:
+    def get_resource_limit(self, resource_type: str) -> Any | None:
         """Get resource limit for a resource type."""
         return self.resource_limits.get(resource_type)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary."""
         data = asdict(self)
         data["issued_at"] = data["issued_at"].isoformat()
@@ -118,7 +118,7 @@ class AgentIdentityManager:
     def __init__(
         self,
         secret_key: str,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         token_lifetime_hours: int = 24,
     ):
         """Initialize identity manager.
@@ -131,11 +131,11 @@ class AgentIdentityManager:
         self.secret_key = secret_key.encode() if isinstance(secret_key, str) else secret_key
         self.logger = logger or logging.getLogger(__name__)
         self.token_lifetime_hours = token_lifetime_hours
-        self._identities: Dict[str, AgentIdentity] = {}
-        self._tokens: Dict[str, CapabilityToken] = {}
+        self._identities: dict[str, AgentIdentity] = {}
+        self._tokens: dict[str, CapabilityToken] = {}
 
     def register_agent(
-        self, agent_name: str, capabilities: List[str], resource_limits: Dict
+        self, agent_name: str, capabilities: list[str], resource_limits: dict
     ) -> AgentIdentity:
         """Register a new agent identity.
 
@@ -180,10 +180,10 @@ class AgentIdentityManager:
     def issue_capability_token(
         self,
         agent_id: str,
-        capabilities: List[str],
-        resource_access: Dict[str, str],
-        resource_limits: Dict,
-    ) -> Tuple[bool, Optional[CapabilityToken], Optional[str]]:
+        capabilities: list[str],
+        resource_access: dict[str, str],
+        resource_limits: dict,
+    ) -> tuple[bool, CapabilityToken | None, str | None]:
         """Issue a capability token to an agent.
 
         Args:
@@ -239,7 +239,7 @@ class AgentIdentityManager:
 
         return True, token, None
 
-    def verify_token(self, token: CapabilityToken) -> Tuple[bool, Optional[str]]:
+    def verify_token(self, token: CapabilityToken) -> tuple[bool, str | None]:
         """Verify capability token integrity and validity.
 
         Args:
@@ -274,7 +274,7 @@ class AgentIdentityManager:
 
         return True, None
 
-    def revoke_token(self, token_id: str, reason: Optional[str] = None) -> bool:
+    def revoke_token(self, token_id: str, reason: str | None = None) -> bool:
         """Revoke a capability token.
 
         Args:
@@ -322,7 +322,7 @@ class AgentIdentityManager:
 
     def get_agent_capabilities(
         self, agent_id: str
-    ) -> Tuple[bool, Optional[List[str]], Optional[str]]:
+    ) -> tuple[bool, list[str] | None, str | None]:
         """Get capabilities for an agent.
 
         Args:
@@ -341,8 +341,8 @@ class AgentIdentityManager:
         return True, identity.capabilities, None
 
     def can_perform_action(
-        self, agent_id: str, action: str, token: Optional[CapabilityToken] = None
-    ) -> Tuple[bool, Optional[str]]:
+        self, agent_id: str, action: str, token: CapabilityToken | None = None
+    ) -> tuple[bool, str | None]:
         """Check if agent can perform a specific action.
 
         Args:
@@ -388,7 +388,7 @@ class AgentIdentityManager:
         base = f"key_{agent_name}_{secrets.token_hex(32)}"
         return base
 
-    def _sign_data(self, data: Dict) -> str:
+    def _sign_data(self, data: dict) -> str:
         """Sign data with secret key.
 
         Args:
@@ -402,7 +402,7 @@ class AgentIdentityManager:
         signature = hmac.new(self.secret_key, data_str.encode(), hashlib.sha256).hexdigest()
         return signature
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get identity manager statistics.
 
         Returns:

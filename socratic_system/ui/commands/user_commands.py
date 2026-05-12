@@ -23,7 +23,7 @@ class UserLoginCommand(BaseCommand):
             name="user login", description="Login to an existing account", usage="user login"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute user login command"""
         orchestrator = context.get("orchestrator")
         app = context.get("app")
@@ -67,7 +67,7 @@ class UserCreateCommand(BaseCommand):
             name="user create", description="Create a new account", usage="user create"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute user create command"""
         orchestrator = context.get("orchestrator")
         app = context.get("app")
@@ -180,7 +180,7 @@ class UserLogoutCommand(BaseCommand):
             usage="user logout",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute user logout command"""
         app = context.get("app")
 
@@ -208,7 +208,7 @@ class UserArchiveCommand(BaseCommand):
             usage="user archive",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute user archive command"""
         if not self.require_user(context):
             return self.error("No user logged in")
@@ -264,7 +264,7 @@ class UserDeleteCommand(BaseCommand):
             usage="user delete",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute user delete command"""
         if not self.require_user(context):
             return self.error("No user logged in")
@@ -330,7 +330,7 @@ class UserRestoreCommand(BaseCommand):
             usage="user restore",
         )
 
-    def _display_archived_users(self, archived_users: List[Dict[str, Any]]) -> None:
+    def _display_archived_users(self, archived_users: list[dict[str, Any]]) -> None:
         """
         Display archived user accounts with formatted dates.
 
@@ -351,7 +351,7 @@ class UserRestoreCommand(BaseCommand):
 
             print(f"{i}. {user_info['username']} (archived: {archived_date})")
 
-    def _restore_selected_user(self, username: str, orchestrator) -> Dict[str, Any]:
+    def _restore_selected_user(self, username: str, orchestrator) -> dict[str, Any]:
         """
         Restore a selected archived user account.
 
@@ -380,7 +380,7 @@ class UserRestoreCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute user restore command"""
         orchestrator = context.get("orchestrator")
 

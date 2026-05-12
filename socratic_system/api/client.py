@@ -45,7 +45,7 @@ class SocratesAgentClient:
     def __init__(
         self,
         api_url: str = "http://localhost:8000",
-        auth_token: Optional[str] = None,
+        auth_token: str | None = None,
         timeout: float = 30.0,
     ):
         """Initialize Socrates agent client.
@@ -76,7 +76,7 @@ class SocratesAgentClient:
             timeout=timeout,
         )
 
-    async def project_manager(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def project_manager(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call ProjectManager agent.
 
         Args:
@@ -87,7 +87,7 @@ class SocratesAgentClient:
         """
         return await self._call_agent("project_manager", request)
 
-    async def socratic_counselor(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def socratic_counselor(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call SocraticCounselor agent.
 
         Args:
@@ -98,7 +98,7 @@ class SocratesAgentClient:
         """
         return await self._call_agent("socratic_counselor", request)
 
-    async def code_generator(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def code_generator(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call CodeGenerator agent.
 
         Args:
@@ -109,7 +109,7 @@ class SocratesAgentClient:
         """
         return await self._call_agent("code_generator", request)
 
-    async def code_validation(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def code_validation(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call CodeValidation agent.
 
         Args:
@@ -120,7 +120,7 @@ class SocratesAgentClient:
         """
         return await self._call_agent("code_validation", request)
 
-    async def quality_controller(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def quality_controller(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call QualityController agent.
 
         Args:
@@ -131,7 +131,7 @@ class SocratesAgentClient:
         """
         return await self._call_agent("quality_controller", request)
 
-    async def conflict_detector(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def conflict_detector(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call ConflictDetector agent.
 
         Args:
@@ -142,7 +142,7 @@ class SocratesAgentClient:
         """
         return await self._call_agent("conflict_detector", request)
 
-    async def _call_agent(self, agent_name: str, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def _call_agent(self, agent_name: str, request: dict[str, Any]) -> dict[str, Any]:
         """Call agent via REST API.
 
         Args:
@@ -165,7 +165,7 @@ class SocratesAgentClient:
         response.raise_for_status()
         return response.json()
 
-    async def get_available_agents(self) -> Dict[str, Any]:
+    async def get_available_agents(self) -> dict[str, Any]:
         """Get list of available agents.
 
         Returns:
@@ -175,7 +175,7 @@ class SocratesAgentClient:
         response.raise_for_status()
         return response.json()
 
-    async def get_agent_schema(self, agent_name: str) -> Dict[str, Any]:
+    async def get_agent_schema(self, agent_name: str) -> dict[str, Any]:
         """Get request schema for agent.
 
         Args:
@@ -211,34 +211,34 @@ class SocratesAgentClientSync:
     def __init__(
         self,
         api_url: str = "http://localhost:8000",
-        auth_token: Optional[str] = None,
+        auth_token: str | None = None,
         timeout: float = 30.0,
     ):
         """Initialize synchronous client."""
         self.client = SocratesAgentClient(api_url, auth_token, timeout)
         self.loop = asyncio.new_event_loop()
 
-    def project_manager(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def project_manager(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call ProjectManager agent (blocking)."""
         return self.loop.run_until_complete(self.client.project_manager(request))
 
-    def socratic_counselor(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def socratic_counselor(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call SocraticCounselor agent (blocking)."""
         return self.loop.run_until_complete(self.client.socratic_counselor(request))
 
-    def code_generator(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def code_generator(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call CodeGenerator agent (blocking)."""
         return self.loop.run_until_complete(self.client.code_generator(request))
 
-    def code_validation(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def code_validation(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call CodeValidation agent (blocking)."""
         return self.loop.run_until_complete(self.client.code_validation(request))
 
-    def quality_controller(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def quality_controller(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call QualityController agent (blocking)."""
         return self.loop.run_until_complete(self.client.quality_controller(request))
 
-    def conflict_detector(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def conflict_detector(self, request: dict[str, Any]) -> dict[str, Any]:
         """Call ConflictDetector agent (blocking)."""
         return self.loop.run_until_complete(self.client.conflict_detector(request))
 

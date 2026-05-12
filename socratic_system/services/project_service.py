@@ -37,7 +37,7 @@ class ProjectService(Service):
         self.claude_client = claude_client
         self.event_emitter = event_emitter
 
-    def create_project(self, spec: Dict[str, Any]) -> "ProjectContext":
+    def create_project(self, spec: dict[str, Any]) -> "ProjectContext":
         """Create new project with initial specifications.
 
         Args:

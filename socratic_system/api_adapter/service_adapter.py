@@ -25,7 +25,7 @@ class ServiceAdapter(BaseAdapter):
 
     def __init__(
         self,
-        service_registry: Optional[ServiceRegistry] = None,
+        service_registry: ServiceRegistry | None = None,
         version: str = "v1",
     ):
         """
@@ -97,7 +97,7 @@ class ServiceAdapter(BaseAdapter):
         self,
         service_name: str,
         method_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
     ) -> Any:
         """
         Call service method.
@@ -151,9 +151,9 @@ class ServiceAdapter(BaseAdapter):
 
     async def handle_request(
         self,
-        request_data: Dict[str, Any],
+        request_data: dict[str, Any],
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Handle service request.
 
@@ -196,7 +196,7 @@ class ServiceAdapter(BaseAdapter):
             message=f"Successfully called {service_name}.{method_name}",
         )
 
-    def get_registry_info(self) -> Dict[str, Any]:
+    def get_registry_info(self) -> dict[str, Any]:
         """
         Get service registry information.
 
@@ -205,7 +205,7 @@ class ServiceAdapter(BaseAdapter):
         """
         return self.registry.get_registry_info()
 
-    def get_service_info(self, service_name: str) -> Optional[Dict[str, Any]]:
+    def get_service_info(self, service_name: str) -> dict[str, Any] | None:
         """
         Get service information.
 
@@ -230,7 +230,7 @@ class ServiceAdapter(BaseAdapter):
         self,
         service_name: str,
         method_name: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Get method information.
 

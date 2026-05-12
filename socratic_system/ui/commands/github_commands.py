@@ -28,7 +28,7 @@ class GithubImportCommand(BaseCommand):
             usage="github import <url> [project-name]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute github import command"""
         if not self.require_user(context):
             return self.error("Must be logged in to import from GitHub")
@@ -74,13 +74,13 @@ class GithubImportCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _get_github_url(self, args: List[str]) -> str:
+    def _get_github_url(self, args: list[str]) -> str:
         """Get GitHub URL from args or user input"""
         if self.validate_args(args, min_count=1):
             return args[0]
         return input(f"{Fore.WHITE}GitHub repository URL: ").strip()
 
-    def _get_project_name(self, args: List[str]) -> str:
+    def _get_project_name(self, args: list[str]) -> str:
         """Get project name from args or user input"""
         if len(args) > 1:
             return " ".join(args[1:])
@@ -90,14 +90,14 @@ class GithubImportCommand(BaseCommand):
         ).strip()
         return custom_name if custom_name else None
 
-    def _validate_import_context(self, context: Dict[str, Any]) -> bool:
+    def _validate_import_context(self, context: dict[str, Any]) -> bool:
         """Validate required context for import"""
         orchestrator = context.get("orchestrator")
         app = context.get("app")
         user = context.get("user")
         return bool(orchestrator and app and user)
 
-    def _show_import_metadata(self, result: Dict[str, Any]) -> None:
+    def _show_import_metadata(self, result: dict[str, Any]) -> None:
         """Display repository metadata"""
         metadata = result.get("metadata", {})
         if not metadata:
@@ -113,7 +113,7 @@ class GithubImportCommand(BaseCommand):
         if metadata.get("description"):
             print(f"  Description: {metadata.get('description')[:80]}...")
 
-    def _show_import_validation(self, result: Dict[str, Any]) -> None:
+    def _show_import_validation(self, result: dict[str, Any]) -> None:
         """Display validation results"""
         validation = result.get("validation_results", {})
         if not validation:
@@ -152,7 +152,7 @@ class GithubPullCommand(BaseCommand):
             usage="github pull [project-id]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute github pull command"""
         if not self._validate_pull_context(context):
             return self._context_error()
@@ -197,7 +197,7 @@ class GithubPullCommand(BaseCommand):
             self.print_error(f"Pull error: {str(e)}")
             return self.error(f"Pull error: {str(e)}")
 
-    def _validate_pull_context(self, context: Dict[str, Any]) -> bool:
+    def _validate_pull_context(self, context: dict[str, Any]) -> bool:
         """Validate context for pull operation"""
         if not self.require_user(context):
             return False
@@ -220,7 +220,7 @@ class GithubPullCommand(BaseCommand):
 
         return True
 
-    def _context_error(self) -> Dict[str, Any]:
+    def _context_error(self) -> dict[str, Any]:
         """Return context validation error"""
         return self.error("Context validation failed")
 
@@ -234,7 +234,7 @@ class GithubPullCommand(BaseCommand):
 
     def _handle_pull_workflow(
         self, git_manager: Any, temp_path: str, project: Any, orchestrator: Any, handler: Any = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Handle complete pull workflow with conflict detection"""
         print(f"{Fore.CYAN}Pulling updates...{Style.RESET_ALL}")
         try:
@@ -279,7 +279,7 @@ class GithubPullCommand(BaseCommand):
         print(f"\n{Fore.GREEN}[OK] Pull completed successfully{Style.RESET_ALL}")
         return self.success(data={"pull_result": pull_result})
 
-    def _show_pull_output(self, pull_result: Dict[str, Any]) -> None:
+    def _show_pull_output(self, pull_result: dict[str, Any]) -> None:
         """Show pull command output"""
         if pull_result.get("message"):
             print(f"\n{Fore.CYAN}Pull Output:{Style.RESET_ALL}")
@@ -312,7 +312,7 @@ class GithubPullCommand(BaseCommand):
             self.logger.warning(f"Error syncing file changes: {str(e)}")
             print(f"{Fore.YELLOW}Warning: Could not sync file changes: {str(e)}{Style.RESET_ALL}")
 
-    def _read_cloned_files(self, temp_path: str) -> List[Dict[str, Any]]:
+    def _read_cloned_files(self, temp_path: str) -> list[dict[str, Any]]:
         """Read all files from cloned repository"""
         from pathlib import Path
 
@@ -336,7 +336,7 @@ class GithubPullCommand(BaseCommand):
 
         return current_files
 
-    def _show_change_summary(self, sync_result: Dict[str, Any]) -> None:
+    def _show_change_summary(self, sync_result: dict[str, Any]) -> None:
         """Show summary of file changes"""
         summary = sync_result.get("summary", {})
         added_count = len(summary.get("added", []))
@@ -479,7 +479,7 @@ class GithubPushCommand(BaseCommand):
             usage="github push [project-id] [message]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute github push command"""
         if not self._validate_push_context(context):
             return self.error("Context validation failed")
@@ -522,7 +522,7 @@ class GithubPushCommand(BaseCommand):
             self.print_error(f"Push error: {str(e)}")
             return self.error(f"Push error: {str(e)}")
 
-    def _validate_push_context(self, context: Dict[str, Any]) -> bool:
+    def _validate_push_context(self, context: dict[str, Any]) -> bool:
         """Validate context for push operation"""
         if not self.require_user(context):
             return False
@@ -545,7 +545,7 @@ class GithubPushCommand(BaseCommand):
 
         return True
 
-    def _get_commit_message(self, args: List[str], project: Any) -> str:
+    def _get_commit_message(self, args: list[str], project: Any) -> str:
         """Get commit message from args or user input"""
         if len(args) > 0:
             return " ".join(args)
@@ -563,7 +563,7 @@ class GithubPushCommand(BaseCommand):
 
     def _handle_push_workflow(
         self, git_manager: Any, temp_path: str, commit_message: str, handler: Any = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Handle complete push workflow with file size validation"""
         if not self._show_push_diff(git_manager, temp_path):
             return self.success(data={"message": "No changes to push"})
@@ -655,7 +655,7 @@ class GithubPushCommand(BaseCommand):
             return False
         return True
 
-    def _handle_push_result(self, push_result: Dict[str, Any]) -> Dict[str, Any]:
+    def _handle_push_result(self, push_result: dict[str, Any]) -> dict[str, Any]:
         """Handle push result and return appropriate response"""
         try:
             self.print_success("Successfully pushed changes to GitHub!")
@@ -685,7 +685,7 @@ class GithubSyncCommand(BaseCommand):
             usage="github sync [project-id] [commit-message]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute github sync command"""
         if not self.require_user(context):
             return self.error("Must be logged in")

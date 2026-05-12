@@ -10,7 +10,8 @@ Provides:
 
 import asyncio
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
+from collections.abc import Callable
 
 from socratic_system.events.event_emitter import EventEmitter
 
@@ -38,7 +39,7 @@ class EventHandler:
         self.execution_count = 0
         self.error_count = 0
 
-    async def execute(self, data: Dict[str, Any]) -> Any:
+    async def execute(self, data: dict[str, Any]) -> Any:
         """
         Execute handler.
 
@@ -67,7 +68,7 @@ class EventHandlerRegistry:
 
     def __init__(self):
         """Initialize handler registry"""
-        self.handlers: Dict[str, List[EventHandler]] = {}
+        self.handlers: dict[str, list[EventHandler]] = {}
         self.logger = logging.getLogger(__name__)
 
     def register(
@@ -108,8 +109,8 @@ class EventHandlerRegistry:
     async def execute_handlers(
         self,
         event_type: str,
-        data: Dict[str, Any],
-    ) -> List[Any]:
+        data: dict[str, Any],
+    ) -> list[Any]:
         """
         Execute all handlers for event type.
 
@@ -133,7 +134,7 @@ class EventHandlerRegistry:
 
         return results
 
-    def get_handlers(self, event_type: str) -> List[EventHandler]:
+    def get_handlers(self, event_type: str) -> list[EventHandler]:
         """
         Get handlers for event type.
 
@@ -145,7 +146,7 @@ class EventHandlerRegistry:
         """
         return self.handlers.get(event_type, [])
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get handler statistics.
 
@@ -207,8 +208,8 @@ class AsyncEventProcessor:
     async def process_event(
         self,
         event_type: str,
-        data: Dict[str, Any],
-    ) -> List[Any]:
+        data: dict[str, Any],
+    ) -> list[Any]:
         """
         Process event asynchronously.
 
@@ -224,8 +225,8 @@ class AsyncEventProcessor:
     async def emit_and_process(
         self,
         event_type: str,
-        data: Dict[str, Any],
-    ) -> List[Any]:
+        data: dict[str, Any],
+    ) -> list[Any]:
         """
         Emit event and process asynchronously.
 

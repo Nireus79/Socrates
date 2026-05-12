@@ -18,7 +18,7 @@ class SecureRequest:
     source_agent: str
     target_agent: str
     action: str
-    parameters: Dict[str, Any]
+    parameters: dict[str, Any]
     timestamp: datetime
 
 
@@ -30,7 +30,7 @@ class SecureResponse:
     source_agent: str
     status_code: int
     data: Any
-    error: Optional[str] = None
+    error: str | None = None
     timestamp: datetime = None
 
     def __post_init__(self):
@@ -53,7 +53,7 @@ class SecureAgentClient:
         client_certificate_pem: str,
         client_private_key_pem: str,
         ca_certificate_pem: str,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize secure agent client.
@@ -72,7 +72,7 @@ class SecureAgentClient:
         self.ca_certificate_pem = ca_certificate_pem
 
         # Connection state
-        self.active_connections: Dict[str, bool] = {}
+        self.active_connections: dict[str, bool] = {}
         self.request_count = 0
 
     def connect(
@@ -115,9 +115,9 @@ class SecureAgentClient:
         self,
         target_agent_id: str,
         action: str,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         timeout_seconds: int = 30,
-    ) -> Optional[SecureResponse]:
+    ) -> SecureResponse | None:
         """
         Send encrypted request to target agent.
 
@@ -189,7 +189,7 @@ class SecureAgentClient:
 
         return False
 
-    def get_connection_status(self) -> Dict[str, bool]:
+    def get_connection_status(self) -> dict[str, bool]:
         """Get status of all active connections."""
         return self.active_connections.copy()
 
@@ -224,7 +224,7 @@ class SecureAgentClient:
         target_agent_id: str,
         payload: str,
         timeout_seconds: int,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Send encrypted payload to target agent."""
         # Simplified - in production use actual TLS transmission
         connection_id = f"tls_{self.source_agent_id}_{target_agent_id}"

@@ -46,7 +46,7 @@ class BaseLanguageExtractor(ABC):
         self.logger = logging.getLogger(f"socrates.extractors.{language}")
 
     @abstractmethod
-    def get_file_extensions(self) -> List[str]:
+    def get_file_extensions(self) -> list[str]:
         """
         Return file extensions for this language.
 
@@ -56,7 +56,7 @@ class BaseLanguageExtractor(ABC):
         pass
 
     @abstractmethod
-    def get_code_fence_identifiers(self) -> List[str]:
+    def get_code_fence_identifiers(self) -> list[str]:
         """
         Return markdown code fence identifiers for this language.
 
@@ -81,7 +81,7 @@ class BaseLanguageExtractor(ABC):
         pass
 
     @abstractmethod
-    def get_import_statements(self, code: str) -> List[str]:
+    def get_import_statements(self, code: str) -> list[str]:
         """
         Extract import/require/use statements from code.
 

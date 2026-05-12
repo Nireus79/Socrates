@@ -5,7 +5,8 @@ Provides backward compatibility while enabling migration to agent bus.
 """
 
 import logging
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
+from collections.abc import Callable
 
 from socratic_system.messaging.agent_bus import AgentBus
 from socratic_system.messaging.middleware import AgentBusMiddleware, ServiceAgentAdapter
@@ -33,7 +34,7 @@ class OrchestratorAgentBusAdapter:
         self.logger = logging.getLogger(__name__)
 
         # Legacy support
-        self._legacy_handlers: Dict[str, Callable] = {}
+        self._legacy_handlers: dict[str, Callable] = {}
 
     def register_legacy_handler(self, agent_name: str, handler: Callable) -> None:
         """
@@ -49,9 +50,9 @@ class OrchestratorAgentBusAdapter:
     async def call_agent(
         self,
         agent_name: str,
-        request: Dict[str, Any],
-        timeout: Optional[float] = None,
-    ) -> Dict[str, Any]:
+        request: dict[str, Any],
+        timeout: float | None = None,
+    ) -> dict[str, Any]:
         """
         Call agent using bus (replacing orchestrator.process_request).
 
@@ -86,9 +87,9 @@ class OrchestratorAgentBusAdapter:
     async def call_agent_resilient(
         self,
         agent_name: str,
-        request: Dict[str, Any],
-        timeout: Optional[float] = None,
-    ) -> Dict[str, Any]:
+        request: dict[str, Any],
+        timeout: float | None = None,
+    ) -> dict[str, Any]:
         """
         Call agent with resilience patterns.
 
@@ -118,7 +119,7 @@ class OrchestratorAgentBusAdapter:
         """
         return ServiceAgentAdapter(self.agent_bus, service_name)
 
-    def get_bus_stats(self) -> Dict[str, Any]:
+    def get_bus_stats(self) -> dict[str, Any]:
         """
         Get agent bus statistics.
 

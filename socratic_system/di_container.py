@@ -67,10 +67,10 @@ class DIContainer:
         self.system = system
 
         # Service cache (singleton pattern)
-        self._services: Dict[str, Any] = {}
+        self._services: dict[str, Any] = {}
 
         # Repository cache
-        self._repositories: Dict[str, Any] = {}
+        self._repositories: dict[str, Any] = {}
 
         logger.info("DIContainer initialized (Phase 3: SocraticAgentsSystem)")
 
@@ -173,7 +173,7 @@ class DIContainer:
 
     # Utility methods
 
-    def get_all_services(self) -> Dict[str, Any]:
+    def get_all_services(self) -> dict[str, Any]:
         """Get all registered services."""
         return {
             "project_service": self.get_project_service(),
@@ -186,7 +186,7 @@ class DIContainer:
             "learning_service": self.get_learning_service(),
         }
 
-    def get_all_repositories(self) -> Dict[str, Any]:
+    def get_all_repositories(self) -> dict[str, Any]:
         """Get all registered repositories."""
         return {
             "project_repo": self.get_project_repository(),

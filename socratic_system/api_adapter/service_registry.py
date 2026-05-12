@@ -6,7 +6,8 @@ Maintains information about available services and their methods.
 
 import inspect
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
+from collections.abc import Callable
 
 
 class ServiceInfo:
@@ -17,7 +18,7 @@ class ServiceInfo:
         name: str,
         service_instance: Any,
         version: str = "v1",
-        description: Optional[str] = None,
+        description: str | None = None,
     ):
         """
         Initialize service info.
@@ -34,7 +35,7 @@ class ServiceInfo:
         self.description = description or service_instance.__class__.__doc__
         self.methods = self._discover_methods()
 
-    def _discover_methods(self) -> Dict[str, Dict[str, Any]]:
+    def _discover_methods(self) -> dict[str, dict[str, Any]]:
         """
         Discover available methods in service.
 
@@ -91,7 +92,7 @@ class ServiceInfo:
 
         return methods
 
-    def get_method(self, method_name: str) -> Optional[Callable]:
+    def get_method(self, method_name: str) -> Callable | None:
         """
         Get method by name.
 
@@ -106,7 +107,7 @@ class ServiceInfo:
 
         return getattr(self.service_instance, method_name)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary.
 
@@ -131,7 +132,7 @@ class ServiceRegistry:
 
     def __init__(self):
         """Initialize service registry"""
-        self.services: Dict[str, ServiceInfo] = {}
+        self.services: dict[str, ServiceInfo] = {}
         self.logger = logging.getLogger(__name__)
 
     def register(
@@ -139,7 +140,7 @@ class ServiceRegistry:
         name: str,
         service_instance: Any,
         version: str = "v1",
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> ServiceInfo:
         """
         Register a service.
@@ -183,7 +184,7 @@ class ServiceRegistry:
         self.logger.info(f"Unregistered service '{name}'")
         return True
 
-    def get_service(self, name: str) -> Optional[ServiceInfo]:
+    def get_service(self, name: str) -> ServiceInfo | None:
         """
         Get service information.
 
@@ -195,7 +196,7 @@ class ServiceRegistry:
         """
         return self.services.get(name)
 
-    def get_service_instance(self, name: str) -> Optional[Any]:
+    def get_service_instance(self, name: str) -> Any | None:
         """
         Get service instance.
 
@@ -242,7 +243,7 @@ class ServiceRegistry:
         self,
         service_name: str,
         method_name: str,
-    ) -> Optional[Callable]:
+    ) -> Callable | None:
         """
         Get method from service.
 
@@ -258,7 +259,7 @@ class ServiceRegistry:
             return None
         return service.get_method(method_name)
 
-    def list_services(self) -> List[str]:
+    def list_services(self) -> list[str]:
         """
         List all registered services.
 
@@ -267,7 +268,7 @@ class ServiceRegistry:
         """
         return list(self.services.keys())
 
-    def get_registry_info(self) -> Dict[str, Any]:
+    def get_registry_info(self) -> dict[str, Any]:
         """
         Get information about all registered services.
 
@@ -276,7 +277,7 @@ class ServiceRegistry:
         """
         return {name: service_info.to_dict() for name, service_info in self.services.items()}
 
-    def get_service_info(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_service_info(self, name: str) -> dict[str, Any] | None:
         """
         Get information about specific service.
 
@@ -295,7 +296,7 @@ class ServiceRegistry:
         self,
         service_name: str,
         method_name: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Get information about service method.
 
@@ -318,7 +319,7 @@ class ServiceRegistry:
 
 
 # Global registry instance
-_registry: Optional[ServiceRegistry] = None
+_registry: ServiceRegistry | None = None
 
 
 def get_service_registry() -> ServiceRegistry:

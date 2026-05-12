@@ -20,7 +20,7 @@ class KnowledgeAddCommand(BaseCommand):
             usage="knowledge add --content=<text> --category=<cat> [--topic=<t>] [--difficulty=beginner|intermediate|advanced]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute knowledge add command"""
         if not self.require_project(context):
             return self.error("No project loaded. Load a project first with 'project select'")
@@ -75,7 +75,7 @@ class KnowledgeAddCommand(BaseCommand):
         except Exception as e:
             return self.error(f"Failed to add knowledge: {str(e)}")
 
-    def _parse_args(self, args: List[str]) -> Dict[str, str]:
+    def _parse_args(self, args: list[str]) -> dict[str, str]:
         """Parse named arguments from args list"""
         params = {}
         for arg in args:
@@ -95,7 +95,7 @@ class KnowledgeListCommand(BaseCommand):
             usage="knowledge list [--project] [--limit=10]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute knowledge list command"""
         try:
             orchestrator = context.get("orchestrator")
@@ -146,7 +146,7 @@ class KnowledgeListCommand(BaseCommand):
         except Exception as e:
             return self.error(f"Failed to list knowledge: {str(e)}")
 
-    def _get_limit(self, args: List[str]) -> int:
+    def _get_limit(self, args: list[str]) -> int:
         """Extract limit from args"""
         for arg in args:
             if arg.startswith("--limit="):
@@ -167,7 +167,7 @@ class KnowledgeSearchCommand(BaseCommand):
             usage="knowledge search <query> [--project] [--top=5]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute knowledge search command"""
         if not args or not args[0]:
             return self.error("Provide a search query")
@@ -210,7 +210,7 @@ class KnowledgeSearchCommand(BaseCommand):
         except Exception as e:
             return self.error(f"Search failed: {str(e)}")
 
-    def _get_top_k(self, args: List[str]) -> int:
+    def _get_top_k(self, args: list[str]) -> int:
         """Extract top_k from args"""
         for arg in args:
             if arg.startswith("--top="):
@@ -231,7 +231,7 @@ class KnowledgeExportCommand(BaseCommand):
             usage="knowledge export <filename.json>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute knowledge export command"""
         if not self.require_project(context):
             return self.error("No project loaded. Load a project first")
@@ -272,7 +272,7 @@ class KnowledgeImportCommand(BaseCommand):
             usage="knowledge import <filename.json>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute knowledge import command"""
         if not self.require_project(context):
             return self.error("No project loaded. Load a project first")
@@ -326,7 +326,7 @@ class KnowledgeRemoveCommand(BaseCommand):
             usage="knowledge remove <entry_id>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute knowledge remove command"""
         if not self.require_project(context):
             return self.error("No project loaded. Load a project first")
@@ -358,7 +358,7 @@ class RememberCommand(BaseCommand):
             usage="remember <text to remember>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute remember command"""
         if not self.require_project(context):
             return self.error("No project loaded. Load a project first")

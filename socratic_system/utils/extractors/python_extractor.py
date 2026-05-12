@@ -23,11 +23,11 @@ class PythonExtractor(BaseLanguageExtractor):
     and validates syntax using Python's ast module.
     """
 
-    def get_file_extensions(self) -> List[str]:
+    def get_file_extensions(self) -> list[str]:
         """Return file extensions for Python"""
         return [".py", ".pyw", ".pyx"]
 
-    def get_code_fence_identifiers(self) -> List[str]:
+    def get_code_fence_identifiers(self) -> list[str]:
         """Return markdown fence identifiers for Python code blocks"""
         return ["python", "py", "python3"]
 
@@ -66,7 +66,7 @@ class PythonExtractor(BaseLanguageExtractor):
             logger.error(f"Unexpected error during Python validation: {error_msg}")
             return ValidationResult(is_valid=False, error_message=error_msg)
 
-    def get_import_statements(self, code: str) -> List[str]:
+    def get_import_statements(self, code: str) -> list[str]:
         """
         Extract import statements from Python code.
 

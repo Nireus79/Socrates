@@ -22,7 +22,7 @@ class HelpCommand(BaseCommand):
             usage="help [command]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute help command"""
         if args:
             command_name = args[0]
@@ -39,7 +39,7 @@ class ExitCommand(BaseCommand):
     def __init__(self):
         super().__init__(name="exit", description="Exit the Socrates AI", usage="exit")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute exit command"""
         print(f"\n{Fore.GREEN}Thank you for using Socrates AI")
         print(f"..τῷ Ἀσκληπιῷ ὀφείλομεν ἀλεκτρυόνα, ἀπόδοτε καὶ μὴ ἀμελήσετε...{Style.RESET_ALL}\n")
@@ -55,7 +55,7 @@ class BackCommand(BaseCommand):
             name="back", description="Go back to previous context or main menu", usage="back"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute back command"""
         nav_stack = context.get("nav_stack")
         if not nav_stack:
@@ -83,7 +83,7 @@ class MenuCommand(BaseCommand):
     def __init__(self):
         super().__init__(name="menu", description="Return to main menu", usage="menu")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute menu command"""
         nav_stack = context.get("nav_stack")
         if not nav_stack:
@@ -109,7 +109,7 @@ class StatusCommand(BaseCommand):
             name="status", description="Show current system and application status", usage="status"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute status command"""
         orchestrator = context.get("orchestrator")
         if not orchestrator:
@@ -163,7 +163,7 @@ class ClearCommand(BaseCommand):
     def __init__(self):
         super().__init__(name="clear", description="Clear the terminal screen", usage="clear")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute clear command"""
         # Use subprocess instead of os.system for better security and cross-platform compatibility
         try:
@@ -187,7 +187,7 @@ class PromptCommand(BaseCommand):
             name="prompt", description="Display current context and prompt", usage="prompt"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute prompt command"""
         context_display = context.get("app").context_display if context.get("app") else None
 
@@ -213,7 +213,7 @@ class InfoCommand(BaseCommand):
             name="info", description="Display system and version information", usage="info"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute info command"""
         self.print_header("Socrates AI Information")
 
@@ -252,7 +252,7 @@ class NLUEnableCommand(BaseCommand):
             usage="nlu enable",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute NLU enable command"""
         app = context.get("app")
         if not app or not app.nlu_handler:
@@ -274,7 +274,7 @@ class NLUDisableCommand(BaseCommand):
             usage="nlu disable",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute NLU disable command"""
         app = context.get("app")
         if not app or not app.nlu_handler:
@@ -296,7 +296,7 @@ class NLUStatusCommand(BaseCommand):
             usage="nlu status",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute NLU status command"""
         app = context.get("app")
         if not app or not app.nlu_handler:

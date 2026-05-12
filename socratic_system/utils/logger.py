@@ -16,9 +16,9 @@ class DebugLogger:
 
     _instance: Optional["DebugLogger"] = None
     _debug_mode: bool = False
-    _logger: Optional[logging.Logger] = None
-    _console_handler: Optional[logging.StreamHandler] = None
-    _file_handler: Optional[logging.handlers.TimedRotatingFileHandler] = None
+    _logger: logging.Logger | None = None
+    _console_handler: logging.StreamHandler | None = None
+    _file_handler: logging.handlers.TimedRotatingFileHandler | None = None
 
     def __new__(cls):
         """Create or return singleton instance of logger."""
@@ -238,7 +238,7 @@ class DebugLogger:
 
     @classmethod
     def error(
-        cls, message: str, component: str = "system", exception: Optional[Exception] = None
+        cls, message: str, component: str = "system", exception: Exception | None = None
     ) -> None:
         """Log error message"""
         logger = cls.get_logger(component)

@@ -17,7 +17,7 @@ class SkillsSetCommand(BaseCommand):
             usage="skills set <username> <skill1,skill2,...>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute skills set command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -74,7 +74,7 @@ class SkillsListCommand(BaseCommand):
             usage="skills list",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute skills list command"""
         project = context.get("project")
 

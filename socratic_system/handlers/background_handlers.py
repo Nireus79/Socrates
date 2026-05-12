@@ -53,7 +53,7 @@ class BackgroundHandlers:
 
         logger.debug("Background event handlers registered")
 
-    async def _on_response_received(self, data: Dict[str, Any]):
+    async def _on_response_received(self, data: dict[str, Any]):
         """Background processing when response is received.
 
         Triggered by response.received event. Schedules background tasks
@@ -75,7 +75,7 @@ class BackgroundHandlers:
         asyncio.create_task(self._process_conflicts_async(project_id))
         asyncio.create_task(self._process_insights_async(project_id))
 
-    async def _on_quality_analysis_requested(self, data: Dict[str, Any]):
+    async def _on_quality_analysis_requested(self, data: dict[str, Any]):
         """Handle explicit quality analysis request.
 
         Args:
@@ -85,7 +85,7 @@ class BackgroundHandlers:
         if project_id:
             await self._process_quality_async(project_id)
 
-    async def _on_conflict_analysis_requested(self, data: Dict[str, Any]):
+    async def _on_conflict_analysis_requested(self, data: dict[str, Any]):
         """Handle explicit conflict analysis request.
 
         Args:

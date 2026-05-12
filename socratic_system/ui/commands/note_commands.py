@@ -20,7 +20,7 @@ class NoteAddCommand(BaseCommand):
             usage="note add <type> <title>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute note add command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -107,7 +107,7 @@ class NoteListCommand(BaseCommand):
             usage="note list [type]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute note list command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -182,7 +182,7 @@ class NoteSearchCommand(BaseCommand):
             usage="note search <query>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute note search command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -251,7 +251,7 @@ class NoteDeleteCommand(BaseCommand):
             usage="note delete <note-id>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute note delete command"""
         if not self.require_project(context):
             return self.error("No project loaded")

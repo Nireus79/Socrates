@@ -35,9 +35,9 @@ class GovernanceAwareOrchestrator:
     async def process_request_with_governance(
         self,
         agent_name: str,
-        request: Dict[str, Any],
+        request: dict[str, Any],
         interactive_dialogue: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Process agent request with governance evaluation.
 
@@ -125,7 +125,7 @@ class GovernanceAwareOrchestrator:
             return False
 
     @staticmethod
-    def _extract_action_description(agent_name: str, request: Dict[str, Any]) -> str:
+    def _extract_action_description(agent_name: str, request: dict[str, Any]) -> str:
         """
         Extract human-readable action description from request.
 
@@ -175,9 +175,9 @@ def wrap_orchestrator_with_governance(
 async def evaluate_action_governance(
     action: str,
     agent: str,
-    context: Optional[Dict[str, Any]] = None,
-    purpose: Optional[str] = None,
-) -> Dict[str, Any]:
+    context: dict[str, Any] | None = None,
+    purpose: str | None = None,
+) -> dict[str, Any]:
     """
     Evaluate an action for governance compliance.
 

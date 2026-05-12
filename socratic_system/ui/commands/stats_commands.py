@@ -20,7 +20,7 @@ class ProjectStatsCommand(BaseCommand):
             usage="project stats",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project stats command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -107,7 +107,7 @@ class ProjectProgressCommand(BaseCommand):
             usage="project progress <0-100>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project progress command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -169,7 +169,7 @@ class ProjectStatusCommand(BaseCommand):
             usage="project status <active|completed|on-hold>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project status command"""
         if not self.require_project(context):
             return self.error("No project loaded")

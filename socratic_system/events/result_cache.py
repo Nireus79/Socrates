@@ -56,7 +56,7 @@ class ResultCache:
             default_ttl: Default TTL for entries in seconds
         """
         self.default_ttl = default_ttl
-        self.cache: Dict[str, CacheEntry] = {}
+        self.cache: dict[str, CacheEntry] = {}
         self.logger = logging.getLogger(__name__)
 
         # Metrics
@@ -71,7 +71,7 @@ class ResultCache:
         self,
         key: str,
         value: Any,
-        ttl: Optional[float] = None,
+        ttl: float | None = None,
     ) -> None:
         """
         Set cache value.
@@ -87,7 +87,7 @@ class ResultCache:
 
         self.logger.debug(f"Cached result for key: {key}")
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """
         Get cached value.
 
@@ -176,7 +176,7 @@ class ResultCache:
         self.logger.debug(f"Cleaned up {len(expired_keys)} expired entries")
         return len(expired_keys)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 
@@ -209,7 +209,7 @@ class ResultCache:
             return True
         return False
 
-    def get_all_valid(self) -> Dict[str, Any]:
+    def get_all_valid(self) -> dict[str, Any]:
         """
         Get all non-expired cached values.
 

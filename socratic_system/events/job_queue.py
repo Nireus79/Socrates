@@ -12,9 +12,10 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from enum import Enum
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
+from collections.abc import Callable
 
 
 class JobStatus(Enum):
@@ -34,14 +35,14 @@ class JobResult:
 
     job_id: str
     status: JobStatus = JobStatus.PENDING
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    started_at: Optional[str] = None
-    completed_at: Optional[str] = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
+    started_at: str | None = None
+    completed_at: str | None = None
     duration_ms: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary"""
         return {
             "job_id": self.job_id,
@@ -88,7 +89,7 @@ class Job:
         Returns:
             JobResult with outcome
         """
-        self.result.started_at = datetime.now(timezone.utc).isoformat()
+        self.result.started_at = datetime.now(UTC).isoformat()
         self.result.status = JobStatus.RUNNING
 
         try:
@@ -101,7 +102,7 @@ class Job:
             self.result.status = JobStatus.COMPLETED
             self.result.result = task_result
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.result.status = JobStatus.TIMEOUT
             self.result.error = f"Job timed out after {self.timeout}s"
 
@@ -114,7 +115,7 @@ class Job:
             self.result.error = str(e)
 
         finally:
-            self.result.completed_at = datetime.now(timezone.utc).isoformat()
+            self.result.completed_at = datetime.now(UTC).isoformat()
 
             # Calculate duration
             if self.result.started_at and self.result.completed_at:
@@ -139,8 +140,8 @@ class JobQueue:
         self.logger = logging.getLogger(__name__)
 
         # Job tracking
-        self.jobs: Dict[str, Job] = {}
-        self.results: Dict[str, JobResult] = {}
+        self.jobs: dict[str, Job] = {}
+        self.results: dict[str, JobResult] = {}
         self.queue: asyncio.Queue = asyncio.Queue()
 
         # Metrics
@@ -239,7 +240,7 @@ class JobQueue:
             await asyncio.wait_for(
                 asyncio.gather(*self.workers, return_exceptions=True), timeout=5.0
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.logger.warning("Worker shutdown timed out, forcing termination")
         except Exception as e:
             self.logger.warning(f"Error during worker shutdown: {e}")
@@ -247,7 +248,7 @@ class JobQueue:
         self.workers.clear()
         self.logger.info("Stopped workers")
 
-    def get_job_status(self, job_id: str) -> Optional[JobResult]:
+    def get_job_status(self, job_id: str) -> JobResult | None:
         """
         Get job status.
 
@@ -259,7 +260,7 @@ class JobQueue:
         """
         return self.results.get(job_id)
 
-    def get_all_results(self) -> Dict[str, JobResult]:
+    def get_all_results(self) -> dict[str, JobResult]:
         """
         Get all job results.
 
@@ -268,7 +269,7 @@ class JobQueue:
         """
         return self.results.copy()
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get queue metrics.
 
@@ -281,7 +282,7 @@ class JobQueue:
             "cached_results": len(self.results),
         }
 
-    def clear_results(self, older_than_seconds: Optional[int] = None) -> int:
+    def clear_results(self, older_than_seconds: int | None = None) -> int:
         """
         Clear old results.
 
@@ -297,7 +298,7 @@ class JobQueue:
             return cleared
 
         # Clear old results
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         to_remove = []
 
         for job_id, result in self.results.items():

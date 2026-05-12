@@ -30,9 +30,9 @@ class MultiFileCodeSplitter:
         self.code = code
         self.language = language.lower()
         self.project_type = project_type
-        self.files: Dict[str, str] = {}
+        self.files: dict[str, str] = {}
 
-    def split(self) -> Dict[str, str]:
+    def split(self) -> dict[str, str]:
         """
         Split code into organized files.
 
@@ -45,7 +45,7 @@ class MultiFileCodeSplitter:
             # For non-Python, keep as single file
             return {"main.py" if self.language == "javascript" else "main": self.code}
 
-    def _split_python(self) -> Dict[str, str]:
+    def _split_python(self) -> dict[str, str]:
         """Split Python code into organized files"""
         try:
             tree = ast.parse(self.code)
@@ -96,9 +96,9 @@ class MultiFileCodeSplitter:
 
         return self.files
 
-    def _categorize_code_blocks(self, tree: ast.Module) -> Dict[str, list]:
+    def _categorize_code_blocks(self, tree: ast.Module) -> dict[str, list]:
         """Categorize code blocks from AST"""
-        categorized: Dict[str, list] = {
+        categorized: dict[str, list] = {
             "models": [],
             "controllers": [],
             "services": [],
@@ -121,7 +121,7 @@ class MultiFileCodeSplitter:
 
         return categorized
 
-    def _categorize_and_add_class(self, node: ast.ClassDef, categorized: Dict[str, list]) -> None:
+    def _categorize_and_add_class(self, node: ast.ClassDef, categorized: dict[str, list]) -> None:
         """Categorize and add class definition to appropriate category"""
         class_code = ast.unparse(node)
         category = self._categorize_class(node.name)
@@ -136,7 +136,7 @@ class MultiFileCodeSplitter:
             categorized["utils"].append(class_code)
 
     def _categorize_and_add_function(
-        self, node: ast.FunctionDef, categorized: Dict[str, list]
+        self, node: ast.FunctionDef, categorized: dict[str, list]
     ) -> None:
         """Categorize and add function definition to appropriate category"""
         func_code = ast.unparse(node)
@@ -150,7 +150,7 @@ class MultiFileCodeSplitter:
         else:
             categorized["utils"].append(func_code)
 
-    def _categorize_and_add_other(self, node: ast.stmt, categorized: Dict[str, list]) -> None:
+    def _categorize_and_add_other(self, node: ast.stmt, categorized: dict[str, list]) -> None:
         """Categorize and add other statements to appropriate category"""
         other_code = ast.unparse(node)
 
@@ -161,7 +161,7 @@ class MultiFileCodeSplitter:
         else:
             categorized["utils"].append(other_code)
 
-    def _build_organized_files(self, categorized: Dict[str, list], imports: str) -> None:
+    def _build_organized_files(self, categorized: dict[str, list], imports: str) -> None:
         """Build organized files from categorized code"""
         self.files = {}
 
@@ -191,14 +191,14 @@ class MultiFileCodeSplitter:
 
         self._add_main_entry_point(categorized, imports)
 
-    def _add_main_entry_point(self, categorized: Dict[str, list], imports: str) -> None:
+    def _add_main_entry_point(self, categorized: dict[str, list], imports: str) -> None:
         """Add main entry point file"""
         if categorized["main"]:
             self.files["main.py"] = imports + "\n\n" + "\n\n".join(categorized["main"])
         elif categorized["models"] or categorized["services"] or categorized["controllers"]:
             self.files["main.py"] = self._create_main_entry_point()
 
-    def _add_supporting_files(self, categorized: Dict[str, list]) -> None:
+    def _add_supporting_files(self, categorized: dict[str, list]) -> None:
         """Add supporting files (init files, requirements, readme)"""
         self.files["src/__init__.py"] = self._create_init_file("src")
         self.files["config/__init__.py"] = self._create_init_file("config")
@@ -353,11 +353,11 @@ class ProjectStructureGenerator:
     @staticmethod
     def create_structure(
         project_name: str,
-        generated_files: Dict[str, str],
+        generated_files: dict[str, str],
         project_type: str = "software",
         python_version: str = "3.9",
         dependencies: list = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Create complete project structure with all production-ready files.
 

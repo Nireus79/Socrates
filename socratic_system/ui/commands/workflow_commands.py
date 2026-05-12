@@ -31,7 +31,7 @@ class WorkflowApprovalsCommand(BaseCommand):
             usage="workflow approvals",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute the workflow approvals command"""
         project = context.get("project")
         orchestrator = context.get("orchestrator")
@@ -65,7 +65,7 @@ class WorkflowApprovalsCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _display_pending_approvals(self, approvals: List[Dict[str, Any]]) -> None:
+    def _display_pending_approvals(self, approvals: list[dict[str, Any]]) -> None:
         """Display pending approvals in table format"""
         print(f"\n{Fore.CYAN}{'='*100}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}PENDING WORKFLOW APPROVALS{Style.RESET_ALL}")
@@ -98,7 +98,7 @@ class WorkflowApprovalsCommand(BaseCommand):
 
             print(f"\n{Fore.CYAN}{'-'*100}{Style.RESET_ALL}\n")
 
-    def _display_path_info(self, path: Dict[str, Any], is_recommended: bool = False) -> None:
+    def _display_path_info(self, path: dict[str, Any], is_recommended: bool = False) -> None:
         """Display detailed path information"""
         path_id = path.get("path_id", "unknown")
         total_cost = path.get("total_cost_tokens", 0)
@@ -135,7 +135,7 @@ class WorkflowApproveCommand(BaseCommand):
             usage="workflow approve <request_id> <path_id>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute the workflow approve command"""
         if not self.validate_args(args, min_count=2):
             return self.error("Usage: workflow approve <request_id> <path_id>")
@@ -190,7 +190,7 @@ class WorkflowRejectCommand(BaseCommand):
             usage="workflow reject <request_id> [reason]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute the workflow reject command"""
         if not self.validate_args(args, min_count=1):
             return self.error("Usage: workflow reject <request_id> [reason]")
@@ -245,7 +245,7 @@ class WorkflowInfoCommand(BaseCommand):
             usage="workflow info <request_id>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute the workflow info command"""
         if not self.validate_args(args, min_count=1):
             return self.error("Usage: workflow info <request_id>")
@@ -289,7 +289,7 @@ class WorkflowInfoCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _display_detailed_approval(self, approval: Dict[str, Any]) -> None:
+    def _display_detailed_approval(self, approval: dict[str, Any]) -> None:
         """Display detailed approval information"""
         print(f"\n{Fore.CYAN}{'='*100}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}WORKFLOW APPROVAL DETAILS{Style.RESET_ALL}")

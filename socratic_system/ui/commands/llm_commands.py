@@ -20,7 +20,7 @@ class LLMCommand(BaseCommand):
             usage="llm [list|config|set|models|usage|key|stats]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute LLM command"""
         orchestrator = context.get("orchestrator")
         user = context.get("user")
@@ -35,8 +35,8 @@ class LLMCommand(BaseCommand):
         return self._dispatch_subcommand(subcommand, args[1:], orchestrator, user)
 
     def _dispatch_subcommand(
-        self, subcommand: str, args: List[str], orchestrator, user
-    ) -> Dict[str, Any]:
+        self, subcommand: str, args: list[str], orchestrator, user
+    ) -> dict[str, Any]:
         """Dispatch subcommand to appropriate handler"""
         subcommand_map = {
             "list": lambda: self._list_providers(orchestrator),
@@ -54,7 +54,7 @@ class LLMCommand(BaseCommand):
             return subcommand_map[subcommand]()
         return self.error(f"Unknown subcommand: {subcommand}\nTry: llm help")
 
-    def _show_help(self) -> Dict[str, Any]:
+    def _show_help(self) -> dict[str, Any]:
         """Show help for LLM commands"""
         help_text = f"""
 {Fore.CYAN}LLM Provider Management{Style.RESET_ALL}
@@ -86,7 +86,7 @@ class LLMCommand(BaseCommand):
         print(help_text)
         return self.success(message="Help displayed")
 
-    def _list_providers(self, orchestrator) -> Dict[str, Any]:
+    def _list_providers(self, orchestrator) -> dict[str, Any]:
         """List all available providers"""
         print(f"\n{Fore.CYAN}Available LLM Providers{Style.RESET_ALL}\n")
 
@@ -125,7 +125,7 @@ class LLMCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _show_config(self, orchestrator, user) -> Dict[str, Any]:
+    def _show_config(self, orchestrator, user) -> dict[str, Any]:
         """Show user's provider configuration"""
         print(f"\n{Fore.CYAN}Your LLM Provider Configuration{Style.RESET_ALL}\n")
 
@@ -156,7 +156,7 @@ class LLMCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _set_default(self, args: List[str], orchestrator, user) -> Dict[str, Any]:
+    def _set_default(self, args: list[str], orchestrator, user) -> dict[str, Any]:
         """Set default provider"""
         if not args:
             return self.error("Provider name required. Usage: /llm set <provider>")
@@ -176,7 +176,7 @@ class LLMCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _set_model(self, args: List[str], orchestrator, user) -> Dict[str, Any]:
+    def _set_model(self, args: list[str], orchestrator, user) -> dict[str, Any]:
         """Set model for a provider"""
         if len(args) < 2:
             return self.error(
@@ -204,7 +204,7 @@ class LLMCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _show_models(self, args: List[str], orchestrator) -> Dict[str, Any]:
+    def _show_models(self, args: list[str], orchestrator) -> dict[str, Any]:
         """Show available models for a provider"""
         if not args:
             return self.error("Provider name required. Usage: /llm models <provider>")
@@ -244,7 +244,7 @@ class LLMCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _manage_key(self, args: List[str], orchestrator, user) -> Dict[str, Any]:
+    def _manage_key(self, args: list[str], orchestrator, user) -> dict[str, Any]:
         """Manage API keys"""
         if not args:
             return self.error("Usage: /llm key [add|remove] <provider> [api_key]")
@@ -298,7 +298,7 @@ class LLMCommand(BaseCommand):
         else:
             return self.error(f"Unknown key action: {action}")
 
-    def _show_stats(self, args: List[str], orchestrator, user) -> Dict[str, Any]:
+    def _show_stats(self, args: list[str], orchestrator, user) -> dict[str, Any]:
         """Show usage statistics and costs"""
         provider = args[0].lower() if args else None
         days = int(args[1]) if len(args) > 1 else 30
@@ -354,7 +354,7 @@ class LLMCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _set_auth_method(self, args: List[str], orchestrator, user) -> Dict[str, Any]:
+    def _set_auth_method(self, args: list[str], orchestrator, user) -> dict[str, Any]:
         """Set Claude authentication method (api_key or subscription)"""
         if not args:
             print(f"\n{Fore.CYAN}Claude Authentication Methods{Style.RESET_ALL}\n")
@@ -413,11 +413,11 @@ class LLMCommand(BaseCommand):
         )
 
     # Utility methods from base
-    def success(self, message: str = "Success", data: Dict[str, Any] = None) -> Dict[str, Any]:
+    def success(self, message: str = "Success", data: dict[str, Any] = None) -> dict[str, Any]:
         """Return success response"""
         return {"status": "success", "message": message, "data": data or {}}
 
-    def error(self, message: str) -> Dict[str, Any]:
+    def error(self, message: str) -> dict[str, Any]:
         """Return error response"""
         print(f"{Fore.RED}Error: {message}{Style.RESET_ALL}")
         return {"status": "error", "message": message}

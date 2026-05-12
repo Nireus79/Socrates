@@ -30,14 +30,14 @@ class CodeStructureAnalyzer:
         """
         self.code = code
         self.language = language.lower()
-        self.classes: List[Dict] = []
-        self.functions: List[Dict] = []
-        self.imports: List[str] = []
+        self.classes: list[dict] = []
+        self.functions: list[dict] = []
+        self.imports: list[str] = []
         self.has_tests = False
         self.has_config = False
         self.has_main = False
 
-    def analyze(self) -> Dict:
+    def analyze(self) -> dict:
         """
         Analyze code structure.
 
@@ -49,7 +49,7 @@ class CodeStructureAnalyzer:
         else:
             return self._analyze_generic()
 
-    def _analyze_python(self) -> Dict:
+    def _analyze_python(self) -> dict:
         """Analyze Python code structure using AST"""
         try:
             tree = ast.parse(self.code)
@@ -105,7 +105,7 @@ class CodeStructureAnalyzer:
                     }
                 )
 
-    def _build_analysis_result(self) -> Dict:
+    def _build_analysis_result(self) -> dict:
         """Build analysis result dictionary"""
         return {
             "language": "python",
@@ -141,7 +141,7 @@ class CodeStructureAnalyzer:
         if '__name__ == "__main__"' in self.code or "if __name__" in self.code:
             self.has_main = True
 
-    def _analyze_generic(self) -> Dict:
+    def _analyze_generic(self) -> dict:
         """Analyze code for non-Python languages"""
         analysis = {
             "language": self.language,
@@ -186,14 +186,14 @@ class CodeStructureAnalyzer:
 
         return analysis
 
-    def suggest_file_organization(self) -> Dict[str, List[str]]:
+    def suggest_file_organization(self) -> dict[str, list[str]]:
         """
         Suggest how to organize code into files.
 
         Returns:
             Dictionary with suggested file organization
         """
-        organization: Dict[str, list] = {
+        organization: dict[str, list] = {
             "models.py": [],
             "controllers.py": [],
             "services.py": [],
@@ -234,7 +234,7 @@ class CodeStructureAnalyzer:
         # Remove empty files
         return {k: v for k, v in organization.items() if v}
 
-    def get_suggested_structure(self, project_type: str = "software") -> Dict:
+    def get_suggested_structure(self, project_type: str = "software") -> dict:
         """
         Get suggested project structure based on analysis.
 

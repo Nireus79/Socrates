@@ -148,7 +148,7 @@ class CodeExtractor:
         return content
 
     @staticmethod
-    def validate_python_syntax(content: str) -> Tuple[bool, Optional[str]]:
+    def validate_python_syntax(content: str) -> tuple[bool, str | None]:
         """
         Validate that content is valid Python code.
 
@@ -188,7 +188,7 @@ class CodeExtractor:
             return False, error_msg
 
     @staticmethod
-    def extract_and_validate(content: str) -> Tuple[str, bool, Optional[str]]:
+    def extract_and_validate(content: str) -> tuple[str, bool, str | None]:
         """
         Extract code from markdown (if needed) and validate it in one step.
 

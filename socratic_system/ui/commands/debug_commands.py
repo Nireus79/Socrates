@@ -19,7 +19,7 @@ class DebugCommand(BaseCommand):
             usage="debug [on|off]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute debug command"""
         current_state = is_debug_mode()
 
@@ -51,7 +51,7 @@ class LogsCommand(BaseCommand):
     def __init__(self):
         super().__init__(name="logs", description="View recent log entries", usage="logs [lines]")
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute logs command"""
         # Get number of lines to display
         num_lines = 20
@@ -105,7 +105,7 @@ class StatusCommand(BaseCommand):
             name="status", description="Show system status and debug information", usage="status"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute status command"""
         debug_state = "ON" if is_debug_mode() else "OFF"
         log_file = Path("socratic_logs/socratic.log")

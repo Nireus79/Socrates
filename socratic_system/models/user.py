@@ -28,19 +28,19 @@ class User:
     email: str
     passcode_hash: str
     created_at: datetime.datetime
-    projects: Optional[List[str]] = None  # User can start with no projects
+    projects: list[str] | None = None  # User can start with no projects
     is_archived: bool = False
-    archived_at: Optional[datetime.datetime] = None
+    archived_at: datetime.datetime | None = None
 
     # NEW: Subscription fields
     subscription_tier: str = "free"  # "free", "pro", "enterprise"
     subscription_status: str = "active"  # "active", "expired", "cancelled"
-    subscription_start: Optional[datetime.datetime] = None
-    subscription_end: Optional[datetime.datetime] = None
+    subscription_start: datetime.datetime | None = None
+    subscription_end: datetime.datetime | None = None
 
     # NEW: Usage tracking (resets monthly)
     questions_used_this_month: int = 0
-    usage_reset_date: Optional[datetime.datetime] = None
+    usage_reset_date: datetime.datetime | None = None
 
     # Testing mode - bypasses all monetization restrictions
     # Any authenticated user can enable this for their own account to bypass monetization
@@ -51,9 +51,9 @@ class User:
     claude_auth_method: str = "api_key"  # How to authenticate with Claude API
 
     # GitHub Integration (NEW)
-    github_token: Optional[str] = None  # Encrypted GitHub Personal Access Token
-    github_username: Optional[str] = None  # GitHub username (cached from API)
-    github_token_expires: Optional[datetime.datetime] = None  # Token expiration date
+    github_token: str | None = None  # Encrypted GitHub Personal Access Token
+    github_username: str | None = None  # GitHub username (cached from API)
+    github_token_expires: datetime.datetime | None = None  # Token expiration date
     has_github_auth: bool = False  # Whether user has authenticated with GitHub
 
     # Export & Git Preferences (NEW)

@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
-def encrypt_data(data: str, encryption_key: Optional[str] = None) -> str:
+def encrypt_data(data: str, encryption_key: str | None = None) -> str:
     """
     Encrypt data using Fernet symmetric encryption with PBKDF2 key derivation.
 
@@ -65,7 +65,7 @@ def encrypt_data(data: str, encryption_key: Optional[str] = None) -> str:
         raise RuntimeError(f"Failed to encrypt data: {e}") from e
 
 
-def decrypt_data(encrypted_data: str, encryption_key: Optional[str] = None) -> str:
+def decrypt_data(encrypted_data: str, encryption_key: str | None = None) -> str:
     """
     Decrypt data using Fernet symmetric encryption.
 

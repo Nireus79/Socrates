@@ -43,10 +43,10 @@ class Threat:
     threat_type: ThreatType
     severity: ThreatLevel
     description: str
-    evidence: Dict[str, Any] = field(default_factory=dict)
-    affected_components: List[str] = field(default_factory=list)
+    evidence: dict[str, Any] = field(default_factory=dict)
+    affected_components: list[str] = field(default_factory=list)
     risk_score: float = 0.0  # 0.0-1.0
-    recommendations: List[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def __hash__(self):
@@ -71,12 +71,12 @@ class ThreatAnalysis:
     """Complete threat analysis for a reasoning session."""
 
     action: str
-    threats: List[Threat] = field(default_factory=list)
+    threats: list[Threat] = field(default_factory=list)
     overall_threat_level: ThreatLevel = ThreatLevel.NONE
     overall_risk_score: float = 0.0
     is_safe: bool = True
-    safety_concerns: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    safety_concerns: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 
@@ -93,23 +93,23 @@ class ThreatDetector:
     - Deviation from historical precedents
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """Initialize threat detector.
 
         Args:
             logger: Optional logger instance
         """
         self.logger = logger or logging.getLogger(__name__)
-        self.confidence_history: List[float] = []
-        self.conclusion_history: List[str] = []
-        self.framework_agreement_history: List[float] = []
+        self.confidence_history: list[float] = []
+        self.conclusion_history: list[str] = []
+        self.framework_agreement_history: list[float] = []
 
     def analyze(
         self,
         action: str,
-        framework_analyses: Dict[str, Any],
-        contradiction_analysis: Optional[Dict[str, Any]] = None,
-        precedent_analysis: Optional[Dict[str, Any]] = None,
+        framework_analyses: dict[str, Any],
+        contradiction_analysis: dict[str, Any] | None = None,
+        precedent_analysis: dict[str, Any] | None = None,
         confidence: float = 0.5,
         final_conclusion: str = "unknown",
     ) -> ThreatAnalysis:
@@ -235,11 +235,11 @@ class ThreatDetector:
 
     def _detect_reasoning_inconsistencies(
         self,
-        framework_analyses: Dict[str, Any],
-        contradiction_analysis: Optional[Dict[str, Any]],
-    ) -> List[Threat]:
+        framework_analyses: dict[str, Any],
+        contradiction_analysis: dict[str, Any] | None,
+    ) -> list[Threat]:
         """Detect internal reasoning inconsistencies."""
-        threats: List[Threat] = []
+        threats: list[Threat] = []
 
         if not contradiction_analysis:
             return threats
@@ -263,9 +263,9 @@ class ThreatDetector:
 
         return threats
 
-    def _detect_framework_manipulation(self, framework_analyses: Dict[str, Any]) -> List[Threat]:
+    def _detect_framework_manipulation(self, framework_analyses: dict[str, Any]) -> list[Threat]:
         """Detect signs of framework manipulation or gaming."""
-        threats: List[Threat] = []
+        threats: list[Threat] = []
 
         if not framework_analyses:
             return threats
@@ -294,7 +294,7 @@ class ThreatDetector:
 
         return threats
 
-    def _detect_principle_violations(self, framework_analyses: Dict[str, Any]) -> List[Threat]:
+    def _detect_principle_violations(self, framework_analyses: dict[str, Any]) -> list[Threat]:
         """Detect violations of core principles."""
         threats = []
 
@@ -323,7 +323,7 @@ class ThreatDetector:
 
         return threats
 
-    def _detect_stakeholder_harm(self, framework_analyses: Dict[str, Any]) -> List[Threat]:
+    def _detect_stakeholder_harm(self, framework_analyses: dict[str, Any]) -> list[Threat]:
         """Detect patterns indicating stakeholder harm."""
         threats = []
 
@@ -359,9 +359,9 @@ class ThreatDetector:
 
         return threats
 
-    def _detect_pattern_anomalies(self, confidence: float, conclusion: str) -> List[Threat]:
+    def _detect_pattern_anomalies(self, confidence: float, conclusion: str) -> list[Threat]:
         """Detect anomalies in reasoning patterns."""
-        threats: List[Threat] = []
+        threats: list[Threat] = []
 
         if len(self.confidence_history) < 5:
             return threats  # Need enough history for patterns
@@ -401,10 +401,10 @@ class ThreatDetector:
         return threats
 
     def _detect_confidence_manipulation(
-        self, confidence: float, framework_analyses: Dict[str, Any]
-    ) -> List[Threat]:
+        self, confidence: float, framework_analyses: dict[str, Any]
+    ) -> list[Threat]:
         """Detect signs of confidence score manipulation."""
-        threats: List[Threat] = []
+        threats: list[Threat] = []
 
         if not framework_analyses:
             return threats
@@ -441,8 +441,8 @@ class ThreatDetector:
         self,
         confidence: float,
         conclusion: str,
-        contradiction_analysis: Optional[Dict[str, Any]],
-    ) -> List[Threat]:
+        contradiction_analysis: dict[str, Any] | None,
+    ) -> list[Threat]:
         """Detect attempts to avoid escalation inappropriately."""
         threats = []
 
@@ -468,10 +468,10 @@ class ThreatDetector:
         self,
         action: str,
         conclusion: str,
-        precedent_analysis: Optional[Dict[str, Any]],
-    ) -> List[Threat]:
+        precedent_analysis: dict[str, Any] | None,
+    ) -> list[Threat]:
         """Detect deviations from established precedents."""
-        threats: List[Threat] = []
+        threats: list[Threat] = []
 
         if not precedent_analysis:
             return threats
@@ -500,7 +500,7 @@ class ThreatDetector:
 
         return threats
 
-    def get_baseline_stats(self) -> Dict[str, float]:
+    def get_baseline_stats(self) -> dict[str, float]:
         """Get baseline statistics from history."""
         if not self.confidence_history:
             return {

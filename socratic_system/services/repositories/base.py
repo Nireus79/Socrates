@@ -35,7 +35,7 @@ class Repository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    def find_by_id(self, entity_id: Any) -> Optional[T]:
+    def find_by_id(self, entity_id: Any) -> T | None:
         """
         Find entity by ID.
 
@@ -48,7 +48,7 @@ class Repository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    def find_all(self, limit: Optional[int] = None, offset: int = 0) -> List[T]:
+    def find_all(self, limit: int | None = None, offset: int = 0) -> list[T]:
         """
         Find all entities with optional pagination.
 

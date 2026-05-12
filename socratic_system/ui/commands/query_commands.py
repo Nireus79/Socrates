@@ -17,7 +17,7 @@ class AskCommand(BaseCommand):
             usage="ask <your question>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute ask command"""
         if not self.validate_args(args, min_count=1):
             question = input(f"{Fore.WHITE}What would you like to know? ").strip()
@@ -108,7 +108,7 @@ class ExplainCommand(BaseCommand):
             usage="explain <topic>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute explain command"""
         if not self.validate_args(args, min_count=1):
             topic = input(f"{Fore.WHITE}What would you like explained? ").strip()
@@ -202,7 +202,7 @@ class SearchCommand(BaseCommand):
             usage="search <keywords>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute search command"""
         if not self.validate_args(args, min_count=1):
             query = input(f"{Fore.WHITE}What would you like to search for? ").strip()

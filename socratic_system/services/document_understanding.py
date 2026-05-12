@@ -22,7 +22,7 @@ class DocumentUnderstandingService:
     and more informed question generation.
     """
 
-    def __init__(self, claude_client: Optional[Any] = None):
+    def __init__(self, claude_client: Any | None = None):
         """
         Initialize the document understanding service.
 
@@ -31,7 +31,7 @@ class DocumentUnderstandingService:
                           If not provided, uses heuristic-based fallbacks.
         """
         self.claude_client = claude_client
-        self.summary_cache: Dict[str, Dict[str, Any]] = {}
+        self.summary_cache: dict[str, dict[str, Any]] = {}
         self.logger = self._get_logger()
 
     def _get_logger(self):
@@ -46,8 +46,8 @@ class DocumentUnderstandingService:
             return logging.getLogger("document_understanding")
 
     def generate_document_summary(
-        self, document_chunks: List[str], file_name: str, file_type: str = "text"
-    ) -> Dict[str, Any]:
+        self, document_chunks: list[str], file_name: str, file_type: str = "text"
+    ) -> dict[str, Any]:
         """
         Generate comprehensive document summary from chunks.
 
@@ -90,8 +90,8 @@ class DocumentUnderstandingService:
             return self._create_fallback_summary(file_name, document_chunks, file_type)
 
     def compare_goals_with_documents(
-        self, user_goals: str, document_summaries: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, user_goals: str, document_summaries: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """
         Compare user's stated goals with document content.
 
@@ -128,7 +128,7 @@ class DocumentUnderstandingService:
             self.logger.warning(f"Error comparing goals with documents: {e}")
             return self._create_empty_comparison()
 
-    def extract_key_concepts(self, document_chunks: List[str], max_concepts: int = 5) -> List[str]:
+    def extract_key_concepts(self, document_chunks: list[str], max_concepts: int = 5) -> list[str]:
         """
         Extract key concepts/topics from document chunks.
 
@@ -155,7 +155,7 @@ class DocumentUnderstandingService:
             return []
 
     def determine_document_complexity(
-        self, document_chunks: List[str], file_type: str = "text"
+        self, document_chunks: list[str], file_type: str = "text"
     ) -> str:
         """
         Determine the complexity level of a document.
@@ -208,8 +208,8 @@ class DocumentUnderstandingService:
     # Private helper methods
 
     def _analyze_document(
-        self, document_chunks: List[str], file_name: str, file_type: str
-    ) -> Dict[str, Any]:
+        self, document_chunks: list[str], file_name: str, file_type: str
+    ) -> dict[str, Any]:
         """Analyze document and create summary."""
         # Combine chunks for analysis
         full_text = " ".join(document_chunks[:10])  # Limit to first 10 chunks
@@ -250,7 +250,7 @@ class DocumentUnderstandingService:
 
         return ". ".join(summary_sentences) + "."
 
-    def _extract_key_points(self, text: str) -> List[str]:
+    def _extract_key_points(self, text: str) -> list[str]:
         """Extract key points from text using heuristics."""
         points = []
 
@@ -291,7 +291,7 @@ class DocumentUnderstandingService:
 
         return points[:5]
 
-    def _extract_concepts_heuristic(self, text: str) -> List[str]:
+    def _extract_concepts_heuristic(self, text: str) -> list[str]:
         """Extract concepts/topics using heuristics."""
         # Look for capitalized words and technical terms
         words = text.split()
@@ -341,7 +341,7 @@ class DocumentUnderstandingService:
 
         return concepts[:5]
 
-    def _detect_code_language(self, text: str) -> Optional[str]:
+    def _detect_code_language(self, text: str) -> str | None:
         """Detect programming language from code text."""
         language_patterns = {
             "python": ["def ", "import ", "class ", "self.", ":"],
@@ -366,8 +366,8 @@ class DocumentUnderstandingService:
         return None
 
     def _ai_compare_goals_documents(
-        self, user_goals: str, document_summaries: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, user_goals: str, document_summaries: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Use Claude API for intelligent goal-document comparison."""
         try:
             # Format document summaries for analysis
@@ -382,8 +382,8 @@ class DocumentUnderstandingService:
             return self._heuristic_compare_goals_documents(user_goals, document_summaries)
 
     def _heuristic_compare_goals_documents(
-        self, user_goals: str, document_summaries: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, user_goals: str, document_summaries: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Use heuristic-based comparison."""
         goals_lower = user_goals.lower()
         doc_text = " ".join(s.get("summary", "") for s in document_summaries).lower()
@@ -429,7 +429,7 @@ class DocumentUnderstandingService:
             "match_score": match_score,
         }
 
-    def _format_summaries_for_analysis(self, summaries: List[Dict[str, Any]]) -> str:
+    def _format_summaries_for_analysis(self, summaries: list[dict[str, Any]]) -> str:
         """Format summaries for analysis."""
         sections = []
 
@@ -446,8 +446,8 @@ Topics: {', '.join(s.get('topics', []))}
         return "\n".join(sections)
 
     def _create_fallback_summary(
-        self, file_name: str, document_chunks: List[str], file_type: str
-    ) -> Dict[str, Any]:
+        self, file_name: str, document_chunks: list[str], file_type: str
+    ) -> dict[str, Any]:
         """Create a basic fallback summary."""
         full_text = " ".join(document_chunks)
 
@@ -462,7 +462,7 @@ Topics: {', '.join(s.get('topics', []))}
             "language": None,
         }
 
-    def _create_empty_comparison(self) -> Dict[str, Any]:
+    def _create_empty_comparison(self) -> dict[str, Any]:
         """Create empty comparison result."""
         return {
             "alignment": "No comparison available.",
@@ -471,7 +471,7 @@ Topics: {', '.join(s.get('topics', []))}
             "match_score": 0.0,
         }
 
-    def _generate_cache_key(self, file_name: str, chunks: List[str]) -> str:
+    def _generate_cache_key(self, file_name: str, chunks: list[str]) -> str:
         """Generate cache key for document summary."""
         # Use file name and chunk count as key
         key_text = f"{file_name}:{len(chunks)}:{len(''.join(chunks))}"

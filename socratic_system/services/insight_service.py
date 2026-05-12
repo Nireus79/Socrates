@@ -42,9 +42,9 @@ class InsightService(Service):
         self,
         context: str,
         project: "ProjectContext",
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         user_auth_method: str = "api_key",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Extract insights from user response using Claude.
 
         Args:
@@ -70,7 +70,7 @@ class InsightService(Service):
         self.logger.debug(f"Extracted insights: {len(validated_insights)} keys (validated)")
         return validated_insights
 
-    def analyze_context(self, project: "ProjectContext") -> Dict[str, Any]:
+    def analyze_context(self, project: "ProjectContext") -> dict[str, Any]:
         """Analyze project context for insights.
 
         Args:
@@ -86,7 +86,7 @@ class InsightService(Service):
 
         return self.context_analyzer.analyze(project)  # type: ignore
 
-    def analyze_insights(self, project_id: str, insights_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def analyze_insights(self, project_id: str, insights_dict: dict[str, Any]) -> dict[str, Any]:
         """Analyze and categorize insights from dict.
 
         Args:
@@ -169,7 +169,7 @@ class InsightService(Service):
         else:
             return min(0.95, 0.7 + (length / 200))
 
-    def _validate_insights(self, insights: Any) -> Dict[str, Any]:
+    def _validate_insights(self, insights: Any) -> dict[str, Any]:
         """Validate extracted insights, filtering out null/empty values.
 
         Args:
@@ -205,7 +205,7 @@ class InsightService(Service):
 
         return validated
 
-    def store_insights(self, project_id: str, insights: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def store_insights(self, project_id: str, insights: list[dict[str, Any]]) -> dict[str, Any]:
         """Store analyzed insights to repository.
 
         Args:
@@ -235,7 +235,7 @@ class InsightService(Service):
             "total": len(insights),
         }
 
-    def get_project_insights(self, project_id: str) -> Dict[str, Any]:
+    def get_project_insights(self, project_id: str) -> dict[str, Any]:
         """Get all insights for a project.
 
         Args:
@@ -256,7 +256,7 @@ class InsightService(Service):
             "statistics": stats,
         }
 
-    def get_insights_by_category(self, project_id: str, category: str) -> Dict[str, Any]:
+    def get_insights_by_category(self, project_id: str, category: str) -> dict[str, Any]:
         """Get insights filtered by category.
 
         Args:
@@ -277,7 +277,7 @@ class InsightService(Service):
             "insights": insights,
         }
 
-    def generate_recommendations(self, project_id: str) -> Dict[str, Any]:
+    def generate_recommendations(self, project_id: str) -> dict[str, Any]:
         """Generate recommendations from high-confidence insights.
 
         Args:
@@ -293,7 +293,7 @@ class InsightService(Service):
         )
 
         # Group by category
-        by_category: Dict[str, List[Dict[str, Any]]] = {}
+        by_category: dict[str, list[dict[str, Any]]] = {}
         for insight in high_conf_insights:
             cat = insight.get("category", "unknown")
             if cat not in by_category:
@@ -321,7 +321,7 @@ class InsightService(Service):
             "recommendations": recommendations,
         }
 
-    def _calculate_priority(self, insights: List[Dict[str, Any]]) -> str:
+    def _calculate_priority(self, insights: list[dict[str, Any]]) -> str:
         """Calculate priority based on confidence scores.
 
         Args:
@@ -342,7 +342,7 @@ class InsightService(Service):
         else:
             return "low"
 
-    def _generate_recommendation_text(self, category: str, insights: List[Dict[str, Any]]) -> str:
+    def _generate_recommendation_text(self, category: str, insights: list[dict[str, Any]]) -> str:
         """Generate recommendation text for a category.
 
         Args:

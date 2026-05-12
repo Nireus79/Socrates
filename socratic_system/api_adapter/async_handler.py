@@ -30,8 +30,8 @@ class AsyncJobHandler:
     def __init__(
         self,
         job_queue: JobQueue,
-        result_cache: Optional[ResultCache] = None,
-        service_adapter: Optional[ServiceAdapter] = None,
+        result_cache: ResultCache | None = None,
+        service_adapter: ServiceAdapter | None = None,
         max_workers: int = 5,
     ):
         """
@@ -53,9 +53,9 @@ class AsyncJobHandler:
         self,
         service_name: str,
         method_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         timeout: float = 300.0,
-        job_name: Optional[str] = None,
+        job_name: str | None = None,
     ) -> str:
         """
         Submit async job to queue.
@@ -102,7 +102,7 @@ class AsyncJobHandler:
                 error_code="JOB_SUBMISSION_FAILED",
             )
 
-    def get_job_status(self, job_id: str) -> Dict[str, Any]:
+    def get_job_status(self, job_id: str) -> dict[str, Any]:
         """
         Get job status.
 
@@ -126,7 +126,7 @@ class AsyncJobHandler:
         self.logger.debug(f"Retrieved status for job {job_id}: {job_result.status}")
 
         # Prepare response
-        response: Dict[str, Any] = {
+        response: dict[str, Any] = {
             "job_id": job_id,
             "status": job_result.status.value,
             "ready": job_result.status.value
@@ -153,7 +153,7 @@ class AsyncJobHandler:
 
         return response
 
-    def get_batch_job_status(self, job_ids: list[str]) -> Dict[str, Any]:
+    def get_batch_job_status(self, job_ids: list[str]) -> dict[str, Any]:
         """
         Get status for multiple jobs.
 
@@ -212,7 +212,7 @@ class AsyncJobHandler:
         job_id: str,
         max_polls: int = 30,
         poll_interval: float = 1.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Wait for job result with polling.
 
@@ -251,7 +251,7 @@ class AsyncJobHandler:
             error_code="JOB_TIMEOUT",
         )
 
-    def get_active_jobs(self) -> Dict[str, Any]:
+    def get_active_jobs(self) -> dict[str, Any]:
         """
         Get all active jobs.
 
@@ -273,7 +273,7 @@ class AsyncJobHandler:
             "jobs": active,
         }
 
-    def get_completed_jobs(self) -> Dict[str, Any]:
+    def get_completed_jobs(self) -> dict[str, Any]:
         """
         Get all completed jobs.
 
@@ -295,7 +295,7 @@ class AsyncJobHandler:
             "jobs": completed,
         }
 
-    def get_failed_jobs(self) -> Dict[str, Any]:
+    def get_failed_jobs(self) -> dict[str, Any]:
         """
         Get all failed jobs.
 

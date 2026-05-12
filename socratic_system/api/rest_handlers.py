@@ -31,7 +31,7 @@ if BaseModel is not object:
         """Agent response model."""
 
         status: str
-        data: Dict[str, Any]
+        data: dict[str, Any]
         timestamp: str
 
         class Config:
@@ -56,7 +56,7 @@ if BaseModel is not object:
         adapter = AgentAdapter(orchestrator)
 
         @router.post("/{agent_name}/process", response_model=AgentResponse)
-        async def process_agent_request(agent_name: str, request: Dict[str, Any]):
+        async def process_agent_request(agent_name: str, request: dict[str, Any]):
             """Process request for specific agent.
 
             Args:

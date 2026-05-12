@@ -11,7 +11,8 @@ import asyncio
 import functools
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional, TypeVar
+from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class QueryStats:
         self.max_time = 0.0
         self.slow_count = 0
         self.error_count = 0
-        self.last_executed_at: Optional[float] = None
+        self.last_executed_at: float | None = None
 
     def add_execution(self, duration: float, is_slow: bool = False, error: bool = False) -> None:
         """Record a query execution.
@@ -88,7 +89,7 @@ class QueryStats:
             return 0.0
         return (self.slow_count / self.count) * 100
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation.
 
         Returns:
@@ -136,7 +137,7 @@ class QueryProfiler:
             slow_query_threshold_ms: Threshold above which queries are considered slow (default: 100ms)
         """
         self.slow_query_threshold = slow_query_threshold_ms / 1000.0
-        self.stats: Dict[str, QueryStats] = {}
+        self.stats: dict[str, QueryStats] = {}
         logger.info(
             f"QueryProfiler initialized with slow query threshold: {slow_query_threshold_ms}ms"
         )
@@ -144,7 +145,7 @@ class QueryProfiler:
     def profile(
         self,
         query_name: str,
-        slow_query_threshold_ms: Optional[float] = None,
+        slow_query_threshold_ms: float | None = None,
     ) -> Callable[[F], F]:
         """Decorator to profile query execution time.
 
@@ -284,7 +285,7 @@ class QueryProfiler:
 
         self.stats[query_name].add_execution(duration, is_slow=is_slow, error=error)
 
-    def get_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_stats(self) -> dict[str, dict[str, Any]]:
         """Get all collected statistics.
 
         Returns:
@@ -299,7 +300,7 @@ class QueryProfiler:
         """
         return {name: stats.to_dict() for name, stats in self.stats.items()}
 
-    def get_slow_queries(self, min_slow_count: int = 1) -> List[Dict[str, Any]]:
+    def get_slow_queries(self, min_slow_count: int = 1) -> list[dict[str, Any]]:
         """Get list of queries with slow executions.
 
         Args:
@@ -321,7 +322,7 @@ class QueryProfiler:
         # Sort by slow count descending
         return sorted(slow_queries, key=lambda x: x["slow_count"], reverse=True)
 
-    def get_slowest_queries(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_slowest_queries(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get queries with highest average execution time.
 
         Args:
@@ -344,7 +345,7 @@ class QueryProfiler:
         )
         return sorted_stats[:limit]
 
-    def reset_stats(self, query_name: Optional[str] = None) -> None:
+    def reset_stats(self, query_name: str | None = None) -> None:
         """Reset statistics for one or all queries.
 
         Args:
@@ -404,7 +405,7 @@ class QueryProfiler:
 
 
 # Global profiler instance
-_profiler: Optional[QueryProfiler] = None
+_profiler: QueryProfiler | None = None
 
 
 def get_profiler() -> QueryProfiler:
@@ -427,7 +428,7 @@ def get_profiler() -> QueryProfiler:
 
 def profile_query(
     query_name: str,
-    slow_query_threshold_ms: Optional[float] = None,
+    slow_query_threshold_ms: float | None = None,
 ) -> Callable[[F], F]:
     """Module-level decorator using global profiler.
 

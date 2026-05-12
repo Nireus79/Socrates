@@ -118,7 +118,7 @@ def enable_workflow_optimization_for_all_projects(
         return 0, 0, 0
 
 
-def show_optimization_status(database, project_id: Optional[str] = None) -> None:
+def show_optimization_status(database, project_id: str | None = None) -> None:
     """
     Show workflow optimization status for project(s).
 

@@ -28,8 +28,8 @@ class AgentCertificate:
     fingerprint: str  # SHA-256 fingerprint
     key_size: int  # RSA key size (2048, 4096, etc.)
     is_revoked: bool = False
-    revoked_at: Optional[datetime] = None
-    revocation_reason: Optional[str] = None
+    revoked_at: datetime | None = None
+    revocation_reason: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def is_valid(self) -> bool:
@@ -60,7 +60,7 @@ class AgentCertificate:
         self.revoked_at = datetime.now(UTC)
         self.revocation_reason = reason
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for storage."""
         return {
             "agent_id": self.agent_id,
@@ -92,7 +92,7 @@ class CertificateAuthority:
         ca_certificate_pem: str,
         ca_private_key_pem: str,
         ca_common_name: str = "Socrates CA",
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize Certificate Authority.
@@ -109,7 +109,7 @@ class CertificateAuthority:
         self.ca_common_name = ca_common_name
 
         # Certificate inventory
-        self.issued_certificates: Dict[str, AgentCertificate] = {}
+        self.issued_certificates: dict[str, AgentCertificate] = {}
         self.serial_counter = 0
 
     def issue_certificate(
@@ -117,7 +117,7 @@ class CertificateAuthority:
         agent_id: str,
         valid_days: int = 365,
         key_size: int = 2048,
-        subject_cn: Optional[str] = None,
+        subject_cn: str | None = None,
     ) -> AgentCertificate:
         """
         Issue a certificate for an agent.
@@ -219,16 +219,16 @@ class CertificateAuthority:
         self.logger.info(f"[CA] Revoked certificate for {agent_id}: {reason}")
         return True
 
-    def get_certificate(self, agent_id: str) -> Optional[AgentCertificate]:
+    def get_certificate(self, agent_id: str) -> AgentCertificate | None:
         """Get a certificate by agent ID."""
         return self.issued_certificates.get(agent_id)
 
-    def get_certificate_status(self) -> Dict[str, Any]:
+    def get_certificate_status(self) -> dict[str, Any]:
         """Get status of all certificates."""
         valid_count = 0
         expired_count = 0
         revoked_count = 0
-        expiring_soon_list: List[Dict[str, Any]] = []
+        expiring_soon_list: list[dict[str, Any]] = []
 
         for cert in self.issued_certificates.values():
             if cert.is_revoked:
@@ -245,7 +245,7 @@ class CertificateAuthority:
             else:
                 valid_count += 1
 
-        status: Dict[str, Any] = {
+        status: dict[str, Any] = {
             "total_issued": len(self.issued_certificates),
             "valid": valid_count,
             "expired": expired_count,

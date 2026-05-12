@@ -68,7 +68,7 @@ class MigrationRunner:
                 f"New users may experience failures when accessing user or knowledge base features."
             )
 
-    def apply_migration(self, migration_file: str, is_optional: bool = False) -> Tuple[bool, str]:
+    def apply_migration(self, migration_file: str, is_optional: bool = False) -> tuple[bool, str]:
         """
         Apply a SQL migration script to the database
 
@@ -152,7 +152,7 @@ class MigrationRunner:
             self.logger.error(f"Error checking if table exists: {str(e)}")
             return False
 
-    def get_existing_tables(self) -> List[str]:
+    def get_existing_tables(self) -> list[str]:
         """
         Get list of all existing tables in database
 
@@ -178,7 +178,7 @@ class MigrationRunner:
             self.logger.error(f"Error getting existing tables: {str(e)}")
             return []
 
-    def check_migration_status(self) -> Dict[str, bool]:
+    def check_migration_status(self) -> dict[str, bool]:
         """
         Check status of all required migrations
 
@@ -242,7 +242,7 @@ class MigrationRunner:
             )
             return False
 
-    def ensure_migrations_applied(self) -> Tuple[bool, str]:
+    def ensure_migrations_applied(self) -> tuple[bool, str]:
         """
         Ensure all required migrations are applied
 
@@ -335,7 +335,7 @@ class MigrationRunner:
             self.logger.error(final_msg)
             return all_migrations_successful, final_msg
 
-    def list_migrations(self) -> List[str]:
+    def list_migrations(self) -> list[str]:
         """
         List all available migration files
 

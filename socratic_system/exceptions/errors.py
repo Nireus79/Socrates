@@ -18,8 +18,8 @@ class SocratesError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        error_code: str | None = None,
+        context: dict[str, Any] | None = None,
     ):
         """Initialize SocratesError"""
         self.message = message
@@ -33,7 +33,7 @@ class SocratesError(Exception):
             return f"[{self.error_code}] {self.message}"
         return self.message
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary format"""
         return {
             "error": self.__class__.__name__,
@@ -70,7 +70,7 @@ class AuthenticationError(SocratesError):
 class ProjectNotFoundError(DatabaseError):
     """Raised when a project is not found in the database"""
 
-    def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, context: dict[str, Any] | None = None):
         """Initialize ProjectNotFoundError"""
         super().__init__(message, error_code="PROJECT_NOT_FOUND", context=context)
 
@@ -78,7 +78,7 @@ class ProjectNotFoundError(DatabaseError):
 class UserNotFoundError(DatabaseError):
     """Raised when a user is not found in the database"""
 
-    def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, context: dict[str, Any] | None = None):
         """Initialize UserNotFoundError"""
         super().__init__(message, error_code="USER_NOT_FOUND", context=context)
 
@@ -95,9 +95,9 @@ class APIError(SocratesError):
     def __init__(
         self,
         message: str,
-        status_code: Optional[int] = None,
-        error_type: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        status_code: int | None = None,
+        error_type: str | None = None,
+        context: dict[str, Any] | None = None,
     ):
         """Initialize APIError"""
         if context is None:

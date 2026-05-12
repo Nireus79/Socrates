@@ -29,9 +29,9 @@ class CodeService(Service):
     def generate_code(
         self,
         project: "ProjectContext",
-        language: Optional[str] = None,
-        user_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        language: str | None = None,
+        user_id: str | None = None,
+    ) -> dict[str, Any]:
         """Generate code for project.
 
         Args:
@@ -59,8 +59,8 @@ class CodeService(Service):
     def validate_code(
         self,
         project: "ProjectContext",
-        user_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        user_id: str | None = None,
+    ) -> dict[str, Any]:
         """Validate project code.
 
         Args:

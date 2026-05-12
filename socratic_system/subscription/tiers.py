@@ -10,10 +10,10 @@ class TierLimits:
 
     name: str
     monthly_cost: float
-    max_projects: Optional[int]  # None = unlimited
-    max_team_members: Optional[int]  # None = unlimited, 1 = solo only
-    max_questions_per_month: Optional[int]  # None = unlimited
-    storage_gb: Optional[int]  # None = unlimited
+    max_projects: int | None  # None = unlimited
+    max_team_members: int | None  # None = unlimited, 1 = solo only
+    max_questions_per_month: int | None  # None = unlimited
+    storage_gb: int | None  # None = unlimited
     multi_llm_access: bool
     advanced_analytics: bool
     code_generation: bool

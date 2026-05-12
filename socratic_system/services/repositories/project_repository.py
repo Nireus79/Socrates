@@ -43,7 +43,7 @@ class ProjectRepository(Repository[ProjectContext]):
         self.database.save_project(project)
         return project
 
-    def find_by_id(self, project_id: str) -> Optional[ProjectContext]:
+    def find_by_id(self, project_id: str) -> ProjectContext | None:
         """
         Find project by ID.
 
@@ -55,7 +55,7 @@ class ProjectRepository(Repository[ProjectContext]):
         """
         return self.database.load_project(project_id)
 
-    def find_all(self, limit: Optional[int] = None, offset: int = 0) -> List[ProjectContext]:
+    def find_all(self, limit: int | None = None, offset: int = 0) -> list[ProjectContext]:
         """
         Find all projects with optional pagination.
 
@@ -105,7 +105,7 @@ class ProjectRepository(Repository[ProjectContext]):
         """
         return self.find_by_id(project_id) is not None
 
-    def find_by_user(self, user_id: str) -> List[ProjectContext]:
+    def find_by_user(self, user_id: str) -> list[ProjectContext]:
         """
         Find all projects for a user.
 

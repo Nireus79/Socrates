@@ -39,15 +39,15 @@ class EmbeddingCache:
             max_size: Maximum number of embeddings to cache (default: 10000)
                 Recommended: 10000 for 6-15MB memory usage with typical embeddings
         """
-        self._cache: Dict[str, List[float]] = {}
-        self._access_order: List[str] = []
+        self._cache: dict[str, list[float]] = {}
+        self._access_order: list[str] = []
         self._max_size = max_size
         self._hits = 0
         self._misses = 0
         self._lock = threading.RLock()
         self._logger = logging.getLogger("embedding_cache")
 
-    def get(self, text: str) -> Optional[List[float]]:
+    def get(self, text: str) -> list[float] | None:
         """
         Retrieve cached embedding for text.
 
@@ -74,7 +74,7 @@ class EmbeddingCache:
             self._misses += 1
             return None
 
-    def put(self, text: str, embedding: List[float]) -> None:
+    def put(self, text: str, embedding: list[float]) -> None:
         """
         Store embedding in cache.
 
@@ -113,7 +113,7 @@ class EmbeddingCache:
             self._access_order.clear()
             self._logger.info("Embedding cache cleared")
 
-    def stats(self) -> Dict[str, any]:
+    def stats(self) -> dict[str, any]:
         """
         Get cache statistics.
 

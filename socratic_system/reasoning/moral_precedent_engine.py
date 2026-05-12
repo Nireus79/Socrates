@@ -31,12 +31,12 @@ class MoralPrecedent:
     conclusion: PrecedentType
     confidence: float  # 0.0-1.0
     reasoning: str
-    principles_involved: List[str] = field(default_factory=list)
-    context: Dict[str, Any] = field(default_factory=dict)
-    stakeholders_affected: List[str] = field(default_factory=list)
+    principles_involved: list[str] = field(default_factory=list)
+    context: dict[str, Any] = field(default_factory=dict)
+    stakeholders_affected: list[str] = field(default_factory=list)
     created_date: datetime = field(default_factory=datetime.utcnow)
     usage_count: int = 0  # How many times this precedent was referenced
-    related_precedents: List[str] = field(default_factory=list)
+    related_precedents: list[str] = field(default_factory=list)
 
     def __hash__(self):
         """Return hash of this object."""
@@ -77,8 +77,8 @@ class PrecedentQuery:
     action: str
     similarity_threshold: float = 0.5
     max_results: int = 5
-    principle_filter: Optional[List[str]] = None
-    conclusion_filter: Optional[List[PrecedentType]] = None
+    principle_filter: list[str] | None = None
+    conclusion_filter: list[PrecedentType] | None = None
 
 
 @dataclass
@@ -96,10 +96,10 @@ class PrecedentAnalysis:
     """Analysis of precedents related to a deliberation."""
 
     action: str
-    matching_precedents: List[PrecedentMatch] = field(default_factory=list)
+    matching_precedents: list[PrecedentMatch] = field(default_factory=list)
     precedent_consistency: bool = True  # Are precedents consistent with each other?
     consistency_explanation: str = ""
-    recommended_conclusion: Optional[PrecedentType] = None
+    recommended_conclusion: PrecedentType | None = None
     historical_pattern: str = ""  # Description of pattern in precedents
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
@@ -115,14 +115,14 @@ class MoralPrecedentEngine:
     - Precedent-based reasoning support
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """Initialize moral precedent engine.
 
         Args:
             logger: Optional logger instance
         """
         self.logger = logger or logging.getLogger(__name__)
-        self.precedents: Dict[str, MoralPrecedent] = {}
+        self.precedents: dict[str, MoralPrecedent] = {}
         self._id_counter = 0
 
     def store_precedent(
@@ -131,9 +131,9 @@ class MoralPrecedentEngine:
         conclusion: PrecedentType,
         confidence: float,
         reasoning: str,
-        principles_involved: Optional[List[str]] = None,
-        context: Optional[Dict[str, Any]] = None,
-        stakeholders_affected: Optional[List[str]] = None,
+        principles_involved: list[str] | None = None,
+        context: dict[str, Any] | None = None,
+        stakeholders_affected: list[str] | None = None,
     ) -> str:
         """
         Store a new moral precedent.
@@ -172,7 +172,7 @@ class MoralPrecedentEngine:
 
         return precedent_id
 
-    def query_precedents(self, query: PrecedentQuery) -> List[PrecedentMatch]:
+    def query_precedents(self, query: PrecedentQuery) -> list[PrecedentMatch]:
         """
         Find precedents similar to a given action.
 
@@ -226,7 +226,7 @@ class MoralPrecedentEngine:
         return matches
 
     def analyze_precedents(
-        self, action: str, principles: Optional[List[str]] = None
+        self, action: str, principles: list[str] | None = None
     ) -> PrecedentAnalysis:
         """
         Analyze precedents related to an action.
@@ -296,8 +296,8 @@ class MoralPrecedentEngine:
         return analysis
 
     def check_consistency(
-        self, new_conclusion: PrecedentType, matching_precedents: List[MoralPrecedent]
-    ) -> Tuple[bool, str]:
+        self, new_conclusion: PrecedentType, matching_precedents: list[MoralPrecedent]
+    ) -> tuple[bool, str]:
         """
         Check if a new conclusion is consistent with precedents.
 
@@ -347,7 +347,7 @@ class MoralPrecedentEngine:
         # Mixed precedents
         return True, "Precedents mixed; new conclusion could go either way"
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get statistics about stored precedents."""
         if not self.precedents:
             return {

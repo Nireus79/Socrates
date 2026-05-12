@@ -9,7 +9,8 @@ Provides adapters for:
 
 import asyncio
 import logging
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
+from collections.abc import Callable
 
 from socratic_system.messaging.agent_bus import AgentBus
 
@@ -31,9 +32,9 @@ class AgentBusMiddleware:
         self,
         agent_name: str,
         action: str,
-        payload: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = None,
-    ) -> Dict[str, Any]:
+        payload: dict[str, Any] | None = None,
+        timeout: float | None = None,
+    ) -> dict[str, Any]:
         """
         Call another agent via the bus.
 
@@ -59,7 +60,7 @@ class AgentBusMiddleware:
         self,
         agent_name: str,
         action: str,
-        payload: Optional[Dict[str, Any]] = None,
+        payload: dict[str, Any] | None = None,
     ) -> str:
         """
         Call agent without waiting for response.
@@ -84,9 +85,9 @@ class AgentBusMiddleware:
 
     async def call_parallel(
         self,
-        calls: list[tuple[str, str, Dict[str, Any]]],
-        timeout: Optional[float] = None,
-    ) -> Dict[str, Any]:
+        calls: list[tuple[str, str, dict[str, Any]]],
+        timeout: float | None = None,
+    ) -> dict[str, Any]:
         """
         Call multiple agents in parallel.
 
@@ -122,7 +123,7 @@ class AgentBusMiddleware:
         """
         self.agent_bus.register_handler(agent_name, handler)
 
-    def get_bus_status(self) -> Dict[str, Any]:
+    def get_bus_status(self) -> dict[str, Any]:
         """
         Get agent bus status.
 
@@ -152,7 +153,7 @@ class ServiceAgentAdapter:
         target_agent: str,
         action: str,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Make request to agent from service.
 
@@ -173,8 +174,8 @@ class ServiceAgentAdapter:
 
     async def request_multiple(
         self,
-        requests: Dict[str, tuple[str, Dict[str, Any]]],
-    ) -> Dict[str, Any]:
+        requests: dict[str, tuple[str, dict[str, Any]]],
+    ) -> dict[str, Any]:
         """
         Make multiple requests in parallel.
 

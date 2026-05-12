@@ -33,7 +33,7 @@ class MoralityGovernanceIntegration:
 
     def __init__(
         self,
-        constitution_path: Optional[str] = None,
+        constitution_path: str | None = None,
         llm_provider: str = "anthropic",
         enable_dialogue: bool = True,
     ):
@@ -65,10 +65,10 @@ class MoralityGovernanceIntegration:
         self,
         action: str,
         agent_name: str,
-        context: Optional[Dict[str, Any]] = None,
-        purpose: Optional[str] = None,
+        context: dict[str, Any] | None = None,
+        purpose: str | None = None,
         interactive: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Evaluate agent action against constitutional principles.
 
@@ -129,7 +129,7 @@ class MoralityGovernanceIntegration:
             logger.error(f"Error during governance evaluation: {e}", exc_info=True)
             raise
 
-    async def check_constitutional_principles(self, action: str) -> Dict[str, Any]:
+    async def check_constitutional_principles(self, action: str) -> dict[str, Any]:
         """
         Quick check of action against constitutional principles.
 
@@ -155,7 +155,7 @@ class MoralityGovernanceIntegration:
             "confidence": check.confidence,
         }
 
-    async def get_agent_capabilities(self, agent_name: str) -> Dict[str, Any]:
+    async def get_agent_capabilities(self, agent_name: str) -> dict[str, Any]:
         """
         Get authorized capabilities for an agent.
 
@@ -185,7 +185,7 @@ class MoralityGovernanceIntegration:
             "restrictions": caps.get("restrictions", []),
         }
 
-    async def store_decision_precedent(self, action: str, decision: Dict[str, Any]) -> None:
+    async def store_decision_precedent(self, action: str, decision: dict[str, Any]) -> None:
         """
         Store a governance decision as a precedent for future reference.
 
@@ -206,7 +206,7 @@ class MoralityGovernanceIntegration:
         except Exception as e:
             logger.warning(f"Failed to store precedent: {e}")
 
-    async def get_decision_history(self, limit: int = 10) -> list[Dict[str, Any]]:
+    async def get_decision_history(self, limit: int = 10) -> list[dict[str, Any]]:
         """
         Get recent governance decisions.
 
@@ -220,11 +220,11 @@ class MoralityGovernanceIntegration:
 
 
 # Global integration instance
-_morality_integration: Optional[MoralityGovernanceIntegration] = None
+_morality_integration: MoralityGovernanceIntegration | None = None
 
 
 async def initialize_morality_governance(
-    constitution_path: Optional[str] = None,
+    constitution_path: str | None = None,
     llm_provider: str = "anthropic",
     enable_dialogue: bool = True,
 ) -> MoralityGovernanceIntegration:

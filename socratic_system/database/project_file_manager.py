@@ -35,7 +35,7 @@ class ProjectFileManager:
         conn.row_factory = sqlite3.Row  # Allow accessing columns by name
         return conn
 
-    def save_files_batch(self, project_id: str, files: List[Dict[str, str]]) -> Tuple[int, str]:
+    def save_files_batch(self, project_id: str, files: list[dict[str, str]]) -> tuple[int, str]:
         """
         Save multiple files in batch (optimized for performance)
 
@@ -103,7 +103,7 @@ class ProjectFileManager:
             self.logger.error(msg)
             return 0, msg
 
-    def get_project_files(self, project_id: str, offset: int = 0, limit: int = 100) -> List[Dict]:
+    def get_project_files(self, project_id: str, offset: int = 0, limit: int = 100) -> list[dict]:
         """
         Retrieve paginated list of files for a project
 
@@ -171,7 +171,7 @@ class ProjectFileManager:
             self.logger.error(f"Error getting file count: {str(e)}")
             return 0
 
-    def get_file_by_path(self, project_id: str, file_path: str) -> Optional[Dict]:
+    def get_file_by_path(self, project_id: str, file_path: str) -> dict | None:
         """
         Retrieve a single file by project and path
 
@@ -205,7 +205,7 @@ class ProjectFileManager:
             self.logger.error(f"Error retrieving file by path: {str(e)}")
             return None
 
-    def update_file(self, project_id: str, file_info: Dict[str, str]) -> Tuple[bool, str]:
+    def update_file(self, project_id: str, file_info: dict[str, str]) -> tuple[bool, str]:
         """
         Update an existing file
 
@@ -255,7 +255,7 @@ class ProjectFileManager:
             self.logger.error(msg)
             return False, msg
 
-    def delete_file(self, project_id: str, file_path: str) -> Tuple[bool, str]:
+    def delete_file(self, project_id: str, file_path: str) -> tuple[bool, str]:
         """
         Delete a file
 
@@ -296,7 +296,7 @@ class ProjectFileManager:
             self.logger.error(msg)
             return False, msg
 
-    def delete_project_files(self, project_id: str) -> Tuple[int, str]:
+    def delete_project_files(self, project_id: str) -> tuple[int, str]:
         """
         Delete all files for a project
 
@@ -365,7 +365,7 @@ class ProjectFileManager:
             yield batch
             offset += batch_size
 
-    def get_languages_in_project(self, project_id: str) -> List[str]:
+    def get_languages_in_project(self, project_id: str) -> list[str]:
         """
         Get list of programming languages found in project
 
@@ -429,7 +429,7 @@ class ProjectFileManager:
             self.logger.error(f"Error getting total size: {str(e)}")
             return 0
 
-    def get_project_stats(self, project_id: str) -> Dict:
+    def get_project_stats(self, project_id: str) -> dict:
         """
         Get comprehensive statistics about project files
 

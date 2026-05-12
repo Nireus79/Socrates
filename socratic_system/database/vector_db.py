@@ -94,7 +94,7 @@ class VectorDatabase:
                 ) from e
         return self._embedding_model_instance
 
-    def _format_metadata_for_chromadb(self, metadata: Optional[Dict]) -> Dict:
+    def _format_metadata_for_chromadb(self, metadata: dict | None) -> dict:
         """Convert metadata to ChromaDB-compatible format.
 
         ChromaDB only supports primitive types (str, int, float, bool, None).
@@ -283,8 +283,8 @@ class VectorDatabase:
             )
 
     def search_similar(
-        self, query: str, top_k: int = 5, project_id: Optional[str] = None
-    ) -> List[Dict]:
+        self, query: str, top_k: int = 5, project_id: str | None = None
+    ) -> list[dict]:
         """Search for similar knowledge entries
 
         Args:
@@ -346,8 +346,8 @@ class VectorDatabase:
         query: str,
         strategy: str = "snippet",
         top_k: int = 5,
-        project_id: Optional[str] = None,
-    ) -> List[Dict]:
+        project_id: str | None = None,
+    ) -> list[dict]:
         """
         Enhanced search with adaptive content loading.
 
@@ -419,7 +419,7 @@ class VectorDatabase:
             self.logger.warning(f"Adaptive search failed: {e}")
             return []
 
-    def add_text(self, content: str, metadata: Dict = None):
+    def add_text(self, content: str, metadata: dict = None):
         """Add text content directly (for document imports)"""
         if metadata is None:
             metadata = {}
@@ -482,7 +482,7 @@ class VectorDatabase:
             self.logger.warning(f"Failed to add project knowledge: {e}")
             return False
 
-    def get_project_knowledge(self, project_id: str) -> List[Dict]:
+    def get_project_knowledge(self, project_id: str) -> list[dict]:
         """Get all knowledge entries for a specific project
 
         Args:
@@ -509,7 +509,7 @@ class VectorDatabase:
             self.logger.warning(f"Failed to get project knowledge: {e}")
             return []
 
-    def export_project_knowledge(self, project_id: str) -> List[Dict]:
+    def export_project_knowledge(self, project_id: str) -> list[dict]:
         """Export all knowledge entries for a project as JSON-compatible dicts
 
         Args:
@@ -533,7 +533,7 @@ class VectorDatabase:
             self.logger.warning(f"Failed to export project knowledge: {e}")
             return []
 
-    def import_project_knowledge(self, project_id: str, entries: List[Dict]) -> int:
+    def import_project_knowledge(self, project_id: str, entries: list[dict]) -> int:
         """Import knowledge entries for a project
 
         Args:
@@ -566,7 +566,7 @@ class VectorDatabase:
             self.logger.warning(f"Failed to import project knowledge: {e}")
             return count
 
-    def _build_project_filter(self, project_id: Optional[str] = None) -> Optional[Dict]:
+    def _build_project_filter(self, project_id: str | None = None) -> dict | None:
         """Build ChromaDB where filter for project_id
 
         Args:
@@ -618,7 +618,7 @@ class VectorDatabase:
             self.logger.warning(f"Failed to delete project knowledge: {e}")
             return 0
 
-    def count_chunks_by_source(self, source: str, project_id: Optional[str] = None) -> int:
+    def count_chunks_by_source(self, source: str, project_id: str | None = None) -> int:
         """Count chunks (entries) for a specific document source.
 
         Args:
@@ -665,7 +665,7 @@ class VectorDatabase:
             self.logger.error(f"Failed to count chunks for source '{source}': {e}", exc_info=True)
             return 0
 
-    def get_all_chunks_debug(self) -> List[Dict]:
+    def get_all_chunks_debug(self) -> list[dict]:
         """Debug method to list all chunks in the database with their metadata.
 
         Returns:

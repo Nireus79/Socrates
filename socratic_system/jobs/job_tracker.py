@@ -31,13 +31,13 @@ class JobResult:
     project_id: str
     status: JobStatus
     created_at: datetime
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
     progress: float = field(default=0.0)  # 0.0 to 1.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert job result to dictionary for serialization.
 
         Returns:
@@ -69,7 +69,7 @@ class JobTracker:
 
     def __init__(self):
         """Initialize job tracker"""
-        self._jobs: Dict[str, JobResult] = {}
+        self._jobs: dict[str, JobResult] = {}
         self._lock = Lock()
         self._max_jobs = 10000  # Max tracked jobs
         logger.info("JobTracker initialized")
@@ -95,7 +95,7 @@ class JobTracker:
             logger.debug(f"Job created: {job_id} for project {project_id}")
             return job
 
-    def get_job(self, job_id: str) -> Optional[JobResult]:
+    def get_job(self, job_id: str) -> JobResult | None:
         """Get job by ID.
 
         Args:
@@ -119,7 +119,7 @@ class JobTracker:
                 job.started_at = datetime.now()
                 logger.debug(f"Job started: {job_id}")
 
-    def mark_completed(self, job_id: str, result: Dict[str, Any]):
+    def mark_completed(self, job_id: str, result: dict[str, Any]):
         """Mark job as completed with result.
 
         Args:
@@ -226,7 +226,7 @@ class JobTracker:
             if to_delete:
                 logger.info(f"Cleaned up {len(to_delete)} completed jobs")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get job tracker statistics.
 
         Returns:

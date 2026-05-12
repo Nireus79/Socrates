@@ -26,10 +26,10 @@ class BaseCommand(ABC):
         self.name = name
         self.description = description
         self.usage = usage
-        self.subcommands: Dict[str, BaseCommand] = {}
+        self.subcommands: dict[str, BaseCommand] = {}
 
     @abstractmethod
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """
         Execute the command with given arguments.
 
@@ -75,7 +75,7 @@ class BaseCommand(ABC):
         return help_text
 
     def validate_args(
-        self, args: List[str], min_count: int = 0, max_count: Optional[int] = None
+        self, args: list[str], min_count: int = 0, max_count: int | None = None
     ) -> bool:
         """
         Validate argument count.
@@ -94,7 +94,7 @@ class BaseCommand(ABC):
             return False
         return True
 
-    def error(self, message: str) -> Dict[str, Any]:
+    def error(self, message: str) -> dict[str, Any]:
         """
         Create an error response.
 
@@ -106,7 +106,7 @@ class BaseCommand(ABC):
         """
         return {"status": "error", "message": f"{Fore.RED}Error: {message}{Style.RESET_ALL}"}
 
-    def success(self, message: str = "", data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def success(self, message: str = "", data: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         Create a success response.
 
@@ -124,7 +124,7 @@ class BaseCommand(ABC):
             response["data"] = data
         return response
 
-    def info(self, message: str) -> Dict[str, Any]:
+    def info(self, message: str) -> dict[str, Any]:
         """
         Create an info response (displays message but doesn't require action).
 
@@ -136,7 +136,7 @@ class BaseCommand(ABC):
         """
         return {"status": "info", "message": f"{Fore.CYAN}{message}{Style.RESET_ALL}"}
 
-    def require_project(self, context: Dict[str, Any]) -> bool:
+    def require_project(self, context: dict[str, Any]) -> bool:
         """
         Check if a project is currently loaded.
 
@@ -148,7 +148,7 @@ class BaseCommand(ABC):
         """
         return context.get("project") is not None
 
-    def require_user(self, context: Dict[str, Any]) -> bool:
+    def require_user(self, context: dict[str, Any]) -> bool:
         """
         Check if a user is currently logged in.
 

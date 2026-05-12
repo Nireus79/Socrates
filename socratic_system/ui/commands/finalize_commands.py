@@ -25,7 +25,7 @@ class FinalizeGenerateCommand(BaseCommand):
             usage="finalize generate",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute finalize generate command"""
         # Validate context
         validation_error = self._validate_finalize_context(context)
@@ -69,7 +69,7 @@ class FinalizeGenerateCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def _validate_finalize_context(self, context: Dict[str, Any]) -> Dict:
+    def _validate_finalize_context(self, context: dict[str, Any]) -> dict:
         """Validate required context for finalize command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -179,7 +179,7 @@ class FinalizeDocsCommand(BaseCommand):
             usage="finalize docs",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute finalize docs command"""
         if not self.require_project(context):
             return self.error("No project loaded")

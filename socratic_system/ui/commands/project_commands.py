@@ -20,7 +20,7 @@ class ProjectCreateCommand(BaseCommand):
             name="project create", description="Create a new project", usage="project create <name>"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project create command"""
         if not self.require_user(context):
             return self.error("Must be logged in to create a project")
@@ -100,7 +100,7 @@ class ProjectLoadCommand(BaseCommand):
             name="project load", description="Load an existing project", usage="project load"
         )
 
-    def _display_projects(self, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _display_projects(self, result: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Display projects organized by status (active/archived).
 
@@ -138,8 +138,8 @@ class ProjectLoadCommand(BaseCommand):
         return all_projects
 
     def _load_selected_project(
-        self, project_info: Dict[str, Any], orchestrator, app
-    ) -> Dict[str, Any]:
+        self, project_info: dict[str, Any], orchestrator, app
+    ) -> dict[str, Any]:
         """
         Load selected project and update app context.
 
@@ -178,7 +178,7 @@ class ProjectLoadCommand(BaseCommand):
         except ValueError as e:
             return self.error(str(e))
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project load command"""
         if not self.require_user(context):
             return self.error("Must be logged in to load a project")
@@ -227,7 +227,7 @@ class ProjectListCommand(BaseCommand):
             name="project list", description="List all your projects", usage="project list"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project list command"""
         if not self.require_user(context):
             return self.error("Must be logged in to list projects")
@@ -271,7 +271,7 @@ class ProjectArchiveCommand(BaseCommand):
             usage="project archive",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project archive command"""
         if not self.require_project(context):
             return self.error("No project loaded")
@@ -326,7 +326,7 @@ class ProjectRestoreCommand(BaseCommand):
             usage="project restore",
         )
 
-    def _display_archived_projects(self, archived_projects: List[Dict[str, Any]]) -> None:
+    def _display_archived_projects(self, archived_projects: list[dict[str, Any]]) -> None:
         """
         Display archived projects with formatted dates.
 
@@ -350,8 +350,8 @@ class ProjectRestoreCommand(BaseCommand):
             )
 
     def _restore_selected_project(
-        self, project: Dict[str, Any], user, orchestrator
-    ) -> Dict[str, Any]:
+        self, project: dict[str, Any], user, orchestrator
+    ) -> dict[str, Any]:
         """
         Restore a selected archived project.
 
@@ -389,7 +389,7 @@ class ProjectRestoreCommand(BaseCommand):
         else:
             return self.error(result.get("message", "Failed to restore project"))
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project restore command"""
         if not self.require_user(context):
             return self.error("Must be logged in")
@@ -444,8 +444,8 @@ class ProjectDeleteCommand(BaseCommand):
         )
 
     def _get_owned_projects(
-        self, user, orchestrator, result: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, user, orchestrator, result: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """
         Get list of projects owned by the user.
 
@@ -471,7 +471,7 @@ class ProjectDeleteCommand(BaseCommand):
                 )
         return owned_projects
 
-    def _display_owned_projects(self, owned_projects: List[Dict[str, Any]]) -> None:
+    def _display_owned_projects(self, owned_projects: list[dict[str, Any]]) -> None:
         """
         Display owned projects for deletion selection.
 
@@ -490,7 +490,7 @@ class ProjectDeleteCommand(BaseCommand):
             )
             print(f"{i}. {status_indicator} {project['name']} {collab_text}")
 
-    def _confirm_delete(self, project: Dict[str, Any]) -> bool:
+    def _confirm_delete(self, project: dict[str, Any]) -> bool:
         """
         Get double confirmation for project deletion.
 
@@ -520,8 +520,8 @@ class ProjectDeleteCommand(BaseCommand):
         return True
 
     def _delete_selected_project(
-        self, project: Dict[str, Any], user, orchestrator, app
-    ) -> Dict[str, Any]:
+        self, project: dict[str, Any], user, orchestrator, app
+    ) -> dict[str, Any]:
         """
         Delete selected project after confirmation.
 
@@ -558,7 +558,7 @@ class ProjectDeleteCommand(BaseCommand):
         else:
             return self.error(result.get("message", "Failed to delete project"))
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project delete command"""
         if not self.require_user(context):
             return self.error("Must be logged in")
@@ -627,7 +627,7 @@ class ProjectAnalyzeCommand(BaseCommand):
             usage="project analyze [project-id]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project analyze command"""
         if not self._validate_analyze_context(context):
             return self.error("Context validation failed")
@@ -661,7 +661,7 @@ class ProjectAnalyzeCommand(BaseCommand):
             self.print_error(f"Analysis error: {str(e)}")
             return self.error(f"Analysis error: {str(e)}")
 
-    def _validate_analyze_context(self, context: Dict[str, Any]) -> bool:
+    def _validate_analyze_context(self, context: dict[str, Any]) -> bool:
         """Validate context for analyze command"""
         if not self.require_user(context):
             return False
@@ -694,7 +694,7 @@ class ProjectAnalyzeCommand(BaseCommand):
             return None
         return clone_result
 
-    def _perform_code_analysis(self, project: Any, temp_path: str) -> Dict[str, Any]:
+    def _perform_code_analysis(self, project: Any, temp_path: str) -> dict[str, Any]:
         """Perform code structure analysis on the cloned repository"""
         from pathlib import Path
 
@@ -760,7 +760,7 @@ class ProjectAnalyzeCommand(BaseCommand):
 
         return analysis
 
-    def _run_analyze_validation(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
+    def _run_analyze_validation(self, orchestrator: Any, project_path: str) -> dict[str, Any]:
         """Run validation to get code quality metrics"""
         return safe_orchestrator_call(
             orchestrator,
@@ -774,7 +774,7 @@ class ProjectAnalyzeCommand(BaseCommand):
         )
 
     def _display_analyze_results(
-        self, analysis: Dict[str, Any], validation_result: Dict[str, Any], project: Any
+        self, analysis: dict[str, Any], validation_result: dict[str, Any], project: Any
     ) -> None:
         """Display analysis and validation results"""
         summary = validation_result.get("validation_summary", {})
@@ -835,7 +835,7 @@ class ProjectTestCommand(BaseCommand):
             usage="project test [project-id]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project test command"""
         if not self._validate_test_context(context):
             return self.error("Context validation failed")
@@ -874,7 +874,7 @@ class ProjectTestCommand(BaseCommand):
             self.print_error(f"Test execution error: {str(e)}")
             return self.error(f"Test execution error: {str(e)}")
 
-    def _validate_test_context(self, context: Dict[str, Any]) -> bool:
+    def _validate_test_context(self, context: dict[str, Any]) -> bool:
         """Validate context for test command"""
         if not self.require_user(context):
             return False
@@ -907,7 +907,7 @@ class ProjectTestCommand(BaseCommand):
             return None
         return clone_result
 
-    def _run_project_tests(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
+    def _run_project_tests(self, orchestrator: Any, project_path: str) -> dict[str, Any]:
         """Run tests on the project using CodeValidationAgent"""
         return safe_orchestrator_call(
             orchestrator,
@@ -920,7 +920,7 @@ class ProjectTestCommand(BaseCommand):
             operation_name="run_tests",
         )
 
-    def _display_test_results(self, results: Dict[str, Any]) -> None:
+    def _display_test_results(self, results: dict[str, Any]) -> None:
         """Display test execution results"""
         self.print_success("Test execution complete!")
 
@@ -960,7 +960,7 @@ class ProjectFixCommand(BaseCommand):
             usage="project fix [issue-type]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project fix command"""
         if not self._validate_fix_context(context):
             return self.error("Context validation failed")
@@ -1024,7 +1024,7 @@ class ProjectFixCommand(BaseCommand):
             self.print_error(f"Fix error: {str(e)}")
             return self.error(f"Fix error: {str(e)}")
 
-    def _validate_fix_context(self, context: Dict[str, Any]) -> bool:
+    def _validate_fix_context(self, context: dict[str, Any]) -> bool:
         """Validate context for fix command"""
         if not self.require_user(context):
             return False
@@ -1049,7 +1049,7 @@ class ProjectFixCommand(BaseCommand):
 
         return True
 
-    def _get_and_validate_issue_type(self, args: List[str]) -> str:
+    def _get_and_validate_issue_type(self, args: list[str]) -> str:
         """Get and validate issue type"""
         issue_type = args[0] if args else "all"
         valid_types = {"syntax", "style", "dependencies", "all"}
@@ -1069,8 +1069,8 @@ class ProjectFixCommand(BaseCommand):
         return clone_result
 
     def _gather_fixable_issues(
-        self, validation_data: Dict[str, Any], issue_type: str
-    ) -> List[tuple]:
+        self, validation_data: dict[str, Any], issue_type: str
+    ) -> list[tuple]:
         """Gather fixable issues from validation data"""
         issues = []
 
@@ -1084,7 +1084,7 @@ class ProjectFixCommand(BaseCommand):
 
         return issues
 
-    def _display_issues(self, issues: List[tuple]) -> None:
+    def _display_issues(self, issues: list[tuple]) -> None:
         """Display found issues"""
         print(f"\n{Fore.YELLOW}Issues Found:{Style.RESET_ALL}")
         for i, (itype, issue) in enumerate(issues, 1):
@@ -1099,7 +1099,7 @@ class ProjectFixCommand(BaseCommand):
             return False
         return True
 
-    def _apply_fixes(self, issues: List[tuple], temp_path: str) -> int:
+    def _apply_fixes(self, issues: list[tuple], temp_path: str) -> int:
         """Apply fixes to identified issues"""
 
         fixes_applied = 0
@@ -1133,7 +1133,7 @@ class ProjectFixCommand(BaseCommand):
             print(f"{Fore.YELLOW}[SKIP] Could not add dependencies: {e}{Style.RESET_ALL}")
             return 0
 
-    def _display_fix_summary(self, issues: List[tuple], fixes_applied: int) -> None:
+    def _display_fix_summary(self, issues: list[tuple], fixes_applied: int) -> None:
         """Display fix summary"""
         print(f"\n{Fore.CYAN}Fix Summary:{Style.RESET_ALL}")
         print(f"  Issues processed: {len(issues)}")
@@ -1156,7 +1156,7 @@ class ProjectValidateCommand(BaseCommand):
             usage="project validate [project-id]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project validate command"""
         if not self._validate_cmd_context(context):
             return self.error("Context validation failed")
@@ -1194,7 +1194,7 @@ class ProjectValidateCommand(BaseCommand):
             self.print_error(f"Validation error: {str(e)}")
             return self.error(f"Validation error: {str(e)}")
 
-    def _validate_cmd_context(self, context: Dict[str, Any]) -> bool:
+    def _validate_cmd_context(self, context: dict[str, Any]) -> bool:
         """Validate context for validate command"""
         if not self.require_user(context):
             return False
@@ -1227,7 +1227,7 @@ class ProjectValidateCommand(BaseCommand):
             return None
         return clone_result
 
-    def _run_validation(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
+    def _run_validation(self, orchestrator: Any, project_path: str) -> dict[str, Any]:
         """Run validation pipeline"""
         return safe_orchestrator_call(
             orchestrator,
@@ -1240,7 +1240,7 @@ class ProjectValidateCommand(BaseCommand):
             operation_name="validate_project",
         )
 
-    def _display_validation_results(self, validation_result: Dict[str, Any]) -> None:
+    def _display_validation_results(self, validation_result: dict[str, Any]) -> None:
         """Display all validation results"""
         summary = validation_result.get("validation_summary", {})
         results = validation_result.get("validation_results", {})
@@ -1251,7 +1251,7 @@ class ProjectValidateCommand(BaseCommand):
         self._display_detailed_results(results)
         self._display_recommendations(recommendations)
 
-    def _display_summary(self, summary: Dict[str, Any]) -> None:
+    def _display_summary(self, summary: dict[str, Any]) -> None:
         """Display validation summary"""
         overall = summary.get("overall_status", "unknown").upper()
         color = self._get_status_color(overall)
@@ -1269,7 +1269,7 @@ class ProjectValidateCommand(BaseCommand):
             return Fore.YELLOW
         return Fore.RED
 
-    def _display_detailed_results(self, results: Dict[str, Any]) -> None:
+    def _display_detailed_results(self, results: dict[str, Any]) -> None:
         """Display detailed validation results"""
         syntax = results.get("syntax", {})
         deps = results.get("dependencies", {})
@@ -1279,7 +1279,7 @@ class ProjectValidateCommand(BaseCommand):
         self._display_dependency_results(deps)
         self._display_test_results(tests)
 
-    def _display_syntax_results(self, syntax: Dict[str, Any]) -> None:
+    def _display_syntax_results(self, syntax: dict[str, Any]) -> None:
         """Display syntax validation results"""
         print(f"\n{Fore.CYAN}Syntax Validation:{Style.RESET_ALL}")
         print(f"  Status: {'PASS' if syntax.get('valid') else 'FAIL'}")
@@ -1287,7 +1287,7 @@ class ProjectValidateCommand(BaseCommand):
             issues = syntax.get("issues", [])
             print(f"  Issues: {len(issues)}")
 
-    def _display_dependency_results(self, deps: Dict[str, Any]) -> None:
+    def _display_dependency_results(self, deps: dict[str, Any]) -> None:
         """Display dependency validation results"""
         print(f"\n{Fore.CYAN}Dependency Validation:{Style.RESET_ALL}")
         print(f"  Status: {'PASS' if deps.get('valid') else 'FAIL'}")
@@ -1299,7 +1299,7 @@ class ProjectValidateCommand(BaseCommand):
         if meta.get("unused_dependencies"):
             print(f"  Unused: {len(meta.get('unused_dependencies', []))}")
 
-    def _display_test_results(self, tests: Dict[str, Any]) -> None:
+    def _display_test_results(self, tests: dict[str, Any]) -> None:
         """Display test validation results"""
         print(f"\n{Fore.CYAN}Tests:{Style.RESET_ALL}")
         if tests.get("tests_found"):
@@ -1308,7 +1308,7 @@ class ProjectValidateCommand(BaseCommand):
         else:
             print("  No tests found")
 
-    def _display_recommendations(self, recommendations: List[str]) -> None:
+    def _display_recommendations(self, recommendations: list[str]) -> None:
         """Display recommendations"""
         if not recommendations:
             return
@@ -1328,7 +1328,7 @@ class ProjectReviewCommand(BaseCommand):
             usage="project review [project-id]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project review command"""
         if not self.require_user(context):
             return self.error("Must be logged in")
@@ -1489,7 +1489,7 @@ class ProjectDiffCommand(BaseCommand):
             usage="project diff [project-id]",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute project diff command"""
         if not self._validate_diff_context(context):
             return self.error("Context validation failed")
@@ -1531,7 +1531,7 @@ class ProjectDiffCommand(BaseCommand):
             self.print_error(f"Diff error: {str(e)}")
             return self.error(f"Diff error: {str(e)}")
 
-    def _validate_diff_context(self, context: Dict[str, Any]) -> bool:
+    def _validate_diff_context(self, context: dict[str, Any]) -> bool:
         """Validate context for diff command"""
         if not self.require_user(context):
             return False
@@ -1557,7 +1557,7 @@ class ProjectDiffCommand(BaseCommand):
             return None
         return clone_result
 
-    def _run_diff_validation(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
+    def _run_diff_validation(self, orchestrator: Any, project_path: str) -> dict[str, Any]:
         """Run validation for diff operation"""
         return safe_orchestrator_call(
             orchestrator,
@@ -1571,7 +1571,7 @@ class ProjectDiffCommand(BaseCommand):
         )
 
     def _display_validation_comparison(
-        self, old_summary: Dict[str, Any], new_summary: Dict[str, Any]
+        self, old_summary: dict[str, Any], new_summary: dict[str, Any]
     ) -> None:
         """Display validation comparison"""
         print(f"\n{Fore.CYAN}Validation Changes:{Style.RESET_ALL}")
@@ -1611,7 +1611,7 @@ class ProjectDiffCommand(BaseCommand):
             print(f"{Fore.YELLOW}[No change]{Style.RESET_ALL}")
 
     def _display_status_change(
-        self, old_summary: Dict[str, Any], new_summary: Dict[str, Any]
+        self, old_summary: dict[str, Any], new_summary: dict[str, Any]
     ) -> None:
         """Display overall status change"""
         old_status = old_summary.get("overall_status", "unknown")
@@ -1621,7 +1621,7 @@ class ProjectDiffCommand(BaseCommand):
             print(f"\n  Status: {old_status} -> {new_status}")
 
     def _display_first_validation(
-        self, new_issues: int, new_warnings: int, new_summary: Dict[str, Any]
+        self, new_issues: int, new_warnings: int, new_summary: dict[str, Any]
     ) -> None:
         """Display first validation data"""
         new_status = new_summary.get("overall_status", "unknown")

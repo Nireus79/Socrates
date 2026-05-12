@@ -17,7 +17,7 @@ class AnalysisCache(ABC):
     """Base class for analysis result caching"""
 
     @abstractmethod
-    def get(self, key: str) -> Optional[Dict[str, Any]]:
+    def get(self, key: str) -> dict[str, Any] | None:
         """Get cached value by key.
 
         Args:
@@ -29,7 +29,7 @@ class AnalysisCache(ABC):
         pass
 
     @abstractmethod
-    def set(self, key: str, value: Dict[str, Any], ttl: int = 3600):
+    def set(self, key: str, value: dict[str, Any], ttl: int = 3600):
         """Set cache value with TTL.
 
         Args:
@@ -68,12 +68,12 @@ class InMemoryAnalysisCache(AnalysisCache):
 
     def __init__(self):
         """Initialize in-memory cache"""
-        self._cache: Dict[str, tuple] = {}  # {key: (value, expiry_time)}
+        self._cache: dict[str, tuple] = {}  # {key: (value, expiry_time)}
         self._lock = Lock()
         self._max_size = 10000  # Max cache entries
         logger.info("InMemoryAnalysisCache initialized")
 
-    def get(self, key: str) -> Optional[Dict[str, Any]]:
+    def get(self, key: str) -> dict[str, Any] | None:
         """Get cached value by key, respecting TTL.
 
         Args:
@@ -98,7 +98,7 @@ class InMemoryAnalysisCache(AnalysisCache):
             logger.debug(f"Cache hit: {key}")
             return value
 
-    def set(self, key: str, value: Dict[str, Any], ttl: int = 3600):
+    def set(self, key: str, value: dict[str, Any], ttl: int = 3600):
         """Set cache value with TTL.
 
         Args:
@@ -153,7 +153,7 @@ class InMemoryAnalysisCache(AnalysisCache):
         with self._lock:
             return len(self._cache)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics"""
         with self._lock:
             current_time = time.time()
