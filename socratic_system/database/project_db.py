@@ -80,13 +80,16 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
+            # Enable WAL mode for better concurrent access
+            self._enable_wal_mode(cursor)
+
             # Enable foreign keys globally for proper cascading deletes
             self._enable_foreign_keys(cursor)
 
             # Test if V2 tables exist
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='projects'")
             if cursor.fetchone():
-                self.logger.info("V2 schema already exists (foreign keys enabled)")
+                self.logger.info("V2 schema already exists (WAL and foreign keys enabled)")
                 # Still need to ensure migrations are applied
                 conn.close()
                 self._ensure_migrations()
@@ -102,7 +105,7 @@ class ProjectDatabase:
 
             cursor.executescript(schema_sql)
             conn.commit()
-            self.logger.info("V2 schema initialized with foreign keys enabled")
+            self.logger.info("V2 schema initialized with WAL and foreign keys enabled")
 
         finally:
             conn.close()
@@ -141,6 +144,26 @@ class ProjectDatabase:
                 self.logger.warning("Failed to enable foreign keys - cascade deletes may not work")
         except Exception as e:
             self.logger.error(f"Error enabling foreign keys: {e}")
+
+    def _enable_wal_mode(self, cursor: sqlite3.Cursor) -> None:
+        """
+        Enable Write-Ahead Logging (WAL) mode for better concurrent access
+
+        WAL mode improves concurrent database access by allowing readers and writers
+        to work concurrently. This fixes issues where separate connections may not
+        see each other's committed changes due to SQLite's isolation levels.
+
+        Must be called on database initialization to enable WAL globally.
+        """
+        try:
+            cursor.execute("PRAGMA journal_mode = WAL")
+            result = cursor.fetchone()
+            if result and result[0].upper() == "WAL":
+                self.logger.debug("WAL mode enabled for database")
+            else:
+                self.logger.warning(f"Failed to enable WAL mode - got {result}")
+        except Exception as e:
+            self.logger.error(f"Error enabling WAL mode: {e}")
 
     def _get_cascade_delete_counts(self, cursor: sqlite3.Cursor, project_id: str) -> dict[str, int]:
         """
@@ -229,6 +252,10 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
+            # Ensure WAL and foreign keys are enabled for this connection
+            self._enable_wal_mode(cursor)
+            self._enable_foreign_keys(cursor)
+
             now = datetime.now()
             self._save_main_project_record(cursor, project, now)
             self._delete_project_related_records(cursor, project.project_id)
@@ -658,7 +685,8 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
-            # Explicitly enable foreign keys to ensure cascade deletes work
+            # Ensure WAL and foreign keys are enabled for this connection
+            self._enable_wal_mode(cursor)
             self._enable_foreign_keys(cursor)
 
             # Get cascading delete counts before deletion for logging

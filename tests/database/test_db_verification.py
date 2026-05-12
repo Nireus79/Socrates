@@ -173,6 +173,15 @@ class TestProjectOperations:
             db_path = f.name
 
         db_instance = ProjectDatabase(db_path)
+
+        # Create test user for project foreign key constraint
+        from socratic_system.models.user import User
+
+        test_user = User(
+            username="testuser", email="test@test.com", passcode_hash="hash", created_at=datetime.now()
+        )
+        db_instance.save_user(test_user)
+
         yield db_instance
 
         if os.path.exists(db_path):

@@ -37,6 +37,13 @@ def temp_db():
     with tempfile.TemporaryDirectory() as tmpdir:
         db_path = os.path.join(tmpdir, "test.db")
         db = ProjectDatabase(db_path)
+
+        # Create test user for project foreign key constraint
+        test_user = User(
+            username="testuser", email="test@test.com", passcode_hash="hash", created_at=datetime.datetime.now()
+        )
+        db.save_user(test_user)
+
         yield db
 
 

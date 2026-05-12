@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS project_files (
     file_size INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
     UNIQUE(project_id, file_path)
 );
 
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS repository_metadata (
     branch TEXT DEFAULT 'main',
     last_sync_timestamp TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 
 -- Create table for code validation results
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS code_validation_results (
     result TEXT,
     severity TEXT CHECK (severity IN ('info', 'warning', 'error')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 
 -- Create indexes for efficient queries
