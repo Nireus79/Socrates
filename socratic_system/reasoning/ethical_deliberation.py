@@ -244,7 +244,7 @@ class EthicalDeliberation:
             # Increase confidence if affects vulnerable
             confidence = sum(
                 conf
-                for conc, conf in zip(conclusions, confidences)
+                for conc, conf in zip(conclusions, confidences, strict=False)
                 if conc == EthicalConclusion.BLOCKED
             ) / max(block_count, 1)
 
@@ -265,7 +265,7 @@ class EthicalDeliberation:
         else:  # Majority allow
             confidence = sum(
                 conf
-                for conc, conf in zip(conclusions, confidences)
+                for conc, conf in zip(conclusions, confidences, strict=False)
                 if conc == EthicalConclusion.ALLOWED
             ) / max(allow_count, 1)
             return EthicalConclusion.ALLOWED, confidence

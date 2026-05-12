@@ -10,7 +10,6 @@ Tests complete user journeys:
 """
 
 import time
-from typing import Tuple
 
 import pytest
 import requests
@@ -23,7 +22,7 @@ API_URL = "http://localhost:8008"
 class TestAuthenticationWorkflow:
     """Test user registration and authentication flow."""
 
-    def test_user_registration_login_flow(self) -> Tuple[str, str]:
+    def test_user_registration_login_flow(self) -> tuple[str, str]:
         """Test user can register and login."""
         timestamp = int(time.time())
 

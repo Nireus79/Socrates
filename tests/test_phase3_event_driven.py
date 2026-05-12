@@ -167,7 +167,7 @@ class TestJobQueue(unittest.IsolatedAsyncioTestCase):
         """Clean up"""
         try:
             await asyncio.wait_for(self.queue.stop_workers(), timeout=10.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # Force cleanup if stop_workers hangs
             self.queue.workers.clear()
         finally:

@@ -46,7 +46,7 @@ except (ImportError, ModuleNotFoundError):
             if len(vec1) != len(vec2):
                 return 0.0
 
-            dot_product = sum(x * y for x, y in zip(vec1, vec2))
+            dot_product = sum(x * y for x, y in zip(vec1, vec2, strict=False))
             mag1 = math.sqrt(sum(x * x for x in vec1))
             mag2 = math.sqrt(sum(x * x for x in vec2))
 

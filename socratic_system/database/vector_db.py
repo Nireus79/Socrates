@@ -327,7 +327,10 @@ class VectorDatabase:
             search_results = [
                 {"content": doc, "metadata": meta, "score": dist}
                 for doc, meta, dist in zip(
-                    results["documents"][0], results["metadatas"][0], results["distances"][0]
+                    results["documents"][0],
+                    results["metadatas"][0],
+                    results["distances"][0],
+                    strict=False,
                 )
             ]
 
@@ -501,7 +504,7 @@ class VectorDatabase:
             return [
                 {"id": entry_id, "content": doc, "metadata": meta}
                 for entry_id, doc, meta in zip(
-                    results["ids"], results["documents"], results["metadatas"]
+                    results["ids"], results["documents"], results["metadatas"], strict=False
                 )
             ]
         except Exception as e:
