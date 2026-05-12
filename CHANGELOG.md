@@ -9,6 +9,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Added
+
+### Fixed
+
+## [0.2.0] - 2026-05-12
+
+### Added
+
+- **PyPI Publication Ready** - Consolidated package structure for unified PyPI distribution
+  - Single `socrates-ai` package on PyPI (previously fragmented across multiple packages)
+  - CLI and API now included as internal modules with entry points
+  - Unified dependency management in `pyproject.toml`
+
+### Changed
+
+- **Package Consolidation** - All components now shipped as single `socrates-ai` package
+  - `socrates-api/` - FastAPI REST server (internal module)
+  - `socrates-cli/` - Click-based CLI (internal module)
+  - `socratic_system/` - Core orchestration system
+  - Installation: `pip install socrates-ai`
+
+- **Version Reset** - Bumped to 0.2.0 (Beta) for clean PyPI publication
+  - Previous versions (0.1.x) were pre-release iterations
+  - 0.2.0 represents stable beta for public distribution
+
+- **Docker Build Pipeline** - Enhanced CI/CD for multi-architecture image builds
+  - Increased API build timeout to 45 minutes (accommodates Python dependency compilation)
+  - Updated GitHub Actions to Node.js 24 compatible versions
+  - Fixed duplicate stage in Dockerfile.api
+  - Removed redundant docker-build-push.yml workflow (single source of truth: docker-publish.yml)
+  - Images now published to GitHub Container Registry (ghcr.io)
+
+- **Specs Confirmation Workflow** - Implemented Socrates-M behavior for specs handling
+  - Debug mode OFF: Specs automatically saved silently (no user confirmation needed)
+  - Debug mode ON: Specs shown to user with confirmation dialog before saving
+  - Added `requires_confirmation` flag to chat message responses
+  - Deferred specs update in debug mode until user confirms via `/save-extracted-specs` endpoint
+  - Matches Socrates-M reference implementation behavior
+
+- **Async/Await Architecture** - Standardized async/await patterns throughout codebase
+  - Fixed 26+ missing awaits on async `send_request()` calls across API routes
+  - Replaced sync `emit()` with `await emit_async()` in async contexts
+  - Corrected async method calls to sync `send_request_sync()` variants
+  - Ensured proper async context handling in background event processing
+  - All API routes now properly await async agent bus calls
+
+- **Package Naming** - Standardized package names to follow AI naming convention
+  - Single `socrates-ai` package (replaces `socrates-ai-cli` and `socrates-ai-api`)
+  - Ensures consistency with AI-focused branding
+
+### Fixed
+
+- **Docker Build Failures** - Resolved GitHub Actions workflow issues
+  - Fixed API build timeout (30 min → 45 min) - was failing at 32m51s
+  - Updated action versions for Node.js 24 compatibility
+  - Fixed duplicate stage definition in Dockerfile.api
+
+- **Async Context Violations** - Corrected async/await patterns in multiple files
+  - `agent_adapter.py` line 135: Changed `send_request_sync()` to `await send_request()` in async `handle_request()` method
+  - `knowledge.py` routes (3 locations): Changed sync `emit()` to `await emit_async()` in async import functions
+  - `knowledge_analysis.py` line 193: Changed `emit_event()` to `await emit_async()` in async `_handle_document_imported_async()` method
+  - `knowledge_analysis.py` line 155: Added missing `except` clause to sync event handler try block
+  - Prevents RuntimeError when calling sync methods from async contexts
+  - Ensures proper event loop handling for background processing
+
+- **Event Emission** - Fixed event emitter usage in background handlers
+  - `background_handlers.py`: Updated 6 emit() calls to await emit_async() in async methods
+  - Lines 159, 187, 232, 258, 303, 329: All background analysis completion events now use async emission
+  - Prevents blocking the event loop during quality, conflict, and insight analysis
+
+- **Docker Workflow** - Fixed Docker build and publish pipeline
+  - Fixed Alpine-incompatible healthcheck in frontend Dockerfile (wget → shell-based check)
+
+### Changed
+
 - **Specs Confirmation Workflow** - Implemented Socrates-M behavior for specs handling
   - Debug mode OFF: Specs automatically saved silently (no user confirmation needed)
   - Debug mode ON: Specs shown to user with confirmation dialog before saving
