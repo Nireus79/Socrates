@@ -203,9 +203,7 @@ class VectorDatabase:
             self._handle_embedding_error(e, entry)
         except Exception as e:
             # Catch unexpected exceptions but re-raise for caller to handle
-            self.logger.warning(
-                f"Unexpected error generating embedding for entry {entry.id}: {e}"
-            )
+            self.logger.warning(f"Unexpected error generating embedding for entry {entry.id}: {e}")
             raise
 
     def _handle_embedding_error(self, error: Exception, entry: KnowledgeEntry) -> None:
@@ -225,7 +223,9 @@ class VectorDatabase:
             # Check if model property is available
             embedding_model = self.embedding_model
             if embedding_model is None:
-                self.logger.warning(f"Embedding model recovery failed - model is None for entry {entry.id}")
+                self.logger.warning(
+                    f"Embedding model recovery failed - model is None for entry {entry.id}"
+                )
                 raise RuntimeError("Embedding model is unavailable")
 
             embedding_result = embedding_model.encode(entry.content)
