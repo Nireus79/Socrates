@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [0.2.0.post1] - 2026-05-12
+
+### Fixed
+
+- **PyPI Upload** - Published as `0.2.0.post1` instead of `0.2.0` due to PyPI filename reuse restrictions
+  - Previous `0.2.0` filenames were reserved and deleted on PyPI
+  - Using post-release version (PEP 440) to work around PyPI's permanent filename reservation policy
+
 ## [0.2.0] - 2026-05-12
 
 ### Added
