@@ -44,12 +44,12 @@ services:
 
 **Build time**: ~5-10 minutes (first time), ~2 minutes (cached)
 
-### Option 2: Use Pre-Built from Docker Hub (Production)
+### Option 2: Use Pre-Built from GitHub Container Registry (Production)
 ```yaml
 services:
   api:
-    image: nireus79/socrates-api:latest
-    # Uses pre-built image from Docker Hub
+    image: ghcr.io/Nireus79/Socrates/api:latest
+    # Uses pre-built image from GitHub Container Registry
     # Suitable for: Quick deployments, production
 ```
 
@@ -191,75 +191,46 @@ Ensures:
 ```
 
 ### Using GitHub Actions (Automated)
-We've set up automated Docker builds in `.github/workflows/docker-build-push.yml`:
-
-```yaml
-name: Build and Push Docker Images
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:      # Can manually trigger
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push API
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./Dockerfile.api
-          push: true
-          tags: nireus79/socrates-api:latest
-
-      - name: Build and push Web
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./Dockerfile.reverse-proxy
-          push: true
-          tags: nireus79/socrates-web:latest
-```
+We've set up automated Docker builds in `.github/workflows/docker-publish.yml`:
 
 **How it works**:
 1. Push code to GitHub
 2. GitHub Actions automatically triggers
-3. Builds Docker images
-4. Pushes to Docker Hub
-5. Available as `nireus79/socrates-api:latest`
+3. Builds Docker images (multi-platform: amd64, arm64)
+4. Scans for vulnerabilities with Trivy
+5. Tests images for functionality
+6. Pushes to GitHub Container Registry (GHCR)
+7. Images available as `ghcr.io/Nireus79/Socrates/api:latest`
+
+**Image Tags**:
+- `latest` - Latest on main branch
+- `main` - Current main branch
+- `v1.0.0` - Semantic version tags
+- `sha-abc1234` - Commit SHA (for traceability)
 
 ### Manual Build & Push (If Needed)
 ```bash
 # Build locally
-docker build -f Dockerfile.api -t nireus79/socrates-api:latest .
-docker build -f Dockerfile.reverse-proxy -t nireus79/socrates-web:latest .
+docker build -f Dockerfile.api -t ghcr.io/Nireus79/Socrates/api:latest .
+docker build -f socrates-frontend/Dockerfile -t ghcr.io/Nireus79/Socrates/frontend:latest .
 
-# Login to Docker Hub
-docker login
+# Login to GitHub Container Registry
+docker login ghcr.io
 
 # Push
-docker push nireus79/socrates-api:latest
-docker push nireus79/socrates-web:latest
+docker push ghcr.io/Nireus79/Socrates/api:latest
+docker push ghcr.io/Nireus79/Socrates/frontend:latest
 ```
 
 ---
 
-## Running from Docker Hub
+## Running from GitHub Container Registry
 
 ### Single Command
 ```bash
 docker run -e ANTHROPIC_API_KEY=sk-ant-xxxxx \
            -p 8000:8000 \
-           nireus79/socrates-api:latest
+           ghcr.io/Nireus79/Socrates/api:latest
 ```
 
 ### With Docker Compose
@@ -269,7 +240,7 @@ version: '3.8'
 
 services:
   api:
-    image: nireus79/socrates-api:latest  # Pre-built from Docker Hub
+    image: ghcr.io/Nireus79/Socrates/api:latest  # Pre-built from GitHub Container Registry
     ports:
       - "8000:8000"
     environment:

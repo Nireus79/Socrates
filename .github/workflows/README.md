@@ -275,6 +275,12 @@ trivy image ghcr.io/owner/socrates/api:latest
 **Docker build cache:**
 - Caching is automatic via GitHub Actions cache
 - Layer caching reduces build time significantly
+- Multi-platform builds (amd64, arm64) cached separately
+
+**API build timeout:**
+- Set to 45 minutes to accommodate Python dependency compilation
+- First builds take 30-35 minutes (cached in subsequent builds)
+- Depends on complexity of installed packages
 
 **Test parallelization:**
 - Tests run in parallel with pytest-xdist
@@ -405,16 +411,34 @@ Workflows include integrations for:
 
 ### Typical Workflow Times
 
-- **docker-publish.yml**: 8-12 minutes (includes scanning, testing)
+- **docker-publish.yml**: 35-50 minutes (includes Docker builds, scanning, testing)
+  - API build: 30-35 minutes (Python dependency compilation)
+  - Frontend build: 2-3 minutes (Node.js build)
+  - Security scan: 5-8 minutes
+  - Image tests: 3-5 minutes
 - **tests.yml**: 5-8 minutes (pytest across Python versions)
 - **code-quality.yml**: 3-5 minutes (linting, type checking)
 
 ### Optimization Tips
 
 1. Use workflow cache for dependencies
-2. Parallelize jobs where possible
+2. Parallelize jobs where possible (API and frontend build in parallel)
 3. Use Ubuntu latest runner (faster)
 4. Skip unnecessary jobs for non-code changes
+5. First API build takes longer due to dependency compilation; subsequent builds use cache
+
+## Action Versions & Updates
+
+### Current Versions (Node.js 24 Compatible)
+
+- `docker/setup-buildx-action@v4` - Multi-platform Docker builds
+- `docker/login-action@v4` - Registry authentication
+- `docker/build-push-action@v6` - Building and pushing images
+- `docker/metadata-action@v5` - Image metadata extraction
+- `actions/checkout@v4` - Repository checkout
+- `actions/upload-artifact@v4` - Artifact storage
+
+These versions support Node.js 24, which becomes the default on GitHub Actions June 2, 2026.
 
 ## Resources
 

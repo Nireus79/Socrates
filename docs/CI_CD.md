@@ -276,11 +276,22 @@ View workflow status at:
 - **Caching**: pip cache is used to speed up dependency installation
 - **Selective testing**: Different test suites run on different OS to balance load
 
+### Docker Build Optimization
+
+- **Multi-platform caching**: GitHub Actions cache speeds up builds significantly
+- **Layer caching**: Docker layers are cached between builds
+- **Parallel builds**: API and frontend build in parallel
+- **Timeout**: 45 minutes allocated for API builds (accounts for Python dependency compilation)
+
 ### Typical Build Time
 
 - **Test workflow**: 10-15 minutes (parallel across platforms)
 - **Lint workflow**: 3-5 minutes
-- **Publish workflow**: 10-20 minutes (includes building and publishing)
+- **Publish workflow**: 35-50 minutes (includes Docker builds, scanning, testing)
+  - API image build: ~30-35 minutes (Python dependencies)
+  - Frontend image build: ~2-3 minutes (Node.js build)
+  - Security scanning: ~5-8 minutes
+  - Image testing: ~3-5 minutes
 - **Release workflow**: 5-10 minutes
 
 ## Troubleshooting
