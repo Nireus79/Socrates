@@ -1,9 +1,16 @@
 services:
   # API backend service
+  # Option 1: Build locally (default)
+  #   Uncomment 'build' and comment 'image' to build from Dockerfile
+  # Option 2: Pull from Docker Hub
+  #   Uncomment 'image' and comment 'build' to use pre-built image from nireus79/socrates-api
   api:
+    # Uncomment for local build:
     build:
       context: .
       dockerfile: Dockerfile.api
+    # Uncomment for Docker Hub image (comment out 'build' section above):
+    # image: nireus79/socrates-api:latest
     container_name: socrates-api
     environment:
       # Listen on 0.0.0.0 for Docker networking (required for reverse proxy to reach it)
@@ -47,10 +54,17 @@ services:
       - redis_data:/data
 
   # Frontend builder and reverse proxy
+  # Option 1: Build locally (default)
+  #   Uncomment 'build' and comment 'image' to build from Dockerfile
+  # Option 2: Pull from Docker Hub
+  #   Uncomment 'image' and comment 'build' to use pre-built image from nireus79/socrates-web
   web:
+    # Uncomment for local build:
     build:
       context: .
       dockerfile: Dockerfile.reverse-proxy
+    # Uncomment for Docker Hub image (comment out 'build' section above):
+    # image: nireus79/socrates-web:latest
     container_name: socrates-web
     ports:
       - "80:80"
