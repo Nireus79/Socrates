@@ -132,8 +132,24 @@ class VectorDatabase:
             self._update_entry_metadata(entry)
             return
 
-        # Generate or get cached embedding
-        self._generate_or_cache_embedding(entry)
+        # Generate or get cached embedding (if available)
+        if not entry.embedding:
+            try:
+                self._generate_or_cache_embedding(entry)
+            except RuntimeError as e:
+                # Embedding model failed to load - log and continue without embeddings
+                self.logger.warning(
+                    f"Embedding model unavailable for entry {entry.id}: {e}. "
+                    f"Knowledge will be added without embeddings."
+                )
+                entry.embedding = None  # Mark as no embedding
+            except Exception as e:
+                # Other embedding generation errors
+                self.logger.warning(
+                    f"Failed to generate embedding for knowledge entry {entry.id}: {e}. "
+                    f"Knowledge will be added without embedding."
+                )
+                entry.embedding = None  # Mark as no embedding
 
         # Add to collection with metadata
         self._add_entry_to_collection(entry)
@@ -184,12 +200,22 @@ class VectorDatabase:
                 )
                 self.embedding_cache.put(entry.content, entry.embedding)
                 self.logger.debug(f"Cached new embedding for knowledge entry: {entry.id}")
-        except (ValueError, RuntimeError, OSError) as e:
+        except (ValueError, RuntimeError, OSError, TypeError, AttributeError) as e:
+            # These errors need special handling
             self._handle_embedding_error(e, entry)
+        except Exception as e:
+            # Catch unexpected exceptions but re-raise for caller to handle
+            self.logger.warning(
+                f"Unexpected error generating embedding for entry {entry.id}: {e}"
+            )
+            raise
 
     def _handle_embedding_error(self, error: Exception, entry: KnowledgeEntry) -> None:
         """Handle embedding generation errors with recovery"""
-        if "closed file" not in str(error) and "I/O operation" not in str(error):
+        error_str = str(error)
+
+        # Only attempt recovery for specific I/O errors
+        if "closed file" not in error_str and "I/O operation" not in error_str:
             raise
 
         self.logger.warning(f"Embedding model has stale file handles, attempting recovery: {error}")
@@ -198,7 +224,13 @@ class VectorDatabase:
             self._embedding_model_instance = None
             self.logger.debug("Reloading embedding model after garbage collection")
 
-            embedding_result = self.embedding_model.encode(entry.content)
+            # Check if model property is available
+            embedding_model = self.embedding_model
+            if embedding_model is None:
+                self.logger.warning(f"Embedding model recovery failed - model is None for entry {entry.id}")
+                raise RuntimeError("Embedding model is unavailable")
+
+            embedding_result = embedding_model.encode(entry.content)
             entry.embedding = (
                 embedding_result.tolist()
                 if hasattr(embedding_result, "tolist")
@@ -215,13 +247,23 @@ class VectorDatabase:
         try:
             self._prepare_and_add_metadata(entry)
             formatted_metadata = self._format_metadata_for_chromadb(entry.metadata)
-            self.collection.add(
-                documents=[entry.content],
-                metadatas=[formatted_metadata],
-                ids=[entry.id],
-                embeddings=[entry.embedding],
+
+            # Only include embeddings if they exist and are not empty
+            add_kwargs = {
+                "documents": [entry.content],
+                "metadatas": [formatted_metadata],
+                "ids": [entry.id],
+            }
+
+            # Add embeddings only if available
+            if entry.embedding and (isinstance(entry.embedding, list) and len(entry.embedding) > 0):
+                add_kwargs["embeddings"] = [entry.embedding]
+
+            self.collection.add(**add_kwargs)
+            self.logger.debug(
+                f"Added knowledge entry: {entry.id} "
+                f"(embedding: {'yes' if entry.embedding else 'no'})"
             )
-            self.logger.debug(f"Added knowledge entry: {entry.id}")
             self._invalidate_search_caches_after_add()
         except Exception as e:
             self.logger.warning(f"Could not add knowledge entry {entry.id}: {e}")
