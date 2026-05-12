@@ -18,6 +18,7 @@ import pytest
 from socratic_system.config import SocratesConfig
 from socratic_system.database.project_db import ProjectDatabase
 from socratic_system.models.project import ProjectContext
+from socratic_system.models.user import User
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
@@ -52,9 +53,6 @@ def orchestrator(e2e_environment):
 @pytest.fixture
 def database(e2e_environment):
     """Create database for E2E testing."""
-    from socratic_system.models.user import User
-    import datetime
-
     db_path = str(Path(e2e_environment["db_dir"]) / "test.db")
     db = ProjectDatabase(db_path)
 
@@ -72,7 +70,7 @@ def database(e2e_environment):
             username=username,
             email=f"{username}@test.com",
             passcode_hash="hash",
-            created_at=datetime.datetime.now(),
+            created_at=datetime.now(),
         )
         db.save_user(user)
 
