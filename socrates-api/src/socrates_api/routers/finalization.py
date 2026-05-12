@@ -22,7 +22,14 @@ from socrates_api.auth.project_access import check_project_access
 from socratic_system.database import ProjectDatabase
 from socratic_system.utils.archive_builder import ArchiveBuilder
 from socratic_system.utils.git_initializer import GitInitializer
-from socratic_system.docs import DocumentationGenerator
+
+try:
+    from socratic_system.docs import DocumentationGenerator
+    HAS_DOCS_LIBRARY = True
+except ImportError:
+    HAS_DOCS_LIBRARY = False
+    DocumentationGenerator = None
+
 from socrates_api.models import APIResponse
 
 logger = logging.getLogger(__name__)
@@ -231,6 +238,13 @@ async def generate_final_documentation(
 
         if project.owner != current_user:
             raise HTTPException(status_code=403, detail="Access denied")
+
+        # Check if documentation library is available
+        if not HAS_DOCS_LIBRARY:
+            raise HTTPException(
+                status_code=501,
+                detail="Documentation generation is not available. Install socratic-docs library.",
+            )
 
         # Build documentation package using comprehensive generator
         doc_package = {
