@@ -9,8 +9,23 @@ except ImportError:
 
 try:
     from socratic_knowledge import KnowledgeEntry
-except ImportError:
-    KnowledgeEntry = None
+except ImportError as e:
+    # Log the import error for debugging
+    import sys
+    print(f"WARNING: Failed to import KnowledgeEntry from socratic_knowledge: {e}", file=sys.stderr)
+
+    # Provide a fallback KnowledgeEntry definition so the system continues to work
+    from dataclasses import dataclass
+    from typing import Any, Dict, List, Optional
+
+    @dataclass
+    class KnowledgeEntry:
+        """Fallback KnowledgeEntry definition when socratic_knowledge is unavailable"""
+        id: str
+        content: str
+        category: str
+        embedding: Optional[List[float]] = None
+        metadata: Optional[Dict[str, Any]] = None
 
 try:
     from socratic_learning import (
