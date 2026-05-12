@@ -31,9 +31,6 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 # Copy pre-built dependencies from dependencies stage
 FROM python:3.11-slim as runtime
 
-# Stage 2: Runtime
-FROM python:3.11-slim as runtime
-
 WORKDIR /app
 
 # Install runtime dependencies
