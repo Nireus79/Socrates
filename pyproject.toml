@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "0.1.2"
+version = "0.2.0"
 description = "Multi-agent AI orchestration platform with Constitutional AI governance, Socratic guidance, and RAG knowledge management"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -239,7 +239,7 @@ extend-exclude = '''
 
 [tool.ruff]
 line-length = 100
-target-version = "py38"
+target-version = "0.2.0"
 
 [tool.ruff.lint]
 select = [
@@ -264,7 +264,7 @@ line_length = 100
 skip_gitignore = true
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "0.2.0"
 warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
