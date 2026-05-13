@@ -83,7 +83,7 @@ response = await orchestrator.handle_agent_request(
     payload={"project": project}
 )
 ```
-"See Comparison" Link in Key Features
+
 | Feature                 | Socrates    | LangChain   | AutoGen     | LlamaIndex   |
 |-------------------------|-------------|-------------|-------------|--------------|
 | Multi-Agent             | ✅ Full     | ⚠️ Basic    | ✅ Good    | ❌ No        |
