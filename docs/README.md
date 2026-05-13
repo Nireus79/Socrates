@@ -1,6 +1,20 @@
 # Socrates AI - Complete Documentation
 
-Welcome to **Socrates AI**, an AI-powered software development companion that guides you through projects using the Socratic method—asking thoughtful questions to help you clarify requirements, design systems, and write better code.
+## 🚀 Start Here (Choose Your Path)
+
+**New to Socrates?**
+- 📖 **[Main README](../README.md)** - What Socrates is and what it does
+- 🏗️ **[ECOSYSTEM.md](../ECOSYSTEM.md)** - Complete architecture and modules (THE reference)
+- ⚡ **[QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - Get running in 5-10 minutes
+
+**Already installed?**
+- 🎨 **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Development setup and patterns
+- 🔧 **[ARCHITECTURE.md](ARCHITECTURE.md)** - Deep technical dive
+- 📡 **[API_REFERENCE.md](API_REFERENCE.md)** - All endpoints documented
+
+---
+
+Welcome to **Socrates AI**, a production-ready AI multi-agent orchestration platform.
 
 ## Table of Contents
 

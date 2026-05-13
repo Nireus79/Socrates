@@ -4,9 +4,13 @@ This document provides a comprehensive technical overview of Socrates AI's archi
 
 ## Quick Start
 
-**New to Socrates architecture?** Socrates is built on a modular library-based architecture. Start with:
-- [FRAMEWORK_INTEGRATIONS.md](../FRAMEWORK_INTEGRATIONS.md) - How external frameworks integrate into Socrates
-- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) - Setting up your development environment
+**New to Socrates?** Start with these documents in order:
+
+1. **[Main README](../README.md)** - What Socrates does and why it matters
+2. **[ECOSYSTEM.md](../ECOSYSTEM.md)** - Complete module reference and component breakdown
+3. **This document** - Deep technical architecture
+4. **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Setting up your development environment
+5. **[FRAMEWORK_INTEGRATIONS.md](../FRAMEWORK_INTEGRATIONS.md)** - LangChain/LangGraph integration
 
 ## Table of Contents
 

@@ -6,23 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="b13c29eb-a190-422e-b9a9-1ba216d0bc04" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DOCKER_READY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/INTEGRATION_COMPLETION_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SOCRATIC_AGENTS_INTEGRATION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/SOCRATIC_MORALITY_INTEGRATION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/ARCHITECTURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/ARCHITECTURE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/DEPLOYMENT_DOCKER.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/IMPLEMENTATION_ROADMAP.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/IMPLEMENTATION_ROADMAP.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/PROJECT_STRUCTURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/PROJECT_STRUCTURE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/database/DATABASE_VERIFICATION_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/deployment/DEPLOYMENT_READY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/deployment/PRODUCTION_READINESS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/rbac/FRONTEND_VALIDATION_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/rbac/RBAC_COMPLETION_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/rbac/RBAC_IMPLEMENTATION_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
