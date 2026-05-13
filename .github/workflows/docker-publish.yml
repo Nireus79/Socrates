@@ -61,7 +61,7 @@ jobs:
         uses: docker/metadata-action@v5.5.1
         with:
           images: |
-            ghcr.io/${{ github.repository }}/api
+            ghcr.io/nireus79/socrates/api
             docker.io/nireus79/socrates-api
           tags: |
             type=ref,event=branch
@@ -90,7 +90,7 @@ jobs:
         if: always()
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}
+          image: ghcr.io/nireus79/socrates/api:${{ github.ref_name }}
           format: spdx-json
           output-file: sbom-api.spdx.json
         continue-on-error: true
@@ -114,7 +114,7 @@ jobs:
           chmod +x cosign-linux-amd64
 
           # Sign image
-          ./cosign-linux-amd64 sign --key env://COSIGN_KEY ghcr.io/${{ github.repository }}/api@${{ steps.build.outputs.digest }}
+          ./cosign-linux-amd64 sign --key env://COSIGN_KEY ghcr.io/nireus79/socrates/api@${{ steps.build.outputs.digest }}
         continue-on-error: true
 
   build-frontend:
@@ -155,7 +155,7 @@ jobs:
         uses: docker/metadata-action@v5.5.1
         with:
           images: |
-            ghcr.io/${{ github.repository }}/frontend
+            ghcr.io/nireus79/socrates/frontend
             docker.io/nireus79/socrates-frontend
           tags: |
             type=ref,event=branch
@@ -185,7 +185,7 @@ jobs:
         if: always()
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
+          image: ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }}
           format: spdx-json
           output-file: sbom-frontend.spdx.json
         continue-on-error: true
@@ -209,7 +209,7 @@ jobs:
       - name: Run Trivy vulnerability scanner (API)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-api.outputs.api-image-primary }}
+          image-ref: ghcr.io/nireus79/socrates/api:${{ github.ref_name }}
           format: 'sarif'
           output: 'trivy-api-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -218,7 +218,7 @@ jobs:
       - name: Run Trivy vulnerability scanner (Frontend)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build-frontend.outputs.frontend-image-primary }}
+          image-ref: ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }}
           format: 'sarif'
           output: 'trivy-frontend-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -253,13 +253,13 @@ jobs:
 
       - name: Load API image from ghcr.io
         run: |
-          API_IMAGE="ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}"
+          API_IMAGE="ghcr.io/nireus79/socrates/api:${{ github.ref_name }}"
           docker pull "$API_IMAGE"
           docker tag "$API_IMAGE" socrates-api:test
 
       - name: Load frontend image from ghcr.io
         run: |
-          FRONTEND_IMAGE="ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}"
+          FRONTEND_IMAGE="ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }}"
           docker pull "$FRONTEND_IMAGE"
           docker tag "$FRONTEND_IMAGE" socrates-frontend:test
 
@@ -364,23 +364,23 @@ jobs:
 
             ### API
             ```
-            ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}
+            ghcr.io/nireus79/socrates/api:${{ github.ref_name }}
             ```
 
             ### Frontend
             ```
-            ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
+            ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }}
             ```
 
             ## Deployment
 
             ```bash
             kubectl set image deployment/socrates-api \
-              socrates-api=ghcr.io/${{ github.repository }}/api:${{ github.ref_name }} \
+              socrates-api=ghcr.io/nireus79/socrates/api:${{ github.ref_name }} \
               -n socrates-prod
 
             kubectl set image deployment/socrates-frontend \
-              socrates-frontend=ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }} \
+              socrates-frontend=ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }} \
               -n socrates-prod
             ```
 
@@ -415,7 +415,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Docker Images Published*\n\n*API*\n`ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}`\n\n*Frontend*\n`ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}`"
+                    "text": "*Docker Images Published*\n\n*API*\n`ghcr.io/nireus79/socrates/api:${{ github.ref_name }}`\n\n*Frontend*\n`ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }}`"
                   }
                 },
                 {
@@ -464,12 +464,12 @@ jobs:
                 "fields": [
                   {
                     "name": "API Image",
-                    "value": "ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}",
+                    "value": "ghcr.io/nireus79/socrates/api:${{ github.ref_name }}",
                     "inline": false
                   },
                   {
                     "name": "Frontend Image",
-                    "value": "ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}",
+                    "value": "ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }}",
                     "inline": false
                   },
                   {
@@ -501,8 +501,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Component | Status | Image |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| API | ${{ needs.build-api.result }} | ghcr.io/${{ github.repository }}/api |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend | ${{ needs.build-frontend.result }} | ghcr.io/${{ github.repository }}/frontend |" >> $GITHUB_STEP_SUMMARY
+          echo "| API | ${{ needs.build-api.result }} | ghcr.io/nireus79/socrates/api |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.build-frontend.result }} | ghcr.io/nireus79/socrates/frontend |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
           echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
