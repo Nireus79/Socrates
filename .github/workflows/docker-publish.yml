@@ -67,8 +67,6 @@ jobs:
             docker.io/${{ secrets.DOCKER_USERNAME }}/socrates-api
           tags: |
             type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
             type=match,pattern=v(.*),group=1
@@ -172,8 +170,6 @@ jobs:
             docker.io/${{ secrets.DOCKER_USERNAME }}/socrates-frontend
           tags: |
             type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
             type=match,pattern=v(.*),group=1
