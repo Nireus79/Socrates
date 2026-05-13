@@ -71,7 +71,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value={{tag_name}},enable={{is_tag}}
+            type=match,pattern=v(.*),group=1
 
       - name: Build and push API image
         id: build
@@ -176,7 +176,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value={{tag_name}},enable={{is_tag}}
+            type=match,pattern=v(.*),group=1
 
       - name: Build and push frontend image
         id: build
