@@ -27,6 +27,8 @@ jobs:
     name: Build and Push API Image
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
       api-image: ${{ steps.meta.outputs.tags }}
       api-image-primary: ${{ steps.extract-image.outputs.primary }}
@@ -130,6 +132,8 @@ jobs:
     name: Build and Push Frontend Image
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
       frontend-image: ${{ steps.meta.outputs.tags }}
       frontend-image-primary: ${{ steps.extract-image.outputs.primary }}
@@ -264,6 +268,8 @@ jobs:
     timeout-minutes: 30
     needs: [build-api, build-frontend]
     if: github.event_name != 'pull_request' && needs.build-api.result == 'success' && needs.build-frontend.result == 'success'
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout code
@@ -350,6 +356,8 @@ jobs:
     needs: [build-api, build-frontend, scan-images, test-images]
     if: startsWith(github.ref, 'refs/tags/') && needs.build-api.result == 'success' && needs.build-frontend.result == 'success' && needs.scan-images.result == 'success' && needs.test-images.result == 'success'
     timeout-minutes: 10
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout code
