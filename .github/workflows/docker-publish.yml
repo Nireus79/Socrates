@@ -30,8 +30,6 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
-      api-image: ${{ steps.meta.outputs.tags }}
-      api-image-primary: ${{ steps.extract-image.outputs.primary }}
       api-digest: ${{ steps.build.outputs.digest }}
 
     steps:
@@ -90,18 +88,11 @@ jobs:
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
             VCS_REF=${{ github.sha }}
 
-      - name: Extract primary image tag
-        id: extract-image
-        run: |
-          TAGS="${{ steps.meta.outputs.tags }}"
-          PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
-          echo "primary=$PRIMARY_TAG" >> $GITHUB_OUTPUT
-
       - name: Generate SBOM (Optional)
         if: always()
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ steps.extract-image.outputs.primary }}
+          image: ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}
           format: spdx-json
           output-file: sbom-api.spdx.json
         continue-on-error: true
@@ -135,8 +126,6 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
-      frontend-image: ${{ steps.meta.outputs.tags }}
-      frontend-image-primary: ${{ steps.extract-image.outputs.primary }}
       frontend-digest: ${{ steps.build.outputs.digest }}
 
     steps:
@@ -196,18 +185,11 @@ jobs:
             VCS_REF=${{ github.sha }}
             VITE_API_URL=${{ secrets.VITE_API_URL || 'https://api.socrates.app' }}
 
-      - name: Extract primary image tag
-        id: extract-image
-        run: |
-          TAGS="${{ steps.meta.outputs.tags }}"
-          PRIMARY_TAG=$(echo "$TAGS" | head -n 1)
-          echo "primary=$PRIMARY_TAG" >> $GITHUB_OUTPUT
-
       - name: Generate SBOM (Optional)
         if: always()
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ steps.extract-image.outputs.primary }}
+          image: ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
           format: spdx-json
           output-file: sbom-frontend.spdx.json
         continue-on-error: true
