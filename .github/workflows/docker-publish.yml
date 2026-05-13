@@ -141,6 +141,8 @@ jobs:
     timeout-minutes: 30
     needs: [build-api, build-frontend]
     if: github.event_name != 'pull_request'
+    env:
+      SHA_SHORT: ${{ github.sha | truncate(7, '') }}
 
     steps:
       - name: Checkout code
@@ -148,13 +150,13 @@ jobs:
 
       - name: Test API image
         run: |
-          docker pull nireus79/socrates-api:sha-${{ github.sha | truncate(7, '') }}
-          docker tag nireus79/socrates-api:sha-${{ github.sha | truncate(7, '') }} socrates-api:test
+          docker pull nireus79/socrates-api:sha-$SHA_SHORT
+          docker tag nireus79/socrates-api:sha-$SHA_SHORT socrates-api:test
 
       - name: Test Frontend image
         run: |
-          docker pull nireus79/socrates-frontend:sha-${{ github.sha | truncate(7, '') }}
-          docker tag nireus79/socrates-frontend:sha-${{ github.sha | truncate(7, '') }} socrates-frontend:test
+          docker pull nireus79/socrates-frontend:sha-$SHA_SHORT
+          docker tag nireus79/socrates-frontend:sha-$SHA_SHORT socrates-frontend:test
 
       - name: Start API container
         run: |
