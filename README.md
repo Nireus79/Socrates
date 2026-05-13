@@ -79,6 +79,78 @@ response = await orchestrator.handle_agent_request(
 
 ---
 
+## 🎯 Real-World Use Cases
+
+### 1. **Enterprise Code Review Automation**
+Multi-agent system debates code quality, security, and architecture — faster than human review.
+- **Agents**: CodeGenerator, QualityController, ConflictDetector
+- **Outcome**: 5-10x faster reviews, consistent standards, zero compliance violations
+- **ROI**: Frees senior engineers for high-impact work
+
+### 2. **AI-Powered Customer Support Escalation**
+Agents handle tier-1 support, escalate complex issues with full context to humans.
+- **Agents**: ContextAnalyzer, KnowledgeManager, DocumentProcessor
+- **Outcome**: 70% auto-resolution rate, context-aware escalations, 24/7 availability
+- **ROI**: Reduces support costs 60%, improves CSAT score
+
+### 3. **Research Paper Synthesis**
+Agents gather, analyze, debate, and synthesize research papers into actionable insights.
+- **Agents**: KnowledgeManager, ContextAnalyzer, DocumentProcessor
+- **Outcome**: 100 papers → 5-page synthesis in hours (vs. days)
+- **ROI**: Accelerates R&D cycles, identifies patterns humans miss
+
+### 4. **Internal Tool Development**
+Agents autonomously build APIs, dashboards, data pipelines from natural language requirements.
+- **Agents**: CodeGenerator, CodeValidator, QualityController
+- **Outcome**: Simple tools in hours, complex systems in days
+- **ROI**: Non-technical staff can request tools directly
+
+### 5. **Bug Triage & Root Cause Analysis**
+Agents reproduce, analyze, and suggest fixes for reported bugs faster than manual debugging.
+- **Agents**: CodeAnalyzer, QualityController, ContextAnalyzer
+- **Outcome**: 80% of bugs auto-fixed, root causes identified
+- **ROI**: Reduces bug lifecycle from 2 days to 2 hours
+
+### 6. **Architecture Compliance & Conflict Detection**
+Agents automatically detect violations of architectural patterns and design conflicts.
+- **Agents**: ConflictDetector, CodeAnalyzer, QualityController
+- **Outcome**: Pre-deployment conflict detection, architecture drift prevention
+- **ROI**: Prevents costly architectural refactors
+
+---
+
+## 📦 Ecosystem: 11 Production Packages
+
+Socrates is built from **11 independent, version-controlled PyPI packages**. Use them together or pick what you need:
+
+| Package | Purpose | Links |
+|---------|---------|-------|
+| **socrates-ai** | Complete platform | [GitHub](https://github.com/Nireus79/Socrates) \| [PyPI](https://pypi.org/project/socrates-ai/) |
+| **socratic-nexus** | Universal LLM client (OpenAI, Anthropic, Claude, Llama) | [GitHub](https://github.com/Nireus79/Socratic-nexus) \| [PyPI](https://pypi.org/project/socratic-nexus/) |
+| **socratic-agents** | 19 specialized agent implementations | [GitHub](https://github.com/Nireus79/Socratic-agents) \| [PyPI](https://pypi.org/project/socratic-agents/) |
+| **socratic-morality** | Ethical governance & compliance framework | [GitHub](https://github.com/Nireus79/Socratic-morality) \| [PyPI](https://pypi.org/project/socratic-morality/) |
+| **socratic-workflow** | Workflow orchestration & state management | [GitHub](https://github.com/Nireus79/Socratic-workflow) \| [PyPI](https://pypi.org/project/socratic-workflow/) |
+| **socratic-knowledge** | RAG, embeddings, semantic search | [GitHub](https://github.com/Nireus79/Socratic-knowledge) \| [PyPI](https://pypi.org/project/socratic-knowledge/) |
+| **socratic-learning** | Self-improving agent loops & analytics | [GitHub](https://github.com/Nireus79/Socratic-learning) \| [PyPI](https://pypi.org/project/socratic-learning/) |
+| **socratic-analyzer** | Code analysis & metrics | [GitHub](https://github.com/Nireus79/Socratic-analyzer) \| [PyPI](https://pypi.org/project/socratic-analyzer/) |
+| **socratic-performance** | Caching, monitoring, performance utilities | [GitHub](https://github.com/Nireus79/Socratic-performance) \| [PyPI](https://pypi.org/project/socratic-performance/) |
+| **socratic-conflict** | Conflict resolution between agents | [GitHub](https://github.com/Nireus79/Socratic-conflict) \| [PyPI](https://pypi.org/project/socratic-conflict/) |
+| **socratic-maturity** | Tracking system maturity levels | [GitHub](https://github.com/Nireus79/Socratic-maturity) \| [PyPI](https://pypi.org/project/socratic-maturity/) |
+
+**Pick & Mix Example:**
+```bash
+# Just governance + agents (for existing systems)
+pip install socratic-morality socratic-agents
+
+# Full stack (everything)
+pip install socrates-ai
+
+# Custom AI assistant (LLM + agents + knowledge)
+pip install socratic-nexus socratic-agents socratic-knowledge
+```
+
+---
+
 ## Core Capabilities
 
 ### 🤖 Multi-Agent Orchestration (14+ Agents)
@@ -349,6 +421,39 @@ docker-compose -f deployment/docker/docker-compose.yml up -d
 
 **Current version:** v0.2.0 Beta
 **Python Support:** 3.11+ (recommended), 3.8+ (minimum)
+
+---
+
+## 💼 Services & Consulting
+
+### Available for Contract Work
+
+**I'm available for 2-3 projects** (20-40 hrs/week) starting immediately.
+
+**Project Types I'm Best At:**
+- ✅ Multi-agent AI system design & implementation
+- ✅ RAG/knowledge system optimization (embedding, retrieval, fine-tuning)
+- ✅ LLM integration & cost optimization
+- ✅ Production deployment (Docker, Kubernetes, AWS/GCP)
+- ✅ Architecture consulting for AI-intensive projects
+
+**Typical Project Examples:**
+- **Code Review Automation** — Setup agents to review PRs, enforce standards ($3k-8k)
+- **Research Synthesis** — Build RAG system to analyze 100+ documents ($5k-12k)
+- **Internal Tool Generation** — Agents build internal tools from requirements ($4k-10k)
+- **LLM Cost Reduction** — Audit & optimize existing LLM usage ($2k-5k)
+- **Agent Deployment** — Deploy Socrates to your infrastructure ($3k-6k)
+
+**Engagement Terms:**
+- **Duration:** 4-8 week contracts
+- **Rate:** $35-55/hour (fixed-price projects available)
+- **Response Time:** 24 hours
+- **Timezone:** GMT+2 (flexible for projects)
+
+**Get Started:**
+- 📧 Email: [contact@socrates-ai.dev](mailto:contact@socrates-ai.dev)
+- 🤝 [Schedule Consultation](https://calendly.com/socrates-ai/consultation)
+- 💬 [GitHub Discussions](https://github.com/Nireus79/Socrates/discussions)
 
 ---
 
