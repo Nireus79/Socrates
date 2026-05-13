@@ -4,25 +4,35 @@ Complete guide to finding documentation for Socrates features and functionality.
 
 ## Quick Links
 
-- **Getting Started**: [Quick Start Guide](#getting-started)
-- **Sponsorship & Tiers**: [Premium Features](#sponsorship--premium-tiers)
-- **API Reference**: [API Documentation](#api-reference)
-- **Contributing**: [How to Help](#how-to-help)
+- **🎯 Product Overview**: [ECOSYSTEM.md](../ECOSYSTEM.md) - Complete module and architecture reference
+- **⚡ Getting Started**: [Quick Start Guide](#getting-started)
+- **💰 Sponsorship & Tiers**: [Premium Features](#sponsorship--premium-tiers)
+- **📡 API Reference**: [API Documentation](#api-reference)
+- **🤝 Contributing**: [How to Help](#how-to-help)
 
 ---
 
 ## Getting Started
 
-### For New Users
+### For New Users (Start Here!)
 
-- **[README.md](../README.md)** - Project overview, features, quick start
-- **[SPONSORSHIP_USER_GUIDE.md](SPONSORSHIP_USER_GUIDE.md)** - Quick sponsorship reference (start here!)
-- **Setup & Installation** - See README Quick Start section
+1. **[Main README](../README.md)** - What is Socrates and why it matters
+2. **[ECOSYSTEM.md](../ECOSYSTEM.md)** - Complete architecture and modules (THE reference)
+3. **[QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - Get running in 5-10 minutes
+4. **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical deep-dive
 
-### CLI & Local Development
+### For Developers
 
-- **[Development Setup](DEVELOPMENT_SETUP.md)** - Setting up dev environment
+- **[Developer Guide](DEVELOPER_GUIDE.md)** - Development setup and patterns
+- **[Development Setup](DEVELOPMENT_SETUP.md)** - Detailed dev environment setup
 - **[Configuration](CONFIGURATION.md)** - Environment variables and settings
+- **[Testing Guide](TESTING.md)** - How to write and run tests
+
+### For DevOps / Production
+
+- **[Docker Deployment](DOCKER_DEPLOYMENT.md)** - Containerization and Docker Compose
+- **[Production Deployment](PRODUCTION_DEPLOYMENT.md)** - Kubernetes, scaling, high availability
+- **[Observability Guide](OBSERVABILITY.md)** - Monitoring, metrics, logging
 
 ---
 
