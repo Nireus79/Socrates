@@ -59,11 +59,12 @@ jobs:
           images: |
             ghcr.io/nireus79/socrates/api
             docker.io/nireus79/socrates-api
-          tags: type=ref,event=branch
-                type=semver,pattern={{version}}
-                type=semver,pattern={{major}}.{{minor}}
-                type=sha
-                type=raw,value=latest,enable={{is_default_branch}}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push API image
         id: build
@@ -114,11 +115,12 @@ jobs:
           images: |
             ghcr.io/nireus79/socrates/frontend
             docker.io/nireus79/socrates-frontend
-          tags: type=ref,event=branch
-                type=semver,pattern={{version}}
-                type=semver,pattern={{major}}.{{minor}}
-                type=sha
-                type=raw,value=latest,enable={{is_default_branch}}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push frontend image
         id: build
