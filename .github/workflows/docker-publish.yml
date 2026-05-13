@@ -104,3 +104,35 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  test-images:
+    name: Test Images
+    runs-on: ubuntu-latest
+    needs: [build-api, build-frontend]
+    if: github.event_name != 'pull_request'
+    steps:
+      - run: docker pull nireus79/socrates-api:latest && docker run --rm nireus79/socrates-api:latest python --version
+      - run: docker pull nireus79/socrates-frontend:latest && docker run --rm nireus79/socrates-frontend:latest ls /etc/nginx
+
+  publish-release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs: [build-api, build-frontend, test-images]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body: |
+            ## Docker Images Built and Tested
+
+            **API Image:** `nireus79/socrates-api:${{ github.ref_name }}`
+            **Frontend Image:** `nireus79/socrates-frontend:${{ github.ref_name }}`
+
+            Pull with:
+            ```bash
+            docker pull nireus79/socrates-api:${{ github.ref_name }}
+            docker pull nireus79/socrates-frontend:${{ github.ref_name }}
+            ```
