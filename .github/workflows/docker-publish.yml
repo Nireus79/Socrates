@@ -277,13 +277,15 @@ jobs:
 
       - name: Load API image from ghcr.io
         run: |
-          docker pull ${{ needs.build-api.outputs.api-image-primary }}
-          docker tag ${{ needs.build-api.outputs.api-image-primary }} socrates-api:test
+          API_IMAGE="ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}"
+          docker pull "$API_IMAGE"
+          docker tag "$API_IMAGE" socrates-api:test
 
       - name: Load frontend image from ghcr.io
         run: |
-          docker pull ${{ needs.build-frontend.outputs.frontend-image-primary }}
-          docker tag ${{ needs.build-frontend.outputs.frontend-image-primary }} socrates-frontend:test
+          FRONTEND_IMAGE="ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}"
+          docker pull "$FRONTEND_IMAGE"
+          docker tag "$FRONTEND_IMAGE" socrates-frontend:test
 
       - name: Test API image
         run: |
