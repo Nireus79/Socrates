@@ -1,5 +1,12 @@
 # Socrates AI — Production AI Multi-Agent System
 
+[![PyPI Version](https://img.shields.io/pypi/v/socrates-ai.svg?style=flat-square)](https://pypi.org/project/socrates-ai/)
+[![Downloads](https://img.shields.io/pypi/dm/socrates-ai.svg?style=flat-square)](https://pypi.org/project/socrates-ai/)
+[![PyPI Downloads Monthly](https://img.shields.io/pypi/dm/socrates-ai.svg?label=monthly%20downloads&style=flat-square)](https://pypi.org/project/socrates-ai/)
+[![GitHub Stars](https://img.shields.io/github/stars/Nireus79/Socrates.svg?style=flat-square)](https://github.com/Nireus79/Socrates)
+[![License](https://img.shields.io/github/license/Nireus79/Socrates.svg?style=flat-square)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg?style=flat-square)](https://www.python.org/downloads/)
+
 > **The complete, modular platform for building intelligent agent networks at scale.**
 >
 > Multi-agent orchestration with constitutional governance, RAG knowledge integration, real-time collaboration, and production-grade infrastructure. Use the whole platform or mix-and-match individual components.
