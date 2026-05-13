@@ -225,6 +225,8 @@ jobs:
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           body: |
             ## Docker Images
@@ -270,10 +272,8 @@ jobs:
             ```
 
             ## Tests Passed
-            - ✓ API health check
-            - ✓ Frontend loads
-            - ✓ Images built and pushed
+            - API health check
+            - Frontend loads
+            - Images built and pushed
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
