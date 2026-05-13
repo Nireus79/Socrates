@@ -73,36 +73,433 @@ pip install socrates-ai
 
 ### Layer 2: Specialized Libraries
 
-Eight independently-published `socratic-*` libraries providing extensible functionality:
+Eight independently-published `socratic-*` libraries providing extensible functionality. Each can be used independently or combined for maximum capability.
 
-#### Core Libraries (Essential)
+#### Core Library 1: socratic-morality
+**Constitutional AI & Ethical Governance**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-morality.svg)](https://pypi.org/project/socratic-morality/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-morality.svg)](https://pypi.org/project/socratic-morality/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-morality.svg?style=social)](https://github.com/Nireus79/Socratic-morality)
+
+Use this library to add ethical decision-making to ANY agent system:
+
 ```python
-# Install all core capabilities
-pip install socratic-morality      # Constitutional AI governance (ANY agent system)
-pip install socratic-agents        # 14+ specialized agents (multi-agent systems)
-pip install socratic-knowledge     # RAG & embeddings (semantic search)
-pip install socratic-nexus         # Inter-component communication
+from socratic_morality import EthicalGovernor, EthicalFramework
+from socratic_morality.reasoning import KantianAnalyzer, UtilitarianAnalyzer
+
+# Initialize governor with multiple ethical frameworks
+governor = EthicalGovernor(
+    frameworks=[
+        KantianAnalyzer(),      # Deontological ethics
+        UtilitarianAnalyzer(),  # Consequentialist ethics
+    ]
+)
+
+# Evaluate agent decisions before execution
+decision = {"action": "delete_data", "reason": "privacy"}
+is_ethical = await governor.evaluate(decision)
+
+if is_ethical:
+    await execute_action(decision)
+else:
+    await log_ethical_violation(decision)
 ```
 
-#### Feature Libraries (Optional)
+📖 [GitHub](https://github.com/Nireus79/Socratic-morality) | 📦 [PyPI](https://pypi.org/project/socratic-morality/) | Use cases: AI safety, compliance, policy enforcement
+
+---
+
+#### Core Library 2: socratic-agents
+**14+ Specialized Agents for Multi-Agent Systems**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-agents.svg)](https://pypi.org/project/socratic-agents/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-agents.svg)](https://pypi.org/project/socratic-agents/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-agents.svg?style=social)](https://github.com/Nireus79/Socratic-agents)
+
+Drop-in agents for code review, conflict detection, knowledge management, and more:
+
 ```python
-# Use only what you need
-pip install socratic-maturity      # Project maturity scoring
-pip install socratic-analyzer      # Analytics & insight categorization
-pip install socratic-conflict      # Specification conflict detection
-pip install socratic-learning      # User learning analytics
-pip install socratic-docs          # Documentation generation
-pip install socratic-workflow      # Workflow execution & automation
-pip install socratic-performance   # Performance profiling & metrics
+from socratic_agents import (
+    CodeGeneratorAgent, QualityControllerAgent,
+    ConflictDetectorAgent, KnowledgeManagerAgent
+)
+
+# Create specialized agents
+code_gen = CodeGeneratorAgent()
+quality_ctrl = QualityControllerAgent()
+
+# Use in your workflow
+spec = {"language": "python", "type": "api"}
+code = await code_gen.generate(spec)
+quality = await quality_ctrl.validate(code)
+
+print(f"Code quality score: {quality.score}")
+print(f"Suggestions: {quality.suggestions}")
 ```
+
+**Agents included:**
+- `CodeGeneratorAgent` - Synthesis from specifications
+- `QualityControllerAgent` - Code review and quality assessment
+- `ConflictDetectorAgent` - Specification validation
+- `SocraticCounselorAgent` - Guided questioning
+- Plus 10 more specialized agents
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-agents) | 📦 [PyPI](https://pypi.org/project/socratic-agents/) | Use cases: Code review, multi-agent orchestration, specialized tasks
+
+---
+
+#### Core Library 3: socratic-knowledge
+**RAG & Semantic Search**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-knowledge.svg)](https://pypi.org/project/socratic-knowledge/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-knowledge.svg)](https://pypi.org/project/socratic-knowledge/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-knowledge.svg?style=social)](https://github.com/Nireus79/Socratic-knowledge)
+
+Build semantic search into your applications:
+
+```python
+from socratic_knowledge import KnowledgeBase, EmbeddingGenerator
+from socratic_knowledge.retrieval import SemanticSearcher
+
+# Initialize knowledge base
+kb = KnowledgeBase(vector_db="chromadb")
+embedder = EmbeddingGenerator(model="claude")
+searcher = SemanticSearcher(kb)
+
+# Add documents
+await kb.add_document(
+    content="Python best practices...",
+    metadata={"type": "guide", "language": "python"}
+)
+
+# Search semantically
+results = await searcher.search(
+    query="How should I structure a Python project?",
+    limit=3
+)
+
+for doc in results:
+    print(f"Found: {doc.metadata}")
+    print(f"Relevance: {doc.score}")
+```
+
+**Features:**
+- Multi-document RAG
+- Semantic similarity search
+- Metadata filtering
+- Batch document ingestion
+- Embedding caching
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-knowledge) | 📦 [PyPI](https://pypi.org/project/socratic-knowledge/) | Use cases: Document Q&A, research synthesis, knowledge management
+
+---
+
+#### Core Library 4: socratic-nexus
+**Inter-Component Communication**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-nexus.svg)](https://pypi.org/project/socratic-nexus/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-nexus.svg)](https://pypi.org/project/socratic-nexus/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-nexus.svg?style=social)](https://github.com/Nireus79/Socratic-nexus)
+
+Coordinate communication between independent services:
+
+```python
+from socratic_nexus import EventEmitter, EventBus
+
+# Publish events
+emitter = EventEmitter()
+
+# Service A: Emit event
+await emitter.publish("code_generated", {
+    "project_id": "proj-123",
+    "code": "...",
+    "language": "python"
+})
+
+# Service B: Subscribe to events
+@emitter.on("code_generated")
+async def handle_code_generated(event):
+    await validate_code(event.payload["code"])
+    await notify_user(event.payload["project_id"])
+```
+
+**Features:**
+- Pub/sub event system
+- Async/await throughout
+- Event filtering and routing
+- Event history tracking
+- Extensible event types
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-nexus) | 📦 [PyPI](https://pypi.org/project/socratic-nexus/) | Use cases: Microservices, real-time systems, event-driven architectures
+
+---
+
+#### Feature Library 1: socratic-conflict
+**Conflict Detection & Resolution**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-conflict.svg)](https://pypi.org/project/socratic-conflict/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-conflict.svg)](https://pypi.org/project/socratic-conflict/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-conflict.svg?style=social)](https://github.com/Nireus79/Socratic-conflict)
+
+Validate specifications and detect contradictions:
+
+```python
+from socratic_conflict import ConflictDetector, ConflictType
+
+detector = ConflictDetector()
+
+# Check for conflicts
+spec = {
+    "goals": ["Real-time processing", "Minimal latency"],
+    "constraints": ["$500/month budget", "Single machine"],
+    "tech_stack": ["Kubernetes", "Raspberry Pi"]
+}
+
+conflicts = detector.detect(spec)
+
+for conflict in conflicts:
+    if conflict.type == ConflictType.GOAL_vs_CONSTRAINT:
+        print(f"Conflict: {conflict.description}")
+        print(f"Severity: {conflict.severity}")  # CRITICAL, HIGH, MEDIUM, LOW
+```
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-conflict) | 📦 [PyPI](https://pypi.org/project/socratic-conflict/) | Use cases: Requirements validation, project planning, risk assessment
+
+---
+
+#### Feature Library 2: socratic-analyzer
+**Analytics & Insight Categorization**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-analyzer.svg)](https://pypi.org/project/socratic-analyzer/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-analyzer.svg)](https://pypi.org/project/socratic-analyzer/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-analyzer.svg?style=social)](https://github.com/Nireus79/Socratic-analyzer)
+
+Analyze patterns and categorize insights from data:
+
+```python
+from socratic_analyzer import InsightAnalyzer, InsightCategory
+
+analyzer = InsightAnalyzer()
+
+# Analyze project data
+insights = await analyzer.analyze({
+    "project_name": "E-Commerce Platform",
+    "phase": "implementation",
+    "team_size": 5,
+    "timeline": "3 months"
+})
+
+# Insights categorized by type
+for insight in insights:
+    print(f"{insight.category}: {insight.text}")
+    print(f"Confidence: {insight.confidence}")
+    if insight.recommendations:
+        for rec in insight.recommendations:
+            print(f"  → {rec}")
+```
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-analyzer) | 📦 [PyPI](https://pypi.org/project/socratic-analyzer/) | Use cases: Project analytics, business intelligence, automated insights
+
+---
+
+#### Feature Library 3: socratic-maturity
+**Project Maturity Scoring**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-maturity.svg)](https://pypi.org/project/socratic-maturity/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-maturity.svg)](https://pypi.org/project/socratic-maturity/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-maturity.svg?style=social)](https://github.com/Nireus79/Socratic-maturity)
+
+Track project readiness and progress:
+
+```python
+from socratic_maturity import MaturityCalculator
+
+calculator = MaturityCalculator()
+
+# Calculate maturity score
+maturity = calculator.score({
+    "requirements_completeness": 0.85,
+    "architecture_defined": True,
+    "testing_coverage": 0.72,
+    "documentation_complete": True,
+    "team_readiness": 0.90
+})
+
+print(f"Overall Maturity: {maturity.score}%")  # 0-100
+print(f"Phase Readiness: {maturity.recommended_phase}")
+print(f"Blockers: {maturity.blockers}")
+```
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-maturity) | 📦 [PyPI](https://pypi.org/project/socratic-maturity/) | Use cases: Project management, phase progression, milestone tracking
+
+---
+
+#### Feature Library 4: socratic-learning
+**User Learning Analytics**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-learning.svg)](https://pypi.org/project/socratic-learning/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-learning.svg)](https://pypi.org/project/socratic-learning/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-learning.svg?style=social)](https://github.com/Nireus79/Socratic-learning)
+
+Track how users interact and learn:
+
+```python
+from socratic_learning import LearningTracker, SkillLevel
+
+tracker = LearningTracker()
+
+# Track user interactions
+await tracker.record_interaction(
+    user_id="user-123",
+    action="generated_code",
+    topic="python",
+    success=True
+)
+
+# Get learning progress
+progress = tracker.get_progress("user-123", topic="python")
+print(f"Skill Level: {progress.skill_level}")  # BEGINNER, INTERMEDIATE, EXPERT
+print(f"Topics: {progress.mastered_topics}")
+print(f"Next Recommended: {progress.next_topic}")
+```
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-learning) | 📦 [PyPI](https://pypi.org/project/socratic-learning/) | Use cases: User profiling, personalization, learning paths
+
+---
+
+#### Feature Library 5: socratic-workflow
+**Workflow Execution & Automation**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-workflow.svg)](https://pypi.org/project/socratic-workflow/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-workflow.svg)](https://pypi.org/project/socratic-workflow/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-workflow.svg?style=social)](https://github.com/Nireus79/Socratic-workflow)
+
+Define and execute multi-step workflows:
+
+```python
+from socratic_workflow import WorkflowEngine, Workflow, Step
+
+# Define workflow
+workflow = Workflow(
+    name="Code Review Pipeline",
+    steps=[
+        Step(name="analyze", agent="code_analyzer"),
+        Step(name="validate", agent="validator", depends_on="analyze"),
+        Step(name="suggest", agent="suggester", depends_on="validate"),
+    ]
+)
+
+# Execute
+engine = WorkflowEngine()
+result = await engine.execute(workflow, context={
+    "code": "def hello(): pass"
+})
+
+print(f"Status: {result.status}")  # SUCCESS, PARTIAL, FAILED
+for step in result.steps:
+    print(f"  {step.name}: {step.output}")
+```
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-workflow) | 📦 [PyPI](https://pypi.org/project/socratic-workflow/) | Use cases: Automation, orchestration, multi-step processes
+
+---
+
+#### Feature Library 6: socratic-performance
+**Performance Profiling & Metrics**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-performance.svg)](https://pypi.org/project/socratic-performance/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-performance.svg)](https://pypi.org/project/socratic-performance/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-performance.svg?style=social)](https://github.com/Nireus79/Socratic-performance)
+
+Monitor and optimize system performance:
+
+```python
+from socratic_performance import PerformanceMonitor, MetricType
+
+monitor = PerformanceMonitor()
+
+# Track operation
+with monitor.measure("code_generation"):
+    result = await generate_code(spec)
+
+# Get metrics
+metrics = monitor.get_metrics()
+print(f"Avg latency: {metrics.avg_latency}ms")
+print(f"P95: {metrics.p95_latency}ms")
+print(f"Throughput: {metrics.requests_per_sec}")
+
+# Get recommendations
+for recommendation in metrics.optimization_suggestions():
+    print(f"Consider: {recommendation}")
+```
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-performance) | 📦 [PyPI](https://pypi.org/project/socratic-performance/) | Use cases: Performance optimization, bottleneck detection, monitoring
+
+---
+
+#### Feature Library 7: socratic-docs
+**Documentation Generation**
+
+[![PyPI](https://img.shields.io/pypi/v/socratic-docs.svg)](https://pypi.org/project/socratic-docs/)
+[![Downloads](https://img.shields.io/pypi/dm/socratic-docs.svg)](https://pypi.org/project/socratic-docs/)
+[![GitHub](https://img.shields.io/github/stars/Nireus79/Socratic-docs.svg?style=social)](https://github.com/Nireus79/Socratic-docs)
+
+Auto-generate documentation from code and specs:
+
+```python
+from socratic_docs import DocumentationGenerator, DocFormat
+
+generator = DocumentationGenerator()
+
+# Generate from spec
+docs = await generator.generate(
+    spec={
+        "project": "MyProject",
+        "modules": [...],
+        "endpoints": [...]
+    },
+    format=DocFormat.MARKDOWN
+)
+
+# Customize template
+docs.set_template("api", "templates/api-custom.jinja2")
+docs.generate_api_docs()
+docs.generate_architecture_guide()
+
+# Export
+await docs.export(path="./docs", format="pdf")
+```
+
+📖 [GitHub](https://github.com/Nireus79/Socratic-docs) | 📦 [PyPI](https://pypi.org/project/socratic-docs/) | Use cases: API documentation, project guides, knowledge bases
+
+---
 
 #### Framework Integrations
+
+Seamlessly integrate Socrates with your existing ecosystem:
+
 ```python
-# Extend to your ecosystem
-pip install langchain langchain-community          # LangChain agents
-pip install langgraph                             # State machine workflows
-# openclaw integration included
+# LangChain integration
+from socratic_system.api.adapters import create_socrates_tools
+from langchain.agents import initialize_agent
+
+tools = create_socrates_tools(
+    agent_names=["code_generator", "conflict_detector"]
+)
+agent = initialize_agent(tools, your_llm, agent=AgentType.REACT)
+
+# LangGraph integration
+from socratic_system.api.adapters import create_socrates_nodes
+from langgraph.graph import StateGraph
+
+workflow = StateGraph(YourState)
+nodes = create_socrates_nodes(agents=["code_generator", "quality_controller"])
+for name, fn in nodes.items():
+    workflow.add_node(name, fn)
 ```
+
+📖 [Framework Integrations Guide](FRAMEWORK_INTEGRATIONS.md)
 
 ---
 

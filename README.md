@@ -121,21 +121,36 @@ Agents automatically detect violations of architectural patterns and design conf
 
 ## 📦 Ecosystem: 11 Production Packages
 
-Socrates is built from **11 independent, version-controlled PyPI packages**. Use them together or pick what you need:
+Socrates is built from **11 independent, version-controlled PyPI packages**. Use them together or pick what you need.
 
-| Package | Purpose | Links |
-|---------|---------|-------|
-| **socrates-ai** | Complete platform | [GitHub](https://github.com/Nireus79/Socrates) \| [PyPI](https://pypi.org/project/socrates-ai/) |
-| **socratic-nexus** | Universal LLM client (OpenAI, Anthropic, Claude, Llama) | [GitHub](https://github.com/Nireus79/Socratic-nexus) \| [PyPI](https://pypi.org/project/socratic-nexus/) |
-| **socratic-agents** | 19 specialized agent implementations | [GitHub](https://github.com/Nireus79/Socratic-agents) \| [PyPI](https://pypi.org/project/socratic-agents/) |
-| **socratic-morality** | Ethical governance & compliance framework | [GitHub](https://github.com/Nireus79/Socratic-morality) \| [PyPI](https://pypi.org/project/socratic-morality/) |
-| **socratic-workflow** | Workflow orchestration & state management | [GitHub](https://github.com/Nireus79/Socratic-workflow) \| [PyPI](https://pypi.org/project/socratic-workflow/) |
-| **socratic-knowledge** | RAG, embeddings, semantic search | [GitHub](https://github.com/Nireus79/Socratic-knowledge) \| [PyPI](https://pypi.org/project/socratic-knowledge/) |
-| **socratic-learning** | Self-improving agent loops & analytics | [GitHub](https://github.com/Nireus79/Socratic-learning) \| [PyPI](https://pypi.org/project/socratic-learning/) |
-| **socratic-analyzer** | Code analysis & metrics | [GitHub](https://github.com/Nireus79/Socratic-analyzer) \| [PyPI](https://pypi.org/project/socratic-analyzer/) |
-| **socratic-performance** | Caching, monitoring, performance utilities | [GitHub](https://github.com/Nireus79/Socratic-performance) \| [PyPI](https://pypi.org/project/socratic-performance/) |
-| **socratic-conflict** | Conflict resolution between agents | [GitHub](https://github.com/Nireus79/Socratic-conflict) \| [PyPI](https://pypi.org/project/socratic-conflict/) |
-| **socratic-maturity** | Tracking system maturity levels | [GitHub](https://github.com/Nireus79/Socratic-maturity) \| [PyPI](https://pypi.org/project/socratic-maturity/) |
+**📖 [View detailed package docs with integration examples →](ECOSYSTEM.md#layer-2-specialized-libraries)**
+
+### Core Packages (Essential)
+
+| Package | Purpose | Latest | Downloads |
+|---------|---------|--------|-----------|
+| **socratic-morality** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-morality.svg?style=flat)](https://github.com/Nireus79/Socratic-morality) | Ethical governance & compliance | [![Version](https://img.shields.io/pypi/v/socratic-morality.svg)](https://pypi.org/project/socratic-morality/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-morality.svg)](https://pypi.org/project/socratic-morality/) |
+| **socratic-agents** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-agents.svg?style=flat)](https://github.com/Nireus79/Socratic-agents) | 14+ specialized agents | [![Version](https://img.shields.io/pypi/v/socratic-agents.svg)](https://pypi.org/project/socratic-agents/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-agents.svg)](https://pypi.org/project/socratic-agents/) |
+| **socratic-knowledge** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-knowledge.svg?style=flat)](https://github.com/Nireus79/Socratic-knowledge) | RAG, embeddings, semantic search | [![Version](https://img.shields.io/pypi/v/socratic-knowledge.svg)](https://pypi.org/project/socratic-knowledge/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-knowledge.svg)](https://pypi.org/project/socratic-knowledge/) |
+| **socratic-nexus** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-nexus.svg?style=flat)](https://github.com/Nireus79/Socratic-nexus) | Component communication | [![Version](https://img.shields.io/pypi/v/socratic-nexus.svg)](https://pypi.org/project/socratic-nexus/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-nexus.svg)](https://pypi.org/project/socratic-nexus/) |
+
+### Feature Packages (Optional)
+
+| Package | Purpose | Latest | Downloads |
+|---------|---------|--------|-----------|
+| **socratic-conflict** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-conflict.svg?style=flat)](https://github.com/Nireus79/Socratic-conflict) | Conflict detection & resolution | [![Version](https://img.shields.io/pypi/v/socratic-conflict.svg)](https://pypi.org/project/socratic-conflict/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-conflict.svg)](https://pypi.org/project/socratic-conflict/) |
+| **socratic-analyzer** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-analyzer.svg?style=flat)](https://github.com/Nireus79/Socratic-analyzer) | Analytics & insights | [![Version](https://img.shields.io/pypi/v/socratic-analyzer.svg)](https://pypi.org/project/socratic-analyzer/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-analyzer.svg)](https://pypi.org/project/socratic-analyzer/) |
+| **socratic-maturity** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-maturity.svg?style=flat)](https://github.com/Nireus79/Socratic-maturity) | Project maturity scoring | [![Version](https://img.shields.io/pypi/v/socratic-maturity.svg)](https://pypi.org/project/socratic-maturity/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-maturity.svg)](https://pypi.org/project/socratic-maturity/) |
+| **socratic-learning** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-learning.svg?style=flat)](https://github.com/Nireus79/Socratic-learning) | Learning analytics | [![Version](https://img.shields.io/pypi/v/socratic-learning.svg)](https://pypi.org/project/socratic-learning/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-learning.svg)](https://pypi.org/project/socratic-learning/) |
+| **socratic-workflow** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-workflow.svg?style=flat)](https://github.com/Nireus79/Socratic-workflow) | Workflow orchestration | [![Version](https://img.shields.io/pypi/v/socratic-workflow.svg)](https://pypi.org/project/socratic-workflow/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-workflow.svg)](https://pypi.org/project/socratic-workflow/) |
+| **socratic-performance** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-performance.svg?style=flat)](https://github.com/Nireus79/Socratic-performance) | Performance monitoring | [![Version](https://img.shields.io/pypi/v/socratic-performance.svg)](https://pypi.org/project/socratic-performance/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-performance.svg)](https://pypi.org/project/socratic-performance/) |
+| **socratic-docs** [![Stars](https://img.shields.io/github/stars/Nireus79/Socratic-docs.svg?style=flat)](https://github.com/Nireus79/Socratic-docs) | Documentation generation | [![Version](https://img.shields.io/pypi/v/socratic-docs.svg)](https://pypi.org/project/socratic-docs/) | [![Downloads](https://img.shields.io/pypi/dm/socratic-docs.svg)](https://pypi.org/project/socratic-docs/) |
+
+### Platform Package
+
+| Package | Purpose | Latest | Downloads |
+|---------|---------|--------|-----------|
+| **socrates-ai** [![Stars](https://img.shields.io/github/stars/Nireus79/Socrates.svg?style=flat)](https://github.com/Nireus79/Socrates) | Complete platform (37+ modules) | [![Version](https://img.shields.io/pypi/v/socrates-ai.svg)](https://pypi.org/project/socrates-ai/) | [![Downloads](https://img.shields.io/pypi/dm/socrates-ai.svg)](https://pypi.org/project/socrates-ai/) |
 
 **Pick & Mix Example:**
 ```bash
@@ -145,9 +160,14 @@ pip install socratic-morality socratic-agents
 # Full stack (everything)
 pip install socrates-ai
 
-# Custom AI assistant (LLM + agents + knowledge)
-pip install socratic-nexus socratic-agents socratic-knowledge
+# Custom AI assistant (agents + knowledge)
+pip install socratic-agents socratic-knowledge
+
+# Enterprise system (agents + governance + workflow)
+pip install socratic-agents socratic-morality socratic-workflow
 ```
+
+**See code examples for each package →** [ECOSYSTEM.md](ECOSYSTEM.md#layer-2-specialized-libraries)
 
 ---
 
