@@ -64,7 +64,7 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}/api
-            docker.io/${{ secrets.DOCKER_USERNAME }}/socrates-api
+            docker.io/nireus79/socrates-api
           tags: |
             type=ref,event=branch
             type=sha
@@ -167,7 +167,7 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}/frontend
-            docker.io/${{ secrets.DOCKER_USERNAME }}/socrates-frontend
+            docker.io/nireus79/socrates-frontend
           tags: |
             type=ref,event=branch
             type=sha
