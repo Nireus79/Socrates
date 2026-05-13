@@ -76,7 +76,7 @@ This roadmap guides the extraction of Socratic AI into two reusable PyPI librari
 - **DEPLOYMENT.md** - Deployment procedures
 - **deployment/DEPLOYMENT_CHECKLIST.md** - Pre-deployment verification
 - **deployment/DOCKER_BUILD.md** - Docker containerization
-- **deployment/PRODUCTION_READINESS.md** - Production readiness criteria
+- **PRODUCTION_DEPLOYMENT.md** - Production deployment checklist and guide
 - **operations/SHUTDOWN_GUIDE.md** - Graceful shutdown procedures
 
 ### User Guides & Integration
@@ -287,7 +287,7 @@ Refactor Socrates to depend on extracted libraries instead of having internal co
 - **DATABASE_MIGRATION_GUIDE.md** - Database migration procedures
 - **DEPLOYMENT.md** - Deployment strategy
 - **deployment/DEPLOYMENT_CHECKLIST.md** - Pre-deployment verification
-- **DEPLOYMENT_DOCKER.md** - Docker deployment
+- **DOCKER_DEPLOYMENT.md** - Docker deployment
 
 **API & Testing**:
 - **API_REFERENCE.md** - Update endpoints to use libraries
@@ -320,7 +320,7 @@ Implement production-grade security and compliance. (Runs parallel with Phase 4)
 ### Reference Documents to Use
 
 - **SECURITY.md** - Governance framework and security architecture
-- **deployment/PRODUCTION_READINESS.md** - Production readiness checklist
+- **PRODUCTION_DEPLOYMENT.md** - Production deployment and readiness guide
 - **TESTING.md** - Security testing patterns
 - **operations/SHUTDOWN_GUIDE.md** - Operational procedures
 

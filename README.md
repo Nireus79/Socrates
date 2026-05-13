@@ -1,4 +1,4 @@
-# Socrates AI - Collaborative Development Platform
+audelaude# Socrates AI - Collaborative Development Platform
 
 A complete project management and vibe coding RAG system.
 Comprehensive AI-powered platform for collaborative software project development, with real-time collaboration,

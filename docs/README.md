@@ -16,51 +16,39 @@ Welcome to **Socrates AI**, an AI-powered software development companion that gu
 
 ## Quick Start
 
-### Installation
+For detailed installation and setup instructions, see **[INSTALLATION.md](INSTALLATION.md)**.
+
+### Quick Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/Nireus79/Socrates.git
-cd Socrates
+# Install from PyPI
+pip install socrates-ai
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Start API server
+socrates-api
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Set API key
-export ANTHROPIC_API_KEY="sk-ant-your-key-here"  # Or your API key
+# Or use CLI
+socrates --help
 ```
-
-### Run the System
-
-**Quick Start - Choose Your Interface:**
-
-| Command | Description | Use Case |
-|---------|-------------|----------|
-| `python socrates.py` | CLI-only (default) | Interactive terminal, quick testing, learning |
-| `python socrates.py --full` | Full stack (API + Frontend) | Web UI + programmatic access, full experience |
-| `python socrates.py --api` | API server only | Integration with other tools, headless mode |
-| `python socrates.py --frontend` | CLI + React frontend | Hybrid mode, visual + terminal interface |
-| `python socrates.py --help` | Show all options | See all available commands |
 
 ### Docker Deployment (Recommended)
 
 For a containerized, production-ready deployment, use Docker Compose:
 
 ```bash
-# Clone and navigate to Docker deployment directory
+# Clone repository
 git clone https://github.com/Nireus79/Socrates.git
-cd Socrates/deployment/docker
+cd Socrates
+
+# Create environment file
+cp deployment/configurations/.env.example .env
 
 # Start all services (API, Frontend, Database, Redis)
-docker-compose up -d
+docker-compose -f deployment/docker/docker-compose.yml up -d
 
 # This starts:
 # - API Server: http://localhost:8000
-# - Web Frontend: http://localhost:5173
+# - Web Frontend: http://localhost:3000 (via Nginx)
 # - PostgreSQL Database
 # - Redis Cache
 
@@ -71,44 +59,7 @@ docker-compose logs -f
 docker-compose down
 ```
 
-See [Docker Build and Deployment Instructions](deployment/DOCKER_BUILD.md) for detailed Docker information including prerequisites, building custom images, and troubleshooting.
-
-**Example: Full Stack (Recommended for First Time)**
-```bash
-python socrates.py --full
-
-# This starts:
-# - API Server: http://localhost:8000
-# - Web Frontend: http://localhost:5173
-# - Browser opens automatically
-```
-
-**Example: API Server Only**
-```bash
-python socrates.py --api
-
-# Starts API server
-# API available at http://localhost:8000
-# Auto-detects available port if 8000 is busy
-```
-
-**Example: Interactive CLI**
-```bash
-python socrates.py
-
-# Starts command-line interface
-# Interactive prompt for Socratic dialogue
-```
-
-**API Server with Custom Port:**
-```bash
-python socrates.py --api --port 9000
-
-# Start on custom port (auto-detects if busy)
-# Disable auto-detection with --no-auto-port
-```
-
-> **Note**: All startup commands are run from the project root directory where `socrates.py` is located.
+See [Docker Deployment Guide](DOCKER_DEPLOYMENT.md) and [Docker Build Instructions](deployment/DOCKER_BUILD.md) for detailed setup, custom configurations, and troubleshooting.
 
 ---
 
@@ -338,44 +289,18 @@ You'll need an Anthropic API key to use Socrates. Get one at [console.anthropic.
 
 ---
 
-## What's New in v1.3.0
+## Latest Release (v0.2.0 Beta)
 
-### Spec Persistence System
-
-**Persistent Project Specifications** - Project specifications are now automatically saved and retrieved, enabling:
-- Specifications persist across sessions without loss
-- Complete project context maintained in database
-- Ability to load previous project specifications instantly
-- Project specifications included in all knowledge base queries
-
-**Impact**: Your project specifications are now truly persistent. No more worrying about losing critical project context between sessions.
-
-### Improved Maturity Scoring
-
-**Enhanced Project Maturity Calculation** - The system now provides more accurate project maturity assessment:
-- Refined scoring algorithm for better accuracy
-- More nuanced maturity levels (not just binary)
-- Better detection of project completeness across phases
-- Improved feedback on what's needed to advance
-
-**Impact**: Get more reliable guidance on when your project specification is ready for code generation.
-
-### Bug Fixes & Improvements
-
-- Fixed issue where current question wasn't loading in suggestions modal
-- Improved overall system stability and performance
-- Enhanced documentation and examples
-
-For a detailed changelog, see the commit history or [ARCHITECTURE.md](ARCHITECTURE.md).
+This is the current stable release of Socrates AI. See the [main README](../README.md) for the latest features and release notes.
 
 ---
 
 ## Next Steps
 
-1. **[Install the system](INSTALLATION.md)** (5 minutes)
-2. **[Follow the user guide](USER_GUIDE.md)** (30 minutes)
-3. **[Create your first project](USER_GUIDE.md#creating-your-first-project)** (15 minutes)
-4. **[Explore advanced features](USER_GUIDE.md#advanced-usage)** (varies)
+1. **[Install the system](INSTALLATION.md)** following the installation guide
+2. **[Follow the user guide](USER_GUIDE.md)** for complete usage instructions
+3. **[Create your first project](USER_GUIDE.md)** and explore the system
+4. **[Explore advanced features](DEVELOPER_GUIDE.md)** for customization
 
 ---
 
@@ -420,5 +345,5 @@ If you use Socratic in your research or project, please cite:
 
 ---
 
-**Last Updated**: January 2026
-**Version**: 1.3.0
+**Last Updated**: May 2026
+**Version**: 0.2.0 Beta

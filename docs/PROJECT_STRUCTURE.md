@@ -27,15 +27,12 @@ Comprehensive project documentation organized by topic:
 ```
 docs/
 ├── rbac/                          # Role-Based Access Control
-│   ├── RBAC_DOCUMENTATION.md      # User guide (500+ lines)
-│   ├── RBAC_IMPLEMENTATION_SUMMARY.md
-│   ├── RBAC_COMPLETION_SUMMARY.md
-│   └── FRONTEND_VALIDATION_REPORT.md
+│   └── RBAC_DOCUMENTATION.md      # User guide (500+ lines)
 ├── database/                       # Database-related docs
-│   ├── DATABASE_MIGRATION_GUIDE.md
-│   └── DATABASE_VERIFICATION_SUMMARY.md
-├── api/                            # API documentation
-└── guides/                         # Technical guides
+│   └── DATABASE_MIGRATION_GUIDE.md
+├── deployment/                     # Deployment guides
+├── adr/                            # Architecture decision records
+└── [40+ other documentation files] # See docs/INDEX.md for full list
 ```
 
 **Symlinks** at root for easy access:
@@ -226,15 +223,7 @@ GitHub Actions workflows for testing and deployment
 
 ## 🔗 Key Symlinks (at root)
 
-These files are symlinked from `/docs` for convenient access:
-
-```
-RBAC_DOCUMENTATION.md → docs/rbac/RBAC_DOCUMENTATION.md
-DATABASE_MIGRATION_GUIDE.md → docs/database/DATABASE_MIGRATION_GUIDE.md
-RBAC_COMPLETION_SUMMARY.md → docs/rbac/RBAC_COMPLETION_SUMMARY.md
-```
-
-**Note**: These symlinks work on Linux/Mac. On Windows, edit the `.gitignore` to use actual files if needed.
+Key documentation files are accessible in the `/docs` directory. See [INDEX.md](docs/INDEX.md) for complete documentation structure and navigation.
 
 ---
 

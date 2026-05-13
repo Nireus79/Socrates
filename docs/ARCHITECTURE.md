@@ -4,8 +4,8 @@ This document provides a comprehensive technical overview of Socrates AI's archi
 
 ## Quick Start
 
-**New to Socrates architecture?** Socrates v0.2.0+ uses a modular library-based architecture. Start with:
-- [LIBRARY_INTEGRATION.md](LIBRARY_INTEGRATION.md) - How libraries integrate into Socrates
+**New to Socrates architecture?** Socrates is built on a modular library-based architecture. Start with:
+- [FRAMEWORK_INTEGRATIONS.md](../FRAMEWORK_INTEGRATIONS.md) - How external frameworks integrate into Socrates
 - [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) - Setting up your development environment
 
 ## Table of Contents
