@@ -31,6 +31,13 @@ jobs:
       api-digest: ${{ steps.build.outputs.digest }}
 
     steps:
+      - name: Set version variable
+        id: version
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Checkout code
         uses: actions/checkout@v4.2.1
         with:
@@ -82,7 +89,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max,ignore-error=true
           build-args: |
-            VERSION=${{ github.ref_name }}
+            VERSION=${{ steps.version.outputs.version }}
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
             VCS_REF=${{ github.sha }}
 
@@ -90,7 +97,7 @@ jobs:
         if: always()
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/nireus79/socrates/api:${{ github.ref_name }}
+          image: ghcr.io/nireus79/socrates/api:${{ steps.version.outputs.version }}
           format: spdx-json
           output-file: sbom-api.spdx.json
         continue-on-error: true
@@ -125,6 +132,13 @@ jobs:
       frontend-digest: ${{ steps.build.outputs.digest }}
 
     steps:
+      - name: Set version variable
+        id: version
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Checkout code
         uses: actions/checkout@v4.2.1
         with:
@@ -176,7 +190,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max,ignore-error=true
           build-args: |
-            VERSION=${{ github.ref_name }}
+            VERSION=${{ steps.version.outputs.version }}
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
             VCS_REF=${{ github.sha }}
             VITE_API_URL=${{ secrets.VITE_API_URL || 'https://api.socrates.app' }}
@@ -185,7 +199,7 @@ jobs:
         if: always()
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }}
+          image: ghcr.io/nireus79/socrates/frontend:${{ steps.version.outputs.version }}
           format: spdx-json
           output-file: sbom-frontend.spdx.json
         continue-on-error: true
@@ -209,7 +223,7 @@ jobs:
       - name: Run Trivy vulnerability scanner (API)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ghcr.io/nireus79/socrates/api:${{ github.ref_name }}
+          image-ref: ghcr.io/nireus79/socrates/api:sha-${{ github.sha | truncate(7, '') }}
           format: 'sarif'
           output: 'trivy-api-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -218,7 +232,7 @@ jobs:
       - name: Run Trivy vulnerability scanner (Frontend)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }}
+          image-ref: ghcr.io/nireus79/socrates/frontend:sha-${{ github.sha | truncate(7, '') }}
           format: 'sarif'
           output: 'trivy-frontend-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -226,7 +240,7 @@ jobs:
 
       - name: Upload Trivy results to GitHub Security
         if: always()
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-api-results.sarif'
           category: 'trivy-api'
@@ -234,7 +248,7 @@ jobs:
 
       - name: Upload Trivy results to GitHub Security (Frontend)
         if: always()
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-frontend-results.sarif'
           category: 'trivy-frontend'
@@ -248,18 +262,25 @@ jobs:
     if: github.event_name != 'pull_request' && needs.build-api.result == 'success' && needs.build-frontend.result == 'success'
 
     steps:
+      - name: Set version variable
+        id: version
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Load API image from ghcr.io
         run: |
-          API_IMAGE="ghcr.io/nireus79/socrates/api:${{ github.ref_name }}"
+          API_IMAGE="ghcr.io/nireus79/socrates/api:${{ steps.version.outputs.version }}"
           docker pull "$API_IMAGE"
           docker tag "$API_IMAGE" socrates-api:test
 
       - name: Load frontend image from ghcr.io
         run: |
-          FRONTEND_IMAGE="ghcr.io/nireus79/socrates/frontend:${{ github.ref_name }}"
+          FRONTEND_IMAGE="ghcr.io/nireus79/socrates/frontend:${{ steps.version.outputs.version }}"
           docker pull "$FRONTEND_IMAGE"
           docker tag "$FRONTEND_IMAGE" socrates-frontend:test
 
