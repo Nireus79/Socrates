@@ -1,19 +1,12 @@
 services:
   # API backend service
-  # Option 1: Build locally (default)
-  #   Uncomment 'build' and comment 'image' to build from Dockerfile
-  # Option 2: Pull from Docker Hub
-  #   Uncomment 'image' and comment 'build' to use pre-built image from nireus79/socrates-api
   api:
-    # Uncomment for local build:
     build:
       context: .
       dockerfile: Dockerfile.api
-    # Uncomment for Docker Hub image (comment out 'build' section above):
-    # image: nireus79/socrates-api:latest
     container_name: socrates-api
     environment:
-      # Listen on 0.0.0.0 for Docker networking (required for reverse proxy to reach it)
+      # Listen on 0.0.0.0 for Docker networking
       SOCRATES_API_HOST: 0.0.0.0
       SOCRATES_API_PORT: 8000
       ENVIRONMENT: production
@@ -21,11 +14,8 @@ services:
       REDIS_URL: redis://redis:6379
       # Add your encryption key here or pass via environment
       # SOCRATES_ENCRYPTION_KEY: your-key-here
-      # ALLOWED_ORIGINS: http://localhost:80
     ports:
       - "8000:8000"
-    volumes:
-      - ./socrates-api/.env:/app/socrates-api/.env:ro
     networks:
       - socrates-network
     healthcheck:
@@ -37,7 +27,7 @@ services:
     depends_on:
       - redis
 
-  # Redis cache (optional, but API expects it)
+  # Redis cache
   redis:
     image: redis:7-alpine
     container_name: socrates-redis
@@ -53,25 +43,41 @@ services:
     volumes:
       - redis_data:/data
 
-  # Frontend builder and reverse proxy
-  # Option 1: Build locally (default)
-  #   Uncomment 'build' and comment 'image' to build from Dockerfile
-  # Option 2: Pull from Docker Hub
-  #   Uncomment 'image' and comment 'build' to use pre-built image from nireus79/socrates-web
-  web:
-    # Uncomment for local build:
+  # Frontend service - builds and serves the React/Vue application
+  frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.reverse-proxy
-    # Uncomment for Docker Hub image (comment out 'build' section above):
-    # image: nireus79/socrates-web:latest
-    container_name: socrates-web
+      context: ./socrates-frontend
+      dockerfile: Dockerfile
+      args:
+        # API URL available at /api via nginx proxy
+        VITE_API_URL: /api
+    container_name: socrates-frontend
     ports:
-      - "80:80"
+      - "3000:3000"
     networks:
       - socrates-network
     depends_on:
       - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Nginx reverse proxy - routes requests to api and frontend
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: socrates-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-reverse-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - socrates-network
+    depends_on:
+      - api
+      - frontend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s

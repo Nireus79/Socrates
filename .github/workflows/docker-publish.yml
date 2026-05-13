@@ -122,9 +122,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          token: ${{ github.token }}
           body: |
             ## Docker Images Built and Tested
 
