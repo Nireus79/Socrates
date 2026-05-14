@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS projects (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     archived_at TIMESTAMP,
+    code_history TEXT,  -- JSON-encoded version history of code changes
 
     FOREIGN KEY (owner) REFERENCES users(username)
 );
@@ -33,6 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_projects_archived ON projects(is_archived);
 CREATE INDEX IF NOT EXISTS idx_projects_updated ON projects(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_projects_owner_archived ON projects(owner, is_archived);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+CREATE INDEX IF NOT EXISTS idx_projects_code_history ON projects(code_history);
 
 -- Project requirements (normalized from array)
 CREATE TABLE IF NOT EXISTS project_requirements (
