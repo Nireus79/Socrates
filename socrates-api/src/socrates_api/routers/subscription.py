@@ -126,7 +126,15 @@ async def get_subscription_status(
         # Load user from database to get actual tier and testing_mode flag
         user = db.load_user(current_user)
         current_tier = user.subscription_tier if user else "free"
-        testing_mode = user.testing_mode if user else False
+
+        # Check if testing mode is active (auto-expires after 24 hours)
+        # is_testing_mode_active() returns False if expired and auto-disables it
+        testing_mode = False
+        if user:
+            testing_mode = user.is_testing_mode_active()
+            # If testing mode expired, save the updated state back to database
+            if user.testing_mode and not testing_mode:  # Was on, now expired
+                db.save_user(user)
 
         tier_info = SUBSCRIPTION_TIERS.get(current_tier, SUBSCRIPTION_TIERS["free"])
 

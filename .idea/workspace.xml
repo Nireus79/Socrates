@@ -7,6 +7,7 @@
     <list default="true" id="b13c29eb-a190-422e-b9a9-1ba216d0bc04" name="Changes" comment="matrix">
       <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/auth.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_system/database/migration_runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/migration_runner.py" afterDir="false" />
     </list>
