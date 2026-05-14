@@ -780,6 +780,10 @@ async def set_testing_mode(
         # This is NOT an admin-only feature - aligns with owner-based authorization model
         # Users don't need admin privileges to fully test the system
         user.testing_mode = enabled
+        # Set timestamp when enabling, clear when disabling
+        user.testing_mode_enabled_at = (
+            datetime.now() if enabled else None
+        )
         db.save_user(user)
 
         logger.info(

@@ -2,15 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-agents" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-analyzer" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-conflict" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-docs" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-knowledge" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-learning" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-maturity" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-morality" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-performance" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Socratic-workflow" vcs="Git" />
   </component>
 </project>
