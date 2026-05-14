@@ -543,6 +543,7 @@ class SocraticRAGSystem:
         if os.getenv("SOCRATES_TESTING_MODE") == "1" and self.current_user:
             if not self.current_user.testing_mode:
                 self.current_user.testing_mode = True
+                self.current_user.testing_mode_enabled_at = datetime.datetime.now()
                 self.orchestrator.database.save_user(self.current_user)
                 print(f"\n{Fore.GREEN}[OK] Testing mode ENABLED{Style.RESET_ALL}")
                 print(f"{Fore.YELLOW}All monetization restrictions bypassed!{Style.RESET_ALL}\n")
