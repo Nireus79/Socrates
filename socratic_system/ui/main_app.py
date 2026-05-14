@@ -694,6 +694,12 @@ class SocraticRAGSystem:
 
     def _get_context(self) -> dict[str, Any]:
         """Get the current application context for commands"""
+        # Reload user from database to ensure we have the latest state
+        # This is necessary because commands may modify the user (e.g., testing mode)
+        # and save to the database without updating self.current_user in memory
+        if self.current_user:
+            self.current_user = self.orchestrator.database.load_user(self.current_user.username)
+
         return {
             "user": self.current_user,
             "project": self.current_project,
