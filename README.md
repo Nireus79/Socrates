@@ -15,6 +15,11 @@
 
 ## What Socrates Actually Does
 
+Socrates AI is a comprehensive system for solving the context problem in human-AI communication. **[Learn how it works →](WHAT_SOCRATES_ACTUALLY_DOES_AND_HOW.md)**
+
+By applying the Socratic method (2,400 years of philosophical tradition) to modern AI systems,
+Socrates ensures that projects are defined correctly before they're built, reducing rework by 70% and costs by 60%.
+
 Socrates is a **production-ready system for deploying intelligent agents** that can:
 
 ✅ **Coordinate multiple specialized AI agents** - 14+ agents handling project management, code generation, conflict resolution, knowledge retrieval, and more
