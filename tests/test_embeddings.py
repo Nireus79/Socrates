@@ -1,12 +1,39 @@
 """Tests for semantic embeddings functionality."""
 
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
-# Mock the SemanticEmbeddings class since socratic_morality may not have all modules
+# Import SemanticEmbeddings with model loading disabled
 try:
-    from socratic_morality.precedent.embeddings import SemanticEmbeddings
+    from socratic_morality.precedent.embeddings import SemanticEmbeddings as _RealSemanticEmbeddings
+
+    class SemanticEmbeddings(_RealSemanticEmbeddings):  # type: ignore
+        """Wrapper that prevents model downloading in tests."""
+
+        def _load_model(self) -> None:
+            """Skip model loading in tests to avoid network requests."""
+            self.model = None
+
+        def embed(self, text: str):
+            """Override embed to allow caching even without model."""
+            # Check cache first (allows tests to work with cached data)
+            if text in self.embeddings_cache:
+                return self.embeddings_cache[text]
+
+            # Return None if model not available
+            if not self.model:
+                return None
+
+            # Use parent implementation for actual embedding
+            try:
+                embedding = self.model.encode(text, convert_to_tensor=False)
+                embedding_list = embedding.tolist() if hasattr(embedding, "tolist") else list(embedding)
+                self.embeddings_cache[text] = embedding_list
+                return embedding_list
+            except Exception:
+                return None
+
 except (ImportError, ModuleNotFoundError):
     # Create a mock class if import fails
     import math
