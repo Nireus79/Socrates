@@ -176,8 +176,8 @@ def require_subscription_feature(feature: str) -> Callable:
                     detail="User not found",
                 )
 
-            # If testing mode is enabled, bypass subscription checks
-            if getattr(user, "testing_mode", False):
+            # If testing mode is enabled and active, bypass subscription checks
+            if hasattr(user, "is_testing_mode_active") and user.is_testing_mode_active():
                 logger.debug(
                     f"Testing mode enabled for {current_user}, bypassing subscription check for feature: {feature}"
                 )

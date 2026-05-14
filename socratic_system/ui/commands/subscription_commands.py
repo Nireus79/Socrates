@@ -270,6 +270,8 @@ class SubscriptionTestingModeCommand(BaseCommand):
 
     def execute(self, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Execute testing mode command."""
+        import datetime
+
         user = context.get("user")
         orchestrator = context.get("orchestrator")
 
@@ -289,11 +291,12 @@ class SubscriptionTestingModeCommand(BaseCommand):
                 return self.error("Testing mode is already enabled")
 
             user.testing_mode = True
+            user.testing_mode_enabled_at = datetime.datetime.now()
             orchestrator.database.save_user(user)
 
             print(f"\n{Fore.GREEN}✓ Testing mode ENABLED{Style.RESET_ALL}\n")
             print(f"{Fore.YELLOW}All monetization restrictions bypassed!{Style.RESET_ALL}\n")
-            print("Available for testing:")
+            print("Available for testing (next 24 hours):")
             print("  • All premium features unlocked")
             print("  • Unlimited projects")
             print("  • Unlimited team members")
@@ -303,13 +306,14 @@ class SubscriptionTestingModeCommand(BaseCommand):
                 f"\n{Fore.CYAN}Run /subscription romani-ite-domum off to disable{Style.RESET_ALL}\n"
             )
 
-            return self.success("Testing mode enabled")
+            return self.success("Testing mode enabled for 24 hours")
 
         else:  # mode == "off"
             if not user.testing_mode:
                 return self.error("Testing mode is already disabled")
 
             user.testing_mode = False
+            user.testing_mode_enabled_at = None
             orchestrator.database.save_user(user)
 
             print(f"\n{Fore.GREEN}✓ Testing mode DISABLED{Style.RESET_ALL}\n")

@@ -44,7 +44,9 @@ class User:
     # Testing mode - bypasses all monetization restrictions
     # Any authenticated user can enable this for their own account to bypass monetization
     # during development/testing. This is NOT an admin-only feature.
+    # Auto-expires after 24 hours of being enabled.
     testing_mode: bool = False
+    testing_mode_enabled_at: datetime.datetime | None = None  # Tracks when testing mode was activated
 
     # Claude authentication method: "api_key" or "subscription"
     claude_auth_method: str = "api_key"  # How to authenticate with Claude API
@@ -93,6 +95,30 @@ class User:
         """Increment question usage counter."""
         self.reset_monthly_usage_if_needed()
         self.questions_used_this_month += 1
+
+    def is_testing_mode_active(self) -> bool:
+        """
+        Check if testing mode is active and hasn't expired (within 24 hours).
+        Returns True only if testing mode is enabled AND less than 24 hours have passed since activation.
+        """
+        if not self.testing_mode:
+            return False
+
+        if self.testing_mode_enabled_at is None:
+            # If testing_mode is True but no timestamp, assume expired (safety mechanism)
+            return False
+
+        # Check if less than 24 hours have passed
+        time_since_activation = datetime.datetime.now() - self.testing_mode_enabled_at
+        hours_elapsed = time_since_activation.total_seconds() / 3600
+
+        if hours_elapsed >= 24:
+            # Auto-disable testing mode after 24 hours
+            self.testing_mode = False
+            self.testing_mode_enabled_at = None
+            return False
+
+        return True
 
     def get_active_projects_count(self) -> int:
         """Get count of active (non-archived) projects."""

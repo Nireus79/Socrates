@@ -53,7 +53,7 @@ class StorageQuotaManager:
             (can_upload: bool, error_message: Optional[str])
         """
         # Testing mode bypasses storage checks
-        if user and user.testing_mode or testing_mode:
+        if (user and user.is_testing_mode_active()) or testing_mode:
             return True, None
 
         if user is None:

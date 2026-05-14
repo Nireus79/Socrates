@@ -21,7 +21,7 @@ class SubscriptionChecker:
         Returns:
             (has_access: bool, error_message: Optional[str])
         """
-        if user and user.testing_mode:
+        if user and user.is_testing_mode_active():
             return True, None
 
         if user is None:
@@ -73,7 +73,7 @@ class SubscriptionChecker:
             (can_create: bool, error_message: Optional[str])
         """
         # Check both user model and header-based testing mode
-        if (user and user.testing_mode) or testing_mode:
+        if (user and user.is_testing_mode_active()) or testing_mode:
             return True, None
 
         if user is None:
@@ -116,7 +116,7 @@ class SubscriptionChecker:
             (can_add: bool, error_message: Optional[str])
         """
         # Check both user model and header-based testing mode
-        if (user and user.testing_mode) or testing_mode:
+        if (user and user.is_testing_mode_active()) or testing_mode:
             return True, None
 
         user_tier = user.subscription_tier.lower()
@@ -160,7 +160,7 @@ class SubscriptionChecker:
         Returns:
             (can_ask: bool, error_message: Optional[str])
         """
-        if user and user.testing_mode:
+        if user and user.is_testing_mode_active():
             return True, None
 
         if user is None:

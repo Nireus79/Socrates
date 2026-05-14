@@ -222,6 +222,7 @@ CREATE TABLE IF NOT EXISTS users (
     subscription_start TIMESTAMP,
     subscription_end TIMESTAMP,
     testing_mode BOOLEAN DEFAULT 0,
+    testing_mode_enabled_at TIMESTAMP,  -- When testing mode was activated (for 24-hour expiration)
     is_archived BOOLEAN DEFAULT 0,
     created_at TIMESTAMP NOT NULL,
     archived_at TIMESTAMP,

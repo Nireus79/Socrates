@@ -452,6 +452,8 @@ async def toggle_testing_mode(
         SuccessResponse with testing mode status and restrictions bypassed
     """
     try:
+        import datetime
+
         logger.info(f"Toggling testing mode to {enabled} for user: {current_user}")
 
         # Load user and update testing mode flag
@@ -463,16 +465,23 @@ async def toggle_testing_mode(
             )
 
         user.testing_mode = enabled
+        # Set timestamp when enabling, clear when disabling
+        user.testing_mode_enabled_at = (
+            datetime.datetime.now() if enabled else None
+        )
         db.save_user(user)
-        logger.info(f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user}")
+        logger.info(
+            f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user}"
+        )
 
         return APIResponse(
             success=True,
             status="success",
-            message=f"Testing mode {'enabled' if enabled else 'disabled'}",
+            message=f"Testing mode {'enabled for 24 hours' if enabled else 'disabled'}",
             data={
                 "testing_mode": enabled,
                 "effective_immediately": True,
+                "expires_in_hours": 24 if enabled else None,
                 "restrictions_bypassed": (
                     [
                         "Project limits",
@@ -484,7 +493,7 @@ async def toggle_testing_mode(
                     else []
                 ),
                 "warning": (
-                    "Testing mode enabled - all subscription restrictions bypassed"
+                    "Testing mode enabled for next 24 hours - all subscription restrictions bypassed"
                     if enabled
                     else None
                 ),
