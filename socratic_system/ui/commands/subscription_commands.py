@@ -45,9 +45,12 @@ class SubscriptionStatusCommand(BaseCommand):
         )
         print(f"{Fore.WHITE}Monthly Cost:{Style.RESET_ALL} ${limits.monthly_cost:.2f}")
         # Check if testing mode is active (and hasn't expired after 24 hours)
+        # Note: Record whether testing mode was enabled BEFORE calling is_testing_mode_active()
+        # because that method auto-disables expired mode in memory
+        testing_mode_was_enabled = user.testing_mode
         testing_mode_active = user.is_testing_mode_active()
-        # If expired, save the updated state
-        if user.testing_mode and not testing_mode_active:
+        # If expired, save the updated state (auto-disabled by is_testing_mode_active())
+        if testing_mode_was_enabled and not testing_mode_active:
             orchestrator.database.save_user(user)
 
         if testing_mode_active:
