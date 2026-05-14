@@ -1279,14 +1279,15 @@ class ProjectDatabase:
             sub_end = getattr(user, "subscription_end", None)
             is_archived = getattr(user, "is_archived", False)
             archived_at = getattr(user, "archived_at", None)
+            testing_mode_enabled_at = getattr(user, "testing_mode_enabled_at", None)
 
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO users (
                     username, email, passcode_hash, subscription_tier, subscription_status,
-                    subscription_start, subscription_end, testing_mode, created_at,
+                    subscription_start, subscription_end, testing_mode, testing_mode_enabled_at, created_at,
                     claude_auth_method, is_archived, archived_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     user.username,
@@ -1297,6 +1298,7 @@ class ProjectDatabase:
                     serialize_datetime(sub_start) if sub_start else None,
                     serialize_datetime(sub_end) if sub_end else None,
                     getattr(user, "testing_mode", False),
+                    serialize_datetime(testing_mode_enabled_at) if testing_mode_enabled_at else None,
                     serialize_datetime(user.created_at),
                     getattr(user, "claude_auth_method", "api_key"),
                     is_archived,
@@ -1337,6 +1339,17 @@ class ProjectDatabase:
             user.subscription_tier = row["subscription_tier"]
             user.subscription_status = row["subscription_status"]
             user.testing_mode = bool(row["testing_mode"])
+
+            # Set testing mode timestamp (for 24-hour expiration tracking)
+            try:
+                user.testing_mode_enabled_at = (
+                    deserialize_datetime(row["testing_mode_enabled_at"])
+                    if row["testing_mode_enabled_at"]
+                    else None
+                )
+            except (IndexError, KeyError):
+                user.testing_mode_enabled_at = None
+
             try:
                 user.claude_auth_method = row["claude_auth_method"] or "api_key"
             except (IndexError, KeyError):
@@ -1384,6 +1397,17 @@ class ProjectDatabase:
             user.subscription_tier = row["subscription_tier"]
             user.subscription_status = row["subscription_status"]
             user.testing_mode = bool(row["testing_mode"])
+
+            # Set testing mode timestamp (for 24-hour expiration tracking)
+            try:
+                user.testing_mode_enabled_at = (
+                    deserialize_datetime(row["testing_mode_enabled_at"])
+                    if row["testing_mode_enabled_at"]
+                    else None
+                )
+            except (IndexError, KeyError):
+                user.testing_mode_enabled_at = None
+
             try:
                 user.claude_auth_method = row["claude_auth_method"] or "api_key"
             except (IndexError, KeyError):
