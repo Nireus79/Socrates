@@ -1,6 +1,6 @@
 """Tests for semantic embeddings functionality."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -28,7 +28,9 @@ try:
             # Use parent implementation for actual embedding
             try:
                 embedding = self.model.encode(text, convert_to_tensor=False)
-                embedding_list = embedding.tolist() if hasattr(embedding, "tolist") else list(embedding)
+                embedding_list = (
+                    embedding.tolist() if hasattr(embedding, "tolist") else list(embedding)
+                )
                 self.embeddings_cache[text] = embedding_list
                 return embedding_list
             except Exception:
