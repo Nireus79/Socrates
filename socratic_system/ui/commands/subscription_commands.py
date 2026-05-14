@@ -53,9 +53,14 @@ class SubscriptionStatusCommand(BaseCommand):
         if testing_mode_was_enabled and not testing_mode_active:
             orchestrator.database.save_user(user)
 
+        # Always show testing mode status (ON or OFF) for clarity
         if testing_mode_active:
             print(
                 f"{Fore.WHITE}Testing Mode:{Style.RESET_ALL} {Fore.MAGENTA}ENABLED (all features unlocked){Style.RESET_ALL}"
+            )
+        else:
+            print(
+                f"{Fore.WHITE}Testing Mode:{Style.RESET_ALL} {Fore.CYAN}OFF (restrictions active){Style.RESET_ALL}"
             )
         print()
 
