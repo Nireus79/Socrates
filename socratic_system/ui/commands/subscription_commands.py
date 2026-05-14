@@ -44,7 +44,13 @@ class SubscriptionStatusCommand(BaseCommand):
             f"{Fore.WHITE}Status:{Style.RESET_ALL} {Fore.GREEN}{user.subscription_status.title()}{Style.RESET_ALL}"
         )
         print(f"{Fore.WHITE}Monthly Cost:{Style.RESET_ALL} ${limits.monthly_cost:.2f}")
-        if user.testing_mode:
+        # Check if testing mode is active (and hasn't expired after 24 hours)
+        testing_mode_active = user.is_testing_mode_active()
+        # If expired, save the updated state
+        if user.testing_mode and not testing_mode_active:
+            orchestrator.database.save_user(user)
+
+        if testing_mode_active:
             print(
                 f"{Fore.WHITE}Testing Mode:{Style.RESET_ALL} {Fore.MAGENTA}ENABLED (all features unlocked){Style.RESET_ALL}"
             )
