@@ -1298,7 +1298,11 @@ class ProjectDatabase:
                     serialize_datetime(sub_start) if sub_start else None,
                     serialize_datetime(sub_end) if sub_end else None,
                     getattr(user, "testing_mode", False),
-                    serialize_datetime(testing_mode_enabled_at) if testing_mode_enabled_at else None,
+                    (
+                        serialize_datetime(testing_mode_enabled_at)
+                        if testing_mode_enabled_at
+                        else None
+                    ),
                     serialize_datetime(user.created_at),
                     getattr(user, "claude_auth_method", "api_key"),
                     is_archived,

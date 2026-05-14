@@ -203,9 +203,7 @@ class MigrationRunner:
         code_history_exists = self._column_exists("projects", "code_history")
 
         # Check for testing_mode_enabled_at column in users table (24-hour expiration tracking)
-        testing_mode_timestamp_exists = self._column_exists(
-            "users", "testing_mode_enabled_at"
-        )
+        testing_mode_timestamp_exists = self._column_exists("users", "testing_mode_enabled_at")
 
         status = {
             "github_import_tables": github_tables_exist,

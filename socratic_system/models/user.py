@@ -46,7 +46,9 @@ class User:
     # during development/testing. This is NOT an admin-only feature.
     # Auto-expires after 24 hours of being enabled.
     testing_mode: bool = False
-    testing_mode_enabled_at: datetime.datetime | None = None  # Tracks when testing mode was activated
+    testing_mode_enabled_at: datetime.datetime | None = (
+        None  # Tracks when testing mode was activated
+    )
 
     # Claude authentication method: "api_key" or "subscription"
     claude_auth_method: str = "api_key"  # How to authenticate with Claude API
