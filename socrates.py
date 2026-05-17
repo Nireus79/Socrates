@@ -142,6 +142,8 @@ def start_full_stack() -> None:
             env['SOCRATES_API_HOST'] = 'localhost'
             env['SOCRATES_API_PORT'] = str(api_port)
             env['SOCRATES_API_RELOAD'] = 'false'
+            env['ENVIRONMENT'] = 'development'
+            env['TMPDIR'] = os.path.expanduser('~/tmp-pip')
 
             api_process = subprocess.Popen(
                 [sys.executable, "-c", f"""
@@ -152,6 +154,8 @@ sys.path.insert(0, r'{project_root / "socrates-api" / "src"}')
 os.environ['SOCRATES_API_HOST'] = 'localhost'
 os.environ['SOCRATES_API_PORT'] = '{api_port}'
 os.environ['SOCRATES_API_RELOAD'] = 'false'
+os.environ['ENVIRONMENT'] = 'development'
+os.environ['TMPDIR'] = os.path.expanduser('~/tmp-pip')
 from socrates_api.main import run
 run()
 """],
