@@ -571,7 +571,7 @@ Context is complete and mature
 
 Specification generated
 
-Developer/AI builds to spec
+Socrates/Developers build to spec
 
 Result: 99% alignment (matches what you wanted)
 
@@ -1019,8 +1019,8 @@ All modular components (Socratic-nexus, Socratic-agents, etc.) are also MIT Lice
 ### Community
 
 - GitHub Discussions: https://github.com/Nireus79/Socrates/discussions
-- Discord: [Community Server Link]
-- Email: support@socrates-ai.dev
+- Email: Hermes_creative@proton.me
+- https://hermesoftware.wordpress.com/
 
 ### Commercial Support
 
