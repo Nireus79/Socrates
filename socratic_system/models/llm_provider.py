@@ -204,16 +204,25 @@ PROVIDER_METADATA = {
     "ollama": ProviderMetadata(
         provider="ollama",
         display_name="Ollama (Local)",
-        models=["llama2", "mistral", "neural-chat", "orca-mini"],
+        models=[
+            "codellama:latest",
+            "codellama:13b",
+            "codellama:7b",
+            "codellama:34b",
+            "llama2",
+            "mistral",
+            "neural-chat",
+            "orca-mini",
+        ],
         requires_api_key=False,
         cost_per_1k_input_tokens=0.0,
         cost_per_1k_output_tokens=0.0,
-        context_window=8000,
+        context_window=16384,  # CodeLlama supports up to 16k context
         supports_streaming=True,
         supports_vision=False,
         available=True,
         base_url="http://localhost:11434",
-        description="Run models locally with Ollama",
+        description="Run models locally with Ollama, including CodeLlama for code generation",
     ),
 }
 
