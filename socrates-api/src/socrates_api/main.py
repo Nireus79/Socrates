@@ -381,7 +381,6 @@ if not environment:
 else:
     environment = environment.lower()
 
-# IMPORTANT: Add CORS middleware FIRST (before all other middleware) to ensure it's the outermost layer
 # Configure CORS based on environment
 if environment == "production":
     # Production: Allow configured origins plus localhost for testing
@@ -409,13 +408,10 @@ else:
         "http://127.0.0.1:3000",
     ]
 
-# Add CORS middleware as the OUTERMOST layer
-# Using custom SimpleCORSMiddleware for better compatibility with other BaseHTTPMiddleware classes
 logger.info(f"Environment: {environment}")
 logger.info(f"CORS allowed origins: {allowed_origins}")
-app.add_middleware(SimpleCORSMiddleware, allowed_origins=allowed_origins)
 
-# Add other middleware AFTER CORS
+# Add middleware in proper order: inner layers first, outermost (CORS) last
 add_security_headers_middleware(app, environment=environment)
 add_metrics_middleware(app)
 
@@ -423,6 +419,10 @@ add_metrics_middleware(app)
 from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
 
 app.add_middleware(ActivityTrackerMiddleware)
+
+# IMPORTANT: Add CORS middleware LAST so it's the outermost layer
+# This ensures CORS headers are applied to all responses, including preflight OPTIONS requests
+app.add_middleware(SimpleCORSMiddleware, allowed_origins=allowed_origins)
 
 
 # Include API routers
