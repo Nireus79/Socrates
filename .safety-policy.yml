@@ -1,0 +1,3 @@
+security:
+  ignore-vulnerabilities: []
+  ignore-unpinned-requirements: false
