@@ -1439,11 +1439,30 @@ class ProjectDatabase:
         """
         Get all LLM provider configurations for a user.
 
+        This method returns a flattened configuration structure to match the contract
+        expected by socratic-agents library. The config_data JSON is merged at the
+        top level (not nested under a "config" key).
+
         Args:
             user_id: Username to get configs for
 
         Returns:
-            List of LLM configuration dictionaries
+            List of configuration dictionaries with structure:
+            {
+                "id": str,                          # Config record ID
+                "user_id": str,                     # User identifier
+                "provider": str,                    # Provider name (e.g., "claude", "ollama")
+                "created_at": str,                  # ISO timestamp
+                "updated_at": str,                  # ISO timestamp
+                "is_default": bool,                 # Whether this is the default provider
+                "enabled": bool,                    # Whether this config is enabled
+                "settings": dict[str, Any],         # Provider-specific settings
+                                                    # May include: model, max_tokens, temperature, etc.
+            }
+
+        Note: The socratic-agents library expects these fields at the top level.
+        If the contract changes, both this implementation and the agent expectations
+        must be updated together.
         """
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -1494,12 +1513,33 @@ class ProjectDatabase:
         """
         Get single LLM provider configuration for a user.
 
+        This method returns a flattened configuration structure to match the contract
+        expected by socratic-agents library. The config_data JSON is merged at the
+        top level (not nested under a "config" key).
+
         Args:
             user_id: Username
-            provider: Provider name (e.g., 'claude', 'openai')
+            provider: Provider name (e.g., 'claude', 'openai', 'ollama')
 
         Returns:
-            Configuration dictionary or None if not found
+            Configuration dictionary with structure:
+            {
+                "id": str,                          # Config record ID
+                "user_id": str,                     # User identifier
+                "provider": str,                    # Provider name
+                "created_at": str,                  # ISO timestamp
+                "updated_at": str,                  # ISO timestamp
+                "is_default": bool,                 # Whether this is the default provider
+                "enabled": bool,                    # Whether this config is enabled
+                "settings": dict[str, Any],         # Provider-specific settings
+                                                    # May include: model, max_tokens, temperature, etc.
+            }
+            Returns None if no configuration exists for the given user/provider.
+
+        Note: The socratic-agents library expects these fields at the top level.
+        The config_data JSON blob stored in the database is parsed and merged into
+        this returned dictionary for seamless agent integration.
+        See: socratic-agents MultiLLMAgent._set_default_provider() and _set_provider_model()
         """
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
