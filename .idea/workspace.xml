@@ -4,37 +4,134 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b13c29eb-a190-422e-b9a9-1ba216d0bc04" name="Changes" comment="matrix">
+    <list default="true" id="b13c29eb-a190-422e-b9a9-1ba216d0bc04" name="Changes" comment="subscription">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/patches.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/patches.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="891" />
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Nireus79&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Nireus79/Socrates.git&quot;,
+    &quot;accountId&quot;: &quot;e5b98559-71f2-42f2-843c-d0ae26e628fd&quot;
+  }
+}</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.3478956847160815" />
+      <entry key="MS500" value="2.558271648384736" />
+      <entry key="S2" value="3.509090459031567" />
+      <entry key="S5" value="3.834882995958811" />
+      <entry key="S10" value="5.202570245346187" />
+      <entry key="S30" value="25.01893286904502" />
+      <entry key="S60" value="61.54794808733253" />
+      <entry key="M2" value="124.71190551899561" />
+      <entry key="M5" value="232.59795291423674" />
+      <entry key="M10" value="303.3193166032195" />
+      <entry key="M15" value="334.1265849876311" />
+      <entry key="M30" value="369.7123082840628" />
+      <entry key="H1" value="389.57838292882417" />
+      <entry key="H2" value="400.08590665023917" />
+      <entry key="H4" value="405.4909787434943" />
+      <entry key="D1" value="410.0745108757893" />
+      <entry key="W1" value="410.86760670635965" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="1.2952924746995824" />
+      <entry key="MS500" value="2.538809308308428" />
+      <entry key="S2" value="3.502412610234639" />
+      <entry key="S5" value="3.831932832463972" />
+      <entry key="S10" value="5.200182253817707" />
+      <entry key="S30" value="25.01358895373849" />
+      <entry key="S60" value="61.54064488986161" />
+      <entry key="M2" value="124.70346784514759" />
+      <entry key="M5" value="232.59064050841008" />
+      <entry key="M10" value="303.31422597309967" />
+      <entry key="M15" value="334.1227586953679" />
+      <entry key="M30" value="369.71014050230224" />
+      <entry key="H1" value="389.57722697196044" />
+      <entry key="H2" value="400.0853094826508" />
+      <entry key="H4" value="405.4906752074688" />
+      <entry key="D1" value="410.074459585082" />
+      <entry key="W1" value="410.8675993617602" />
+    </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
 }</component>
   <component name="ProjectId" id="3DczXVST1S5O1MxunzUfY0P9x3L" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/themi/PycharmProjects/Socrates",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Notification.DisplayName-DoNotAsk-PyProject.toml&quot;: &quot;pyproject.toml workspace detected [beta]&quot;,
+    &quot;Notification.DoNotAsk-PyProject.toml&quot;: &quot;true&quot;,
+    &quot;Python.continue_tutorial.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/nireus79/PycharmProjects/Socrates&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\themi\PycharmProjects\Socrates" />
@@ -43,7 +140,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-337b0a7a993a-31b6be0877a2-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.19416.19" />
+        <option value="bundled-python-sdk-c59985aa861c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.24374.152" />
       </set>
     </attachedChunks>
   </component>
@@ -55,6 +152,24 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1778596187869</updated>
+      <workItem from="1779015520905" duration="5763000" />
+      <workItem from="1779024518027" duration="16650000" />
+      <workItem from="1779044686195" duration="4056000" />
+      <workItem from="1779086792895" duration="955000" />
+      <workItem from="1779361336253" duration="6000" />
+      <workItem from="1780385153219" duration="4479000" />
+      <workItem from="1780392164156" duration="896000" />
+      <workItem from="1780393085709" duration="139000" />
+      <workItem from="1780560794346" duration="64000" />
+      <workItem from="1780656476789" duration="524000" />
+      <workItem from="1780659413483" duration="414000" />
+      <workItem from="1780667474628" duration="3063000" />
+      <workItem from="1780672799607" duration="78000" />
+      <workItem from="1780687901404" duration="1788000" />
+      <workItem from="1780690291493" duration="125000" />
+      <workItem from="1780715930983" duration="371000" />
+      <workItem from="1780733647480" duration="1304000" />
+      <workItem from="1781120846511" duration="159000" />
     </task>
     <task id="LOCAL-00001" summary="matrix">
       <option name="closed" value="true" />
@@ -75,8 +190,15 @@
     <option name="localTasksCounter" value="3" />
     <servers />
   </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="matrix" />
-    <option name="LAST_COMMIT_MESSAGE" value="matrix" />
+    <MESSAGE value="subscription" />
+    <option name="LAST_COMMIT_MESSAGE" value="subscription" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/Socrates$continue_tutorial.coverage" NAME="continue_tutorial Coverage Results" MODIFIED="1780392364511" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$USER_HOME$/.continue" />
   </component>
 </project>

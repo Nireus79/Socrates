@@ -532,6 +532,10 @@ async def get_question(
         # Call socratic_counselor to generate question
         # Question caching happens internally to avoid redundant Claude calls
         orchestrator = get_orchestrator()
+
+        # Get user's default LLM provider config for provider-aware agent execution
+        provider_config = db.get_user_active_llm_config(current_user)
+
         result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
             {
@@ -539,6 +543,7 @@ async def get_question(
                 "project": project,
                 "current_user": current_user,
                 "user_id": current_user,
+                "provider_config": provider_config,  # Enable provider-aware LLM selection
                 "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
             },
         )
@@ -754,6 +759,9 @@ Provide a helpful, direct answer."""
             # Socratic mode: Use the existing Socratic questioning approach
             logger.info("Processing message in SOCRATIC mode")
 
+            # Get user's default LLM provider config for provider-aware agent execution
+            provider_config = db.get_user_active_llm_config(current_user)
+
             # Call socratic_counselor to process response
             # Pre-extracted insights caching and async processing happen internally
             result = await orchestrator.agent_bus.send_request(
@@ -763,6 +771,7 @@ Provide a helpful, direct answer."""
                     "project": project,
                     "response": request.message,
                     "current_user": current_user,
+                    "provider_config": provider_config,  # Enable provider-aware LLM selection
                     "is_api_mode": True,  # Indicate API mode to handle conflicts differently
                 },
             )
@@ -1007,12 +1016,17 @@ async def get_hint(
 
         # Call orchestrator to generate context-aware hint
         orchestrator = get_orchestrator()
+
+        # Get user's default LLM provider config for provider-aware agent execution
+        provider_config = db.get_user_active_llm_config(current_user)
+
         result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
             {
                 "action": "generate_hint",
                 "project": project,
                 "current_user": current_user,
+                "provider_config": provider_config,  # Enable provider-aware LLM selection
             },
         )
 
@@ -1126,12 +1140,17 @@ async def get_summary(
 
         # Call context analyzer to generate summary
         orchestrator = get_orchestrator()
+
+        # Get user's default LLM provider config for provider-aware agent execution
+        provider_config = db.get_user_active_llm_config(current_user)
+
         result = await orchestrator.agent_bus.send_request(
             "context_analyzer",
             {
                 "action": "generate_summary",
                 "project": project,
                 "user_id": current_user,
+                "provider_config": provider_config,  # Enable provider-aware LLM selection
             },
         )
 
@@ -1531,12 +1550,17 @@ async def reopen_question(
             raise HTTPException(status_code=404, detail="Project not found")
 
         orchestrator = get_orchestrator()
+
+        # Get user's default LLM provider config for provider-aware agent execution
+        provider_config = db.get_user_active_llm_config(current_user)
+
         result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
             {
                 "action": "reopen_question",
                 "project": project,
                 "question_id": question_id,
+                "provider_config": provider_config,  # Enable provider-aware LLM selection
             },
         )
 
@@ -1703,6 +1727,10 @@ async def get_answer_suggestions(
             )
 
         orchestrator = get_orchestrator()
+
+        # Get user's default LLM provider config for provider-aware agent execution
+        provider_config = db.get_user_active_llm_config(current_user)
+
         result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
             {
@@ -1710,6 +1738,7 @@ async def get_answer_suggestions(
                 "project": project,
                 "current_question": current_question,
                 "current_user": current_user,
+                "provider_config": provider_config,  # Enable provider-aware LLM selection
             },
         )
 
@@ -1891,6 +1920,9 @@ async def save_extracted_specs(
 
             orchestrator = get_orchestrator()
 
+            # Get user's default LLM provider config for provider-aware agent execution
+            provider_config = db.get_user_active_llm_config(current_user)
+
             # Convert specs_saved to insights format for maturity calculation
             insights = {
                 "goals": specs_saved.get("goals", []),
@@ -1908,6 +1940,7 @@ async def save_extracted_specs(
                         "project": project,
                         "insights": insights,
                         "current_user": current_user,
+                        "provider_config": provider_config,  # Enable provider-aware LLM selection
                     },
                 )
 

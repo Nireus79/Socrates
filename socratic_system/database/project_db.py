@@ -1748,6 +1748,70 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    def get_user_default_provider(self, user_id: str) -> str:
+        """
+        Get the user's default LLM provider.
+
+        Returns the provider marked as is_default=True. If multiple are marked
+        as default, returns the most recently updated. Falls back to 'claude' if
+        none are configured.
+
+        Args:
+            user_id: Username
+
+        Returns:
+            Provider name (e.g., 'claude', 'openai', 'ollama') or 'claude' as default
+        """
+        configs = self.get_user_llm_configs(user_id)
+
+        if not configs:
+            self.logger.debug(f"No LLM configs for {user_id}, using default 'claude'")
+            return "claude"
+
+        # Find the default provider (marked as is_default=True)
+        default = None
+        for config in configs:
+            if config.get("is_default"):
+                if default is None or config.get("updated_at", "") > default.get(
+                    "updated_at", ""
+                ):
+                    default = config
+
+        if default:
+            provider = default.get("provider", "claude")
+            self.logger.debug(f"Default provider for {user_id}: {provider}")
+            return provider
+
+        self.logger.debug(f"No default provider set for {user_id}, using 'claude'")
+        return "claude"
+
+    def get_user_active_llm_config(self, user_id: str) -> dict[str, Any] | None:
+        """
+        Get the user's active (default) LLM provider configuration.
+
+        Retrieves the full config for the user's default provider, ready to pass
+        to agents for provider-aware LLM operations.
+
+        Args:
+            user_id: Username
+
+        Returns:
+            Full configuration dict for default provider, or None if none configured
+        """
+        provider = self.get_user_default_provider(user_id)
+        config = self.get_user_llm_config(user_id, provider)
+
+        if config:
+            self.logger.debug(
+                f"Retrieved active provider config for {user_id}: {provider}"
+            )
+        else:
+            self.logger.debug(
+                f"No active provider config for {user_id} (provider: {provider})"
+            )
+
+        return config
+
     def save_knowledge_document(
         self,
         user_id: str,

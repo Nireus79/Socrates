@@ -17,6 +17,7 @@ All patches are temporary until upstream packages are updated.
 - `patch_list_available_providers()`: Returns ProviderMetadata objects instead of strings
 - `patch_multi_llm_agent()`: Fixes ProviderMetadata attribute access in _list_providers
 - `patch_multi_llm_agent_provider_config()`: Handles dict configs from database (not objects)
+- `patch_agents_for_provider_awareness()`: Makes agents respect user's default LLM provider
 
 ## Maintenance Notes
 
@@ -362,6 +363,192 @@ def patch_multi_llm_agent_provider_config():
         logger.error(f"Failed to patch MultiLLMAgent provider config handling: {e}")
 
 
+def patch_agents_for_provider_awareness():
+    """
+    Patch agent base class and orchestrator to make agents use the user's default LLM provider.
+
+    **Problem:**
+    - Agents only use orchestrator.claude_client (hardcoded to Claude)
+    - User's default provider config (e.g., Ollama) is ignored
+    - Setting Ollama as default doesn't actually use Ollama
+
+    **Solution:**
+    - Patches socratic_agents.base_agent.BaseAgent to check request for provider_config
+    - If provider_config is in request, agent uses that provider's client
+    - Falls back to orchestrator.claude_client if no provider_config (backward compatible)
+    - Enables per-user, per-request LLM provider selection
+
+    **Data Flow:**
+    1. API route retrieves user's default provider config from database
+    2. API route passes provider_config in request dict to agent
+    3. Agent checks request for provider_config before using claude_client
+    4. Agent uses appropriate client (Claude, OpenAI, Ollama, etc.)
+    """
+    try:
+        from socratic_agents import Agent
+        from socratic_nexus.clients import ClaudeClient
+
+        # Store original process method for fallback
+        original_process = Agent.process
+
+        def patched_process(self, request_data=None):
+            """Patched process method that respects provider config from request"""
+            if request_data is None:
+                request_data = {}
+
+            # Check if request includes provider_config
+            provider_config = request_data.get("provider_config")
+
+            if provider_config:
+                self.logger.debug(
+                    f"Agent using provider from request: "
+                    f"{provider_config.get('provider', 'unknown')}"
+                )
+
+                # Store original client
+                original_client = self.orchestrator.claude_client if hasattr(
+                    self, "orchestrator"
+                ) else None
+
+                try:
+                    # Get the LLM client based on provider
+                    client = self._get_llm_client_for_provider(provider_config)
+
+                    if client and hasattr(self, "orchestrator"):
+                        # Temporarily override orchestrator's client
+                        self.orchestrator.claude_client = client
+                        self.logger.debug(
+                            f"Switched LLM client to {provider_config.get('provider')}"
+                        )
+
+                    # Call original process
+                    result = original_process(self, request_data)
+
+                    return result
+
+                finally:
+                    # Restore original client
+                    if original_client and hasattr(self, "orchestrator"):
+                        self.orchestrator.claude_client = original_client
+            else:
+                # No provider config, use default behavior
+                return original_process(self, request_data)
+
+        def get_llm_client_for_provider(self, provider_config):
+            """Get LLM client for the specified provider"""
+            provider = provider_config.get("provider", "claude")
+            settings = provider_config.get("settings", {})
+
+            self.logger.debug(
+                f"Getting LLM client for provider: {provider}"
+            )
+
+            try:
+                if provider == "claude":
+                    # Use existing Claude client
+                    return self.orchestrator.claude_client if hasattr(
+                        self, "orchestrator"
+                    ) else ClaudeClient()
+
+                elif provider == "ollama":
+                    # Create Ollama client
+                    try:
+                        from socratic_nexus.clients.ollama_client import OllamaClient
+
+                        model = settings.get("model", "codellama:latest")
+                        base_url = settings.get("api_endpoint", "http://localhost:11434")
+
+                        client = OllamaClient(
+                            model=model,
+                            base_url=base_url,
+                            temperature=settings.get("temperature", 0.3),
+                        )
+                        self.logger.info(
+                            f"Created Ollama client: {model} at {base_url}"
+                        )
+                        return client
+                    except ImportError:
+                        self.logger.warning(
+                            "OllamaClient not available in socratic-nexus, "
+                            "falling back to Claude"
+                        )
+                        return self.orchestrator.claude_client if hasattr(
+                            self, "orchestrator"
+                        ) else ClaudeClient()
+
+                elif provider == "openai":
+                    # Create OpenAI client
+                    try:
+                        from socratic_nexus.clients.openai_client import OpenAIClient
+
+                        client = OpenAIClient(
+                            model=settings.get("model", "gpt-4"),
+                            temperature=settings.get("temperature", 0.7),
+                        )
+                        self.logger.info(
+                            f"Created OpenAI client: {settings.get('model', 'gpt-4')}"
+                        )
+                        return client
+                    except ImportError:
+                        self.logger.warning(
+                            "OpenAIClient not available in socratic-nexus, "
+                            "falling back to Claude"
+                        )
+                        return self.orchestrator.claude_client if hasattr(
+                            self, "orchestrator"
+                        ) else ClaudeClient()
+
+                elif provider == "gemini":
+                    # Create Gemini client
+                    try:
+                        from socratic_nexus.clients.gemini_client import GeminiClient
+
+                        client = GeminiClient(
+                            model=settings.get("model", "gemini-pro"),
+                            temperature=settings.get("temperature", 0.7),
+                        )
+                        self.logger.info(
+                            f"Created Gemini client: {settings.get('model', 'gemini-pro')}"
+                        )
+                        return client
+                    except ImportError:
+                        self.logger.warning(
+                            "GeminiClient not available in socratic-nexus, "
+                            "falling back to Claude"
+                        )
+                        return self.orchestrator.claude_client if hasattr(
+                            self, "orchestrator"
+                        ) else ClaudeClient()
+
+                else:
+                    self.logger.warning(
+                        f"Unknown provider: {provider}, falling back to Claude"
+                    )
+                    return self.orchestrator.claude_client if hasattr(
+                        self, "orchestrator"
+                    ) else ClaudeClient()
+
+            except Exception as e:
+                self.logger.error(
+                    f"Error creating LLM client for {provider}: {e}. "
+                    f"Falling back to Claude."
+                )
+                return self.orchestrator.claude_client if hasattr(
+                    self, "orchestrator"
+                ) else ClaudeClient()
+
+        # Apply patches
+        Agent.process = patched_process
+        Agent._get_llm_client_for_provider = get_llm_client_for_provider
+        logger.info("Patched Agent to support provider-aware LLM client selection")
+
+    except Exception as e:
+        logger.warning(
+            f"Failed to patch agents for provider awareness: {e} "
+            f"(agents will use default Claude provider)"
+        )
+
+
 def apply_all_patches():
     """Apply all runtime patches in order"""
     # Encryption patches (applied first for security-critical operations)
@@ -371,5 +558,8 @@ def apply_all_patches():
     patch_list_available_providers()
     patch_multi_llm_agent()
     patch_multi_llm_agent_provider_config()
+
+    # Agent provider awareness (applied third for request-time provider selection)
+    patch_agents_for_provider_awareness()
 
     logger.info("All runtime patches applied successfully")
