@@ -1772,9 +1772,7 @@ class ProjectDatabase:
         default = None
         for config in configs:
             if config.get("is_default"):
-                if default is None or config.get("updated_at", "") > default.get(
-                    "updated_at", ""
-                ):
+                if default is None or config.get("updated_at", "") > default.get("updated_at", ""):
                     default = config
 
         if default:
@@ -1802,13 +1800,9 @@ class ProjectDatabase:
         config = self.get_user_llm_config(user_id, provider)
 
         if config:
-            self.logger.debug(
-                f"Retrieved active provider config for {user_id}: {provider}"
-            )
+            self.logger.debug(f"Retrieved active provider config for {user_id}: {provider}")
         else:
-            self.logger.debug(
-                f"No active provider config for {user_id} (provider: {provider})"
-            )
+            self.logger.debug(f"No active provider config for {user_id} (provider: {provider})")
 
         return config
 
