@@ -1470,15 +1470,15 @@ class ProjectDatabase:
                     "updated_at": row["updated_at"],
                 }
 
-                # Parse JSON config data
+                # Parse JSON config data and merge at top level
                 if row["config_data"]:
                     try:
-                        config_dict["config"] = json.loads(row["config_data"])
+                        parsed_config = json.loads(row["config_data"])
+                        config_dict.update(parsed_config)
                     except json.JSONDecodeError:
                         self.logger.warning(
                             f"Invalid JSON in config for {user_id}/{row['provider']}"
                         )
-                        config_dict["config"] = {}
 
                 configs.append(config_dict)
 
@@ -1527,13 +1527,13 @@ class ProjectDatabase:
                 "updated_at": row["updated_at"],
             }
 
-            # Parse JSON config data
+            # Parse JSON config data and merge at top level
             if row["config_data"]:
                 try:
-                    config_dict["config"] = json.loads(row["config_data"])
+                    parsed_config = json.loads(row["config_data"])
+                    config_dict.update(parsed_config)
                 except json.JSONDecodeError:
                     self.logger.warning(f"Invalid JSON in config for {user_id}/{provider}")
-                    config_dict["config"] = {}
 
             return config_dict
 
@@ -2612,14 +2612,32 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
+            # Get all other configs for this user
             cursor.execute(
                 """
-                UPDATE llm_provider_configs
-                SET is_default = 0
+                SELECT id, config_data FROM llm_provider_configs
                 WHERE user_id = ? AND provider != ?
             """,
                 (user_id, current_provider),
             )
+
+            configs = cursor.fetchall()
+            for config_id, config_json in configs:
+                try:
+                    config_data = json.loads(config_json)
+                    config_data["is_default"] = False
+
+                    cursor.execute(
+                        """
+                        UPDATE llm_provider_configs
+                        SET config_data = ?
+                        WHERE id = ?
+                    """,
+                        (json.dumps(config_data), config_id),
+                    )
+                except json.JSONDecodeError:
+                    self.logger.warning(f"Could not parse config_data for {config_id}")
+
             conn.commit()
             self.logger.debug(f"Unset other default providers for {user_id}")
 
