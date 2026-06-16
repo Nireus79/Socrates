@@ -1,0 +1,328 @@
+# Provider-Aware Agent Execution
+
+## Overview
+
+Socrates now fully supports provider-aware LLM agent execution, enabling users to seamlessly switch between different LLM providers (Claude, OpenAI, Gemini, Ollama) and have agents respect the selected provider.
+
+This solves the original problem: **Setting Ollama as default no longer works — agents were hardcoded to use Claude even when users wanted offline operation with local LLMs.**
+
+---
+
+## What Changed
+
+### 1. Database Layer Enhancements
+
+**New Methods in `ProjectDatabase`:**
+
+```python
+# Get user's default provider name (e.g., "claude", "ollama")
+def get_user_default_provider(user_id: str) -> str:
+    """Returns provider name or 'claude' as fallback"""
+    
+# Get full config for user's default provider (ready for agents)
+def get_user_active_llm_config(user_id: str) -> dict | None:
+    """Returns complete provider config with settings"""
+```
+
+**Behavior:**
+- Checks `llm_provider_configs` table for `is_default=True`
+- Returns most recent if multiple marked as default
+- Falls back to 'claude' if none configured
+- Retrieves full config including model, temperature, endpoint, etc.
+
+### 2. Comprehensive Agent Patches
+
+**New Patch: `patch_agents_for_provider_awareness()`**
+
+Makes all agents (`SocraticCounselorAgent`, `CodeGeneratorAgent`, `QualityControllerAgent`, etc.) respect the user's LLM provider.
+
+**How it works:**
+1. Patches `socratic_agents.Agent.process()` method
+2. Checks request dict for `provider_config` key
+3. If present: Creates appropriate LLM client (Claude, OpenAI, Gemini, or Ollama)
+4. Temporarily replaces `orchestrator.claude_client` with the provider's client
+5. Agent processes request with correct LLM provider
+6. Restores original client afterward (no side effects)
+
+**Supported Providers:**
+- **claude** - Uses `orchestrator.claude_client` (Anthropic API)
+- **openai** - Creates `OpenAIClient` from socratic-nexus
+- **gemini** - Creates `GeminiClient` from socratic-nexus
+- **ollama** - Creates `OllamaClient` from socratic-nexus
+- **other** - Logs warning, falls back to Claude
+
+**Error Handling:**
+- If client creation fails: logs warning, falls back to Claude
+- If provider not in socratic-nexus: logs warning, uses Claude
+- Graceful degradation ensures agents always work
+
+### 3. API Router Updates
+
+**6 Agent Endpoints Updated to Pass Provider Config:**
+
+All these endpoints now retrieve user's default provider and pass it to agents:
+
+```
+GET  /projects/{id}/chat/question              → socratic_counselor
+POST /projects/{id}/chat/message                → socratic_counselor  
+GET  /projects/{id}/chat/hint                   → socratic_counselor
+GET  /projects/{id}/chat/summary                → context_analyzer
+POST /projects/{id}/chat/questions/{qid}/reopen → socratic_counselor
+GET  /projects/{id}/chat/answer-suggestions     → socratic_counselor
+POST /projects/{id}/chat/save-extracted-specs   → quality_controller
+```
+
+**Code Pattern:**
+```python
+# 1. Retrieve provider config
+provider_config = db.get_user_active_llm_config(current_user)
+
+# 2. Pass in request
+result = await orchestrator.agent_bus.send_request(
+    "agent_name",
+    {
+        "action": "some_action",
+        # ... other fields ...
+        "provider_config": provider_config,  # ← NEW
+    }
+)
+
+# 3. Agent automatically uses correct provider
+```
+
+---
+
+## How Users Enable Offline Operation with Ollama
+
+### Step 1: Install and Run Ollama
+
+```bash
+# Install from https://ollama.ai
+# Then in terminal:
+ollama serve
+```
+
+### Step 2: Download a Model
+
+```bash
+# CodeLlama (recommended for code tasks)
+ollama pull codellama:13b
+
+# Or Mistral (good for general text)
+ollama pull mistral
+
+# Or Llama2
+ollama pull llama2
+```
+
+### Step 3: Configure in Socrates Settings
+
+1. Open Socrates UI → Settings → LLM
+2. Find "Ollama (Local)" in available providers
+3. Click "Add API Key" (or it auto-detects local Ollama)
+4. Set model to: `codellama:13b` (or your preferred model)
+5. Click "Set as Default"
+
+### Step 4: Use Without Internet
+
+1. Disconnect internet (or test with offline)
+2. Open a project
+3. Ask a Socratic question
+4. Agent uses local Ollama model instead of Claude
+5. ✅ Works offline!
+
+---
+
+## Data Flow
+
+```
+User Settings: "Set Ollama as Default"
+    ↓
+Database: llm_provider_configs marked is_default=true
+    ↓
+[API Request] GET /chat/question
+    ↓
+Router: db.get_user_active_llm_config(user_id)
+    ↓
+Database: Returns {
+    "provider": "ollama",
+    "settings": {
+        "model": "codellama:13b",
+        "base_url": "http://localhost:11434",
+        "temperature": 0.3
+    }
+}
+    ↓
+Router: Passes in agent request dict
+    ↓
+Agent: Checks request["provider_config"]
+    ↓
+Patch: Creates OllamaClient(model="codellama:13b", ...)
+    ↓
+Patch: Replaces orchestrator.claude_client with OllamaClient
+    ↓
+Agent.process(): Uses OllamaClient instead of Claude
+    ↓
+Socratic Question: Generated by local Ollama
+    ↓
+✅ Offline! No API calls, no internet needed
+```
+
+---
+
+## Backward Compatibility
+
+**All changes are backward compatible:**
+
+1. **Old code still works** - If `provider_config` not in request, agents use default Claude
+2. **No breaking changes** - Agent APIs unchanged, just enhanced
+3. **Graceful fallback** - If provider unavailable, falls back to Claude with warning
+4. **Default behavior preserved** - Without any setup, works exactly as before
+
+**Example:**
+```python
+# Old code (before provider-aware agents)
+result = await agent_bus.send_request("socratic_counselor", {
+    "action": "generate_question",
+    "project": project,
+})
+# ✅ Still works! Uses Claude by default
+
+# New code (with provider-aware agents)  
+provider_config = db.get_user_active_llm_config(user_id)
+result = await agent_bus.send_request("socratic_counselor", {
+    "action": "generate_question",
+    "project": project,
+    "provider_config": provider_config,  # NEW
+})
+# ✅ Uses user's configured provider (Claude, Ollama, etc.)
+```
+
+---
+
+## All Runtime Patches
+
+Socrates now has 6 comprehensive runtime patches for library compatibility:
+
+| # | Patch | Purpose | Status |
+|---|-------|---------|--------|
+| 1 | `patch_claude_client_decryption()` | Unified encryption for API keys | ✅ Active |
+| 2 | `patch_list_available_providers()` | Return ProviderMetadata objects | ✅ Active |
+| 3 | `patch_multi_llm_agent()` | Fix attribute names in _list_providers | ✅ Active |
+| 4 | `patch_multi_llm_agent_provider_config()` | Handle dict configs from DB | ✅ Active |
+| 5 | `patch_agents_for_provider_awareness()` | **NEW** - Request-time provider selection | ✅ Active |
+
+All applied automatically at orchestrator initialization.
+
+---
+
+## Files Changed
+
+### Core Implementation
+- `socratic_system/database/project_db.py` - Database helper methods
+- `socratic_system/patches.py` - Provider-awareness patch
+- `socrates-api/src/socrates_api/routers/projects_chat.py` - API router updates (6 endpoints)
+
+### Documentation
+- `docs/RUNTIME_PATCHES.md` - Updated to document new patch
+- `docs/PROVIDER_AWARE_AGENTS.md` - This file
+
+---
+
+## Testing
+
+All functionality verified:
+
+```bash
+✓ Database methods work (default provider retrieval)
+✓ Agent patch applied successfully  
+✓ All 6 API endpoints pass provider_config
+✓ Ollama client creation works
+✓ Graceful fallback to Claude works
+✓ Backward compatibility maintained
+✓ No breaking changes
+```
+
+---
+
+## Future Enhancements
+
+Potential improvements (not in scope now):
+
+1. **Per-agent provider selection** - Different agents use different providers
+2. **Cost tracking** - Track Ollama vs API costs
+3. **Model switching** - Change model in Socratic question mid-conversation
+4. **Provider health checks** - Verify Ollama running before use
+5. **Token counting** - Accurate token estimates per provider
+6. **Streaming responses** - Stream Ollama responses to UI
+
+---
+
+## Configuration Reference
+
+### Database Storage
+```python
+# llm_provider_configs table
+{
+    "id": "config-123",
+    "user_id": "user_456",
+    "provider": "ollama",           # "claude", "openai", "gemini", "ollama"
+    "is_default": True,             # User's default provider
+    "enabled": True,                # Whether enabled
+    "settings": {                   # Provider-specific
+        "model": "codellama:13b",
+        "temperature": 0.3,
+        "max_tokens": 4096,
+        "api_endpoint": "http://localhost:11434"
+    },
+    "created_at": "2026-06-17T...",
+    "updated_at": "2026-06-17T..."
+}
+```
+
+### Request Format
+```python
+# Agent request dict includes provider_config
+{
+    "action": "generate_question",
+    "project": ProjectContext(...),
+    "current_user": "user_123",
+    "provider_config": {
+        "provider": "ollama",
+        "settings": {...}
+    }
+}
+```
+
+---
+
+## Troubleshooting
+
+**Q: I set Ollama as default, but questions still use Claude**
+A: Make sure:
+1. Ollama is running: `ollama serve`
+2. Model is installed: `ollama pull codellama:13b`
+3. Settings show Ollama as default (check Settings > LLM)
+4. Restart the Socrates API to reload orchestrator
+
+**Q: Ollama not responding - "Temporary failure in name resolution"**
+A: Check:
+1. Ollama running: `curl http://localhost:11434/api/tags`
+2. Model available: `ollama list`
+3. Base URL correct in settings (default: `http://localhost:11434`)
+
+**Q: Falls back to Claude with warning**
+A: This is normal if:
+1. Ollama not running or not accessible
+2. Model not installed
+3. Port 11434 blocked or different
+4. Check logs for specific error message
+
+---
+
+## Related Documents
+
+- `docs/RUNTIME_PATCHES.md` - All runtime patches explained
+- `docs/CODELLAMA_INTEGRATION.md` - CodeLlama setup guide
+- `socratic_system/models/llm_provider.py` - ProviderMetadata schema
+- `socratic_system/database/project_db.py` - LLM config database methods
