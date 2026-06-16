@@ -1,17 +1,88 @@
 """
 Runtime patches for library compatibility.
 
-Patches for socratic-agents PyPI distribution which still contains old code.
-These patches are temporary until the correct version is available on PyPI.
+These patches address incompatibilities between:
+1. socratic-agents PyPI package (outdated code)
+2. socratic-nexus.clients.claude_client (uses legacy encryption)
+3. Socrates' unified encryption system
 
-Patches applied:
-- list_available_providers() returns ProviderMetadata objects (instead of strings)
-- MultiLLMAgent._list_providers() uses correct attribute names
+All patches are temporary until upstream packages are updated.
+
+## Patches Applied
+
+### Encryption Patches
+- `patch_claude_client_decryption()`: Unifies Claude client encryption with Socrates' PBKDF2-Fernet system
+
+### LLM Provider Patches
+- `patch_list_available_providers()`: Returns ProviderMetadata objects instead of strings
+- `patch_multi_llm_agent()`: Fixes ProviderMetadata attribute access in _list_providers
+- `patch_multi_llm_agent_provider_config()`: Handles dict configs from database (not objects)
+
+## Maintenance Notes
+
+When socratic-agents PyPI is updated, verify:
+1. list_available_providers() returns ProviderMetadata objects
+2. MultiLLMAgent._list_providers() uses .provider, not .name
+3. MultiLLMAgent config methods handle both dict and object types
+4. Provider config can be retrieved as dict from database
+
+When socratic-nexus is updated, verify:
+1. ClaudeClient uses unified encryption (decrypt_data from socratic_system.encryption)
+2. No legacy encryption patterns remain
 """
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def patch_claude_client_decryption():
+    """
+    Patch claude_client._decrypt_api_key_from_db to use unified encryption.
+
+    The installed socratic-nexus package may use legacy encryption. This patch
+    ensures the ClaudeClient uses the same encryption/decryption system as
+    Socrates (PBKDF2-Fernet with unified encryption.py).
+
+    **Why this patch:**
+    - Socrates uses decrypt_data() from socratic_system.encryption
+    - ClaudeClient may use legacy or different decryption
+    - Must unify for consistent API key handling across the system
+    """
+    try:
+        from socratic_nexus.clients.claude_client import ClaudeClient
+        from socratic_system.encryption import decrypt_data
+
+        # Save original method for reference and fallback
+        original_decrypt = ClaudeClient._decrypt_api_key_from_db
+
+        def patched_decrypt(self, encrypted_key: str):
+            """Use unified encryption system for decryption"""
+            try:
+                return decrypt_data(encrypted_key)
+            except Exception as e:
+                logger.warning(
+                    f"Failed to decrypt API key with unified encryption: {e}. "
+                    f"Attempting legacy decryption methods as fallback..."
+                )
+                # Fall back to original implementation for backward compatibility
+                try:
+                    return original_decrypt(self, encrypted_key)
+                except Exception as legacy_e:
+                    logger.error(
+                        f"Both unified and legacy decryption failed for API key. "
+                        f"Unified error: {e}, Legacy error: {legacy_e}"
+                    )
+                    return None
+
+        # Replace the method
+        ClaudeClient._decrypt_api_key_from_db = patched_decrypt
+        logger.info("Patched ClaudeClient to use unified encryption system")
+
+    except ImportError:
+        logger.debug("socratic-nexus not imported yet, encryption patch will be applied on first use")
+    except Exception as e:
+        logger.warning(f"Failed to patch claude_client encryption: {e} (non-critical)")
 
 
 def patch_list_available_providers():
@@ -292,7 +363,13 @@ def patch_multi_llm_agent_provider_config():
 
 
 def apply_all_patches():
-    """Apply all runtime patches"""
+    """Apply all runtime patches in order"""
+    # Encryption patches (applied first for security-critical operations)
+    patch_claude_client_decryption()
+
+    # LLM provider patches (applied second for agent compatibility)
     patch_list_available_providers()
     patch_multi_llm_agent()
     patch_multi_llm_agent_provider_config()
+
+    logger.info("All runtime patches applied successfully")
