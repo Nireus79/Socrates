@@ -102,7 +102,197 @@ def patch_multi_llm_agent():
         logger.error(f"Failed to patch MultiLLMAgent: {e}")
 
 
+def patch_multi_llm_agent_provider_config():
+    """
+    Patch MultiLLMAgent to handle provider configs returned as dicts (not objects).
+
+    The database now returns flattened dicts from get_user_llm_config(), but the
+    agent code expects LLMProviderConfig objects. This patch wraps returned configs
+    back into LLMProviderConfig objects for compatibility.
+    """
+    try:
+        from socratic_agents.multi_llm_agent import MultiLLMAgent
+        from socratic_agents.models import LLMProviderConfig
+        from datetime import datetime, timezone
+        import uuid
+
+        def dict_to_config(config_dict):
+            """Convert dict from DB to LLMProviderConfig if needed"""
+            if not config_dict:
+                return None
+            if isinstance(config_dict, dict) and not isinstance(config_dict, LLMProviderConfig):
+                return LLMProviderConfig.from_dict(config_dict)
+            return config_dict
+
+        def patched_set_default_provider(self, data):
+            """Patched version that converts dict configs to LLMProviderConfig objects"""
+            user_id = data.get("user_id")
+            provider = data.get("provider", "").lower()
+            settings = data.get("settings", {})
+
+            if not user_id or not provider:
+                return {"status": "error", "message": "user_id and provider required"}
+
+            self.logger.debug(f"Setting default provider for {user_id}: {provider}")
+
+            try:
+                from socratic_agents.models import get_provider_metadata
+
+                metadata = get_provider_metadata(provider)
+                if not metadata:
+                    self.logger.warning(f"Unknown provider requested: {provider}")
+                    return {"status": "error", "message": f"Unknown provider: {provider}"}
+
+                self.logger.debug(f"Provider {provider} verified, models: {metadata.models}")
+
+                # Get existing config (returns dict, convert to object)
+                existing_dict = self.orchestrator.database.get_user_llm_config(user_id, provider)
+                existing = dict_to_config(existing_dict)
+
+                if existing:
+                    existing.is_default = True
+                    existing.enabled = True
+                    existing.settings = settings or existing.settings
+                    existing.updated_at = datetime.now(timezone.utc)
+                    config = existing
+                else:
+                    config = LLMProviderConfig(
+                        id=str(uuid.uuid4()),
+                        provider=provider,
+                        user_id=user_id,
+                        is_default=True,
+                        enabled=True,
+                        settings=settings,
+                    )
+
+                # Save to database
+                self.logger.debug(f"Saving config: {config.id}")
+                self.orchestrator.database.save_user_llm_config(
+                    user_id, provider, config.to_dict()
+                )
+
+                self.logger.info(f"Set default provider {provider} for user {user_id}")
+                return {
+                    "status": "success",
+                    "provider": provider,
+                    "config_id": config.id,
+                }
+
+            except Exception as e:
+                self.logger.error(f"Error setting default provider: {e}", exc_info=True)
+                return {"status": "error", "message": str(e)}
+
+        def patched_set_provider_model(self, data):
+            """Patched version for setting provider model"""
+            user_id = data.get("user_id")
+            provider = data.get("provider", "").lower()
+            model = data.get("model", "").strip()
+
+            if not user_id or not provider or not model:
+                return {"status": "error", "message": "user_id, provider, and model required"}
+
+            self.logger.debug(f"Setting model for {user_id}/{provider}: {model}")
+
+            try:
+                from socratic_agents.models import get_provider_metadata
+
+                metadata = get_provider_metadata(provider)
+                if not metadata:
+                    return {"status": "error", "message": f"Unknown provider: {provider}"}
+
+                if model not in metadata.models:
+                    return {"status": "error", "message": f"Unknown model {model} for {provider}"}
+
+                # Get existing config (returns dict, convert to object)
+                existing_dict = self.orchestrator.database.get_user_llm_config(user_id, provider)
+                existing = dict_to_config(existing_dict)
+
+                if existing:
+                    existing.settings = existing.settings or {}
+                    existing.settings["model"] = model
+                    existing.updated_at = datetime.now(timezone.utc)
+                    config = existing
+                else:
+                    config = LLMProviderConfig(
+                        id=str(uuid.uuid4()),
+                        provider=provider,
+                        user_id=user_id,
+                        is_default=False,
+                        enabled=True,
+                        settings={"model": model},
+                    )
+
+                # Save to database
+                self.orchestrator.database.save_user_llm_config(
+                    user_id, provider, config.to_dict()
+                )
+
+                self.logger.info(f"Set model {model} for {provider}")
+                return {
+                    "status": "success",
+                    "provider": provider,
+                    "model": model,
+                    "config_id": config.id,
+                }
+
+            except Exception as e:
+                self.logger.error(f"Error setting provider model: {e}", exc_info=True)
+                return {"status": "error", "message": str(e)}
+
+        def patched_get_provider_config(self, data):
+            """Patched version for getting provider config"""
+            user_id = data.get("user_id")
+
+            if not user_id:
+                return {"status": "error", "message": "user_id required"}
+
+            self.logger.debug(f"Getting provider config for {user_id}")
+
+            try:
+                # Get all configs (returns list of dicts, convert to objects)
+                configs_list = self.orchestrator.database.get_user_llm_configs(user_id)
+                configs = [dict_to_config(c) for c in configs_list]
+
+                default_provider = None
+                provider_list = []
+
+                for config in configs:
+                    if config:
+                        provider_dict = {
+                            "id": config.id,
+                            "provider": config.provider,
+                            "is_default": config.is_default,
+                            "enabled": config.enabled,
+                            "settings": config.settings or {},
+                        }
+                        provider_list.append(provider_dict)
+
+                        if config.is_default:
+                            default_provider = config.provider
+
+                self.logger.info(f"Retrieved provider config for {user_id}")
+                return {
+                    "status": "success",
+                    "default_provider": default_provider,
+                    "providers": provider_list,
+                    "count": len(provider_list),
+                }
+
+            except Exception as e:
+                self.logger.error(f"Error getting provider config: {e}", exc_info=True)
+                return {"status": "error", "message": str(e)}
+
+        MultiLLMAgent._set_default_provider = patched_set_default_provider
+        MultiLLMAgent._set_provider_model = patched_set_provider_model
+        MultiLLMAgent._get_provider_config = patched_get_provider_config
+        logger.info("Patched MultiLLMAgent provider config methods to handle dict configs")
+
+    except Exception as e:
+        logger.error(f"Failed to patch MultiLLMAgent provider config handling: {e}")
+
+
 def apply_all_patches():
     """Apply all runtime patches"""
     patch_list_available_providers()
     patch_multi_llm_agent()
+    patch_multi_llm_agent_provider_config()
