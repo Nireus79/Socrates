@@ -191,11 +191,15 @@ async def set_api_key(
         SuccessResponse with confirmation
     """
     try:
+        from socrates_api.database import get_database
         from socrates_api.main import get_orchestrator
 
         logger.info(f"Setting API key for {provider} for user: {current_user}")
 
         orchestrator = get_orchestrator()
+        db = get_database()
+
+        # Add the API key via agent
         result = await orchestrator.agent_bus.send_request(
             "multi_llm_manager",
             {
@@ -209,6 +213,34 @@ async def set_api_key(
         if result["status"] != "success":
             raise HTTPException(
                 status_code=500, detail=result.get("message", "Failed to set API key")
+            )
+
+        # Ensure provider config exists in database (required for is_configured check)
+        # This is needed because simply adding an API key doesn't create the config entry
+        try:
+            existing_config = db.get_user_llm_config(current_user, provider)
+            if not existing_config:
+                # Create default provider config
+                from socratic_agents.models import get_provider_metadata
+
+                metadata = get_provider_metadata(provider)
+                if metadata:
+                    default_config = {
+                        "id": f"{current_user}:{provider}",
+                        "is_default": False,
+                        "enabled": True,
+                        "settings": {
+                            "model": metadata.models[0] if metadata.models else "",
+                            "temperature": 0.7,
+                            "max_tokens": 4096,
+                        },
+                    }
+                    db.save_llm_config(current_user, provider, default_config)
+                    logger.info(f"Created default provider config for {current_user}/{provider}")
+        except Exception as config_error:
+            logger.warning(
+                f"Could not create provider config for {provider}: {config_error}. "
+                f"API key was saved but config may not show as configured."
             )
 
         return APIResponse(
