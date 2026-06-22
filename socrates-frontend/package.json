@@ -47,6 +47,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "format": "eslint . --fix",
+    "format:check": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
