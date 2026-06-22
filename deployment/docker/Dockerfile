@@ -11,16 +11,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
-COPY requirements.txt .
+# COPY requirements.txt .
+COPY pyproject.toml .
+COPY README.md .
+COPY LICENSE .
 
 # Copy application code (note: socrates-api has src/ subdirectory)
 COPY socratic_system socratic_system/
 COPY socrates-api/src socrates-api/src/
 COPY socrates-cli/src socrates-cli/src/
+COPY socrates_ai socrates_ai/
 
 # Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+# RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+#     pip install --no-cache-dir -r requirements.txt
+RUN pip install -e ".[dev]"
 
 # Stage 2: Runtime
 FROM python:3.11-slim

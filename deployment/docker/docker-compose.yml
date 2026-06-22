@@ -4,16 +4,24 @@ services:
   # Socrates API Backend
   api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
+
+    # Point to /app where the volumes are mounted
+    working_dir: /app/socrates-api/src
+
     ports:
       - "8000:8000"
     environment:
       # API Configuration
+      - SOCRATES_API_HOST=0.0.0.0      # <--- ADD THIS LINE
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
       - ENVIRONMENT=development
+
+      # ADDED: Ensure Python knows exactly where to look
+      - PYTHONPATH=/app/socrates-api/src:/app
 
       # Database Configuration
       - DATABASE_URL=sqlite:////app/data/socrates.db
@@ -28,9 +36,10 @@ services:
       - ALLOWED_HOSTS=localhost,127.0.0.1,api
       - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
     volumes:
-      - ./socratic_system:/app/socratic_system
-      - ./socrates-api:/app/socrates-api
-      - ./socrates-cli:/app/socrates-cli
+      # Use ../../ to point to the actual root of your repository
+      - ../../socratic_system:/app/socratic_system
+      - ../../socrates-api:/app/socrates-api
+      - ../../socrates-cli:/app/socrates-cli
       - socrates_data:/app/data
       - socrates_logs:/app/logs
     depends_on:
@@ -48,18 +57,19 @@ services:
   # Frontend Development Server
   frontend:
     build:
-      context: ./socrates-frontend
+      context: ../../socrates-frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: http://api:8000
+
     ports:
-      - "3000:3000"
+      - "3000:80"
     environment:
       - REACT_APP_API_URL=http://api:8000
       - REACT_APP_ENV=development
-    volumes:
-      - ./socrates-frontend:/app
-      - /app/node_modules
+    # volumes:
+    #   - ../../socrates-frontend:/app  # <-- Changed to ../../
+    #   - /app/node_modules
     depends_on:
       - api
     networks:
