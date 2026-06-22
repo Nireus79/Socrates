@@ -290,7 +290,7 @@ async def get_api_key_status(
 
         # Get list of providers
         providers_result = await orchestrator.agent_bus.send_request(
-            "multi_llm_manager", {"action": "list_providers"}
+            "multi_llm_manager", {"action": "list_providers", "user_id": current_user}
         )
 
         if providers_result["status"] != "success":
