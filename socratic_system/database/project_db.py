@@ -29,7 +29,7 @@ from socratic_system.models import (
     QuestionEffectiveness,
     UserBehaviorPattern,
 )
-from socratic_system.models.llm_provider import LLMUsageRecord
+from socratic_system.models.llm_provider import LLMProviderConfig, LLMUsageRecord
 from socratic_system.models.note import ProjectNote
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
@@ -1435,34 +1435,18 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_user_llm_configs(self, user_id: str) -> list[dict[str, Any]]:
+    def get_user_llm_configs(self, user_id: str) -> list[LLMProviderConfig]:
         """
         Get all LLM provider configurations for a user.
 
-        This method returns a flattened configuration structure to match the contract
-        expected by socratic-agents library. The config_data JSON is merged at the
-        top level (not nested under a "config" key).
+        Returns LLMProviderConfig objects to match the type expected by socratic-agents library.
+        The config_data JSON is parsed and merged with database fields.
 
         Args:
             user_id: Username to get configs for
 
         Returns:
-            List of configuration dictionaries with structure:
-            {
-                "id": str,                          # Config record ID
-                "user_id": str,                     # User identifier
-                "provider": str,                    # Provider name (e.g., "claude", "ollama")
-                "created_at": str,                  # ISO timestamp
-                "updated_at": str,                  # ISO timestamp
-                "is_default": bool,                 # Whether this is the default provider
-                "enabled": bool,                    # Whether this config is enabled
-                "settings": dict[str, Any],         # Provider-specific settings
-                                                    # May include: model, max_tokens, temperature, etc.
-            }
-
-        Note: The socratic-agents library expects these fields at the top level.
-        If the contract changes, both this implementation and the agent expectations
-        must be updated together.
+            List of LLMProviderConfig objects with provider, model, settings, etc.
         """
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -1487,19 +1471,27 @@ class ProjectDatabase:
                     "provider": row["provider"],
                     "created_at": row["created_at"],
                     "updated_at": row["updated_at"],
+                    "settings": {},
                 }
 
-                # Parse JSON config data and merge at top level
+                # Parse JSON config data - extract special fields and put the rest in settings
                 if row["config_data"]:
                     try:
                         parsed_config = json.loads(row["config_data"])
-                        config_dict.update(parsed_config)
+                        # Extract known LLMProviderConfig fields
+                        for key in ["is_default", "enabled", "settings"]:
+                            if key in parsed_config:
+                                config_dict[key] = parsed_config[key]
+                        # Put everything else (model, temperature, etc.) in settings
+                        for key, value in parsed_config.items():
+                            if key not in ["is_default", "enabled", "settings", "id", "user_id", "provider", "created_at", "updated_at"]:
+                                config_dict["settings"][key] = value
                     except json.JSONDecodeError:
                         self.logger.warning(
                             f"Invalid JSON in config for {user_id}/{row['provider']}"
                         )
 
-                configs.append(config_dict)
+                configs.append(LLMProviderConfig.from_dict(config_dict))
 
             return configs
 
@@ -1509,37 +1501,18 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_user_llm_config(self, user_id: str, provider: str) -> dict[str, Any] | None:
+    def get_user_llm_config(self, user_id: str, provider: str) -> LLMProviderConfig | None:
         """
         Get single LLM provider configuration for a user.
 
-        This method returns a flattened configuration structure to match the contract
-        expected by socratic-agents library. The config_data JSON is merged at the
-        top level (not nested under a "config" key).
+        Returns an LLMProviderConfig object to match the type expected by socratic-agents library.
 
         Args:
             user_id: Username
             provider: Provider name (e.g., 'claude', 'openai', 'ollama')
 
         Returns:
-            Configuration dictionary with structure:
-            {
-                "id": str,                          # Config record ID
-                "user_id": str,                     # User identifier
-                "provider": str,                    # Provider name
-                "created_at": str,                  # ISO timestamp
-                "updated_at": str,                  # ISO timestamp
-                "is_default": bool,                 # Whether this is the default provider
-                "enabled": bool,                    # Whether this config is enabled
-                "settings": dict[str, Any],         # Provider-specific settings
-                                                    # May include: model, max_tokens, temperature, etc.
-            }
-            Returns None if no configuration exists for the given user/provider.
-
-        Note: The socratic-agents library expects these fields at the top level.
-        The config_data JSON blob stored in the database is parsed and merged into
-        this returned dictionary for seamless agent integration.
-        See: socratic-agents MultiLLMAgent._set_default_provider() and _set_provider_model()
+            LLMProviderConfig object with all configuration details, or None if not found.
         """
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -1565,17 +1538,25 @@ class ProjectDatabase:
                 "provider": row["provider"],
                 "created_at": row["created_at"],
                 "updated_at": row["updated_at"],
+                "settings": {},
             }
 
-            # Parse JSON config data and merge at top level
+            # Parse JSON config data - extract special fields and put the rest in settings
             if row["config_data"]:
                 try:
                     parsed_config = json.loads(row["config_data"])
-                    config_dict.update(parsed_config)
+                    # Extract known LLMProviderConfig fields
+                    for key in ["is_default", "enabled", "settings"]:
+                        if key in parsed_config:
+                            config_dict[key] = parsed_config[key]
+                    # Put everything else (model, temperature, etc.) in settings
+                    for key, value in parsed_config.items():
+                        if key not in ["is_default", "enabled", "settings", "id", "user_id", "provider", "created_at", "updated_at"]:
+                            config_dict["settings"][key] = value
                 except json.JSONDecodeError:
                     self.logger.warning(f"Invalid JSON in config for {user_id}/{provider}")
 
-            return config_dict
+            return LLMProviderConfig.from_dict(config_dict)
 
         except Exception as e:
             self.logger.error(f"Error loading LLM config for {user_id}/{provider}: {e}")
@@ -1771,12 +1752,12 @@ class ProjectDatabase:
         # Find the default provider (marked as is_default=True)
         default = None
         for config in configs:
-            if config.get("is_default"):
-                if default is None or config.get("updated_at", "") > default.get("updated_at", ""):
+            if config.is_default:
+                if default is None or config.updated_at > default.updated_at:
                     default = config
 
         if default:
-            provider = default.get("provider", "claude")
+            provider = default.provider
             self.logger.debug(f"Default provider for {user_id}: {provider}")
             return provider
 
