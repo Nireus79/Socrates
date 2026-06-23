@@ -1484,7 +1484,16 @@ class ProjectDatabase:
                                 config_dict[key] = parsed_config[key]
                         # Put everything else (model, temperature, etc.) in settings
                         for key, value in parsed_config.items():
-                            if key not in ["is_default", "enabled", "settings", "id", "user_id", "provider", "created_at", "updated_at"]:
+                            if key not in [
+                                "is_default",
+                                "enabled",
+                                "settings",
+                                "id",
+                                "user_id",
+                                "provider",
+                                "created_at",
+                                "updated_at",
+                            ]:
                                 config_dict["settings"][key] = value
                     except json.JSONDecodeError:
                         self.logger.warning(
@@ -1551,7 +1560,16 @@ class ProjectDatabase:
                             config_dict[key] = parsed_config[key]
                     # Put everything else (model, temperature, etc.) in settings
                     for key, value in parsed_config.items():
-                        if key not in ["is_default", "enabled", "settings", "id", "user_id", "provider", "created_at", "updated_at"]:
+                        if key not in [
+                            "is_default",
+                            "enabled",
+                            "settings",
+                            "id",
+                            "user_id",
+                            "provider",
+                            "created_at",
+                            "updated_at",
+                        ]:
                             config_dict["settings"][key] = value
                 except json.JSONDecodeError:
                     self.logger.warning(f"Invalid JSON in config for {user_id}/{provider}")
@@ -1766,26 +1784,28 @@ class ProjectDatabase:
 
     def get_user_active_llm_config(self, user_id: str) -> dict[str, Any] | None:
         """
-        Get the user's active (default) LLM provider configuration.
+        Get the user's active (default) LLM provider configuration as a dict.
 
         Retrieves the full config for the user's default provider, ready to pass
-        to agents for provider-aware LLM operations.
+        to agents for provider-aware LLM operations. Returns a dict (JSON-serializable)
+        rather than an object, suitable for API/messaging boundaries.
 
         Args:
             user_id: Username
 
         Returns:
-            Full configuration dict for default provider, or None if none configured
+            Full configuration dict for default provider, or None if none configured.
+            Dict contains: id, user_id, provider, is_default, enabled, settings, created_at, updated_at
         """
         provider = self.get_user_default_provider(user_id)
         config = self.get_user_llm_config(user_id, provider)
 
         if config:
             self.logger.debug(f"Retrieved active provider config for {user_id}: {provider}")
+            return config.to_dict()
         else:
             self.logger.debug(f"No active provider config for {user_id} (provider: {provider})")
-
-        return config
+            return None
 
     def save_knowledge_document(
         self,
