@@ -8721,3 +8721,664 @@ Requirements: Greek ...
 [2026-06-23 12:37:44] [INFO] socratic_rag.orchestrator: Project database closed
 [2026-06-23 12:37:44] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
 [2026-06-23 12:37:44] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'learning'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'learning'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-06-23 13:04:52] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=/home/nireus79/.socrates, log_level=INFO)
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=/home/nireus79/.socrates, log_level=INFO)
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator:   Projects DB: /home/nireus79/.socrates/projects.db
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator:   Projects DB: /home/nireus79/.socrates/projects.db
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator:   Vector DB: /home/nireus79/.socrates/vector_db
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator:   Vector DB: /home/nireus79/.socrates/vector_db
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:04:52] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:05:01] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-06-23 13:05:01] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-06-23 13:05:11] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-06-23 13:05:11] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'learning'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'learning'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=/home/nireus79/.socrates, log_level=INFO)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=/home/nireus79/.socrates, log_level=INFO)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Projects DB: /home/nireus79/.socrates/projects.db
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Projects DB: /home/nireus79/.socrates/projects.db
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Vector DB: /home/nireus79/.socrates/vector_db
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Vector DB: /home/nireus79/.socrates/vector_db
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Pre-initializing all agents for agent bus registration...
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ProjectManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ProjectManager' with registry as 'project_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SocraticCounselor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SocraticCounselor' with registry as 'socratic_counselor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ContextAnalyzer
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ContextAnalyzer' with registry as 'context_analyzer'
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeGenerator
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeGenerator' with registry as 'code_generator'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: SystemMonitor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'SystemMonitor' with registry as 'system_monitor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: ConflictDetector
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'ConflictDetector' with registry as 'conflict_detector'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: DocumentProcessor
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'DocumentProcessor' with registry as 'document_processor'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: UserManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'UserManager' with registry as 'user_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: NoteManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'NoteManager' with registry as 'note_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeManager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeManager' with registry as 'knowledge_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: KnowledgeAnalysis
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'KnowledgeAnalysis' with registry as 'knowledge_analysis'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QualityController
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QualityController' with registry as 'quality_controller'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: User Learning
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'learning'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'User Learning' with registry as 'learning'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: Multi-LLM Manager
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'Multi-LLM Manager' with registry as 'multi_llm_manager'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: QuestionQueue
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'QuestionQueue' with registry as 'question_queue'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Initialized agent: CodeValidation
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-06-23 13:05:12] [DEBUG] socratic_rag.orchestrator: Registered agent 'CodeValidation' with registry as 'code_validation'
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Agent initialization complete: 16 agents registered
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=/home/nireus79/.socrates, log_level=INFO)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=/home/nireus79/.socrates, log_level=INFO)
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Projects DB: /home/nireus79/.socrates/projects.db
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Projects DB: /home/nireus79/.socrates/projects.db
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Vector DB: /home/nireus79/.socrates/vector_db
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator:   Vector DB: /home/nireus79/.socrates/vector_db
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:05:12] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-06-23 13:05:27] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-06-23 13:05:27] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-06-23 13:05:27] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-06-23 13:05:27] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 5a86a236-0e89-460d-8997-2011f4fe7574)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 5a86a236-0e89-460d-8997-2011f4fe7574)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'list_providers'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'list_providers'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'list_providers' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'list_providers' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) list_providers agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) list_providers agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: e95bd544-4dd9-4217-905a-77b16904be23)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: e95bd544-4dd9-4217-905a-77b16904be23)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'get_usage_stats'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'get_usage_stats'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'get_usage_stats' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'get_usage_stats' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) get_usage_stats agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) get_usage_stats agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 47456e58-e730-4378-bd92-9ee5f72c579e)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 47456e58-e730-4378-bd92-9ee5f72c579e)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'get_provider_config'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'get_provider_config'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'get_provider_config' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'get_provider_config' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) get_provider_config agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) get_provider_config agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: e72a61dd-6214-4f07-9f9a-e5fd046b7eb5)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: e72a61dd-6214-4f07-9f9a-e5fd046b7eb5)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'list_providers'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'list_providers'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'list_providers' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'list_providers' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) list_providers agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) list_providers agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: e95bd544-4dd9-4217-905a-77b16904be23)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: e95bd544-4dd9-4217-905a-77b16904be23)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for e95bd544-4dd9-4217-905a-77b16904be23
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for e95bd544-4dd9-4217-905a-77b16904be23
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for e95bd544-4dd9-4217-905a-77b16904be23
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for e95bd544-4dd9-4217-905a-77b16904be23
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 5a86a236-0e89-460d-8997-2011f4fe7574)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 5a86a236-0e89-460d-8997-2011f4fe7574)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 5a86a236-0e89-460d-8997-2011f4fe7574
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 5a86a236-0e89-460d-8997-2011f4fe7574
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 5a86a236-0e89-460d-8997-2011f4fe7574
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 5a86a236-0e89-460d-8997-2011f4fe7574
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 47456e58-e730-4378-bd92-9ee5f72c579e)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 47456e58-e730-4378-bd92-9ee5f72c579e)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 47456e58-e730-4378-bd92-9ee5f72c579e
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 47456e58-e730-4378-bd92-9ee5f72c579e
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 47456e58-e730-4378-bd92-9ee5f72c579e
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 47456e58-e730-4378-bd92-9ee5f72c579e
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: e72a61dd-6214-4f07-9f9a-e5fd046b7eb5)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: e72a61dd-6214-4f07-9f9a-e5fd046b7eb5)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for e72a61dd-6214-4f07-9f9a-e5fd046b7eb5
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for e72a61dd-6214-4f07-9f9a-e5fd046b7eb5
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for e72a61dd-6214-4f07-9f9a-e5fd046b7eb5
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for e72a61dd-6214-4f07-9f9a-e5fd046b7eb5
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: dae2f995-52c5-45da-a5ba-e66f1894d79c)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: dae2f995-52c5-45da-a5ba-e66f1894d79c)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'get_usage_stats'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'get_usage_stats'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'get_usage_stats' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'get_usage_stats' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) get_usage_stats agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) get_usage_stats agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: cb54f6b0-7bf1-4b7c-9077-5246d707549f)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: cb54f6b0-7bf1-4b7c-9077-5246d707549f)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'list_providers'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'list_providers'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'list_providers' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'list_providers' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) list_providers agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) list_providers agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: dae2f995-52c5-45da-a5ba-e66f1894d79c)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: dae2f995-52c5-45da-a5ba-e66f1894d79c)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for dae2f995-52c5-45da-a5ba-e66f1894d79c
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for dae2f995-52c5-45da-a5ba-e66f1894d79c
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for dae2f995-52c5-45da-a5ba-e66f1894d79c
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for dae2f995-52c5-45da-a5ba-e66f1894d79c
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 642a954f-f7b3-4c81-a02c-e542bb247a68)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 642a954f-f7b3-4c81-a02c-e542bb247a68)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'get_provider_config'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'get_provider_config'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'get_provider_config' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'get_provider_config' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) get_provider_config agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) get_provider_config agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 5f7dc85d-ff41-4cc9-8a8f-6af241978b4d)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 5f7dc85d-ff41-4cc9-8a8f-6af241978b4d)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'list_providers'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'list_providers'
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'list_providers' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'list_providers' by multi_llm_manager APPROVED
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) list_providers agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) list_providers agent:multi_llm_manager -> success
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: cb54f6b0-7bf1-4b7c-9077-5246d707549f)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: cb54f6b0-7bf1-4b7c-9077-5246d707549f)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for cb54f6b0-7bf1-4b7c-9077-5246d707549f
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for cb54f6b0-7bf1-4b7c-9077-5246d707549f
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for cb54f6b0-7bf1-4b7c-9077-5246d707549f
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for cb54f6b0-7bf1-4b7c-9077-5246d707549f
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 642a954f-f7b3-4c81-a02c-e542bb247a68)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 642a954f-f7b3-4c81-a02c-e542bb247a68)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 642a954f-f7b3-4c81-a02c-e542bb247a68
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 642a954f-f7b3-4c81-a02c-e542bb247a68
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 642a954f-f7b3-4c81-a02c-e542bb247a68
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 642a954f-f7b3-4c81-a02c-e542bb247a68
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 5f7dc85d-ff41-4cc9-8a8f-6af241978b4d)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 5f7dc85d-ff41-4cc9-8a8f-6af241978b4d)
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 5f7dc85d-ff41-4cc9-8a8f-6af241978b4d
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 5f7dc85d-ff41-4cc9-8a8f-6af241978b4d
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 5f7dc85d-ff41-4cc9-8a8f-6af241978b4d
+[2026-06-23 13:05:36] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 5f7dc85d-ff41-4cc9-8a8f-6af241978b4d
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 62832830-e960-41ba-8c88-ddd1c03536f0)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 62832830-e960-41ba-8c88-ddd1c03536f0)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'set_default_provider'
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'set_default_provider'
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'set_default_provider' by multi_llm_manager APPROVED
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'set_default_provider' by multi_llm_manager APPROVED
+[2026-06-23 13:05:44] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) set_default_provider agent:multi_llm_manager -> success
+[2026-06-23 13:05:44] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) set_default_provider agent:multi_llm_manager -> success
+[2026-06-23 13:05:44] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:44] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 62832830-e960-41ba-8c88-ddd1c03536f0)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 62832830-e960-41ba-8c88-ddd1c03536f0)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 62832830-e960-41ba-8c88-ddd1c03536f0
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 62832830-e960-41ba-8c88-ddd1c03536f0
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 62832830-e960-41ba-8c88-ddd1c03536f0
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 62832830-e960-41ba-8c88-ddd1c03536f0
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 099a3eea-fb76-4303-8954-38f06d49bf63)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 099a3eea-fb76-4303-8954-38f06d49bf63)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'set_provider_model'
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'set_provider_model'
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'set_provider_model' by multi_llm_manager APPROVED
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'set_provider_model' by multi_llm_manager APPROVED
+[2026-06-23 13:05:44] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) set_provider_model agent:multi_llm_manager -> success
+[2026-06-23 13:05:44] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) set_provider_model agent:multi_llm_manager -> success
+[2026-06-23 13:05:44] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:44] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 099a3eea-fb76-4303-8954-38f06d49bf63)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 099a3eea-fb76-4303-8954-38f06d49bf63)
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 099a3eea-fb76-4303-8954-38f06d49bf63
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 099a3eea-fb76-4303-8954-38f06d49bf63
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 099a3eea-fb76-4303-8954-38f06d49bf63
+[2026-06-23 13:05:44] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 099a3eea-fb76-4303-8954-38f06d49bf63
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: b6f43209-b3b4-4893-9e67-cfdc1a2d9ecf)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: b6f43209-b3b4-4893-9e67-cfdc1a2d9ecf)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'set_default_provider'
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'set_default_provider'
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'set_default_provider' by multi_llm_manager APPROVED
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'set_default_provider' by multi_llm_manager APPROVED
+[2026-06-23 13:05:58] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) set_default_provider agent:multi_llm_manager -> success
+[2026-06-23 13:05:58] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) set_default_provider agent:multi_llm_manager -> success
+[2026-06-23 13:05:58] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:58] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: b6f43209-b3b4-4893-9e67-cfdc1a2d9ecf)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: b6f43209-b3b4-4893-9e67-cfdc1a2d9ecf)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for b6f43209-b3b4-4893-9e67-cfdc1a2d9ecf
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for b6f43209-b3b4-4893-9e67-cfdc1a2d9ecf
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for b6f43209-b3b4-4893-9e67-cfdc1a2d9ecf
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for b6f43209-b3b4-4893-9e67-cfdc1a2d9ecf
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to multi_llm_manager (attempt 1)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 1b3610a3-ead9-447a-861a-3a0358d6f72b)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'multi_llm_manager' (id: 1b3610a3-ead9-447a-861a-3a0358d6f72b)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'set_provider_model'
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'multi_llm_manager' has capability for action 'set_provider_model'
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'set_provider_model' by multi_llm_manager APPROVED
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'set_provider_model' by multi_llm_manager APPROVED
+[2026-06-23 13:05:58] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) set_provider_model agent:multi_llm_manager -> success
+[2026-06-23 13:05:58] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: multi_llm_manager (agent) set_provider_model agent:multi_llm_manager -> success
+[2026-06-23 13:05:58] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:58] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 1b3610a3-ead9-447a-861a-3a0358d6f72b)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'multi_llm_manager' returned response (id: 1b3610a3-ead9-447a-861a-3a0358d6f72b)
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 1b3610a3-ead9-447a-861a-3a0358d6f72b
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 1b3610a3-ead9-447a-861a-3a0358d6f72b
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 1b3610a3-ead9-447a-861a-3a0358d6f72b
+[2026-06-23 13:05:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 1b3610a3-ead9-447a-861a-3a0358d6f72b
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to socratic_counselor (attempt 1)
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to socratic_counselor (attempt 1)
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'socratic_counselor' (id: e6356cb9-811d-41b6-9e9d-b05a0572bad1)
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'socratic_counselor' (id: e6356cb9-811d-41b6-9e9d-b05a0572bad1)
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'socratic_counselor' has capability for action 'generate_question'
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'socratic_counselor' has capability for action 'generate_question'
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'generate_question' by socratic_counselor APPROVED
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'generate_question' by socratic_counselor APPROVED
+[2026-06-23 13:06:20] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: socratic_counselor (agent) generate_question agent:socratic_counselor -> success
+[2026-06-23 13:06:20] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: socratic_counselor (agent) generate_question agent:socratic_counselor -> success
+[2026-06-23 13:06:20] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:06:20] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'socratic_counselor' returned response (id: e6356cb9-811d-41b6-9e9d-b05a0572bad1)
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'socratic_counselor' returned response (id: e6356cb9-811d-41b6-9e9d-b05a0572bad1)
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for e6356cb9-811d-41b6-9e9d-b05a0572bad1
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for e6356cb9-811d-41b6-9e9d-b05a0572bad1
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for e6356cb9-811d-41b6-9e9d-b05a0572bad1
+[2026-06-23 13:06:20] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for e6356cb9-811d-41b6-9e9d-b05a0572bad1
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to socratic_counselor (attempt 1)
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to socratic_counselor (attempt 1)
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'socratic_counselor' (id: 78ed22af-1536-4656-b661-200dffb1de42)
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'socratic_counselor' (id: 78ed22af-1536-4656-b661-200dffb1de42)
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'socratic_counselor' has capability for action 'process_response'
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'socratic_counselor' has capability for action 'process_response'
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'process_response' by socratic_counselor APPROVED
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'process_response' by socratic_counselor APPROVED
+[2026-06-23 13:07:45] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: socratic_counselor (agent) process_response agent:socratic_counselor -> success
+[2026-06-23 13:07:45] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: socratic_counselor (agent) process_response agent:socratic_counselor -> success
+[2026-06-23 13:07:45] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:07:45] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.socratic_counselor: Processing user response (76 chars) from Themis
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.socratic_counselor: Processing user response (76 chars) from Themis
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 8 messages)
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 8 messages)
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-06-23 13:07:45] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-06-23 13:07:45] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-06-23 13:07:45] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-06-23 13:07:48] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 2 constraint(s)
+[2026-06-23 13:07:48] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 2 constraint(s)
+[2026-06-23 13:07:48] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': "Translate 'Το κόκκινο φυλλάδιο' (The Red Pamphlet) from Greek to Russian, prioritizing the main body of translation", 'constraints': ['Acceptance that some nuances or details will be lost in translation', 'Focus on main body content rather than perfect fidelity to every element']}
+[2026-06-23 13:07:48] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': "Translate 'Το κόκκινο φυλλάδιο' (The Red Pamphlet) from Greek to Russian, prioritizing the main body of translation", 'constraints': ['Acceptance that some nuances or details will be lost in translation', 'Focus on main body content rather than perfect fidelity to every element']}
+[2026-06-23 13:07:48] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: Since this book contains deeply personal maritime ...
+[2026-06-23 13:07:48] [DEBUG] socratic_rag.socratic_counselor: Marked question as answered: Since this book contains deeply personal maritime ...
+[2026-06-23 13:07:48] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-06-23 13:07:48] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2026-06-23 13:07:48] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2026-06-23 13:07:48] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2026-06-23 13:07:48] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2026-06-23 13:07:48] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2026-06-23 13:07:48] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2026-06-23 13:07:48] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2026-06-23 13:07:48] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2026-06-23 13:07:48] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2026-06-23 13:07:51] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 0.0%
+[2026-06-23 13:07:51] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 0.0%
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Tracking question effectiveness: Since this book contains deeply personal maritime 
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Tracking question effectiveness: Since this book contains deeply personal maritime 
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'socratic_counselor' returned response (id: 78ed22af-1536-4656-b661-200dffb1de42)
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'socratic_counselor' returned response (id: 78ed22af-1536-4656-b661-200dffb1de42)
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 78ed22af-1536-4656-b661-200dffb1de42
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for 78ed22af-1536-4656-b661-200dffb1de42
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 78ed22af-1536-4656-b661-200dffb1de42
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for 78ed22af-1536-4656-b661-200dffb1de42
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to socratic_counselor (attempt 1)
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Sending request to socratic_counselor (attempt 1)
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'socratic_counselor' (id: a92005ed-924f-4e63-ad8e-f8075477bd0b)
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [AgentBus] Routing request to agent 'socratic_counselor' (id: a92005ed-924f-4e63-ad8e-f8075477bd0b)
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'socratic_counselor' has capability for action 'generate_question'
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [Capability] Agent 'socratic_counselor' has capability for action 'generate_question'
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'generate_question' by socratic_counselor APPROVED
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.orchestrator: [Governor] Action 'generate_question' by socratic_counselor APPROVED
+[2026-06-23 13:07:51] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: socratic_counselor (agent) generate_question agent:socratic_counselor -> success
+[2026-06-23 13:07:51] [INFO] socratic_rag.orchestrator: [AUDIT] agent_action_allowed: socratic_counselor (agent) generate_question agent:socratic_counselor -> success
+[2026-06-23 13:07:51] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:07:51] [WARNING] socratic_rag.orchestrator: Database doesn't support audit logging - entry not persisted
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Found 4 previously asked questions in discovery phase
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Found 4 previously asked questions in discovery phase
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Using 'full' document loading strategy
+[2026-06-23 13:07:51] [DEBUG] socratic_rag.socratic_counselor: Using 'full' document loading strategy
+[2026-06-23 13:07:51] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Searching for documents in project proj_3b2025c3-3a06-459f-a284-4612f9c87bce
+[2026-06-23 13:07:51] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Searching for documents in project proj_3b2025c3-3a06-459f-a284-4612f9c87bce
+[2026-06-23 13:07:51] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Query context: Goals: Translate 'Το κόκκινο φυλλάδιο' (The Red Pamphlet) from Greek to Russian, prioritizing the ma...
+[2026-06-23 13:07:51] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Query context: Goals: Translate 'Το κόκκινο φυλλάδιο' (The Red Pamphlet) from Greek to Russian, prioritizing the ma...
+[2026-06-23 13:07:51] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Strategy: full, top_k: 5
+[2026-06-23 13:07:51] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Strategy: full, top_k: 5
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Search returned 5 results
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Search returned 5 results
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 1: source=Το κόκκινο φυλλάδιο - Θέμης Αγγελόπουλος.pdf, score=1.277138113975525
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 1: source=Το κόκκινο φυλλάδιο - Θέμης Αγγελόπουλος.pdf, score=1.277138113975525
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 2: source=Το κόκκινο φυλλάδιο - Θέμης Αγγελόπουλος.pdf, score=1.2812358140945435
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 2: source=Το κόκκινο φυλλάδιο - Θέμης Αγγελόπουλος.pdf, score=1.2812358140945435
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 3: source=Το κόκκινο φυλλάδιο - Θέμης Αγγελόπουλος.pdf, score=1.2895493507385254
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Result 3: source=Το κόκκινο φυλλάδιο - Θέμης Αγγελόπουλος.pdf, score=1.2895493507385254
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.socratic_counselor: Cached document results for discovery phase
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.socratic_counselor: Cached document results for discovery phase
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: [KNOWLEDGE DEBUG] Using 5 knowledge items for question context
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.document_understanding: Cached summary for Το κόκκινο φυλλάδιο - Θέμης Αγγελόπουλος.pdf
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.document_understanding: Cached summary for Το κόκκινο φυλλάδιο - Θέμης Αγγελόπουλος.pdf
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.socratic_counselor: Found 5 relevant knowledge items with strategy 'full'
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #5)
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #5)
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2026-06-23 13:07:56] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-06-23 13:07:56] [DEBUG] socratic_rag.socratic_counselor: Using auth method 'api_key' for user Themis
+[2026-06-23 13:07:58] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Given that you're prioritizing the main body of translation and accepting that some nuances will be ...
+[2026-06-23 13:07:58] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Given that you're prioritizing the main body of translation and accepting that some nuances will be ...
+[2026-06-23 13:07:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'socratic_counselor' returned response (id: a92005ed-924f-4e63-ad8e-f8075477bd0b)
+[2026-06-23 13:07:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Agent 'socratic_counselor' returned response (id: a92005ed-924f-4e63-ad8e-f8075477bd0b)
+[2026-06-23 13:07:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for a92005ed-924f-4e63-ad8e-f8075477bd0b
+[2026-06-23 13:07:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Response queued for a92005ed-924f-4e63-ad8e-f8075477bd0b
+[2026-06-23 13:07:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for a92005ed-924f-4e63-ad8e-f8075477bd0b
+[2026-06-23 13:07:58] [DEBUG] socratic_rag.orchestrator: [AgentBus] Received response for a92005ed-924f-4e63-ad8e-f8075477bd0b

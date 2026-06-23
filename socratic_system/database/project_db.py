@@ -969,7 +969,12 @@ class ProjectDatabase:
                 )
 
             conn.commit()
-            self.logger.debug(f"Saved {len(questions)} pending questions for project {project_id}")
+            # Log with distinction between active (unanswered) and completed (answered) questions
+            active = sum(1 for q in questions if q.get("status") == "unanswered")
+            completed = len(questions) - active
+            self.logger.debug(
+                f"Saved question history for project {project_id}: {active} active, {completed} completed"
+            )
 
         except Exception as e:
             conn.rollback()
