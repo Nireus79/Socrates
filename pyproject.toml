@@ -63,11 +63,16 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "socratic-morality>=0.0.6",
-    "socratic-agents>=0.4.3",
+    "socratic-agents>=0.4.4",
+    "socratic-morality>=0.0.7",
+    "socratic-workflow>=0.1.5",
+    "socratic-maturity>=0.2.1",
+    "socratic-knowledge>=0.1.7",
+    "socratic-conflict>=0.1.6",
+    "socratic-learning>=0.2.1",
+    "socratic-analyzer>=0.1.7",
+    "socratic-performance>=0.2.2",
     "socratic-nexus>=0.4.3",
-    "socratic-maturity>=0.2.0",
-    "socratic-knowledge>=0.1.6",
     "anthropic>=0.40.0",
     "chromadb>=0.5.0",
     "sentence-transformers>=3.0.0",
