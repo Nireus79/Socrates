@@ -80,7 +80,9 @@ class AgentOrchestrator:
             # Per-user mode: create config with no global API key
             self.config = SocratesConfig(api_key=None)
         else:
-            raise TypeError(f"api_key_or_config must be str, SocratesConfig, or None, got {type(api_key_or_config)}")
+            raise TypeError(
+                f"api_key_or_config must be str, SocratesConfig, or None, got {type(api_key_or_config)}"
+            )
 
         self.api_key = self.config.api_key
 
@@ -378,6 +380,7 @@ class AgentOrchestrator:
         try:
             if provider == "claude":
                 from socratic_nexus.clients import ClaudeClient
+
                 subscription_token = provider_config.get("subscription_token")
                 client = ClaudeClient(
                     api_key=api_key,
@@ -389,6 +392,7 @@ class AgentOrchestrator:
 
             elif provider == "ollama":
                 from socratic_nexus.clients import OllamaClient
+
                 # Ollama doesn't need API key, but can use base_url from settings
                 settings = provider_config.get("settings", {})
                 base_url = settings.get("base_url", "http://localhost:11434")
@@ -401,6 +405,7 @@ class AgentOrchestrator:
 
             elif provider == "openai":
                 from socratic_nexus.clients import OpenAIClient
+
                 if not api_key:
                     raise ValueError("OpenAI provider requires an API key")
                 client = OpenAIClient(api_key=api_key, orchestrator=self)
@@ -409,6 +414,7 @@ class AgentOrchestrator:
 
             elif provider == "gemini":
                 from socratic_nexus.clients import GoogleClient
+
                 if not api_key:
                     raise ValueError("Gemini provider requires an API key")
                 client = GoogleClient(api_key=api_key, orchestrator=self)

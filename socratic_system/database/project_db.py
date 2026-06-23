@@ -1840,10 +1840,13 @@ class ProjectDatabase:
 
             # Decrypt it
             from socratic_system.encryption import decrypt_data
+
             decrypted_key = decrypt_data(encrypted_key)
             config["api_key"] = decrypted_key
 
-            self.logger.debug(f"Retrieved active LLM config with credentials for {user_id}: {provider}")
+            self.logger.debug(
+                f"Retrieved active LLM config with credentials for {user_id}: {provider}"
+            )
             return config
 
         except Exception as e:
