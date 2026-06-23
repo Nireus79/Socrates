@@ -26,6 +26,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])
 
 
+def require_provider_config(provider_config):
+    """Validate that user has configured an LLM provider.
+
+    Raises HTTPException if provider_config is None.
+    All LLM operations require a valid provider configuration from the database.
+    """
+    if provider_config is None:
+        raise HTTPException(
+            status_code=status.HTTP_412_PRECONDITION_FAILED,
+            detail="No LLM provider configured. Please configure an LLM provider in Settings > LLM to proceed.",
+        )
+
+
 # ============================================================================
 # Response Models for Code Generation Endpoints
 # ============================================================================
@@ -187,6 +200,10 @@ async def generate_code(
 
             orchestrator = get_orchestrator()
 
+            # Get user's LLM provider config with API key credentials (required for all agent operations)
+            provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+            require_provider_config(provider_config)
+
             # Use code generator agent via orchestrator routing (not direct call)
             result = await orchestrator.agent_bus.send_request(
                 "code_generator",
@@ -197,6 +214,7 @@ async def generate_code(
                     "requirements": specification,
                     "current_user": current_user,
                     "is_api_mode": True,
+                    "provider_config": provider_config,
                 },
             )
 
@@ -727,6 +745,10 @@ async def refactor_code(
 
             orchestrator = get_orchestrator()
 
+            # Get user's LLM provider config with API key credentials (required for all agent operations)
+            provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+            require_provider_config(provider_config)
+
             # Use code generator agent via orchestrator routing for refactoring
             result = await orchestrator.agent_bus.send_request(
                 "code_generator",
@@ -738,6 +760,7 @@ async def refactor_code(
                     "refactor_type": refactor_type,
                     "current_user": current_user,
                     "is_api_mode": True,
+                    "provider_config": provider_config,
                 },
             )
 

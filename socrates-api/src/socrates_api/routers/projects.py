@@ -60,6 +60,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
+def require_provider_config(provider_config):
+    """Validate that user has configured an LLM provider.
+
+    Raises HTTPException if provider_config is None.
+    All LLM operations require a valid provider configuration from the database.
+    """
+    if provider_config is None:
+        raise HTTPException(
+            status_code=status.HTTP_412_PRECONDITION_FAILED,
+            detail="No LLM provider configured. Please configure an LLM provider in Settings > LLM to proceed.",
+        )
+
+
 def _get_orchestrator() -> "socrates.AgentOrchestrator":
     """Get the global orchestrator instance for agent-based processing."""
     # Import here to avoid circular imports
@@ -229,6 +242,9 @@ async def create_project(
             orchestrator = app_state.get("orchestrator")
             if orchestrator:
                 logger.info("Orchestrator available, using it...")
+                # Get user's LLM provider config with API key credentials (required for all agent operations)
+                provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+                require_provider_config(provider_config)
                 # Use orchestrator pattern (same as CLI)
                 # Pass description and knowledge_base_content so ProjectManagerAgent can analyze them
                 result = await orchestrator.agent_bus.send_request(
@@ -240,6 +256,7 @@ async def create_project(
                         "description": request.description or "",
                         "knowledge_base_content": request.knowledge_base_content or "",
                         "project_type": request.knowledge_base_content or "general",
+                        "provider_config": provider_config,
                     },
                 )
 
@@ -420,6 +437,9 @@ async def create_project(
                 logger.info(f"Calculating initial maturity for project {project_id}...")
                 # Get orchestrator and quality controller
                 orchestrator = _get_orchestrator()
+                # Get user's LLM provider config with API key credentials (required for all agent operations)
+                provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+                require_provider_config(provider_config)
                 # Use quality controller to calculate initial maturity
                 maturity_result = orchestrator.agent_bus.send_request(
                     "quality_controller",
@@ -427,6 +447,7 @@ async def create_project(
                         "action": "calculate_maturity",
                         "project": project,
                         "current_user": current_user,
+                        "provider_config": provider_config,
                     },
                 )
                 if maturity_result.get("overall_maturity") is not None:

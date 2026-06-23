@@ -392,14 +392,9 @@ class LLMCommand(BaseCommand):
                     f"{Fore.YELLOW}Please set: export ANTHROPIC_SUBSCRIPTION_TOKEN=<your-token>{Style.RESET_ALL}"
                 )
         else:  # api_key
-            import os
-
-            api_key = os.getenv("ANTHROPIC_API_KEY", os.getenv("API_KEY_CLAUDE"))
-            if not api_key:
-                return self.error(
-                    "API key not configured.\n"
-                    f"{Fore.YELLOW}Please set: export ANTHROPIC_API_KEY=sk-...{Style.RESET_ALL}"
-                )
+            # API key will be stored in database when user adds it via settings
+            # No environment variable fallback
+            pass
 
         # Update user preference
         user.claude_auth_method = auth_method

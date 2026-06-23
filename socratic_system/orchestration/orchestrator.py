@@ -62,20 +62,25 @@ class AgentOrchestrator:
     for backward compatibility.
     """
 
-    def __init__(self, api_key_or_config: str | SocratesConfig):
+    def __init__(self, api_key_or_config: str | SocratesConfig | None = None):
         """
         Initialize the orchestrator.
 
         Args:
-            api_key_or_config: Either an API key string (old style) or SocratesConfig (new style)
+            api_key_or_config: Either an API key string (old style), SocratesConfig (new style), or None (per-user mode)
         """
-        # Handle both old-style (api_key string) and new-style (SocratesConfig) initialization
+        # Handle old-style (api_key string), new-style (SocratesConfig), or per-user mode (None)
         if isinstance(api_key_or_config, str):
             # Old style: create config from API key with defaults
             self.config = SocratesConfig(api_key=api_key_or_config)
-        else:
+        elif isinstance(api_key_or_config, SocratesConfig):
             # New style: use provided config
             self.config = api_key_or_config
+        elif api_key_or_config is None:
+            # Per-user mode: create config with no global API key
+            self.config = SocratesConfig(api_key=None)
+        else:
+            raise TypeError(f"api_key_or_config must be str, SocratesConfig, or None, got {type(api_key_or_config)}")
 
         self.api_key = self.config.api_key
 
@@ -155,8 +160,11 @@ class AgentOrchestrator:
         self.logger.info("Database components initialized successfully")
 
         # Initialize Claude client
+        # In per-user mode (api_key is None), use a placeholder key that won't be used
+        # Agents will fetch per-user credentials from database and create their own clients
+        api_key_for_client = self.config.api_key or "placeholder-will-use-per-user-credentials"
         self.claude_client = ClaudeClient(
-            self.config.api_key, self, subscription_token=self.config.subscription_token
+            api_key_for_client, self, subscription_token=self.config.subscription_token
         )
 
         # Cache for lazy-loaded agents
@@ -337,6 +345,85 @@ class AgentOrchestrator:
 
         except Exception as e:
             self.logger.error(f"Error during agent pre-initialization: {e}")
+
+    def get_llm_client_for_provider(self, provider_config: dict[str, Any] | None = None):
+        """
+        Get the appropriate LLM client based on provider configuration.
+
+        This method implements provider-aware client selection. Based on the provider
+        specified in provider_config, it instantiates and returns the correct client
+        (Claude, Ollama, Google, etc.).
+
+        The agents call this to get the right client without needing to know about
+        provider-specific logic. This keeps socratic-agents as a standalone library.
+
+        Args:
+            provider_config: Dict with 'provider', 'api_key', and 'settings'.
+                           If None, defaults to Claude.
+
+        Returns:
+            An LLM client instance (ClaudeClient, OllamaClient, GoogleClient, etc.)
+
+        Raises:
+            ValueError: If provider is unknown or client instantiation fails
+        """
+        # Default to Claude if no provider config
+        if not provider_config or not provider_config.get("provider"):
+            self.logger.debug("No provider_config specified, defaulting to ClaudeClient")
+            return self.claude_client
+
+        provider = provider_config.get("provider", "").lower()
+        api_key = provider_config.get("api_key")
+
+        try:
+            if provider == "claude":
+                from socratic_nexus.clients import ClaudeClient
+                subscription_token = provider_config.get("subscription_token")
+                client = ClaudeClient(
+                    api_key=api_key,
+                    orchestrator=self,
+                    subscription_token=subscription_token,
+                )
+                self.logger.debug(f"Created ClaudeClient for {provider}")
+                return client
+
+            elif provider == "ollama":
+                from socratic_nexus.clients import OllamaClient
+                # Ollama doesn't need API key, but can use base_url from settings
+                settings = provider_config.get("settings", {})
+                base_url = settings.get("base_url", "http://localhost:11434")
+                client = OllamaClient(api_key=api_key, orchestrator=self)
+                # Set base URL if available
+                if hasattr(client, "base_url"):
+                    client.base_url = base_url
+                self.logger.debug(f"Created OllamaClient for {provider} (base_url: {base_url})")
+                return client
+
+            elif provider == "openai":
+                from socratic_nexus.clients import OpenAIClient
+                if not api_key:
+                    raise ValueError("OpenAI provider requires an API key")
+                client = OpenAIClient(api_key=api_key, orchestrator=self)
+                self.logger.debug(f"Created OpenAIClient for {provider}")
+                return client
+
+            elif provider == "gemini":
+                from socratic_nexus.clients import GoogleClient
+                if not api_key:
+                    raise ValueError("Gemini provider requires an API key")
+                client = GoogleClient(api_key=api_key, orchestrator=self)
+                self.logger.debug(f"Created GoogleClient for {provider}")
+                return client
+
+            else:
+                raise ValueError(f"Unknown LLM provider: {provider}")
+
+        except ImportError as e:
+            self.logger.error(f"Client library not available for {provider}: {e}")
+            raise ValueError(f"Provider '{provider}' client not available") from e
+        except Exception as e:
+            self.logger.error(f"Failed to create LLM client for {provider}: {e}")
+            raise ValueError(f"Failed to initialize {provider} client: {str(e)}") from e
 
     @property
     def sandbox(self) -> Sandbox:

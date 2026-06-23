@@ -319,16 +319,7 @@ async def get_api_key_status(
                     f"Add or update your API key in Settings > LLM > {provider_name} to use this provider."
                 )
 
-        # Check if environment fallback is being used
-        import os
-
-        env_key_available = bool(os.getenv("ANTHROPIC_API_KEY"))
-        if not configured_providers and env_key_available:
-            warnings.insert(
-                0,
-                "No user API keys configured. Currently using environment variable as fallback. "
-                "For better security and control, add your API key in Settings > LLM > Anthropic.",
-            )
+        # No environment variable fallback - all credentials are per-user from database
 
         return APIResponse(
             success=True,
@@ -338,8 +329,7 @@ async def get_api_key_status(
                 "configured_providers": configured_providers,
                 "missing_api_keys": missing_api_keys,
                 "warnings": warnings,
-                "environment_fallback_available": env_key_available,
-                "action_required": len(missing_api_keys) > 0,
+                "action_required": len(missing_api_keys) > 0 or len(configured_providers) == 0,
             },
         )
 

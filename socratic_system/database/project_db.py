@@ -1807,6 +1807,52 @@ class ProjectDatabase:
             self.logger.debug(f"No active provider config for {user_id} (provider: {provider})")
             return None
 
+    def get_user_active_llm_config_with_credentials(self, user_id: str) -> dict[str, Any] | None:
+        """
+        Get user's active LLM provider config WITH decrypted API key.
+
+        This is the version agents should use - it includes the actual credentials
+        needed to instantiate the LLM client.
+
+        Args:
+            user_id: Username
+
+        Returns:
+            Config dict with decrypted 'api_key' field added, or None if not configured.
+            Includes: id, user_id, provider, is_default, enabled, settings, api_key, created_at, updated_at
+        """
+        config = self.get_user_active_llm_config(user_id)
+        if not config:
+            return None
+
+        provider = config.get("provider")
+        if not provider:
+            return None
+
+        try:
+            # Get encrypted API key
+            encrypted_key = self.get_api_key(user_id, provider)
+            if not encrypted_key:
+                self.logger.warning(
+                    f"No API key found for {user_id}/{provider}. Agent will fail without credentials."
+                )
+                return config  # Return config without api_key - will fail at agent level
+
+            # Decrypt it
+            from socratic_system.encryption import decrypt_data
+            decrypted_key = decrypt_data(encrypted_key)
+            config["api_key"] = decrypted_key
+
+            self.logger.debug(f"Retrieved active LLM config with credentials for {user_id}: {provider}")
+            return config
+
+        except Exception as e:
+            self.logger.error(
+                f"Failed to get credentials for {user_id}/{provider}: {e}. "
+                f"Config returned without api_key - agent will fail."
+            )
+            return config  # Return config without api_key - will fail at agent level
+
     def save_knowledge_document(
         self,
         user_id: str,

@@ -72,6 +72,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
 
 
+def require_provider_config(provider_config):
+    """Validate that user has configured an LLM provider.
+
+    Raises HTTPException if provider_config is None.
+    All LLM operations require a valid provider configuration from the database.
+    """
+    if provider_config is None:
+        raise HTTPException(
+            status_code=status.HTTP_412_PRECONDITION_FAILED,
+            detail="No LLM provider configured. Please configure an LLM provider in Settings > LLM to proceed.",
+        )
+
+
 # ============================================================================
 # Chat Sessions Endpoints (Phase 2)
 # ============================================================================
@@ -533,8 +546,9 @@ async def get_question(
         # Question caching happens internally to avoid redundant Claude calls
         orchestrator = get_orchestrator()
 
-        # Get user's default LLM provider config for provider-aware agent execution
-        provider_config = db.get_user_active_llm_config(current_user)
+        # Get user's default LLM provider config with API key credentials
+        provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+        require_provider_config(provider_config)
 
         result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
@@ -761,6 +775,7 @@ Provide a helpful, direct answer."""
 
             # Get user's default LLM provider config for provider-aware agent execution
             provider_config = db.get_user_active_llm_config(current_user)
+            require_provider_config(provider_config)
 
             # Call socratic_counselor to process response
             # Pre-extracted insights caching and async processing happen internally
@@ -1017,8 +1032,9 @@ async def get_hint(
         # Call orchestrator to generate context-aware hint
         orchestrator = get_orchestrator()
 
-        # Get user's default LLM provider config for provider-aware agent execution
-        provider_config = db.get_user_active_llm_config(current_user)
+        # Get user's default LLM provider config with API key credentials
+        provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+        require_provider_config(provider_config)
 
         result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
@@ -1141,8 +1157,9 @@ async def get_summary(
         # Call context analyzer to generate summary
         orchestrator = get_orchestrator()
 
-        # Get user's default LLM provider config for provider-aware agent execution
-        provider_config = db.get_user_active_llm_config(current_user)
+        # Get user's default LLM provider config with API key credentials
+        provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+        require_provider_config(provider_config)
 
         result = await orchestrator.agent_bus.send_request(
             "context_analyzer",
@@ -1551,8 +1568,9 @@ async def reopen_question(
 
         orchestrator = get_orchestrator()
 
-        # Get user's default LLM provider config for provider-aware agent execution
-        provider_config = db.get_user_active_llm_config(current_user)
+        # Get user's default LLM provider config with API key credentials
+        provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+        require_provider_config(provider_config)
 
         result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
@@ -1728,8 +1746,9 @@ async def get_answer_suggestions(
 
         orchestrator = get_orchestrator()
 
-        # Get user's default LLM provider config for provider-aware agent execution
-        provider_config = db.get_user_active_llm_config(current_user)
+        # Get user's default LLM provider config with API key credentials
+        provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+        require_provider_config(provider_config)
 
         result = await orchestrator.agent_bus.send_request(
             "socratic_counselor",
@@ -1922,6 +1941,7 @@ async def save_extracted_specs(
 
             # Get user's default LLM provider config for provider-aware agent execution
             provider_config = db.get_user_active_llm_config(current_user)
+            require_provider_config(provider_config)
 
             # Convert specs_saved to insights format for maturity calculation
             insights = {

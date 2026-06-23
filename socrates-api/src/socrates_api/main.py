@@ -267,41 +267,17 @@ async def lifespan(app: FastAPI):
         logger.warning("Rate limiting is disabled")
 
     # Auto-initialize orchestrator on startup
-    # Note: API key can be provided via environment variable OR per-user via database
+    # All API credentials are per-user from database. No environment variable fallback.
     try:
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if api_key:
-            logger.info(f"ANTHROPIC_API_KEY is set ({api_key[:10]}...)")
-        else:
-            logger.info(
-                "ANTHROPIC_API_KEY not set. Users will provide their own API keys via Settings > LLM > Anthropic"
-            )
+        logger.info("Creating AgentOrchestrator with per-user credential model...")
 
-        # Create and initialize orchestrator
-        # If no env API key, use a placeholder - actual keys will be fetched per-user from database
-        logger.info("Creating AgentOrchestrator...")
+        # Initialize orchestrator WITHOUT any global API key
+        # All LLM calls must be provider-aware with credentials from database
         orchestrator = AgentOrchestrator(
-            api_key_or_config=api_key or "placeholder-key-will-use-user-specific-keys"
+            api_key_or_config=None
         )
-        logger.info("AgentOrchestrator created successfully")
-
-        # Test connection only if we have an env API key
-        if api_key:
-            try:
-                logger.info("Testing API connection with environment API key...")
-                orchestrator.claude_client.test_connection()
-                logger.info("Orchestrator initialized successfully with valid environment API key")
-            except Exception as e:
-                logger.warning(
-                    f"Environment API key connection test failed: {type(e).__name__}: {str(e)[:100]}"
-                )
-                logger.info(
-                    "Orchestrator initialized but will rely on per-user API keys from database"
-                )
-        else:
-            logger.info(
-                "No environment API key set. System will use per-user API keys from database."
-            )
+        logger.info("AgentOrchestrator created successfully (credential-less)")
+        logger.info("All agents will use per-user LLM configurations from database")
 
         # Setup event listeners
         logger.info("Setting up event listeners...")
@@ -314,7 +290,7 @@ async def lifespan(app: FastAPI):
         app_state["start_time"] = time.time()
         logger.info(f"Orchestrator stored. app_state['orchestrator'] = {app_state['orchestrator']}")
 
-        logger.info("Socrates API orchestrator fully initialized and ready for per-user API keys")
+        logger.info("Socrates API orchestrator initialized for per-user LLM provider management")
 
     except Exception as e:
         logger.error(f"Failed to auto-initialize orchestrator on startup: {type(e).__name__}: {e}")
@@ -719,43 +695,15 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
     """
     Initialize the Socrates API with configuration
 
-    Parameters:
-    - api_key: Claude API key (optional, will use ANTHROPIC_API_KEY env var if not provided)
-
-    Note: API key can be provided here OR users can set it in Settings > LLM > Anthropic
+    All LLM credentials are per-user and stored in the database.
+    No global API keys are used.
     """
     try:
-        # Get API key from request body or environment variable
-        api_key = None
-        if request and request.api_key:
-            api_key = request.api_key
-        else:
-            # Fall back to environment variable
-            api_key = os.getenv("ANTHROPIC_API_KEY")
+        logger.info("Initializing Socrates API (per-user credential model)")
 
-        # If no API key provided, that's okay - users will provide their own via UI
-        if api_key:
-            logger.info("Initializing with provided API key")
-
-            # Create orchestrator with provided API key
-            orchestrator = AgentOrchestrator(api_key_or_config=api_key)
-
-            # Test connection
-            try:
-                orchestrator.claude_client.test_connection()
-                logger.info("API key connection successful")
-            except Exception as e:
-                logger.warning(f"API key connection test failed: {e}")
-                raise HTTPException(status_code=400, detail=f"API key is invalid: {str(e)}")
-        else:
-            logger.info(
-                "No API key provided in request. Using placeholder for per-user keys from database"
-            )
-
-            # Create orchestrator with placeholder - will use per-user keys
-            orchestrator = AgentOrchestrator(
-                api_key_or_config="placeholder-key-will-use-user-specific-keys"
-            )
+        # Create orchestrator without any global credentials
+        # All LLM calls must use provider_config from database
+        orchestrator = AgentOrchestrator(api_key_or_config=None)
 
         # Setup event listeners
         _setup_event_listeners(orchestrator)
@@ -764,7 +712,7 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
         app_state["orchestrator"] = orchestrator
         app_state["start_time"] = time.time()
 
-        logger.info("Socrates API initialized successfully")
+        logger.info("Socrates API initialized successfully (per-user LLM provider model)")
 
         return SystemInfoResponse(
             version="8.0.0", library_version="8.0.0", status="operational", uptime=0.0

@@ -19,6 +19,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 
 
+def require_provider_config(provider_config):
+    """Validate that user has configured an LLM provider.
+
+    Raises HTTPException if provider_config is None.
+    All LLM operations require a valid provider configuration from the database.
+    """
+    if provider_config is None:
+        raise HTTPException(
+            status_code=status.HTTP_412_PRECONDITION_FAILED,
+            detail="No LLM provider configured. Please configure an LLM provider in Settings > LLM to proceed.",
+        )
+
+
 @router.get(
     "/list",
     response_model=APIResponse,
@@ -119,9 +132,14 @@ async def invoke_agent_sync(
 
         orchestrator = get_orchestrator()
 
+        # Get user's LLM provider config with API key credentials (required for all agent operations)
+        provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+        require_provider_config(provider_config)
+
         # Prepare request with user context
         request = {
             "current_user": current_user,
+            "provider_config": provider_config,
             **request_payload,
         }
 
@@ -194,9 +212,14 @@ async def invoke_agent_async(
         orchestrator = get_orchestrator()
         job_queue = JobQueue()  # Get global job queue
 
+        # Get user's LLM provider config with API key credentials (required for all agent operations)
+        provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+        require_provider_config(provider_config)
+
         # Prepare request
         request = {
             "current_user": current_user,
+            "provider_config": provider_config,
             **request_payload,
         }
 

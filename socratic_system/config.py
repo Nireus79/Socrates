@@ -222,12 +222,13 @@ class SocratesConfig:
         Create configuration from environment variables.
 
         Environment variables:
-            ANTHROPIC_API_KEY or API_KEY_CLAUDE: Claude API key (optional - users can provide per-user keys via database)
-            ANTHROPIC_SUBSCRIPTION_TOKEN: Optional - Claude subscription token for subscription-based auth
             CLAUDE_MODEL: Model name
             SOCRATES_DATA_DIR: Data directory
             SOCRATES_LOG_LEVEL: Logging level
             SOCRATES_LOG_FILE: Log file path
+
+        Note: API keys are no longer loaded from environment variables.
+        All credentials are per-user and stored in the database.
 
         Args:
             **overrides: Override specific settings
@@ -236,26 +237,13 @@ class SocratesConfig:
             Configured SocratesConfig instance
         """
         config_dict = {
-            "api_key": overrides.get("api_key")
-            or os.getenv("ANTHROPIC_API_KEY")
-            or os.getenv("API_KEY_CLAUDE"),
+            "api_key": None,  # No global API key from environment
             "claude_model": overrides.get("claude_model")
             or os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
             "data_dir": overrides.get("data_dir")
             or Path(os.getenv("SOCRATES_DATA_DIR", Path.home() / ".socrates")),
             "log_level": overrides.get("log_level") or os.getenv("SOCRATES_LOG_LEVEL", "INFO"),
         }
-
-        # API key is now optional - it will be checked at runtime
-        # For API server mode, users provide per-user keys from database
-        # For direct mode, the API key will be needed when making API calls
-
-        # Optional subscription token (alternative auth method)
-        subscription_token = overrides.get("subscription_token") or os.getenv(
-            "ANTHROPIC_SUBSCRIPTION_TOKEN"
-        )
-        if subscription_token:
-            config_dict["subscription_token"] = subscription_token
 
         log_file = overrides.get("log_file") or os.getenv("SOCRATES_LOG_FILE")
         if log_file:
