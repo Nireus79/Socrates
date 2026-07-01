@@ -12,12 +12,16 @@ services:
       ENVIRONMENT: production
       # Redis connection for Docker (use service name on docker network)
       REDIS_URL: redis://redis:6379
+      # Data persistence: mount volume for SQLite database
+      SOCRATES_DATA_DIR: /app/data
       # Add your encryption key here or pass via environment
       # SOCRATES_ENCRYPTION_KEY: your-key-here
     ports:
       - "8000:8000"
     networks:
       - socrates-network
+    volumes:
+      - socrates_data:/app/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -90,5 +94,7 @@ networks:
     driver: bridge
 
 volumes:
+  socrates_data:
+    driver: local
   redis_data:
     driver: local
