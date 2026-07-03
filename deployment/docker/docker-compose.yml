@@ -32,9 +32,13 @@ services:
       - SOCRATES_ENCRYPTION_KEY=${SOCRATES_ENCRYPTION_KEY:-change-me-in-production}
       - DATABASE_ENCRYPTION_KEY=${DATABASE_ENCRYPTION_KEY:-change-me-in-production}
 
+      # JWT Configuration - CRITICAL for session persistence across container restarts
+      # Must be consistent across all deployments to avoid invalidating user sessions
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+
       # API Security
-      - ALLOWED_HOSTS=localhost,127.0.0.1,api
-      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - ALLOWED_HOSTS=localhost,127.0.0.1,api,host.docker.internal
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://api:3000
     volumes:
       # Use ../../ to point to the actual root of your repository
       - ../../socratic_system:/app/socratic_system
