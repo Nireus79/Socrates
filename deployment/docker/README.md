@@ -4,7 +4,28 @@ This directory contains Docker configurations for running Socrates in a containe
 
 ## Quick Start (Development)
 
-### 1. Prepare Environment
+### 1. Generate Environment & Keys (Automated)
+
+**Option A: Automated (Recommended)**
+
+```bash
+cd deployment/docker
+
+# Linux/macOS
+./generate-keys.sh
+
+# Windows
+generate-keys.bat
+```
+
+This will:
+- ✅ Generate all required encryption keys automatically
+- ✅ Create .env file with secure values
+- ✅ Show next steps
+
+Then just add your Anthropic API key to the generated .env file.
+
+**Option B: Manual Setup**
 
 ```bash
 cd deployment/docker
@@ -12,28 +33,30 @@ cd deployment/docker
 # Copy the environment template
 cp .env.docker .env
 
-# Edit .env and set your API key
-# IMPORTANT: Replace placeholder values before running
+# Edit and set your API key
 nano .env  # or use your editor
 ```
 
-**Required settings in .env**:
-```env
-ANTHROPIC_API_KEY=sk-ant-your-actual-key-here
-SOCRATES_ENCRYPTION_KEY=your-secure-32-char-random-key
-DATABASE_ENCRYPTION_KEY=your-secure-32-char-random-key
-JWT_SECRET_KEY=your-secure-random-jwt-secret  # CRITICAL for session persistence
-```
-
-### 2. Generate Secure Encryption Keys
-
+Then manually generate keys:
 ```bash
-# Generate encryption keys (do this twice for two different keys)
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-python -c "import secrets; print(secrets.token_urlsafe(32))"
+# JWT Secret Key
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 
-# Copy the output to .env for SOCRATES_ENCRYPTION_KEY and DATABASE_ENCRYPTION_KEY
+# Encryption Keys (run twice for two different keys)
+python3 -c "import secrets, base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
+python3 -c "import secrets, base64; print(base64.b64encode(secrets.token_bytes(32)).decode())"
+
+# Copy outputs to .env
 ```
+
+### 2. Add Your Anthropic API Key
+
+Edit the generated `.env` file:
+```bash
+nano .env
+```
+
+Replace `sk-ant-YOUR-KEY-HERE` with your actual API key from [console.anthropic.com](https://console.anthropic.com)
 
 ### 3. Start Services
 
@@ -41,14 +64,18 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 # From deployment/docker directory
 docker-compose up -d
 
-# Or from root directory
+# Or from root directory  
 docker-compose -f deployment/docker/docker-compose.yml up -d
 
 # Check status
 docker-compose ps
 ```
 
-### 4. Access Services
+### 4. Access Socrates
+
+Wait 10-15 seconds for all containers to be ready, then open:
+
+### 5. Access Services
 
 - **Frontend**: http://localhost:3000 (via Nginx reverse proxy)
 - **Backend API**: http://localhost:8000 (direct access)
@@ -56,7 +83,7 @@ docker-compose ps
 - **PostgreSQL**: localhost:5432 (user: socrates, password from .env)
 - **Redis**: localhost:6379
 
-### 5. View Logs
+### 6. View Logs
 
 ```bash
 # All services
@@ -68,7 +95,7 @@ docker-compose logs -f frontend
 docker-compose logs -f postgres
 ```
 
-### 6. Stop Services
+### 7. Stop Services
 
 ```bash
 # Stop all services (data persists in volumes)
