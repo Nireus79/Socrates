@@ -2,7 +2,11 @@
 
 This directory contains Docker configurations for running Socrates in a containerized environment.
 
-## Quick Start (Development)
+## 🚀 Quick Start (5 minutes)
+
+**→ [See QUICKSTART.md for fastest setup](./QUICKSTART.md)**
+
+Or follow detailed steps below:
 
 ### 1. Generate Environment & Keys (Automated)
 
