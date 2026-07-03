@@ -22,6 +22,7 @@ nano .env  # or use your editor
 ANTHROPIC_API_KEY=sk-ant-your-actual-key-here
 SOCRATES_ENCRYPTION_KEY=your-secure-32-char-random-key
 DATABASE_ENCRYPTION_KEY=your-secure-32-char-random-key
+JWT_SECRET_KEY=your-secure-random-jwt-secret  # CRITICAL for session persistence
 ```
 
 ### 2. Generate Secure Encryption Keys
@@ -136,6 +137,7 @@ docker-compose down -v
 ANTHROPIC_API_KEY           # Claude API key (from console.anthropic.com)
 SOCRATES_ENCRYPTION_KEY     # For encrypting API keys in database
 DATABASE_ENCRYPTION_KEY     # For database-level encryption
+JWT_SECRET_KEY              # For JWT token signing (CRITICAL - must be consistent across restarts)
 ```
 
 ### Database Variables
