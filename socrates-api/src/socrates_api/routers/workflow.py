@@ -6,15 +6,14 @@ Handles the blocking workflow optimization flow during question generation.
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
 from socrates_api.auth.project_access import check_project_access
-from socratic_system.database import ProjectDatabase
+from socrates_api.database import get_database
 from socrates_api.models import APIResponse, ErrorResponse
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/workflow", tags=["workflow"])
@@ -108,7 +107,7 @@ async def get_pending_approvals(
 async def approve_workflow(
     request_id: str,
     approved_path_id: str,
-    project_id: Optional[str] = None,
+    project_id: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -203,8 +202,8 @@ async def approve_workflow(
 )
 async def reject_workflow(
     request_id: str,
-    reason: Optional[str] = None,
-    project_id: Optional[str] = None,
+    reason: str | None = None,
+    project_id: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -300,7 +299,7 @@ async def reject_workflow(
 )
 async def get_workflow_info(
     request_id: str,
-    project_id: Optional[str] = None,
+    project_id: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):

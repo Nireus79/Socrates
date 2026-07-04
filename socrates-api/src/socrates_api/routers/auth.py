@@ -9,7 +9,7 @@ import hashlib
 import logging
 import sqlite3
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -152,7 +152,7 @@ async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_d
             subscription_tier="free",  # Default to free tier
             subscription_status="active",
             testing_mode=False,  # Testing mode disabled by default - users must explicitly enable
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
 
         # Save user to database
@@ -838,7 +838,7 @@ async def archive_account(
 
         # Archive user
         user.is_archived = True
-        user.archived_at = datetime.now(timezone.utc)
+        user.archived_at = datetime.now(UTC)
         db.save_user(user)
 
         return APIResponse(
@@ -907,7 +907,7 @@ async def restore_account(
             message="Account restored successfully",
             data={
                 "user_id": current_user,
-                "restored_at": datetime.now(timezone.utc).isoformat(),
+                "restored_at": datetime.now(UTC).isoformat(),
                 "status": "active",
             },
         )
@@ -948,10 +948,10 @@ def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None
         # Decode token to extract expiration time (without verification, just decode)
         try:
             payload = jwt.decode(token, options={"verify_signature": False})
-            expires_at = datetime.fromtimestamp(payload.get("exp", 0), tz=timezone.utc)
+            expires_at = datetime.fromtimestamp(payload.get("exp", 0), tz=UTC)
         except (jwt.InvalidTokenError, ValueError, KeyError):
             # If token decoding fails, set expiry to 7 days from now as default
-            expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+            expires_at = datetime.now(UTC) + timedelta(days=7)
             logger.warning(
                 f"Could not decode token expiration for user {username}, using default 7-day expiry"
             )
@@ -992,7 +992,7 @@ def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None
                     username,
                     token_hash,
                     expires_at.isoformat(),
-                    datetime.now(timezone.utc).isoformat(),
+                    datetime.now(UTC).isoformat(),
                 ),
             )
 
@@ -1055,12 +1055,12 @@ def _validate_refresh_token(db: ProjectDatabase, username: str, token: str) -> b
 
             # Check if token has expired
             expires_at = datetime.fromisoformat(expires_at_str)
-            if datetime.now(timezone.utc) > expires_at:
+            if datetime.now(UTC) > expires_at:
                 logger.info(f"Refresh token expired for user {username}")
                 # Mark as revoked to clean up
                 cursor.execute(
                     "UPDATE refresh_tokens SET revoked_at = ? WHERE id = ?",
-                    (datetime.now(timezone.utc).isoformat(), token_id),
+                    (datetime.now(UTC).isoformat(), token_id),
                 )
                 conn.commit()
                 return False
@@ -1098,7 +1098,7 @@ def _revoke_refresh_token(db: ProjectDatabase, username: str) -> None:
                 SET revoked_at = ?
                 WHERE user_id = ? AND revoked_at IS NULL
                 """,
-                (datetime.now(timezone.utc).isoformat(), username),
+                (datetime.now(UTC).isoformat(), username),
             )
 
             conn.commit()

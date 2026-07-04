@@ -8,8 +8,7 @@ import asyncio
 import json
 import logging
 from collections import deque
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -42,7 +41,7 @@ def record_event(event_type: str, data: dict = None, user_id: str = None) -> Non
     event = {
         "id": f"evt_{len(_event_queue)}",
         "type": event_type,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "user_id": user_id,
         "data": data or {},
     }
@@ -67,9 +66,9 @@ def record_event(event_type: str, data: dict = None, user_id: str = None) -> Non
     },
 )
 async def get_event_history(
-    limit: Optional[int] = 100,
-    offset: Optional[int] = 0,
-    event_type: Optional[str] = None,
+    limit: int | None = 100,
+    offset: int | None = 0,
+    event_type: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -169,7 +168,7 @@ async def stream_events(
                         # Wait for new event (5 minute timeout)
                         event = await asyncio.wait_for(subscriber_queue.get(), timeout=300)
                         yield f"data: {json.dumps(event)}\n\n"
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         # Keep connection alive with heartbeat
                         yield ": heartbeat\n\n"
                     except asyncio.CancelledError:

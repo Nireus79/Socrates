@@ -12,7 +12,6 @@ Metrics are exposed at /metrics endpoint in Prometheus format.
 
 import logging
 import time
-from typing import Dict
 
 from fastapi import Request
 from prometheus_client import (
@@ -326,7 +325,7 @@ def set_connection_pool_metrics(size: int, active: int):
     connection_pool_active.set(active)
 
 
-def get_metrics_summary() -> Dict:
+def get_metrics_summary() -> dict:
     """
     Get a summary of current metrics.
 

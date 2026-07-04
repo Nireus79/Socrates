@@ -8,15 +8,14 @@ Provides REST endpoints for chat operations including:
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
 from socrates_api.auth.project_access import check_project_access
-from socratic_system.database import ProjectDatabase
+from socrates_api.database import get_database
 from socrates_api.models import APIResponse, ErrorResponse
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -103,7 +102,7 @@ async def get_next_question(
 )
 async def get_conversation_history(
     project_id: str,
-    limit: Optional[int] = None,
+    limit: int | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):

@@ -15,7 +15,7 @@ import hashlib
 import json
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,9 @@ class InMemoryCache:
     """Simple in-memory cache fallback."""
 
     def __init__(self):
-        self.cache: Dict[str, Any] = {}
+        self.cache: dict[str, Any] = {}
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Get value from cache."""
         return self.cache.get(key)
 
@@ -66,7 +66,7 @@ class InMemoryCache:
 class RedisCache:
     """Distributed Redis-backed cache."""
 
-    def __init__(self, redis_url: Optional[str] = None):
+    def __init__(self, redis_url: str | None = None):
         """
         Initialize Redis cache.
 
@@ -98,7 +98,7 @@ class RedisCache:
             logger.warning(f"Failed to connect to Redis: {e} - using in-memory cache")
             self.client = None
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """
         Get value from cache.
 
@@ -217,7 +217,7 @@ class RedisCache:
             logger.error(f"Redis increment error: {e}")
             return 0
 
-    async def get_stats(self) -> Dict[str, Any]:
+    async def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         if self.client is None:
             return {"type": "in-memory", "status": "unavailable"}
@@ -237,7 +237,7 @@ class RedisCache:
 
 
 # Global cache instance
-_cache: Optional[RedisCache] = None
+_cache: RedisCache | None = None
 
 
 def get_cache() -> RedisCache:

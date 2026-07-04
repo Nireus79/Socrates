@@ -8,7 +8,6 @@ import logging
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
@@ -45,9 +44,9 @@ def _get_orchestrator():
     },
 )
 async def list_documents(
-    project_id: Optional[str] = None,
-    document_type: Optional[str] = None,
-    search_query: Optional[str] = None,
+    project_id: str | None = None,
+    document_type: str | None = None,
+    search_query: str | None = None,
     limit: int = 50,
     offset: int = 0,
     sort_by: str = "uploaded_at",
@@ -190,8 +189,9 @@ async def get_all_knowledge_sources(
     """
     try:
         # Verify user has access to project using RBAC (viewers and above can read knowledge)
-        from socrates_api.auth.project_access import check_project_access
         import asyncio
+
+        from socrates_api.auth.project_access import check_project_access
 
         # Run async RBAC check synchronously
         asyncio.get_event_loop()
@@ -496,7 +496,7 @@ async def download_document(
 )
 async def import_file(
     file: UploadFile = File(...),
-    project_id: Optional[str] = Form(None),
+    project_id: str | None = Form(None),
     current_user: str = Depends(get_current_user),
     orchestrator=Depends(_get_orchestrator),
     db: ProjectDatabase = Depends(get_database),
@@ -601,8 +601,9 @@ async def import_file(
                     # Try to extract text content based on file type
                     if file.filename.endswith(".pdf"):
                         try:
-                            from pypdf import PdfReader
                             import io
+
+                            from pypdf import PdfReader
 
                             pdf_reader = PdfReader(io.BytesIO(file_content))
                             for page in pdf_reader.pages:
@@ -968,9 +969,9 @@ async def import_text(
     },
 )
 async def search_knowledge(
-    q: Optional[str] = None,
-    query: Optional[str] = None,
-    project_id: Optional[str] = None,
+    q: str | None = None,
+    query: str | None = None,
+    project_id: str | None = None,
     top_k: int = 10,
     current_user: str = Depends(get_current_user),
     orchestrator=Depends(_get_orchestrator),
@@ -1206,7 +1207,7 @@ async def bulk_delete_documents(
 )
 async def bulk_import_documents(
     files: list = File(..., description="Files to import"),
-    project_id: Optional[str] = Form(None),
+    project_id: str | None = Form(None),
     current_user: str = Depends(get_current_user),
     orchestrator=Depends(_get_orchestrator),
     db: ProjectDatabase = Depends(get_database),

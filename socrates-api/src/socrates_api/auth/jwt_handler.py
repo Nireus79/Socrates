@@ -6,8 +6,8 @@ Uses short-lived access tokens (15 minutes) and long-lived refresh tokens (7 day
 """
 
 import os
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import jwt
 
@@ -24,8 +24,8 @@ class JWTHandler:
     @staticmethod
     def create_access_token(
         subject: str,
-        expires_delta: Optional[timedelta] = None,
-        additional_claims: Optional[Dict[str, Any]] = None,
+        expires_delta: timedelta | None = None,
+        additional_claims: dict[str, Any] | None = None,
     ) -> str:
         """
         Create a short-lived access token.
@@ -41,12 +41,12 @@ class JWTHandler:
         if expires_delta is None:
             expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
 
-        claims: Dict[str, Any] = {
+        claims: dict[str, Any] = {
             "sub": subject,
             "exp": expire,
-            "iat": datetime.now(timezone.utc),
+            "iat": datetime.now(UTC),
             "type": "access",
         }
 
@@ -67,12 +67,12 @@ class JWTHandler:
         Returns:
             JWT refresh token
         """
-        expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
         claims = {
             "sub": subject,
             "exp": expire,
-            "iat": datetime.now(timezone.utc),
+            "iat": datetime.now(UTC),
             "type": "refresh",
         }
 
@@ -80,7 +80,7 @@ class JWTHandler:
         return encoded_jwt
 
     @staticmethod
-    def create_token_pair(subject: str) -> Dict[str, str]:
+    def create_token_pair(subject: str) -> dict[str, str]:
         """
         Create both access and refresh tokens.
 
@@ -96,7 +96,7 @@ class JWTHandler:
         }
 
     @staticmethod
-    def verify_token(token: str, token_type: str = "access") -> Optional[Dict[str, Any]]:
+    def verify_token(token: str, token_type: str = "access") -> dict[str, Any] | None:
         """
         Verify and decode a JWT token.
 
@@ -124,7 +124,7 @@ class JWTHandler:
             return None
 
     @staticmethod
-    def get_subject_from_token(token: str) -> Optional[str]:
+    def get_subject_from_token(token: str) -> str | None:
         """
         Extract subject (user ID) from token without full validation.
 
@@ -157,11 +157,11 @@ def create_refresh_token(subject: str) -> str:
     return JWTHandler.create_refresh_token(subject)
 
 
-def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
+def verify_access_token(token: str) -> dict[str, Any] | None:
     """Verify an access token."""
     return JWTHandler.verify_token(token, token_type="access")
 
 
-def verify_refresh_token(token: str) -> Optional[Dict[str, Any]]:
+def verify_refresh_token(token: str) -> dict[str, Any] | None:
     """Verify a refresh token."""
     return JWTHandler.verify_token(token, token_type="refresh")

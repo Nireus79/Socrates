@@ -14,7 +14,7 @@ Features:
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -34,33 +34,33 @@ class CommandSuggestionResponse(BaseModel):
     command: str
     confidence: float
     reasoning: str
-    args: List[str] = []
+    args: list[str] = []
 
 
 class NLUInterpretRequest(BaseModel):
     """Request to interpret natural language input"""
 
     input: str = Field(..., min_length=1, description="Natural language input to interpret")
-    context: Optional[dict] = Field(None, description="Optional context dict")
+    context: dict | None = Field(None, description="Optional context dict")
 
 
 class NLUInterpretResponse(BaseModel):
     """Response from NLU interpretation"""
 
     status: str  # "success", "suggestions", "no_match", or "error"
-    command: Optional[str] = None
-    suggestions: Optional[List[CommandSuggestionResponse]] = None
+    command: str | None = None
+    suggestions: list[CommandSuggestionResponse] | None = None
     message: str
-    entities: Optional[Dict[str, Any]] = None
-    intent: Optional[str] = None
+    entities: dict[str, Any] | None = None
+    intent: str | None = None
 
 
 async def _extract_entities(
     text: str,
-    context: Optional[dict] = None,
+    context: dict | None = None,
     user_id: str = None,
     user_auth_method: str = "api_key",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Extract entities from user input using Claude AI.
 
@@ -123,10 +123,10 @@ Respond ONLY with valid JSON."""
 
 async def _get_ai_command_suggestions(
     text: str,
-    context: Optional[dict] = None,
+    context: dict | None = None,
     user_id: str = None,
     user_auth_method: str = "api_key",
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Get AI-powered command suggestions using Claude.
 
@@ -215,7 +215,7 @@ Respond ONLY with valid JSON."""
 )
 async def interpret_input(
     request: NLUInterpretRequest,
-    current_user: Optional[str] = Depends(get_current_user_optional),
+    current_user: str | None = Depends(get_current_user_optional),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -250,7 +250,6 @@ async def interpret_input(
         project_id = request.context.get("project_id") if request.context else None
         if project_id and current_user:
             try:
-                from socrates_api.database import get_database
 
                 project = db.load_project(project_id)
                 if project:
@@ -460,7 +459,7 @@ async def interpret_input(
     summary="Get list of available commands",
 )
 async def get_available_commands(
-    current_user: Optional[str] = Depends(get_current_user_optional),
+    current_user: str | None = Depends(get_current_user_optional),
 ):
     """
     Get list of all available commands for command discovery.
@@ -697,9 +696,9 @@ async def get_available_commands(
     summary="Get context-aware command suggestions",
 )
 async def get_context_aware_suggestions(
-    project_id: Optional[str] = None,
-    current_phase: Optional[str] = None,
-    current_user: Optional[str] = Depends(get_current_user_optional),
+    project_id: str | None = None,
+    current_phase: str | None = None,
+    current_user: str | None = Depends(get_current_user_optional),
 ):
     """
     Get command suggestions based on current project context.

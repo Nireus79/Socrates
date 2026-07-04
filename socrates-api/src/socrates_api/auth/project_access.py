@@ -6,12 +6,12 @@ for project endpoints. Handles authorization for Owner, Editor, and Viewer roles
 """
 
 import logging
-from typing import Optional
 
 from fastapi import Depends, HTTPException, status
+
+from socrates_api.auth.dependencies import get_current_user
 from socrates_api.database import get_database
 from socratic_system.database import ProjectDatabase
-from socrates_api.auth.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ async def get_user_project_role(
     project_id: str,
     current_user: str,
     db: ProjectDatabase,
-) -> Optional[str]:
+) -> str | None:
     """
     Get the role of a user in a specific project.
 

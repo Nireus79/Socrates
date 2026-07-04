@@ -5,22 +5,20 @@ Provides analytics trends, exports, and comparative analysis with PDF/CSV report
 """
 
 import logging
-import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import FileResponse
+from socratic_maturity import MaturityCalculator
 
-from socrates_api.auth import get_current_user, get_current_user_object
+from socrates_api.auth import get_current_user
 from socrates_api.auth.dependencies import get_current_user_object_optional
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 from socrates_api.services.report_generator import get_report_generator
 from socratic_system.database import ProjectDatabase
 from socratic_system.models import User
-from socratic_maturity import MaturityCalculator
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -68,10 +66,10 @@ def get_phase_readiness_status(project, maturity_calculator: MaturityCalculator)
     },
 )
 async def get_analytics_summary(
-    project_id: Optional[str] = None,
+    project_id: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
-    user_object: Optional[User] = Depends(get_current_user_object_optional),
+    user_object: User | None = Depends(get_current_user_object_optional),
 ):
     """
     Get analytics summary for a project or overall.
@@ -461,7 +459,7 @@ async def get_trends(
     project_id: str,
     time_period: str = "30d",
     current_user: str = Depends(get_current_user),
-    user_object: Optional[User] = Depends(get_current_user_object_optional),
+    user_object: User | None = Depends(get_current_user_object_optional),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -571,7 +569,7 @@ async def get_trends(
 async def get_recommendations(
     request_data: dict = Body(...),
     current_user: str = Depends(get_current_user),
-    user_object: Optional[User] = Depends(get_current_user_object_optional),
+    user_object: User | None = Depends(get_current_user_object_optional),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -977,7 +975,7 @@ async def compare_projects(
         comparison = {
             "project_1_id": project_1_id,
             "project_2_id": project_2_id,
-            "comparison_date": datetime.now(timezone.utc).isoformat(),
+            "comparison_date": datetime.now(UTC).isoformat(),
             "metrics": {
                 "questions": {
                     "project_1": 42,
@@ -1056,7 +1054,7 @@ async def generate_report(
 
         report = {
             "project_id": project_id,
-            "report_date": datetime.now(timezone.utc).isoformat(),
+            "report_date": datetime.now(UTC).isoformat(),
             "title": f"Analytics Report for Project {project_id}",
             "executive_summary": "The project shows strong progress with increasing engagement and improving confidence scores.",
             "sections": [
@@ -1140,7 +1138,7 @@ async def analyze_project(
 
         analysis = {
             "project_id": project_id,
-            "analysis_date": datetime.now(timezone.utc).isoformat(),
+            "analysis_date": datetime.now(UTC).isoformat(),
             "insights": [
                 "Strong learning velocity - increased 15% this week",
                 "High confidence in functions and loops",
@@ -1322,7 +1320,7 @@ async def get_dashboard_analytics(
 )
 async def get_analytics_breakdown(
     project_id: str,
-    category: Optional[str] = None,
+    category: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -1454,7 +1452,7 @@ async def get_analytics_status(
             "project_name": project.name,
             "health_status": "healthy",
             "health_score": 78,
-            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "last_updated": datetime.now(UTC).isoformat(),
             "key_indicators": {
                 "code_quality": {
                     "status": "good",

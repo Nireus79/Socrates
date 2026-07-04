@@ -10,7 +10,7 @@ Provides:
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 
@@ -93,7 +93,7 @@ async def websocket_chat_endpoint(
                 "type": "acknowledgment",
                 "message": "Connected to chat",
                 "connectionId": connection_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         )
 
@@ -114,7 +114,7 @@ async def websocket_chat_endpoint(
                 if message.type == MessageType.PING:
                     pong_response = {
                         "type": "pong",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                     await websocket.send_json(pong_response)
                     continue
@@ -161,7 +161,7 @@ async def websocket_chat_endpoint(
                         "type": "error",
                         "errorCode": "UNKNOWN_MESSAGE_TYPE",
                         "errorMessage": f"Unknown message type: {message.type}",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                     await websocket.send_json(error_response)
 
@@ -171,7 +171,7 @@ async def websocket_chat_endpoint(
                     "type": "error",
                     "errorCode": "INVALID_MESSAGE",
                     "errorMessage": str(e),
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
                 await websocket.send_json(error_response)
 
@@ -181,7 +181,7 @@ async def websocket_chat_endpoint(
                     "type": "error",
                     "errorCode": "PROCESSING_ERROR",
                     "errorMessage": f"Error processing message: {str(e)}",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
                 try:
                     await websocket.send_json(error_response)
@@ -311,7 +311,7 @@ async def _handle_chat_message(
                     "id": f"msg_{len(project.conversation_history)}",
                     "type": "user",
                     "content": message.content,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "mode": mode,
                 }
             )
@@ -322,7 +322,7 @@ async def _handle_chat_message(
                     "id": f"msg_{len(project.conversation_history)}",
                     "type": "assistant",
                     "content": ai_response,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "hint": hint_text if hint_text else None,
                 }
             )
@@ -337,7 +337,7 @@ async def _handle_chat_message(
             "type": ResponseType.ASSISTANT_RESPONSE.value,
             "content": ai_response,
             "requestId": message.request_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         # Return response so it gets sent to client
@@ -385,7 +385,7 @@ async def _handle_command(
             "type": ResponseType.ASSISTANT_RESPONSE.value,
             "content": result.get("message", "Command executed"),
             "requestId": message.request_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         logger.info(f"Command '{command_name}' executed for {user_id}")
@@ -401,7 +401,7 @@ async def _handle_command(
             "errorCode": "COMMAND_ERROR",
             "errorMessage": f"Error executing command: {str(e)}",
             "requestId": message.request_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 
@@ -573,7 +573,7 @@ async def send_chat_message(
         # Store user message in conversation history
         project.conversation_history.append(
             {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "type": "user",
                 "content": message,
                 "mode": mode,
@@ -636,10 +636,10 @@ async def send_chat_message(
             message="Chat message processed successfully",
             data={
                 "message": {
-                    "id": f"msg_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+                    "id": f"msg_{int(datetime.now(UTC).timestamp() * 1000)}",
                     "role": "assistant",
                     "content": assistant_response,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
                 "initial_question": question_response,
                 "mode": mode,
@@ -1255,7 +1255,7 @@ async def websocket_collaboration_endpoint(
                 "message": "Connected to collaboration",
                 "connectionId": connection_id,
                 "project_id": project_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         )
 
@@ -1265,7 +1265,7 @@ async def websocket_collaboration_endpoint(
             {
                 "type": "user_joined",
                 "user_id": user_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "connection_id": connection_id,
             },
             exclude_connection=connection_id,
@@ -1285,7 +1285,7 @@ async def websocket_collaboration_endpoint(
                     await websocket.send_json(
                         {
                             "type": "heartbeat_ack",
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "timestamp": datetime.now(UTC).isoformat(),
                         }
                     )
 
@@ -1302,7 +1302,7 @@ async def websocket_collaboration_endpoint(
                             "user_id": user_id,
                             "activity_type": activity_type,
                             "activity_data": activity_data,
-                            "created_at": datetime.now(timezone.utc).isoformat(),
+                            "created_at": datetime.now(UTC).isoformat(),
                         }
                         db.save_activity(activity)
                         logger.debug(f"Recorded activity: {activity_type}")
@@ -1317,7 +1317,7 @@ async def websocket_collaboration_endpoint(
                             "user_id": user_id,
                             "activity_type": activity_type,
                             "activity_data": activity_data,
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "timestamp": datetime.now(UTC).isoformat(),
                         },
                     )
 
@@ -1332,7 +1332,7 @@ async def websocket_collaboration_endpoint(
                             "type": "typing",
                             "user_id": user_id,
                             "typing": is_typing,
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "timestamp": datetime.now(UTC).isoformat(),
                         },
                         exclude_connection=connection_id,
                     )
@@ -1349,7 +1349,7 @@ async def websocket_collaboration_endpoint(
                             "type": "error",
                             "errorCode": "INVALID_JSON",
                             "errorMessage": "Invalid JSON format",
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "timestamp": datetime.now(UTC).isoformat(),
                         }
                     )
                 except Exception as send_error:
@@ -1366,7 +1366,7 @@ async def websocket_collaboration_endpoint(
                             "type": "error",
                             "errorCode": "PROCESSING_ERROR",
                             "errorMessage": f"Error processing message: {str(e)}",
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "timestamp": datetime.now(UTC).isoformat(),
                         }
                     )
                 except Exception as send_error:
@@ -1383,7 +1383,7 @@ async def websocket_collaboration_endpoint(
                 {
                     "type": "user_left",
                     "user_id": user_id,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "connection_id": connection_id,
                 },
             )

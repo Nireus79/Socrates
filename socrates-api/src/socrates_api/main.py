@@ -12,10 +12,9 @@ import socket
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
 
-from dotenv import load_dotenv
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import Body, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
@@ -31,13 +30,6 @@ from socrates_api.middleware.rate_limit import (
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware
 from socratic_system.events import EventType
-
-# Load environment variables from .env file
-env_path = Path(__file__).parent.parent.parent / ".env"
-if env_path.exists():
-    load_dotenv(env_path)
-else:
-    load_dotenv()  # Load from current directory or system environment
 from socratic_system.exceptions import SocratesError
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
@@ -61,15 +53,14 @@ from .routers import (
     code_generation_router,
     collaboration_router,
     database_health_router,
-    websocket_polling_router,
     events_router,
     finalization_router,
     free_session_router,
     github_router,
     knowledge_management_router,
     knowledge_router,
-    llm_router,
     llm_config_router,
+    llm_router,
     nlu_router,
     notes_router,
     progress_router,
@@ -81,7 +72,15 @@ from .routers import (
     sponsorships_router,
     subscription_router,
     system_router,
+    websocket_polling_router,
 )
+
+# Load environment variables from .env file
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    load_dotenv()  # Load from current directory or system environment
 
 # Configure logging
 logging.basicConfig(
@@ -696,7 +695,7 @@ async def slowest_query_metrics(limit: int = 10):
 
 
 @app.post("/initialize", response_model=SystemInfoResponse)
-async def initialize(request: Optional[InitializeRequest] = Body(None)):
+async def initialize(request: InitializeRequest | None = Body(None)):
     """
     Initialize the Socrates API with configuration
 

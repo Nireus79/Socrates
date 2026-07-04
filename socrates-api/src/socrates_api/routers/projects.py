@@ -26,8 +26,8 @@ See socratic_system/models/user.py for complete authorization architecture docum
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
@@ -36,7 +36,6 @@ if TYPE_CHECKING:
 
 from socrates_api.auth import (
     get_current_user,
-    get_current_user_object,
     get_current_user_object_optional,
 )
 from socrates_api.auth.project_access import (
@@ -174,7 +173,7 @@ async def create_project(
     request: CreateProjectRequest,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
-    user_object: Optional[User] = Depends(get_current_user_object_optional),
+    user_object: User | None = Depends(get_current_user_object_optional),
     http_request: Request = None,
 ):
     """
@@ -342,8 +341,8 @@ async def create_project(
             owner=current_user,
             description=request.description or "",
             phase="discovery",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             is_archived=False,
             conversation_history=[],
             overall_maturity=0.0,
@@ -606,7 +605,7 @@ async def update_project(
         if request.phase:
             project.phase = request.phase
 
-        project.updated_at = datetime.now(timezone.utc)
+        project.updated_at = datetime.now(UTC)
 
         # Save changes
         db.save_project(project)
@@ -750,7 +749,7 @@ async def restore_project(
         # Restore the project
         project.is_archived = False
         project.archived_at = None
-        project.updated_at = datetime.now(timezone.utc)
+        project.updated_at = datetime.now(UTC)
         db.save_project(project)
 
         logger.info(f"Project {project_id} restored by {current_user}")
@@ -1214,7 +1213,7 @@ def _generate_recommendations(weak_categories, missing_categories, phase_score):
 )
 async def advance_phase(
     project_id: str,
-    request: Optional[UpdateProjectRequest] = None,
+    request: UpdateProjectRequest | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -1269,7 +1268,7 @@ async def advance_phase(
                 new_phase = "discovery"  # Default to discovery if phase is invalid
 
         project.phase = new_phase
-        project.updated_at = datetime.now(timezone.utc)
+        project.updated_at = datetime.now(UTC)
 
         # Save changes
         db.save_project(project)
@@ -1359,7 +1358,7 @@ async def rollback_phase(
             )
 
         project.phase = new_phase
-        project.updated_at = datetime.now(timezone.utc)
+        project.updated_at = datetime.now(UTC)
 
         # Save changes
         db.save_project(project)
@@ -1462,7 +1461,7 @@ async def get_project_analytics(
             "weak_categories": weak_categories,
             "strong_categories": strong_categories,
             "code_history_entries": len(project.code_history or []),
-            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "last_updated": datetime.now(UTC).isoformat(),
         }
 
         from socrates_api.routers.events import record_event
@@ -1536,8 +1535,8 @@ async def get_project_files(
             )
 
         # Read actual project files from filesystem
-        from pathlib import Path
         from datetime import datetime
+        from pathlib import Path
 
         files = []
         project_data_dir = Path(f"~/.socrates/projects/{project_id}").expanduser()

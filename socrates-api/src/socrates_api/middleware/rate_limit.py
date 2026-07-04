@@ -10,7 +10,6 @@ Provides:
 """
 
 import logging
-from typing import Optional
 
 import redis
 
@@ -59,7 +58,7 @@ class RateLimitConfig:
     HEALTH_LIMIT = None
 
 
-def get_limiter(redis_url: Optional[str] = None) -> Optional[Limiter]:
+def get_limiter(redis_url: str | None = None) -> Limiter | None:
     """
     Initialize rate limiter with optional Redis backend.
 
@@ -115,10 +114,10 @@ def get_limiter(redis_url: Optional[str] = None) -> Optional[Limiter]:
 
 
 # Global limiter instance
-_limiter: Optional[Limiter] = None
+_limiter: Limiter | None = None
 
 
-def initialize_limiter(redis_url: Optional[str] = None) -> Optional[Limiter]:
+def initialize_limiter(redis_url: str | None = None) -> Limiter | None:
     """
     Initialize global rate limiter instance.
 
@@ -133,7 +132,7 @@ def initialize_limiter(redis_url: Optional[str] = None) -> Optional[Limiter]:
     return _limiter
 
 
-def get_rate_limiter() -> Optional[Limiter]:
+def get_rate_limiter() -> Limiter | None:
     """Get the global rate limiter instance."""
     return _limiter
 

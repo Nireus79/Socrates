@@ -8,16 +8,15 @@ Provides REST endpoints for tracking and managing project skills including:
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
 from socrates_api.auth.project_access import check_project_access
-from socratic_system.database import ProjectDatabase
+from socrates_api.database import get_database
 from socrates_api.models import APIResponse
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["skills"])
@@ -32,9 +31,9 @@ router = APIRouter(prefix="/projects", tags=["skills"])
 async def set_skills(
     project_id: str,
     skill_name: str = Body(...),
-    proficiency_level: Optional[str] = Body("beginner"),
-    confidence: Optional[float] = Body(0.5),
-    notes: Optional[str] = Body(None),
+    proficiency_level: str | None = Body("beginner"),
+    confidence: float | None = Body(0.5),
+    notes: str | None = Body(None),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -90,24 +89,24 @@ async def set_skills(
             existing_skill["proficiency_level"] = proficiency_level
             existing_skill["confidence"] = confidence
             existing_skill["notes"] = notes
-            existing_skill["updated_at"] = datetime.now(timezone.utc).isoformat()
+            existing_skill["updated_at"] = datetime.now(UTC).isoformat()
             existing_skill["update_count"] = existing_skill.get("update_count", 0) + 1
         else:
             # Create new skill
             skill_item = {
-                "id": f"skill_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+                "id": f"skill_{int(datetime.now(UTC).timestamp() * 1000)}",
                 "name": skill_name,
                 "proficiency_level": proficiency_level,
                 "confidence": confidence,
                 "notes": notes,
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "created_by": current_user,
                 "update_count": 0,
                 "progress_history": [
                     {
                         "level": proficiency_level,
                         "confidence": confidence,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                 ],
             }
@@ -150,9 +149,9 @@ async def set_skills(
 )
 async def list_skills(
     project_id: str,
-    proficiency_level: Optional[str] = None,
-    min_confidence: Optional[float] = None,
-    sort_by: Optional[str] = "proficiency",
+    proficiency_level: str | None = None,
+    min_confidence: float | None = None,
+    sort_by: str | None = "proficiency",
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):

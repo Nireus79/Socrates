@@ -3,20 +3,16 @@
 Complements HTTP GET polling with WebSocket for live updates as analyses complete.
 """
 
-import asyncio
-import json
 import logging
-from typing import Dict, Set
 
-from fastapi import APIRouter, WebSocketDisconnect, WebSocket
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 # Store active WebSocket connections per project
-active_subscriptions: Dict[str, Set[WebSocket]] = {}
+active_subscriptions: dict[str, set[WebSocket]] = {}
 
 
 @router.websocket("/ws/analysis/{project_id}")
@@ -77,7 +73,7 @@ async def websocket_analysis_endpoint(websocket: WebSocket, project_id: str):
 
 
 async def broadcast_analysis_update(
-    project_id: str, analysis_type: str, result: Dict
+    project_id: str, analysis_type: str, result: dict
 ) -> None:
     """Broadcast analysis result update to all subscribers.
 
@@ -116,7 +112,7 @@ async def broadcast_analysis_update(
 
 
 async def broadcast_analysis_status(
-    project_id: str, status: Dict[str, str]
+    project_id: str, status: dict[str, str]
 ) -> None:
     """Broadcast overall analysis status to all subscribers.
 
@@ -141,7 +137,7 @@ async def broadcast_analysis_status(
 
 
 @router.get("/ws/active-subscriptions")
-async def get_active_subscriptions() -> Dict[str, int]:
+async def get_active_subscriptions() -> dict[str, int]:
     """Get count of active WebSocket subscriptions per project.
 
     For monitoring/debugging purposes.

@@ -12,7 +12,6 @@ from socrates_api.routers.chat_sessions import router as chat_sessions_router
 from socrates_api.routers.code_generation import router as code_generation_router
 from socrates_api.routers.collaboration import router as collaboration_router
 from socrates_api.routers.database_health import router as database_health_router
-from socrates_api.routers.websocket_polling import router as websocket_polling_router
 from socrates_api.routers.events import router as events_router
 from socrates_api.routers.finalization import router as finalization_router
 from socrates_api.routers.free_session import router as free_session_router
@@ -32,6 +31,7 @@ from socrates_api.routers.skills import router as skills_router
 from socrates_api.routers.sponsorships import router as sponsorships_router
 from socrates_api.routers.subscription import router as subscription_router
 from socrates_api.routers.system import router as system_router
+from socrates_api.routers.websocket_polling import router as websocket_polling_router
 
 __all__ = [
     "agents_router",

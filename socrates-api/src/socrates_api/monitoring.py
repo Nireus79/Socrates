@@ -11,7 +11,6 @@ Provides:
 
 import logging
 import time
-from typing import Dict, Optional
 from functools import wraps
 
 from fastapi import Request, Response
@@ -40,7 +39,7 @@ class MetricsCollector:
         path: str,
         status_code: int,
         latency_ms: float,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> None:
         """Record HTTP request metrics."""
         endpoint = f"{method} {path}"
@@ -98,7 +97,7 @@ class MetricsCollector:
         cls._metrics["subscriptions"][tier][feature] += usage_amount
 
     @classmethod
-    def get_metrics(cls) -> Dict:
+    def get_metrics(cls) -> dict:
         """Get all collected metrics."""
         return {
             "requests": cls._metrics["requests"],
@@ -195,7 +194,7 @@ class HealthMetrics:
     """Health check metrics for monitoring."""
 
     @staticmethod
-    def get_health_status() -> Dict:
+    def get_health_status() -> dict:
         """Get current API health status."""
         metrics = MetricsCollector.get_metrics()
 

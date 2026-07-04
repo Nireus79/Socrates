@@ -10,9 +10,10 @@ Handles:
 
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +43,8 @@ class WebSocketMessage:
 
     type: MessageType
     content: str
-    metadata: Optional[Dict[str, Any]] = None
-    request_id: Optional[str] = None
+    metadata: dict[str, Any] | None = None
+    request_id: str | None = None
 
 
 @dataclass
@@ -51,12 +52,12 @@ class WebSocketResponse:
     """WebSocket response to send to client."""
 
     type: ResponseType
-    content: Optional[str] = None
-    event_type: Optional[str] = None
-    data: Optional[Dict[str, Any]] = None
-    request_id: Optional[str] = None
-    error_code: Optional[str] = None
-    error_message: Optional[str] = None
+    content: str | None = None
+    event_type: str | None = None
+    data: dict[str, Any] | None = None
+    request_id: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
 
     def to_json(self) -> str:
         """Convert response to JSON string."""
@@ -98,7 +99,7 @@ class MessageHandler:
 
     def __init__(self):
         """Initialize message handler."""
-        self._handlers: Dict[MessageType, Callable] = {}
+        self._handlers: dict[MessageType, Callable] = {}
         logger.info("MessageHandler initialized")
 
     def register_handler(
@@ -116,7 +117,7 @@ class MessageHandler:
         self._handlers[message_type] = handler
         logger.debug(f"Registered handler for {message_type.value}")
 
-    async def parse_message(self, raw_message: str) -> Optional[WebSocketMessage]:
+    async def parse_message(self, raw_message: str) -> WebSocketMessage | None:
         """
         Parse raw WebSocket message into structured format.
 
@@ -157,8 +158,8 @@ class MessageHandler:
     async def handle_message(
         self,
         message: WebSocketMessage,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Optional[WebSocketResponse]:
+        context: dict[str, Any] | None = None,
+    ) -> WebSocketResponse | None:
         """
         Route and handle a parsed message.
 
@@ -200,8 +201,8 @@ class MessageHandler:
     @staticmethod
     async def create_event_response(
         event_type: str,
-        data: Dict[str, Any],
-        request_id: Optional[str] = None,
+        data: dict[str, Any],
+        request_id: str | None = None,
     ) -> WebSocketResponse:
         """
         Create an event response.
@@ -224,8 +225,8 @@ class MessageHandler:
     @staticmethod
     async def create_assistant_response(
         content: str,
-        request_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        request_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> WebSocketResponse:
         """
         Create an assistant response.
@@ -249,7 +250,7 @@ class MessageHandler:
     async def create_error_response(
         error_code: str,
         error_message: str,
-        request_id: Optional[str] = None,
+        request_id: str | None = None,
     ) -> WebSocketResponse:
         """
         Create an error response.
@@ -287,7 +288,7 @@ class MessageHandler:
 
 
 # Module-level singleton instance
-_message_handler: Optional[MessageHandler] = None
+_message_handler: MessageHandler | None = None
 
 
 def get_message_handler() -> MessageHandler:

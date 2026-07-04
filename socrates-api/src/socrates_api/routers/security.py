@@ -5,10 +5,7 @@ Provides password management, 2FA setup, and session management.
 """
 
 import logging
-import os
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Optional
+from datetime import UTC, datetime
 
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -113,7 +110,7 @@ async def change_password(
             "password_changed",
             {
                 "user": current_user,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
         )
 
@@ -121,7 +118,7 @@ async def change_password(
             success=True,
             status="success",
             message="Password changed successfully",
-            data={"changed_at": datetime.now(timezone.utc).isoformat()},
+            data={"changed_at": datetime.now(UTC).isoformat()},
         )
 
     except HTTPException:
@@ -221,7 +218,7 @@ async def setup_2fa(
             "2fa_setup_initiated",
             {
                 "user": current_user,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
         )
 
@@ -254,7 +251,7 @@ async def setup_2fa(
 )
 async def verify_2fa(
     code: str,
-    secret: Optional[str] = None,
+    secret: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -320,7 +317,7 @@ async def verify_2fa(
             "2fa_enabled",
             {
                 "user": current_user,
-                "enabled_at": datetime.now(timezone.utc).isoformat(),
+                "enabled_at": datetime.now(UTC).isoformat(),
             },
         )
 
@@ -328,7 +325,7 @@ async def verify_2fa(
             success=True,
             status="success",
             message="2FA enabled successfully",
-            data={"enabled_at": datetime.now(timezone.utc).isoformat()},
+            data={"enabled_at": datetime.now(UTC).isoformat()},
         )
 
     except HTTPException:
@@ -416,7 +413,7 @@ async def disable_2fa(
             "2fa_disabled",
             {
                 "user": current_user,
-                "disabled_at": datetime.now(timezone.utc).isoformat(),
+                "disabled_at": datetime.now(UTC).isoformat(),
             },
         )
 
@@ -424,7 +421,7 @@ async def disable_2fa(
             success=True,
             status="success",
             message="2FA disabled",
-            data={"disabled_at": datetime.now(timezone.utc).isoformat()},
+            data={"disabled_at": datetime.now(UTC).isoformat()},
         )
 
     except HTTPException:
@@ -473,9 +470,9 @@ async def list_sessions(
                     "device": session.get("device", "Unknown device"),
                     "ip_address": session.get("ip_address", "Unknown"),
                     "last_activity": session.get(
-                        "last_activity", datetime.now(timezone.utc).isoformat()
+                        "last_activity", datetime.now(UTC).isoformat()
                     ),
-                    "created_at": session.get("created_at", datetime.now(timezone.utc).isoformat()),
+                    "created_at": session.get("created_at", datetime.now(UTC).isoformat()),
                     "is_current": session.get("is_current", False),
                 }
             )
@@ -552,7 +549,7 @@ async def revoke_session(
             {
                 "user": current_user,
                 "session_id": session_id,
-                "revoked_at": datetime.now(timezone.utc).isoformat(),
+                "revoked_at": datetime.now(UTC).isoformat(),
             },
         )
 
@@ -628,7 +625,7 @@ async def revoke_all_sessions(
             {
                 "user": current_user,
                 "revoked_count": revoked_count,
-                "revoked_at": datetime.now(timezone.utc).isoformat(),
+                "revoked_at": datetime.now(UTC).isoformat(),
             },
         )
 

@@ -9,16 +9,15 @@ Provides REST endpoints for finalizing projects including:
 
 import logging
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database
 from socrates_api.auth.project_access import check_project_access
+from socrates_api.database import get_database
 from socratic_system.database import ProjectDatabase
 from socratic_system.utils.archive_builder import ArchiveBuilder
 from socratic_system.utils.git_initializer import GitInitializer
@@ -44,9 +43,9 @@ router = APIRouter(prefix="/projects", tags=["finalization"])
 )
 async def generate_final_artifacts(
     project_id: str,
-    include_code: Optional[bool] = True,
-    include_docs: Optional[bool] = True,
-    include_tests: Optional[bool] = True,
+    include_code: bool | None = True,
+    include_docs: bool | None = True,
+    include_tests: bool | None = True,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -82,7 +81,7 @@ async def generate_final_artifacts(
         artifacts = {
             "project_id": project_id,
             "project_name": project.name,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "includes": [],
         }
 
@@ -145,14 +144,14 @@ async def generate_final_artifacts(
         }
 
         # Create finalization record
-        finalization_id = f"final_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+        finalization_id = f"final_{int(datetime.now(UTC).timestamp() * 1000)}"
         if not hasattr(project, "finalization_history"):
             project.finalization_history = []
         project.finalization_history = getattr(project, "finalization_history", [])
         project.finalization_history.append(
             {
                 "id": finalization_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "artifact_count": len(artifacts["includes"]),
                 "status": "completed",
             }
@@ -203,10 +202,10 @@ async def generate_final_artifacts(
 )
 async def generate_final_documentation(
     project_id: str,
-    format: Optional[str] = "markdown",
-    include_api_docs: Optional[bool] = True,
-    include_code_docs: Optional[bool] = True,
-    include_deployment_guide: Optional[bool] = True,
+    format: str | None = "markdown",
+    include_api_docs: bool | None = True,
+    include_code_docs: bool | None = True,
+    include_deployment_guide: bool | None = True,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -425,7 +424,7 @@ For deployment issues:
             )
 
         # Create documentation record
-        doc_id = f"finaldoc_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+        doc_id = f"finaldoc_{int(datetime.now(UTC).timestamp() * 1000)}"
         if not hasattr(project, "final_documentation_history"):
             project.final_documentation_history = []
         project.final_documentation_history = getattr(project, "final_documentation_history", [])
@@ -434,7 +433,7 @@ For deployment issues:
                 "id": doc_id,
                 "format": format,
                 "sections": len(doc_package["sections"]),
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
             }
         )
 
@@ -482,7 +481,7 @@ For deployment issues:
 )
 async def export_project(
     project_id: str,
-    format: Optional[str] = "zip",
+    format: str | None = "zip",
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -544,7 +543,7 @@ async def export_project(
 
             # Determine archive filename and format
             safe_project_name = project.name.replace(" ", "_").replace("/", "_").lower()[:50]
-            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
             base_filename = f"{safe_project_name}_{timestamp}"
 
             # Create archive based on format

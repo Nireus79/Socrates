@@ -15,7 +15,7 @@ GET /database/stats - Connection pool and query statistics
 import logging
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -67,16 +67,16 @@ class DetailedHealthModel(DatabaseHealthModel):
     """Detailed database health with metrics."""
 
     pool_status: PoolStatusModel = Field(description="Connection pool metrics")
-    query_stats: Optional[QueryStatsModel] = Field(description="Query performance metrics")
+    query_stats: QueryStatsModel | None = Field(description="Query performance metrics")
 
 
 class DatabaseStatsModel(BaseModel):
     """Complete database statistics."""
 
     pool_status: PoolStatusModel = Field(description="Connection pool metrics")
-    query_stats: Optional[QueryStatsModel] = Field(description="Query statistics")
-    cache_info: Optional[Dict[str, Any]] = Field(description="Cache statistics")
-    file_info: Optional[Dict[str, Any]] = Field(description="Database file info")
+    query_stats: QueryStatsModel | None = Field(description="Query statistics")
+    cache_info: dict[str, Any] | None = Field(description="Cache statistics")
+    file_info: dict[str, Any] | None = Field(description="Database file info")
 
 
 # ============================================================================
@@ -411,7 +411,7 @@ async def get_slowest_queries(
 
 @router.post("/stats/reset", response_model=APIResponse, tags=["database", "admin"])
 async def reset_statistics(
-    query_name: Optional[str] = None,
+    query_name: str | None = None,
     profiler=Depends(get_query_profiler),
 ) -> APIResponse:
     """Reset query statistics.

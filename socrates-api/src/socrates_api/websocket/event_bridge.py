@@ -8,8 +8,9 @@ Bridges:
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from datetime import UTC, datetime
+from typing import Any
 
 from socratic_system.events.event_emitter import EventType
 
@@ -52,7 +53,7 @@ class EventBridge:
     def __init__(self):
         """Initialize event bridge."""
         self._connection_manager = get_connection_manager()
-        self._event_handlers: Dict[EventType, Callable] = {}
+        self._event_handlers: dict[EventType, Callable] = {}
         self._initialized = False
         logger.info("EventBridge initialized")
 
@@ -122,7 +123,7 @@ class EventBridge:
                     "type": response.type.value,
                     "eventType": response.event_type,
                     "data": response.data,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
                 # Broadcast to project if user_id known, otherwise broadcast to all
@@ -153,7 +154,7 @@ class EventBridge:
         user_id: str,
         project_id: str,
         message: str,
-        request_id: Optional[str] = None,
+        request_id: str | None = None,
     ) -> int:
         """
         Broadcast a chat message to project connections.
@@ -176,7 +177,7 @@ class EventBridge:
         response_dict = {
             "type": response.type.value,
             "content": response.content,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         if request_id:
@@ -194,7 +195,7 @@ class EventBridge:
         project_id: str,
         error_code: str,
         error_message: str,
-        request_id: Optional[str] = None,
+        request_id: str | None = None,
     ) -> int:
         """
         Broadcast an error to project connections.
@@ -220,7 +221,7 @@ class EventBridge:
             "type": response.type.value,
             "errorCode": response.error_code,
             "errorMessage": response.error_message,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         if request_id:
@@ -235,7 +236,7 @@ class EventBridge:
     async def notify_user(
         self,
         user_id: str,
-        notification: Dict[str, Any],
+        notification: dict[str, Any],
     ) -> int:
         """
         Send a notification to all user connections.
@@ -249,7 +250,7 @@ class EventBridge:
         """
         notification_dict = {
             **notification,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         return await self._connection_manager.broadcast_to_user(
@@ -259,7 +260,7 @@ class EventBridge:
 
 
 # Module-level singleton instance
-_event_bridge: Optional[EventBridge] = None
+_event_bridge: EventBridge | None = None
 
 
 def get_event_bridge() -> EventBridge:

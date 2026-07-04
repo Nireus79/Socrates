@@ -12,8 +12,8 @@ import asyncio
 import json
 import logging
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set
+from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import WebSocket
 
@@ -28,7 +28,7 @@ class ConnectionMetadata:
     user_id: str
     project_id: str
     connected_at: str
-    last_message_at: Optional[str] = None
+    last_message_at: str | None = None
     message_count: int = 0
 
 
@@ -45,10 +45,10 @@ class ConnectionManager:
     def __init__(self):
         """Initialize connection manager."""
         # Structure: user_id → project_id → set of WebSocket connections
-        self._connections: Dict[str, Dict[str, Set[WebSocket]]] = {}
+        self._connections: dict[str, dict[str, set[WebSocket]]] = {}
 
         # Metadata tracking
-        self._metadata: Dict[str, ConnectionMetadata] = {}
+        self._metadata: dict[str, ConnectionMetadata] = {}
 
         # Lock for thread-safe access
         self._lock = asyncio.Lock()
@@ -106,7 +106,7 @@ class ConnectionManager:
                 connection_id=connection_id,
                 user_id=user_id,
                 project_id=project_id,
-                connected_at=datetime.now(timezone.utc).isoformat(),
+                connected_at=datetime.now(UTC).isoformat(),
             )
 
             logger.info(
@@ -114,7 +114,7 @@ class ConnectionManager:
                 f"for user {user_id} on project {project_id}"
             )
 
-    async def disconnect(self, connection_id: str) -> Optional[tuple[str, str]]:
+    async def disconnect(self, connection_id: str) -> tuple[str, str] | None:
         """
         Remove a WebSocket connection.
 
@@ -151,8 +151,8 @@ class ConnectionManager:
         self,
         user_id: str,
         project_id: str,
-        message: Dict[str, Any],
-        exclude_connection_id: Optional[str] = None,
+        message: dict[str, Any],
+        exclude_connection_id: str | None = None,
     ) -> int:
         """
         Broadcast a message to all connections in a project.
@@ -192,7 +192,7 @@ class ConnectionManager:
                     for cid, metadata in self._metadata.items():
                         if metadata.user_id == user_id and metadata.project_id == project_id:
                             if cid != exclude_connection_id:
-                                metadata.last_message_at = datetime.now(timezone.utc).isoformat()
+                                metadata.last_message_at = datetime.now(UTC).isoformat()
                                 metadata.message_count += 1
 
             except Exception as e:
@@ -211,7 +211,7 @@ class ConnectionManager:
     async def broadcast_to_user(
         self,
         user_id: str,
-        message: Dict[str, Any],
+        message: dict[str, Any],
     ) -> int:
         """
         Broadcast a message to all connections for a user (all projects).
@@ -247,7 +247,7 @@ class ConnectionManager:
 
     async def broadcast_to_all(
         self,
-        message: Dict[str, Any],
+        message: dict[str, Any],
     ) -> int:
         """
         Broadcast a message to all active connections.
@@ -277,7 +277,7 @@ class ConnectionManager:
 
         return sent_count
 
-    async def get_connection_metadata(self, connection_id: str) -> Optional[Dict[str, Any]]:
+    async def get_connection_metadata(self, connection_id: str) -> dict[str, Any] | None:
         """
         Get metadata for a specific connection.
 
@@ -296,7 +296,7 @@ class ConnectionManager:
         self,
         user_id: str,
         project_id: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get all active connections for a project.
 
@@ -314,7 +314,7 @@ class ConnectionManager:
                     connections.append(asdict(metadata))
             return connections
 
-    async def get_user_statistics(self, user_id: str) -> Dict[str, Any]:
+    async def get_user_statistics(self, user_id: str) -> dict[str, Any]:
         """
         Get statistics for a user's connections.
 
@@ -358,7 +358,7 @@ class ConnectionManager:
                 "projects": projects,
             }
 
-    async def get_global_statistics(self) -> Dict[str, Any]:
+    async def get_global_statistics(self) -> dict[str, Any]:
         """
         Get global statistics for all connections.
 
@@ -427,7 +427,7 @@ class ConnectionManager:
 
 
 # Module-level singleton instance
-_connection_manager: Optional[ConnectionManager] = None
+_connection_manager: ConnectionManager | None = None
 
 
 def get_connection_manager() -> ConnectionManager:

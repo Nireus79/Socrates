@@ -6,7 +6,6 @@ authenticated user information from requests.
 """
 
 import logging
-from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -26,7 +25,7 @@ security_optional = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> str:
     """
     Extract and validate current user from Authorization header.
@@ -64,7 +63,7 @@ async def get_current_user(
         )
 
     # Extract user ID
-    user_id: Optional[str] = payload.get("sub")
+    user_id: str | None = payload.get("sub")
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -76,8 +75,8 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
-) -> Optional[str]:
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_optional),
+) -> str | None:
     """
     Extract user ID from token if present, otherwise return None.
 
@@ -139,9 +138,9 @@ async def get_current_user_object(
 
 
 async def get_current_user_object_optional(
-    username: Optional[str] = Depends(get_current_user_optional),
+    username: str | None = Depends(get_current_user_optional),
     db: ProjectDatabase = Depends(get_database),
-) -> Optional[User]:
+) -> User | None:
     """
     Get full User object if authenticated, otherwise return None.
 

@@ -10,8 +10,7 @@ Provides REST endpoints for chat operations on projects including:
 
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -50,16 +49,16 @@ class ConflictResolution(BaseModel):
     old_value: str
     new_value: str
     resolution: str  # "keep", "replace", "skip", or "manual"
-    manual_value: Optional[str] = None
+    manual_value: str | None = None
 
 
 class SaveExtractedSpecsRequest(BaseModel):
     """Request to save extracted specs from dialogue"""
 
-    goals: Optional[list | str] = None
-    requirements: Optional[list | str] = None
-    tech_stack: Optional[list | str] = None
-    constraints: Optional[list | str] = None
+    goals: list | str | None = None
+    requirements: list | str | None = None
+    tech_stack: list | str | None = None
+    constraints: list | str | None = None
 
 
 class ConflictResolutionRequest(BaseModel):
@@ -127,7 +126,7 @@ async def create_chat_session(
 
         # Create new session
         session_id = f"sess_{uuid.uuid4().hex[:12]}"
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         session = {
             "session_id": session_id,
@@ -199,10 +198,10 @@ async def list_chat_sessions(
 
         for _session_id, session in sessions_dict.items():
             created_at = datetime.fromisoformat(
-                session.get("created_at", datetime.now(timezone.utc).isoformat())
+                session.get("created_at", datetime.now(UTC).isoformat())
             )
             updated_at = datetime.fromisoformat(
-                session.get("updated_at", datetime.now(timezone.utc).isoformat())
+                session.get("updated_at", datetime.now(UTC).isoformat())
             )
 
             sessions_list.append(
@@ -268,10 +267,10 @@ async def get_chat_session(
             raise HTTPException(status_code=404, detail="Chat session not found")
 
         created_at = datetime.fromisoformat(
-            session.get("created_at", datetime.now(timezone.utc).isoformat())
+            session.get("created_at", datetime.now(UTC).isoformat())
         )
         updated_at = datetime.fromisoformat(
-            session.get("updated_at", datetime.now(timezone.utc).isoformat())
+            session.get("updated_at", datetime.now(UTC).isoformat())
         )
 
         return ChatSessionResponse(
@@ -391,7 +390,7 @@ async def send_chat_message(
 
         # Create message
         message_id = f"msg_{uuid.uuid4().hex[:12]}"
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         message = {
             "message_id": message_id,
@@ -438,7 +437,7 @@ async def send_chat_message(
 async def get_chat_messages(
     project_id: str,
     session_id: str,
-    limit: Optional[int] = None,
+    limit: int | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -478,10 +477,10 @@ async def get_chat_messages(
 
         for msg in messages:
             created_at = datetime.fromisoformat(
-                msg.get("created_at", datetime.now(timezone.utc).isoformat())
+                msg.get("created_at", datetime.now(UTC).isoformat())
             )
             updated_at = datetime.fromisoformat(
-                msg.get("updated_at", datetime.now(timezone.utc).isoformat())
+                msg.get("updated_at", datetime.now(UTC).isoformat())
             )
 
             messages_list.append(
@@ -677,14 +676,14 @@ Provide a helpful, direct answer."""
                 {
                     "role": "user",
                     "content": request.message,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
             )
             project.conversation_history.append(
                 {
                     "role": "assistant",
                     "content": answer,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
             )
             db.save_project(project)
@@ -719,7 +718,7 @@ Provide a helpful, direct answer."""
 
                     if specs_count > 0:
                         # Always show debug message if specs found (not just in debug mode)
-                        insights_message = f"\n\n📊 **Detected Specs**:\n"
+                        insights_message = "\n\n📊 **Detected Specs**:\n"
                         if insights.get("goals"):
                             insights_message += f"- Goals: {', '.join(insights['goals'])}\n"
                         if insights.get("requirements"):
@@ -754,7 +753,7 @@ Provide a helpful, direct answer."""
                         "id": f"msg_{id(answer)}",
                         "role": "assistant",
                         "content": answer + (insights_message if insights_message else ""),
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     },
                     "mode": "direct",
                     # Include extracted specs for user confirmation (not auto-saved)
@@ -812,7 +811,7 @@ Provide a helpful, direct answer."""
                             "id": f"msg_{id(result)}",
                             "role": "assistant",
                             "content": "Conflict detected. Please resolve the conflict to proceed.",
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "timestamp": datetime.now(UTC).isoformat(),
                         },
                         "conflicts_pending": True,
                         "conflicts": result.get("conflicts", []),
@@ -893,7 +892,7 @@ Provide a helpful, direct answer."""
 )
 async def get_history(
     project_id: str,
-    limit: Optional[int] = None,
+    limit: int | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -1325,7 +1324,7 @@ async def finish_session(
 )
 async def get_maturity_history(
     project_id: str,
-    limit: Optional[int] = None,
+    limit: int | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -1492,7 +1491,7 @@ async def get_maturity_status(
 )
 async def get_questions(
     project_id: str,
-    status_filter: Optional[str] = None,  # unanswered, answered, skipped
+    status_filter: str | None = None,  # unanswered, answered, skipped
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -1643,7 +1642,7 @@ async def skip_question(
                 logger.info(f"Question {question.get('id')} status: {current_status}")
                 if current_status == "unanswered":
                     question["status"] = "skipped"
-                    question["skipped_at"] = datetime.now(timezone.utc).isoformat()
+                    question["skipped_at"] = datetime.now(UTC).isoformat()
                     logger.info(f"Marked question as skipped: {question.get('id')}")
                     skipped_count += 1
                     break

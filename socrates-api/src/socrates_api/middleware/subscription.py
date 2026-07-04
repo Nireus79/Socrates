@@ -9,10 +9,11 @@ to maintain a single source of truth across CLI, API, and storage systems.
 """
 
 import logging
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
 
 from fastapi import HTTPException, status
+
 from socratic_system.subscription.tiers import TIER_LIMITS
 
 logger = logging.getLogger(__name__)

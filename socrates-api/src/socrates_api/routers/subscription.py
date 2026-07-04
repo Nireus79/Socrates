@@ -220,10 +220,9 @@ async def get_storage_usage(
     try:
         logger.info(f"Getting storage usage for user: {current_user}")
 
-        from socratic_system.subscription.storage import StorageQuotaManager
-
         # Import here to avoid circular imports at module level
         from socrates_api.database import get_database as get_db_instance
+        from socratic_system.subscription.storage import StorageQuotaManager
 
         db = get_db_instance()
 

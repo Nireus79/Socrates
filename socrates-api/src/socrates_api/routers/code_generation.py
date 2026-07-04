@@ -10,8 +10,8 @@ Provides:
 
 import logging
 import time
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -50,7 +50,7 @@ class CodeGenerationData(BaseModel):
     code: str = Field(..., description="Generated code")
     explanation: str = Field(..., description="Explanation of the generated code")
     language: str = Field(..., description="Programming language")
-    token_usage: Optional[int] = Field(None, description="Tokens used")
+    token_usage: int | None = Field(None, description="Tokens used")
     generation_id: str = Field(..., description="Unique generation ID")
     created_at: str = Field(..., description="Timestamp when code was generated")
 
@@ -60,9 +60,9 @@ class CodeValidationData(BaseModel):
 
     language: str = Field(..., description="Programming language")
     is_valid: bool = Field(..., description="Whether code is valid")
-    errors: List[str] = Field(default_factory=list, description="Syntax/semantic errors")
-    warnings: List[str] = Field(default_factory=list, description="Warnings")
-    suggestions: List[str] = Field(default_factory=list, description="Improvement suggestions")
+    errors: list[str] = Field(default_factory=list, description="Syntax/semantic errors")
+    warnings: list[str] = Field(default_factory=list, description="Warnings")
+    suggestions: list[str] = Field(default_factory=list, description="Improvement suggestions")
     complexity_score: int = Field(..., description="Code complexity (1-10)")
     readability_score: int = Field(..., description="Code readability (1-10)")
 
@@ -74,13 +74,13 @@ class CodeHistoryData(BaseModel):
     total: int = Field(..., description="Total generations")
     limit: int = Field(..., description="Results per page")
     offset: int = Field(..., description="Pagination offset")
-    generations: List[Dict[str, Any]] = Field(..., description="List of past generations")
+    generations: list[dict[str, Any]] = Field(..., description="List of past generations")
 
 
 class SupportedLanguagesData(BaseModel):
     """Response data for supported languages endpoint"""
 
-    languages: Dict[str, Any] = Field(..., description="Supported languages with metadata")
+    languages: dict[str, Any] = Field(..., description="Supported languages with metadata")
     total: int = Field(..., description="Total number of supported languages")
 
 
@@ -91,7 +91,7 @@ class CodeRefactoringData(BaseModel):
     explanation: str = Field(..., description="Explanation of changes")
     language: str = Field(..., description="Programming language")
     refactor_type: str = Field(..., description="Type of refactoring applied")
-    changes: List[str] = Field(..., description="List of changes made")
+    changes: list[str] = Field(..., description="List of changes made")
 
 
 class DocumentationData(BaseModel):
@@ -133,9 +133,9 @@ SUPPORTED_LANGUAGES = {
 )
 async def generate_code(
     project_id: str,
-    specification: Optional[str] = None,
+    specification: str | None = None,
     language: str = "python",
-    requirements: Optional[str] = None,
+    requirements: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -294,7 +294,7 @@ async def generate_code(
             code_entry = {
                 "id": generation_id,
                 "code": generated_code,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "language": language,
                 "explanation": explanation,
                 "lines": len(generated_code.splitlines()),
@@ -342,7 +342,7 @@ async def generate_code(
                     language=language,
                     token_usage=token_usage,
                     generation_id=generation_id,
-                    created_at=datetime.now(timezone.utc).isoformat(),
+                    created_at=datetime.now(UTC).isoformat(),
                 ).model_dump(),
             )
 
@@ -359,7 +359,7 @@ async def generate_code(
                     language=language,
                     token_usage=0,
                     generation_id=f"gen_{int(time.time() * 1000)}",
-                    created_at=datetime.now(timezone.utc).isoformat(),
+                    created_at=datetime.now(UTC).isoformat(),
                 ).model_dump(),
             )
 
@@ -739,9 +739,10 @@ async def refactor_code(
         logger.info(f"Code refactoring ({refactor_type}) requested in project {project_id}")
 
         try:
+            from pathlib import Path
+
             from socrates_api.main import get_orchestrator
             from socrates_api.routers.events import record_event
-            from pathlib import Path
 
             orchestrator = get_orchestrator()
 
@@ -811,7 +812,7 @@ async def refactor_code(
             refactor_entry = {
                 "id": generation_id,
                 "code": refactored_code,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "language": language,
                 "explanation": explanation,
                 "refactor_type": refactor_type,
@@ -890,8 +891,8 @@ async def refactor_code(
 )
 async def generate_documentation(
     project_id: str,
-    format: Optional[str] = "markdown",
-    include_examples: Optional[bool] = True,
+    format: str | None = "markdown",
+    include_examples: bool | None = True,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -1044,7 +1045,7 @@ async def generate_documentation(
             {
                 "id": generation_id,
                 "format": format,
-                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
                 "length": len(output),
             }
         )

@@ -9,14 +9,12 @@ Provides REST endpoints for session-based chat operations including:
 
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socratic_system.database import ProjectDatabase
 from socrates_api.models import (
     ChatMessage,
     ChatMessageRequest,
@@ -26,6 +24,7 @@ from socrates_api.models import (
     ListChatSessionsResponse,
     UpdateMessageRequest,
 )
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat-sessions"])
@@ -58,7 +57,7 @@ async def create_chat_session(
             project.chat_sessions = {}
 
         session_id = f"sess_{uuid.uuid4().hex[:12]}"
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         session = {
             "session_id": session_id,
@@ -103,10 +102,10 @@ async def create_chat_session(
 )
 async def list_chat_sessions(
     project_id: str,
-    archived: Optional[bool] = None,
-    search: Optional[str] = None,
-    limit: Optional[int] = 50,
-    offset: Optional[int] = 0,
+    archived: bool | None = None,
+    search: str | None = None,
+    limit: int | None = 50,
+    offset: int | None = 0,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -142,10 +141,10 @@ async def list_chat_sessions(
                     continue
 
             created_at = datetime.fromisoformat(
-                session.get("created_at", datetime.now(timezone.utc).isoformat())
+                session.get("created_at", datetime.now(UTC).isoformat())
             )
             updated_at = datetime.fromisoformat(
-                session.get("updated_at", datetime.now(timezone.utc).isoformat())
+                session.get("updated_at", datetime.now(UTC).isoformat())
             )
 
             sessions_list.append(
@@ -210,10 +209,10 @@ async def get_chat_session(
             raise HTTPException(status_code=404, detail="Chat session not found")
 
         created_at = datetime.fromisoformat(
-            session.get("created_at", datetime.now(timezone.utc).isoformat())
+            session.get("created_at", datetime.now(UTC).isoformat())
         )
         updated_at = datetime.fromisoformat(
-            session.get("updated_at", datetime.now(timezone.utc).isoformat())
+            session.get("updated_at", datetime.now(UTC).isoformat())
         )
 
         return ChatSessionResponse(
@@ -266,7 +265,7 @@ async def send_chat_message(
             raise HTTPException(status_code=404, detail="Chat session not found")
 
         message_id = f"msg_{uuid.uuid4().hex[:12]}"
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         message = {
             "message_id": message_id,
@@ -313,8 +312,8 @@ async def send_chat_message(
 async def get_chat_messages(
     project_id: str,
     session_id: str,
-    limit: Optional[int] = 50,
-    offset: Optional[int] = 0,
+    limit: int | None = 50,
+    offset: int | None = 0,
     order: str = "asc",
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
@@ -355,10 +354,10 @@ async def get_chat_messages(
         messages_list = []
         for msg in paginated_messages:
             created_at = datetime.fromisoformat(
-                msg.get("created_at", datetime.now(timezone.utc).isoformat())
+                msg.get("created_at", datetime.now(UTC).isoformat())
             )
             updated_at = datetime.fromisoformat(
-                msg.get("updated_at", datetime.now(timezone.utc).isoformat())
+                msg.get("updated_at", datetime.now(UTC).isoformat())
             )
 
             messages_list.append(
@@ -435,7 +434,7 @@ async def update_chat_message(
             raise HTTPException(status_code=403, detail="Cannot update message of another user")
 
         # Update message
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         target_message["content"] = request.content
         target_message["metadata"] = request.metadata
         target_message["updated_at"] = now.isoformat()
@@ -509,7 +508,7 @@ async def delete_chat_message(
 
         # Remove message
         messages.pop(message_idx)
-        session["updated_at"] = datetime.now(timezone.utc).isoformat()
+        session["updated_at"] = datetime.now(UTC).isoformat()
         db.save_project(project)
 
     except HTTPException:
@@ -549,7 +548,7 @@ async def archive_chat_session(
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         session["archived"] = True
         session["updated_at"] = now.isoformat()
         db.save_project(project)
@@ -605,7 +604,7 @@ async def restore_chat_session(
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         session["archived"] = False
         session["updated_at"] = now.isoformat()
         db.save_project(project)

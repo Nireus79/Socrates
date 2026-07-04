@@ -8,11 +8,9 @@ Provides PDF and CSV report generation for project analytics, using:
 
 import csv
 import logging
-import os
-import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +47,7 @@ except ImportError:
 class ReportGenerator:
     """Generate PDF and CSV analytics reports."""
 
-    def __init__(self, output_dir: Optional[str] = None):
+    def __init__(self, output_dir: str | None = None):
         """
         Initialize report generator.
 
@@ -68,10 +66,10 @@ class ReportGenerator:
     def generate_project_report(
         self,
         project_id: str,
-        project_data: Dict[str, Any],
-        analytics_data: Dict[str, Any],
+        project_data: dict[str, Any],
+        analytics_data: dict[str, Any],
         format_type: str = "pdf",
-    ) -> Tuple[bool, str, str]:
+    ) -> tuple[bool, str, str]:
         """
         Generate analytics report for a project.
 
@@ -98,9 +96,9 @@ class ReportGenerator:
     def _generate_pdf_report(
         self,
         project_id: str,
-        project_data: Dict[str, Any],
-        analytics_data: Dict[str, Any],
-    ) -> Tuple[bool, str, str]:
+        project_data: dict[str, Any],
+        analytics_data: dict[str, Any],
+    ) -> tuple[bool, str, str]:
         """
         Generate PDF report using reportlab.
 
@@ -291,9 +289,9 @@ class ReportGenerator:
     def _generate_pdf_fallback(
         self,
         project_id: str,
-        project_data: Dict[str, Any],
-        analytics_data: Dict[str, Any],
-    ) -> Tuple[bool, str, str]:
+        project_data: dict[str, Any],
+        analytics_data: dict[str, Any],
+    ) -> tuple[bool, str, str]:
         """
         Generate PDF report without reportlab (basic format).
 
@@ -360,9 +358,9 @@ class ReportGenerator:
     def _generate_csv_report(
         self,
         project_id: str,
-        project_data: Dict[str, Any],
-        analytics_data: Dict[str, Any],
-    ) -> Tuple[bool, str, str]:
+        project_data: dict[str, Any],
+        analytics_data: dict[str, Any],
+    ) -> tuple[bool, str, str]:
         """
         Generate CSV report.
 
@@ -394,9 +392,9 @@ class ReportGenerator:
         self,
         filepath: Path,
         project_id: str,
-        project_data: Dict[str, Any],
-        analytics_data: Dict[str, Any],
-    ) -> Tuple[bool, str, str]:
+        project_data: dict[str, Any],
+        analytics_data: dict[str, Any],
+    ) -> tuple[bool, str, str]:
         """
         Generate CSV report using pandas.
 
@@ -481,9 +479,9 @@ class ReportGenerator:
         self,
         filepath: Path,
         project_id: str,
-        project_data: Dict[str, Any],
-        analytics_data: Dict[str, Any],
-    ) -> Tuple[bool, str, str]:
+        project_data: dict[str, Any],
+        analytics_data: dict[str, Any],
+    ) -> tuple[bool, str, str]:
         """
         Generate CSV report using standard csv module.
 
@@ -584,7 +582,7 @@ class ReportGenerator:
 
 
 # Global report generator instance
-_report_generator: Optional[ReportGenerator] = None
+_report_generator: ReportGenerator | None = None
 
 
 def get_report_generator() -> ReportGenerator:

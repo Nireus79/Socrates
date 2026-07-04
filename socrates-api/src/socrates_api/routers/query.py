@@ -8,7 +8,6 @@ Provides REST endpoints for querying and searching including:
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -29,8 +28,8 @@ router = APIRouter(prefix="/query", tags=["query"])
 )
 async def explain_concept(
     concept: str,
-    context: Optional[str] = None,
-    level: Optional[str] = "intermediate",
+    context: str | None = None,
+    level: str | None = "intermediate",
     current_user: str = Depends(get_current_user),
 ):
     """
@@ -123,8 +122,8 @@ async def explain_concept(
 )
 async def search_knowledge(
     query: str,
-    project_id: Optional[str] = None,
-    limit: Optional[int] = 10,
+    project_id: str | None = None,
+    limit: int | None = 10,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -224,7 +223,7 @@ async def search_knowledge(
 )
 async def find_similar_concepts(
     concept: str,
-    limit: Optional[int] = 5,
+    limit: int | None = 5,
     current_user: str = Depends(get_current_user),
 ):
     """

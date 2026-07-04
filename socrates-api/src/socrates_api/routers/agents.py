@@ -6,9 +6,9 @@ Supports both synchronous and asynchronous invocation patterns.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
@@ -85,7 +85,7 @@ async def list_agents(
 )
 async def invoke_agent_sync(
     agent_name: str,
-    request_payload: Dict[str, Any] = Body(...),
+    request_payload: dict[str, Any] = Body(...),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ) -> APIResponse:
@@ -180,7 +180,7 @@ async def invoke_agent_sync(
 )
 async def invoke_agent_async(
     agent_name: str,
-    request_payload: Dict[str, Any] = Body(...),
+    request_payload: dict[str, Any] = Body(...),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ) -> APIResponse:

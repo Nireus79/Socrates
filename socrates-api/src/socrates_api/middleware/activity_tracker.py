@@ -3,17 +3,17 @@ Activity Tracking Middleware - Track last API activity per user
 and manage server shutdown scheduling.
 """
 
-import time
 import logging
-from typing import Dict, Optional
+import time
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
 # In-memory activity tracking (per-user last activity timestamp)
-_user_activity: Dict[str, float] = {}
-_shutdown_scheduled_at: Optional[float] = None
+_user_activity: dict[str, float] = {}
+_shutdown_scheduled_at: float | None = None
 _shutdown_delay_seconds: int = 300  # 5 minutes for browser-close
 
 
@@ -41,12 +41,12 @@ class ActivityTrackerMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def get_last_activity(username: str) -> Optional[float]:
+def get_last_activity(username: str) -> float | None:
     """Get last activity timestamp for user"""
     return _user_activity.get(username)
 
 
-def get_all_activity() -> Dict[str, float]:
+def get_all_activity() -> dict[str, float]:
     """Get all user activity timestamps"""
     return _user_activity.copy()
 
@@ -99,7 +99,7 @@ def is_shutdown_scheduled() -> bool:
     return _shutdown_scheduled_at is not None
 
 
-def get_shutdown_time_remaining() -> Optional[int]:
+def get_shutdown_time_remaining() -> int | None:
     """Get seconds remaining until shutdown, or None if not scheduled"""
     if not _shutdown_scheduled_at:
         return None

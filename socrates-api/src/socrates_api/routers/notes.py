@@ -9,8 +9,7 @@ Provides REST endpoints for note management including:
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -26,8 +25,8 @@ class NoteRequest(BaseModel):
     """Request body for creating/updating a note"""
 
     content: str
-    title: Optional[str] = None
-    tags: Optional[list] = None
+    title: str | None = None
+    tags: list | None = None
 
 
 class SearchNotesRequest(BaseModel):
@@ -77,11 +76,11 @@ async def add_note(
 
         # Create note
         note = {
-            "id": f"note_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+            "id": f"note_{int(datetime.now(UTC).timestamp() * 1000)}",
             "title": request.title or "Untitled",
             "content": request.content,
             "tags": request.tags or [],
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "created_by": current_user,
         }
 
@@ -118,8 +117,8 @@ async def add_note(
 )
 async def list_notes(
     project_id: str,
-    limit: Optional[int] = None,
-    tag: Optional[str] = None,
+    limit: int | None = None,
+    tag: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):

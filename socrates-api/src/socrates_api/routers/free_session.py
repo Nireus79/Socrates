@@ -14,7 +14,7 @@ Features:
 
 import logging
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -64,8 +64,8 @@ class FreeSessionQuestion(BaseModel):
     """Pre-session Q&A request"""
 
     question: str
-    session_id: Optional[str] = None  # Optional session ID for continuing conversation
-    context: Optional[dict] = None
+    session_id: str | None = None  # Optional session ID for continuing conversation
+    context: dict | None = None
 
 
 class FreeSessionAnswer(BaseModel):
@@ -74,8 +74,8 @@ class FreeSessionAnswer(BaseModel):
     answer: str
     has_context: bool
     session_id: str
-    suggested_commands: Optional[List[str]] = None
-    topics_detected: Optional[List[str]] = None
+    suggested_commands: list[str] | None = None
+    topics_detected: list[str] | None = None
 
 
 class FreeSessionSession(BaseModel):
@@ -100,8 +100,8 @@ class ProjectRecommendation(BaseModel):
 
 
 async def _extract_conversation_topics(
-    conversation_history: List[Dict], user_id: str = None, user_auth_method: str = "api_key"
-) -> List[str]:
+    conversation_history: list[dict], user_id: str = None, user_auth_method: str = "api_key"
+) -> list[str]:
     """
     Extract topics/intents from conversation history using Claude.
 
@@ -157,8 +157,8 @@ Return ONLY a JSON array of topics (strings), like: ["web development", "python"
 
 
 async def _generate_command_suggestions(
-    conversation_history: List[Dict], topics: List[str]
-) -> List[str]:
+    conversation_history: list[dict], topics: list[str]
+) -> list[str]:
     """
     Generate suggested commands based on conversation topics.
 
@@ -379,7 +379,7 @@ async def ask_question(
 
 
 def _build_answer_prompt(
-    question: str, context: str, conversation_history: Optional[List[Dict]] = None
+    question: str, context: str, conversation_history: list[dict] | None = None
 ) -> str:
     """
     Build prompt for Claude to answer pre-session questions with conversation context.
@@ -626,7 +626,7 @@ async def delete_free_session_session(
     summary="Get project recommendations based on free_session conversations",
 )
 async def get_project_recommendations(
-    session_id: Optional[str] = None,
+    session_id: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ) -> SuccessResponse:
@@ -713,7 +713,7 @@ async def get_project_recommendations(
         )
 
 
-def _generate_project_recommendations(topics: List[str]) -> List[Dict[str, Any]]:
+def _generate_project_recommendations(topics: list[str]) -> list[dict[str, Any]]:
     """
     Generate project recommendations based on detected topics.
 

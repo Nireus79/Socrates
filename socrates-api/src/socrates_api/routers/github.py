@@ -6,13 +6,21 @@ Provides GitHub repository import, pull, push, and sync functionality.
 
 import logging
 import os
-from pathlib import Path
-from typing import Optional
+from datetime import UTC
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from socratic_agents import (
+    ConflictResolutionError,
+    NetworkSyncFailedError,
+    PermissionDeniedError,
+    RepositoryNotFoundError,
+    TokenExpiredError,
+    create_github_sync_handler,
+)
 
 from socrates_api.auth import get_current_user
 from socrates_api.auth.dependencies import get_current_user_object_optional
+from socrates_api.auth.project_access import check_project_access
 from socrates_api.database import get_database
 from socrates_api.models import (
     APIResponse,
@@ -21,15 +29,6 @@ from socrates_api.models import (
 )
 from socratic_system.database import ProjectDatabase
 from socratic_system.models import User
-from socrates_api.auth.project_access import check_project_access
-from socratic_agents import (
-    create_github_sync_handler,
-    TokenExpiredError,
-    PermissionDeniedError,
-    RepositoryNotFoundError,
-    NetworkSyncFailedError,
-    ConflictResolutionError,
-)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/github", tags=["github"])
@@ -112,7 +111,7 @@ async def import_repository(
     request: GitHubImportRequest,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
-    user_object: Optional[User] = Depends(get_current_user_object_optional),
+    user_object: User | None = Depends(get_current_user_object_optional),
 ):
     """
     Import a GitHub repository as a new project.
@@ -237,7 +236,7 @@ async def import_repository(
             logger.warning(f"Error fetching GitHub metadata: {e}")
 
         # Create project from GitHub import
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from socratic_system.models.project import ProjectContext
 
@@ -246,8 +245,8 @@ async def import_repository(
             name=project_name,
             owner=current_user,
             phase="planning",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             repository_url=request.url,
             repository_owner=repo_owner,
             repository_name=repo_name,
@@ -660,7 +659,7 @@ async def pull_changes(
 )
 async def push_changes(
     project_id: str,
-    commit_message: Optional[str] = None,
+    commit_message: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -868,7 +867,7 @@ async def push_changes(
 )
 async def sync_project(
     project_id: str,
-    commit_message: Optional[str] = None,
+    commit_message: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -1226,7 +1225,7 @@ async def pull_github_changes(
     },
 )
 async def push_github_changes(
-    commit_message: Optional[str] = None,
+    commit_message: str | None = None,
     current_user: str = Depends(get_current_user),
 ):
     """

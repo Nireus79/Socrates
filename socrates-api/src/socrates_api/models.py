@@ -3,7 +3,7 @@ Pydantic models for API request/response bodies
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -42,16 +42,16 @@ class APIResponse(BaseModel):
     status: Literal["success", "error", "pending", "created", "updated", "deleted"] = Field(
         ..., description="Status of the operation"
     )
-    data: Optional[Dict[str, Any]] = Field(
+    data: dict[str, Any] | None = Field(
         None, description="Response data (structure varies by endpoint)"
     )
-    message: Optional[str] = Field(
+    message: str | None = Field(
         None, description="Human-readable message (useful for errors and status updates)"
     )
-    error_code: Optional[str] = Field(
+    error_code: str | None = Field(
         None, description="Machine-readable error code for programmatic handling"
     )
-    timestamp: Optional[str] = Field(
+    timestamp: str | None = Field(
         None, description="ISO 8601 timestamp when response was generated"
     )
 
@@ -76,8 +76,8 @@ class CreateProjectRequest(BaseModel):
     )
 
     name: str = Field(..., min_length=1, max_length=200, description="Project name")
-    description: Optional[str] = Field(None, max_length=1000, description="Project description")
-    knowledge_base_content: Optional[str] = Field(
+    description: str | None = Field(None, max_length=1000, description="Project description")
+    knowledge_base_content: str | None = Field(
         None, description="Initial knowledge base content"
     )
 
@@ -95,8 +95,8 @@ class UpdateProjectRequest(BaseModel):
         },
     )
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200, description="Project name")
-    phase: Optional[str] = Field(None, description="Project phase")
+    name: str | None = Field(None, min_length=1, max_length=200, description="Project name")
+    phase: str | None = Field(None, description="Project phase")
 
 
 class ProjectResponse(BaseModel):
@@ -120,7 +120,7 @@ class ProjectResponse(BaseModel):
     project_id: str = Field(..., description="Unique project identifier")
     name: str = Field(..., description="Project name")
     owner: str = Field(..., description="Project owner username")
-    description: Optional[str] = Field(None, description="Project description")
+    description: str | None = Field(None, description="Project description")
     phase: str = Field(..., description="Current project phase")
     created_at: datetime = Field(..., description="Project creation timestamp")
     updated_at: datetime = Field(..., description="Project last update timestamp")
@@ -152,7 +152,7 @@ class ListProjectsResponse(BaseModel):
         }
     )
 
-    projects: List[ProjectResponse] = Field(..., description="List of projects")
+    projects: list[ProjectResponse] = Field(..., description="List of projects")
     total: int = Field(..., description="Total number of projects")
 
 
@@ -170,7 +170,7 @@ class AskQuestionRequest(BaseModel):
         },
     )
 
-    topic: Optional[str] = Field(None, description="Topic to ask about")
+    topic: str | None = Field(None, description="Topic to ask about")
     difficulty_level: str = Field(default="intermediate", description="Question difficulty level")
 
 
@@ -193,8 +193,8 @@ class QuestionResponse(BaseModel):
 
     question_id: str = Field(..., description="Unique question identifier")
     question: str = Field(..., description="The Socratic question")
-    context: Optional[str] = Field(None, description="Context for the question")
-    hints: List[str] = Field(default_factory=list, description="Available hints")
+    context: str | None = Field(None, description="Context for the question")
+    hints: list[str] = Field(default_factory=list, description="Available hints")
 
 
 class ProcessResponseRequest(BaseModel):
@@ -239,10 +239,10 @@ class ProcessResponseResponse(BaseModel):
 
     feedback: str = Field(..., description="Feedback on the user's response")
     is_correct: bool = Field(..., description="Whether the response is correct")
-    next_question: Optional[QuestionResponse] = Field(
+    next_question: QuestionResponse | None = Field(
         None, description="Next question if available"
     )
-    insights: Optional[List[str]] = Field(None, description="Key insights extracted")
+    insights: list[str] | None = Field(None, description="Key insights extracted")
 
 
 class GenerateCodeRequest(BaseModel):
@@ -260,7 +260,7 @@ class GenerateCodeRequest(BaseModel):
     )
 
     project_id: str = Field(..., description="Project identifier")
-    specification: Optional[str] = Field(None, description="Code specification or requirements")
+    specification: str | None = Field(None, description="Code specification or requirements")
     language: str = Field(default="python", description="Programming language")
 
 
@@ -277,8 +277,8 @@ class GenerateCodeForProjectRequest(BaseModel):
         },
     )
 
-    specification: Optional[str] = Field(None, description="Code specification or requirements")
-    language: Optional[str] = Field(default="python", description="Programming language")
+    specification: str | None = Field(None, description="Code specification or requirements")
+    language: str | None = Field(default="python", description="Programming language")
 
 
 class CodeGenerationResponse(BaseModel):
@@ -296,9 +296,9 @@ class CodeGenerationResponse(BaseModel):
     )
 
     code: str = Field(..., description="Generated code")
-    explanation: Optional[str] = Field(None, description="Explanation of the generated code")
+    explanation: str | None = Field(None, description="Explanation of the generated code")
     language: str = Field(..., description="Programming language")
-    token_usage: Optional[Dict[str, int]] = Field(None, description="Token usage statistics")
+    token_usage: dict[str, int] | None = Field(None, description="Token usage statistics")
 
 
 class ErrorResponse(BaseModel):
@@ -317,8 +317,8 @@ class ErrorResponse(BaseModel):
 
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
-    error_code: Optional[str] = Field(None, description="Machine-readable error code")
-    details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
+    error_code: str | None = Field(None, description="Machine-readable error code")
+    details: dict[str, Any] | None = Field(None, description="Additional error details")
 
 
 class SystemInfoResponse(BaseModel):
@@ -363,7 +363,7 @@ class RegisterRequest(BaseModel):
     username: str = Field(
         ..., min_length=3, max_length=100, description="Username (3-100 characters)"
     )
-    email: Optional[str] = Field(None, description="User email address (optional)")
+    email: str | None = Field(None, description="User email address (optional)")
     password: str = Field(
         ..., min_length=8, max_length=200, description="Password (min 8 characters)"
     )
@@ -462,7 +462,7 @@ class AuthResponse(BaseModel):
     api_key_configured: bool = Field(
         default=True, description="Whether user has configured an API key"
     )
-    api_key_message: Optional[str] = Field(
+    api_key_message: str | None = Field(
         default=None,
         description="Message to display if no API key is configured. Only shown after login, not on login page.",
     )
@@ -514,7 +514,7 @@ class SuccessResponse(BaseModel):
 
     success: bool = Field(default=True, description="Whether operation succeeded")
     message: str = Field(..., description="Success message")
-    data: Optional[Dict[str, Any]] = Field(None, description="Additional response data")
+    data: dict[str, Any] | None = Field(None, description="Additional response data")
 
 
 class GitHubImportRequest(BaseModel):
@@ -532,8 +532,8 @@ class GitHubImportRequest(BaseModel):
     )
 
     url: str = Field(..., description="GitHub repository URL")
-    project_name: Optional[str] = Field(None, description="Custom project name")
-    branch: Optional[str] = Field(None, description="Branch to import")
+    project_name: str | None = Field(None, description="Custom project name")
+    branch: str | None = Field(None, description="Branch to import")
 
 
 class SetDefaultProviderRequest(BaseModel):
@@ -614,7 +614,7 @@ class CollaborationInvitationResponse(BaseModel):
     )
     created_at: str = Field(..., description="Creation timestamp")
     expires_at: str = Field(..., description="Expiration timestamp")
-    accepted_at: Optional[str] = Field(None, description="Acceptance timestamp")
+    accepted_at: str | None = Field(None, description="Acceptance timestamp")
 
 
 class DeleteDocumentRequest(BaseModel):
@@ -636,7 +636,7 @@ class InitializeRequest(BaseModel):
         json_schema_extra={"example": {"api_key": "sk-ant-..."}},
     )
 
-    api_key: Optional[str] = Field(None, description="Claude API key")
+    api_key: str | None = Field(None, description="Claude API key")
 
 
 # ============================================================================
@@ -652,7 +652,7 @@ class CreateChatSessionRequest(BaseModel):
         json_schema_extra={"example": {"title": "Initial Design Discussion"}},
     )
 
-    title: Optional[str] = Field(None, max_length=255, description="Session title")
+    title: str | None = Field(None, max_length=255, description="Session title")
 
 
 class ChatSessionResponse(BaseModel):
@@ -676,7 +676,7 @@ class ChatSessionResponse(BaseModel):
     session_id: str = Field(..., description="Unique session identifier")
     project_id: str = Field(..., description="Project ID this session belongs to")
     user_id: str = Field(..., description="User who created the session")
-    title: Optional[str] = Field(None, description="Session title")
+    title: str | None = Field(None, description="Session title")
     created_at: datetime = Field(..., description="Session creation timestamp")
     updated_at: datetime = Field(..., description="Session last update timestamp")
     archived: bool = Field(default=False, description="Whether session is archived")
@@ -706,7 +706,7 @@ class ListChatSessionsResponse(BaseModel):
         }
     )
 
-    sessions: List[ChatSessionResponse] = Field(..., description="List of chat sessions")
+    sessions: list[ChatSessionResponse] = Field(..., description="List of chat sessions")
     total: int = Field(..., description="Total number of sessions")
 
 
@@ -756,7 +756,7 @@ class ChatMessage(BaseModel):
     role: str = Field(..., description="Message role (user or assistant)")
     created_at: datetime = Field(..., description="Message creation timestamp")
     updated_at: datetime = Field(..., description="Message last update timestamp")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional message metadata")
+    metadata: dict[str, Any] | None = Field(None, description="Additional message metadata")
 
 
 class GetChatMessagesResponse(BaseModel):
@@ -783,7 +783,7 @@ class GetChatMessagesResponse(BaseModel):
         }
     )
 
-    messages: List[ChatMessage] = Field(..., description="List of messages in session")
+    messages: list[ChatMessage] = Field(..., description="List of messages in session")
     total: int = Field(..., description="Total number of messages")
     session_id: str = Field(..., description="Session ID")
 
@@ -797,7 +797,7 @@ class UpdateMessageRequest(BaseModel):
     )
 
     content: str = Field(..., min_length=1, description="Updated message content")
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: dict[str, Any] | None = Field(
         None, description="Optional metadata for the message"
     )
 
@@ -813,8 +813,8 @@ class CollaboratorData(BaseModel):
     username: str = Field(..., description="Username of collaborator")
     email: str = Field(..., description="Email of collaborator")
     role: str = Field(..., description="Role in project (owner, editor, viewer)")
-    joined_at: Optional[str] = Field(None, description="When collaborator joined")
-    status: Optional[str] = Field(default="inactive", description="Current status")
+    joined_at: str | None = Field(None, description="When collaborator joined")
+    status: str | None = Field(default="inactive", description="Current status")
 
 
 class CollaboratorListData(BaseModel):
@@ -822,7 +822,7 @@ class CollaboratorListData(BaseModel):
 
     project_id: str = Field(..., description="Project ID")
     total: int = Field(..., description="Total number of collaborators")
-    collaborators: List[Dict[str, Any]] = Field(..., description="List of collaborators")
+    collaborators: list[dict[str, Any]] = Field(..., description="List of collaborators")
 
 
 class ActiveCollaboratorData(BaseModel):
@@ -830,16 +830,16 @@ class ActiveCollaboratorData(BaseModel):
 
     project_id: str = Field(..., description="Project ID")
     active_count: int = Field(..., description="Number of active collaborators")
-    collaborators: List[Dict[str, Any]] = Field(..., description="List of active collaborators")
+    collaborators: list[dict[str, Any]] = Field(..., description="List of active collaborators")
 
 
 class CollaborationTokenData(BaseModel):
     """Response data for collaboration token validation"""
 
     valid: bool = Field(..., description="Whether token is valid")
-    inviter: Optional[str] = Field(None, description="User who sent invitation")
-    project_id: Optional[str] = Field(None, description="Associated project ID")
-    email: Optional[str] = Field(None, description="Invited email")
+    inviter: str | None = Field(None, description="User who sent invitation")
+    project_id: str | None = Field(None, description="Associated project ID")
+    email: str | None = Field(None, description="Invited email")
 
 
 class CollaborationSyncData(BaseModel):
@@ -854,7 +854,7 @@ class ActiveSessionsData(BaseModel):
     """Response data for active collaboration sessions"""
 
     total: int = Field(..., description="Total active sessions")
-    sessions: List[Dict[str, Any]] = Field(..., description="List of active sessions")
+    sessions: list[dict[str, Any]] = Field(..., description="List of active sessions")
 
 
 class PresenceData(BaseModel):
@@ -863,7 +863,7 @@ class PresenceData(BaseModel):
     user_id: str = Field(..., description="User identifier")
     project_id: str = Field(..., description="Project ID")
     status: str = Field(..., description="Presence status (online, away, offline)")
-    last_activity: Optional[str] = Field(None, description="Last activity timestamp")
+    last_activity: str | None = Field(None, description="Last activity timestamp")
 
 
 # ============================================================================
@@ -878,7 +878,7 @@ class ProjectStatsData(BaseModel):
     total_collaborators: int = Field(..., description="Total collaborators")
     total_messages: int = Field(..., description="Total messages exchanged")
     code_generations: int = Field(..., description="Number of code generations")
-    last_activity: Optional[str] = Field(None, description="Last activity timestamp")
+    last_activity: str | None = Field(None, description="Last activity timestamp")
 
 
 class ProjectMaturityData(BaseModel):
@@ -886,7 +886,7 @@ class ProjectMaturityData(BaseModel):
 
     project_id: str = Field(..., description="Project ID")
     overall_maturity: float = Field(..., description="Overall maturity percentage (0-100)")
-    components: Dict[str, float] = Field(..., description="Maturity by component")
+    components: dict[str, float] = Field(..., description="Maturity by component")
     last_assessment: str = Field(..., description="When assessment was done")
 
 
@@ -895,7 +895,7 @@ class ProjectAnalyticsData(BaseModel):
 
     project_id: str = Field(..., description="Project ID")
     period: str = Field(..., description="Analytics period")
-    metrics: Dict[str, Any] = Field(..., description="Various metrics")
+    metrics: dict[str, Any] = Field(..., description="Various metrics")
 
 
 class ProjectExportData(BaseModel):
@@ -917,7 +917,7 @@ class KnowledgeSearchData(BaseModel):
 
     query: str = Field(..., description="Search query")
     total_results: int = Field(..., description="Total search results")
-    results: List[Dict[str, Any]] = Field(..., description="Search results")
+    results: list[dict[str, Any]] = Field(..., description="Search results")
 
 
 class RelatedDocumentsData(BaseModel):
@@ -925,7 +925,7 @@ class RelatedDocumentsData(BaseModel):
 
     document_id: str = Field(..., description="Source document ID")
     total_related: int = Field(..., description="Number of related documents")
-    documents: List[Dict[str, Any]] = Field(..., description="Related documents")
+    documents: list[dict[str, Any]] = Field(..., description="Related documents")
 
 
 class BulkImportData(BaseModel):
@@ -933,4 +933,4 @@ class BulkImportData(BaseModel):
 
     imported_count: int = Field(..., description="Number of documents imported")
     failed_count: int = Field(default=0, description="Number of failed imports")
-    details: List[Dict[str, Any]] = Field(..., description="Import details")
+    details: list[dict[str, Any]] = Field(..., description="Import details")

@@ -5,7 +5,6 @@ Provides code validation, testing, review, and analysis functionality.
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -31,9 +30,9 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
     },
 )
 async def validate_code(
-    code: Optional[str] = None,
-    language: Optional[str] = None,
-    project_id: Optional[str] = None,
+    code: str | None = None,
+    language: str | None = None,
+    project_id: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -139,7 +138,7 @@ async def validate_code(
 )
 async def assess_maturity(
     project_id: str,
-    phase: Optional[str] = None,
+    phase: str | None = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):

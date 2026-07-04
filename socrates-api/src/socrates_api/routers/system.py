@@ -10,8 +10,7 @@ Provides REST endpoints for system monitoring and control including:
 
 import logging
 import time
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -19,7 +18,7 @@ from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse
 from socratic_system.database import ProjectDatabase
-from socratic_system.utils.logger import set_debug_mode, is_debug_mode
+from socratic_system.utils.logger import is_debug_mode, set_debug_mode
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/system", tags=["system"])
@@ -239,7 +238,7 @@ async def get_info(
                 "status": "operational",
             },
             "uptime": {
-                "started_at": datetime.now(timezone.utc).isoformat(),
+                "started_at": datetime.now(UTC).isoformat(),
                 "uptime_seconds": time.time(),
             },
             "database": {
@@ -333,7 +332,7 @@ async def get_status(
         logger.info(f"System status requested by user: {current_user}")
 
         status_data = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "overall_status": "healthy",
             "health_score": 95,
             "components": {
@@ -407,8 +406,8 @@ async def get_status(
     summary="Get system logs",
 )
 async def get_logs(
-    limit: Optional[int] = 100,
-    log_level: Optional[str] = None,
+    limit: int | None = 100,
+    log_level: str | None = None,
     current_user: str = Depends(get_current_user),
 ):
     """
@@ -439,21 +438,21 @@ async def get_logs(
         # Sample log entries (in production, would read from actual log files)
         logs = [
             {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "level": "INFO",
                 "module": "socrates_api.routers.projects",
                 "message": "Project created successfully",
                 "user": current_user,
             },
             {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "level": "INFO",
                 "module": "socrates_api.routers.projects_chat",
                 "message": "Chat message processed",
                 "user": current_user,
             },
             {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "level": "INFO",
                 "module": "socrates_api.auth",
                 "message": "User authenticated successfully",
@@ -538,11 +537,11 @@ async def get_context(
 
         context_data = {
             "user": user_data,
-            "current_timestamp": datetime.now(timezone.utc).isoformat(),
+            "current_timestamp": datetime.now(UTC).isoformat(),
             "active_context": {
                 "mode": "authenticated",
                 "projects_count": project_count,
-                "last_activity": datetime.now(timezone.utc).isoformat(),
+                "last_activity": datetime.now(UTC).isoformat(),
             },
             "system_configuration": {
                 "api_url": "http://localhost:8000",
@@ -586,7 +585,7 @@ async def get_context(
     summary="Toggle debug mode on/off",
 )
 async def toggle_debug_mode(
-    enabled: Optional[bool] = Query(None),
+    enabled: bool | None = Query(None),
     current_user: str = Depends(get_current_user),
 ):
     """
@@ -686,8 +685,8 @@ async def schedule_server_shutdown(
     """
     try:
         from socrates_api.middleware.activity_tracker import (
-            schedule_shutdown,
             get_shutdown_time_remaining,
+            schedule_shutdown,
         )
 
         logger.info(f"Server shutdown scheduled with {delay_seconds}s delay")
@@ -763,8 +762,8 @@ async def get_shutdown_status():
     """
     try:
         from socrates_api.middleware.activity_tracker import (
-            is_shutdown_scheduled,
             get_shutdown_time_remaining,
+            is_shutdown_scheduled,
         )
 
         scheduled = is_shutdown_scheduled()

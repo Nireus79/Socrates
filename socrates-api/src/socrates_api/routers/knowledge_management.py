@@ -9,8 +9,7 @@ Provides REST endpoints for managing project knowledge base including:
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -31,7 +30,7 @@ class KnowledgeDocumentRequest(BaseModel):
 
     title: str
     content: str
-    type: Optional[str] = "text"
+    type: str | None = "text"
 
 
 @router.post(
@@ -86,13 +85,13 @@ async def add_knowledge_document(
                 )
 
         # Create document
-        doc_id = f"doc_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+        doc_id = f"doc_{int(datetime.now(UTC).timestamp() * 1000)}"
         document = {
             "id": doc_id,
             "title": request.title,
             "content": request.content,
             "type": request.type or "text",
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "created_by": current_user,
         }
 
@@ -140,8 +139,8 @@ async def add_knowledge(
     project_id: str,
     title: str = Body(...),
     content: str = Body(...),
-    category: Optional[str] = Body(None),
-    tags: Optional[List[str]] = Body(None),
+    category: str | None = Body(None),
+    tags: list[str] | None = Body(None),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -189,12 +188,12 @@ async def add_knowledge(
 
         # Create knowledge item
         knowledge_item = {
-            "id": f"know_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+            "id": f"know_{int(datetime.now(UTC).timestamp() * 1000)}",
             "title": title,
             "content": content,
             "category": category or "general",
             "tags": tags or [],
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "created_by": current_user,
             "pinned": False,
             "usage_count": 0,
@@ -242,10 +241,10 @@ async def add_knowledge(
 )
 async def list_knowledge(
     project_id: str,
-    category: Optional[str] = None,
-    tag: Optional[str] = None,
-    pinned_only: Optional[bool] = False,
-    limit: Optional[int] = 50,
+    category: str | None = None,
+    tag: str | None = None,
+    pinned_only: bool | None = False,
+    limit: int | None = 50,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -335,7 +334,7 @@ async def list_knowledge(
 async def search_knowledge(
     project_id: str,
     query: str = Body(...),
-    limit: Optional[int] = Body(10),
+    limit: int | None = Body(10),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -450,7 +449,7 @@ async def remember_knowledge(
         for item in items:
             if item.get("id") == knowledge_id:
                 item["pinned"] = True
-                item["last_pinned_at"] = datetime.now(timezone.utc).isoformat()
+                item["last_pinned_at"] = datetime.now(UTC).isoformat()
                 found = True
                 break
 
@@ -553,7 +552,7 @@ async def remove_knowledge(
 )
 async def export_knowledge(
     project_id: str,
-    format: Optional[str] = Body("json"),
+    format: str | None = Body("json"),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -588,7 +587,7 @@ async def export_knowledge(
             export_data = {
                 "project_id": project_id,
                 "project_name": project.name,
-                "exported_at": datetime.now(timezone.utc).isoformat(),
+                "exported_at": datetime.now(UTC).isoformat(),
                 "knowledge_items": items,
                 "statistics": {
                     "total_items": len(items),
@@ -627,7 +626,7 @@ async def export_knowledge(
                 "format": format,
                 "items_count": len(items),
                 "export_data": export_data,
-                "export_timestamp": datetime.now(timezone.utc).isoformat(),
+                "export_timestamp": datetime.now(UTC).isoformat(),
             },
         )
 
@@ -649,8 +648,8 @@ async def export_knowledge(
 )
 async def import_knowledge(
     project_id: str,
-    knowledge_items: List[dict] = Body(...),
-    merge: Optional[bool] = Body(True),
+    knowledge_items: list[dict] = Body(...),
+    merge: bool | None = Body(True),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -689,11 +688,11 @@ async def import_knowledge(
         for item in knowledge_items:
             # Generate ID if not provided
             if "id" not in item:
-                item["id"] = f"know_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+                item["id"] = f"know_{int(datetime.now(UTC).timestamp() * 1000)}"
 
             # Set metadata
             if "created_at" not in item:
-                item["created_at"] = datetime.now(timezone.utc).isoformat()
+                item["created_at"] = datetime.now(UTC).isoformat()
             if "created_by" not in item:
                 item["created_by"] = current_user
 
