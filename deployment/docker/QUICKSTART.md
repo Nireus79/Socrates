@@ -129,6 +129,15 @@ docker-compose ps
 docker-compose restart frontend
 ```
 
+### "Data lost after container restart"
+```bash
+# Check if SOCRATES_DATA_DIR is set
+docker-compose exec api env | grep SOCRATES_DATA_DIR
+
+# This environment variable MUST be set to /app/data
+# See: Docker Data Persistence Guide (./DOCKER_DATA_PERSISTENCE.md)
+```
+
 ### "Need to change API key"
 ```bash
 # Edit .env
@@ -157,7 +166,10 @@ docker-compose restart
 docker-compose exec api bash
 
 # View database
-docker-compose exec api sqlite3 /app/data/socrates.db
+docker-compose exec api ls -la /app/data/
+
+# Inspect volume (check if data persists)
+docker volume inspect deployment_docker_socrates_data
 ```
 
 ---
@@ -176,9 +188,8 @@ curl http://localhost:8000/health
 ## 🎓 Next Steps
 
 - **Learn more**: See [Docker README](./README.md)
-- **Troubleshooting**: See [Docker Troubleshooting Guide](../../docs/DOCKER_TROUBLESHOOTING.md)
-- **Production setup**: See [Deployment Guide](../../docs/DEPLOYMENT.md)
-- **Session persistence**: See [Docker Persistence Guide](../../docs/DOCKER_PERSISTENCE_GUIDE.md)
+- **Data persistence issues**: See [Docker Data Persistence Guide](./DOCKER_DATA_PERSISTENCE.md) — **Important if data is lost after restart!**
+- **Production setup**: See the main project documentation
 
 ---
 

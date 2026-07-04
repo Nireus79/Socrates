@@ -14,7 +14,7 @@ services:
       - "8000:8000"
     environment:
       # API Configuration
-      - SOCRATES_API_HOST=0.0.0.0      # <--- ADD THIS LINE
+      - SOCRATES_API_HOST=0.0.0.0
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
@@ -23,8 +23,9 @@ services:
       # ADDED: Ensure Python knows exactly where to look
       - PYTHONPATH=/app/socrates-api/src:/app
 
-      # Database Configuration
-      - DATABASE_URL=sqlite:////app/data/socrates.db
+      # Database Configuration - CRITICAL: Must point to persisted volume
+      # The API uses SOCRATES_DATA_DIR (not DATABASE_URL) for project database
+      - SOCRATES_DATA_DIR=/app/data
       - REDIS_URL=redis://redis:6379/0
 
       # Security - ENCRYPTION KEYS (REQUIRED for API key security)
@@ -64,12 +65,12 @@ services:
       context: ../../socrates-frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://api:8000
+        VITE_API_URL: http://localhost:8000
 
     ports:
       - "3000:80"
     environment:
-      - REACT_APP_API_URL=http://api:8000
+      - REACT_APP_API_URL=http://localhost:8000
       - REACT_APP_ENV=development
     # volumes:
     #   - ../../socrates-frontend:/app  # <-- Changed to ../../
