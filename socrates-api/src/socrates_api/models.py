@@ -77,9 +77,7 @@ class CreateProjectRequest(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200, description="Project name")
     description: str | None = Field(None, max_length=1000, description="Project description")
-    knowledge_base_content: str | None = Field(
-        None, description="Initial knowledge base content"
-    )
+    knowledge_base_content: str | None = Field(None, description="Initial knowledge base content")
 
 
 class UpdateProjectRequest(BaseModel):
@@ -239,9 +237,7 @@ class ProcessResponseResponse(BaseModel):
 
     feedback: str = Field(..., description="Feedback on the user's response")
     is_correct: bool = Field(..., description="Whether the response is correct")
-    next_question: QuestionResponse | None = Field(
-        None, description="Next question if available"
-    )
+    next_question: QuestionResponse | None = Field(None, description="Next question if available")
     insights: list[str] | None = Field(None, description="Key insights extracted")
 
 
@@ -797,9 +793,7 @@ class UpdateMessageRequest(BaseModel):
     )
 
     content: str = Field(..., min_length=1, description="Updated message content")
-    metadata: dict[str, Any] | None = Field(
-        None, description="Optional metadata for the message"
-    )
+    metadata: dict[str, Any] | None = Field(None, description="Optional metadata for the message")
 
 
 # ============================================================================

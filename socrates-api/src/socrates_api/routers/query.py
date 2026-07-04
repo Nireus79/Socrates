@@ -145,7 +145,6 @@ async def search_knowledge(
     try:
         logger.info(f"Searching knowledge base for: {query}")
 
-
         # Search in projects if project_id specified
         results = []
 

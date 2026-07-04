@@ -278,6 +278,7 @@ async def lifespan(app: FastAPI):
     except Exception as db_e:
         logger.error(f"✗ CRITICAL: Failed to initialize database: {db_e}")
         import traceback
+
         logger.error(f"Traceback: {traceback.format_exc()}")
         # Re-raise to prevent API from starting without database
         raise
@@ -289,9 +290,7 @@ async def lifespan(app: FastAPI):
 
         # Initialize orchestrator WITHOUT any global API key
         # All LLM calls must be provider-aware with credentials from database
-        orchestrator = AgentOrchestrator(
-            api_key_or_config=None
-        )
+        orchestrator = AgentOrchestrator(api_key_or_config=None)
         logger.info("AgentOrchestrator created successfully (credential-less)")
         logger.info("All agents will use per-user LLM configurations from database")
 

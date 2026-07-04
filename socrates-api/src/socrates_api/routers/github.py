@@ -338,7 +338,6 @@ async def import_repository(
 
                         # Process extracted code files with chunking
 
-
                         for code_file in files_to_process:
                             try:
                                 file_content = (

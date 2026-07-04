@@ -122,7 +122,6 @@ async def get_subscription_status(
     try:
         logger.info(f"Getting subscription status for user: {current_user}")
 
-
         # Load user from database to get actual tier and testing_mode flag
         user = db.load_user(current_user)
         current_tier = user.subscription_tier if user else "free"
@@ -473,13 +472,9 @@ async def toggle_testing_mode(
 
         user.testing_mode = enabled
         # Set timestamp when enabling, clear when disabling
-        user.testing_mode_enabled_at = (
-            datetime.datetime.now() if enabled else None
-        )
+        user.testing_mode_enabled_at = datetime.datetime.now() if enabled else None
         db.save_user(user)
-        logger.info(
-            f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user}"
-        )
+        logger.info(f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user}")
 
         return APIResponse(
             success=True,

@@ -830,10 +830,14 @@ Provide a helpful, direct answer."""
             if insights:
                 if is_debug_mode():
                     # DEBUG MODE: Show specs to user for confirmation (not auto-saved yet)
-                    logger.debug(f"Debug mode enabled - returning insights for user confirmation: {insights}")
+                    logger.debug(
+                        f"Debug mode enabled - returning insights for user confirmation: {insights}"
+                    )
                     response_data["extracted_insights"] = insights
                     response_data["extracted_specs"] = insights
-                    response_data["extracted_specs_count"] = len([v for v in insights.values() if v])
+                    response_data["extracted_specs_count"] = len(
+                        [v for v in insights.values() if v]
+                    )
                     response_data["requires_confirmation"] = True
                     response_data["confirmation_message"] = (
                         f"Extracted {response_data['extracted_specs_count']} insight categories - please confirm to save"

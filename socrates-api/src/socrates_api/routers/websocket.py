@@ -248,7 +248,6 @@ async def _handle_chat_message(
         try:
             from socrates_api.main import get_orchestrator
 
-
             project = db.load_project(project_id)
             if not project:
                 logger.error(f"Project {project_id} not found")
@@ -428,7 +427,6 @@ async def _route_command(
     """
     try:
         from socrates_api.main import get_orchestrator
-
 
         project = db.load_project(project_id)
         if not project:

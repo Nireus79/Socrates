@@ -11,25 +11,30 @@ from socrates_api.models import APIResponse
 
 class ApiKeyRequest(BaseModel):
     """Request model for setting API key."""
+
     provider: str
     api_key: str
 
 
 class DefaultProviderRequest(BaseModel):
     """Request model for setting default provider."""
+
     provider: str
 
 
 class ModelRequest(BaseModel):
     """Request model for setting model."""
+
     provider: str
     model: str
 
 
 class AuthMethodRequest(BaseModel):
     """Request model for setting authentication method."""
+
     provider: str
     auth_method: str
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/llm", tags=["llm"])
@@ -86,7 +91,11 @@ async def set_default_provider(
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
             "multi_llm_manager",
-            {"action": "set_default_provider", "user_id": current_user, "provider": request.provider},
+            {
+                "action": "set_default_provider",
+                "user_id": current_user,
+                "provider": request.provider,
+            },
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
@@ -167,7 +176,8 @@ async def remove_api_key(provider: str, current_user: str = Depends(get_current_
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm_manager", {"action": "remove_api_key", "user_id": current_user, "provider": provider}
+            "multi_llm_manager",
+            {"action": "remove_api_key", "user_id": current_user, "provider": provider},
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
@@ -244,7 +254,8 @@ async def get_stats(time_period: str = "month", current_user: str = Depends(get_
         orchestrator = get_orchestrator()
         days = 30 if time_period == "month" else 7 if time_period == "week" else 1
         result = await orchestrator.agent_bus.send_request(
-            "multi_llm_manager", {"action": "get_usage_stats", "user_id": current_user, "days": days}
+            "multi_llm_manager",
+            {"action": "get_usage_stats", "user_id": current_user, "days": days},
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))

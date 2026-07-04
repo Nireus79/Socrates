@@ -24,6 +24,7 @@ from socratic_system.utils.git_initializer import GitInitializer
 
 try:
     from socratic_system.docs import DocumentationGenerator
+
     HAS_DOCS_LIBRARY = True
 except ImportError:
     HAS_DOCS_LIBRARY = False

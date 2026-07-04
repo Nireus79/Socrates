@@ -28,7 +28,9 @@ class SimpleCORSMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         # Handle OPTIONS requests (preflight)
         if request.method == "OPTIONS":
-            logger.info(f"[CORS] OPTIONS preflight request from origin: {request.headers.get('origin')}")
+            logger.info(
+                f"[CORS] OPTIONS preflight request from origin: {request.headers.get('origin')}"
+            )
             return self.get_cors_response(request.headers.get("origin"))
 
         # Get the response
@@ -42,22 +44,38 @@ class SimpleCORSMiddleware(BaseHTTPMiddleware):
         if origin:
             if "*" in self.allowed_origins or origin in self.allowed_origins:
                 logger.info(f"[CORS] Origin {origin} is allowed, adding CORS headers")
-                response.headers["Access-Control-Allow-Origin"] = origin if self.allow_credentials else "*"
-                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, X-Testing-Mode"
-                response.headers["Access-Control-Expose-Headers"] = "X-Process-Time, X-Request-ID, X-RateLimit-Limit, X-RateLimit-Remaining"
+                response.headers["Access-Control-Allow-Origin"] = (
+                    origin if self.allow_credentials else "*"
+                )
+                response.headers["Access-Control-Allow-Methods"] = (
+                    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+                )
+                response.headers["Access-Control-Allow-Headers"] = (
+                    "Content-Type, Authorization, X-Requested-With, Accept, X-Testing-Mode"
+                )
+                response.headers["Access-Control-Expose-Headers"] = (
+                    "X-Process-Time, X-Request-ID, X-RateLimit-Limit, X-RateLimit-Remaining"
+                )
                 if self.allow_credentials:
                     response.headers["Access-Control-Allow-Credentials"] = "true"
                 response.headers["Access-Control-Max-Age"] = "3600"
             else:
-                logger.warning(f"[CORS] Origin {origin} NOT in allowed list: {self.allowed_origins}")
+                logger.warning(
+                    f"[CORS] Origin {origin} NOT in allowed list: {self.allowed_origins}"
+                )
         else:
             # Always add CORS headers even without Origin header for direct API access
             logger.info("[CORS] No origin header in request, adding default CORS headers")
             response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, X-Testing-Mode"
-            response.headers["Access-Control-Expose-Headers"] = "X-Process-Time, X-Request-ID, X-RateLimit-Limit, X-RateLimit-Remaining"
+            response.headers["Access-Control-Allow-Methods"] = (
+                "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+            )
+            response.headers["Access-Control-Allow-Headers"] = (
+                "Content-Type, Authorization, X-Requested-With, Accept, X-Testing-Mode"
+            )
+            response.headers["Access-Control-Expose-Headers"] = (
+                "X-Process-Time, X-Request-ID, X-RateLimit-Limit, X-RateLimit-Remaining"
+            )
             response.headers["Access-Control-Max-Age"] = "3600"
 
         return response
@@ -73,7 +91,11 @@ class SimpleCORSMiddleware(BaseHTTPMiddleware):
         else:
             response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, X-Testing-Mode"
-        response.headers["Access-Control-Expose-Headers"] = "X-Process-Time, X-Request-ID, X-RateLimit-Limit, X-RateLimit-Remaining"
+        response.headers["Access-Control-Allow-Headers"] = (
+            "Content-Type, Authorization, X-Requested-With, Accept, X-Testing-Mode"
+        )
+        response.headers["Access-Control-Expose-Headers"] = (
+            "X-Process-Time, X-Request-ID, X-RateLimit-Limit, X-RateLimit-Remaining"
+        )
         response.headers["Access-Control-Max-Age"] = "3600"
         return response

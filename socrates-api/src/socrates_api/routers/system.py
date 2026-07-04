@@ -517,7 +517,6 @@ async def get_context(
     try:
         logger.info(f"System context requested by user: {current_user}")
 
-
         # Get user information
         user = db.get_user(current_user)
         user_data = {

@@ -113,11 +113,21 @@ async def invoke_agent_sync(
 
         # Validate agent name
         valid_agents = {
-            "project_manager", "socratic_counselor", "context_analyzer",
-            "code_generator", "system_monitor", "conflict_detector",
-            "document_processor", "user_manager", "note_manager",
-            "knowledge_manager", "quality_controller", "learning_agent",
-            "multi_llm", "question_queue", "code_validation",
+            "project_manager",
+            "socratic_counselor",
+            "context_analyzer",
+            "code_generator",
+            "system_monitor",
+            "conflict_detector",
+            "document_processor",
+            "user_manager",
+            "note_manager",
+            "knowledge_manager",
+            "quality_controller",
+            "learning_agent",
+            "multi_llm",
+            "question_queue",
+            "code_validation",
         }
 
         if agent_name not in valid_agents:
@@ -192,11 +202,21 @@ async def invoke_agent_async(
 
         # Validate agent name
         valid_agents = {
-            "project_manager", "socratic_counselor", "context_analyzer",
-            "code_generator", "system_monitor", "conflict_detector",
-            "document_processor", "user_manager", "note_manager",
-            "knowledge_manager", "quality_controller", "learning_agent",
-            "multi_llm", "question_queue", "code_validation",
+            "project_manager",
+            "socratic_counselor",
+            "context_analyzer",
+            "code_generator",
+            "system_monitor",
+            "conflict_detector",
+            "document_processor",
+            "user_manager",
+            "note_manager",
+            "knowledge_manager",
+            "quality_controller",
+            "learning_agent",
+            "multi_llm",
+            "question_queue",
+            "code_validation",
         }
 
         if agent_name not in valid_agents:
@@ -291,7 +311,9 @@ async def get_job_status(
             "status": job_result.status.value,
             "complete": is_complete,
             "started_at": job_result.started_at.isoformat() if job_result.started_at else None,
-            "completed_at": job_result.completed_at.isoformat() if job_result.completed_at else None,
+            "completed_at": (
+                job_result.completed_at.isoformat() if job_result.completed_at else None
+            ),
             "duration_ms": job_result.duration_ms,
         }
 

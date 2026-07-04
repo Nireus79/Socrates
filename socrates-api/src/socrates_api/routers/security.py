@@ -469,9 +469,7 @@ async def list_sessions(
                     "id": session.get("session_id") or session.get("id"),
                     "device": session.get("device", "Unknown device"),
                     "ip_address": session.get("ip_address", "Unknown"),
-                    "last_activity": session.get(
-                        "last_activity", datetime.now(UTC).isoformat()
-                    ),
+                    "last_activity": session.get("last_activity", datetime.now(UTC).isoformat()),
                     "created_at": session.get("created_at", datetime.now(UTC).isoformat()),
                     "is_current": session.get("is_current", False),
                 }

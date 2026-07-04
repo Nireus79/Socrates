@@ -72,9 +72,7 @@ async def websocket_analysis_endpoint(websocket: WebSocket, project_id: str):
         await websocket.close()
 
 
-async def broadcast_analysis_update(
-    project_id: str, analysis_type: str, result: dict
-) -> None:
+async def broadcast_analysis_update(project_id: str, analysis_type: str, result: dict) -> None:
     """Broadcast analysis result update to all subscribers.
 
     Called by background handlers when analysis completes.
@@ -98,9 +96,7 @@ async def broadcast_analysis_update(
                     "data": result,
                 }
             )
-            logger.debug(
-                f"[WebSocket] Sent {analysis_type} update to client for {project_id}"
-            )
+            logger.debug(f"[WebSocket] Sent {analysis_type} update to client for {project_id}")
 
         except Exception as e:
             logger.error(f"[WebSocket] Error sending to client: {str(e)}")
@@ -111,9 +107,7 @@ async def broadcast_analysis_update(
         active_subscriptions[project_id].discard(websocket)
 
 
-async def broadcast_analysis_status(
-    project_id: str, status: dict[str, str]
-) -> None:
+async def broadcast_analysis_status(project_id: str, status: dict[str, str]) -> None:
     """Broadcast overall analysis status to all subscribers.
 
     Args:
@@ -146,7 +140,5 @@ async def get_active_subscriptions() -> dict[str, int]:
         Dict with project_id -> subscriber_count
     """
     return {
-        project_id: len(sockets)
-        for project_id, sockets in active_subscriptions.items()
-        if sockets
+        project_id: len(sockets) for project_id, sockets in active_subscriptions.items() if sockets
     }
