@@ -50,7 +50,7 @@ class TestAPIStartupDatabaseInitialization:
                 # Verify database file was created
                 db_path = os.path.join(tmpdir, "projects.db")
                 assert Path(db_path).exists(), f"Database file not created at {db_path}"
-                assert db.db_path == db_path, f"Database path mismatch"
+                assert db.db_path == db_path, "Database path mismatch"
 
             finally:
                 # Restore environment
@@ -126,8 +126,7 @@ class TestAPIStartupDatabaseInitialization:
                 ]
                 for table in expected_tables:
                     assert table in tables, (
-                        f"Expected table '{table}' not found. "
-                        f"Available tables: {tables}"
+                        f"Expected table '{table}' not found. " f"Available tables: {tables}"
                     )
 
             finally:
@@ -153,9 +152,7 @@ class TestAPIStartupDatabaseInitialization:
                 db = DatabaseSingleton.get_instance()
 
                 # File should exist
-                assert Path(db.db_path).exists(), (
-                    f"Database file not created at {db.db_path}"
-                )
+                assert Path(db.db_path).exists(), f"Database file not created at {db.db_path}"
 
             finally:
                 if original_env:
@@ -254,7 +251,7 @@ class TestDatabaseInitializationErrorHandling:
             DatabaseSingleton.reset()
 
             # Should raise an exception (not silently fail)
-            with pytest.raises(Exception):
+            with pytest.raises(OSError):
                 DatabaseSingleton.initialize()
                 DatabaseSingleton.get_instance()
 
@@ -278,8 +275,11 @@ class TestDatabaseInitializationErrorHandling:
 
                 # Create a file where the database should be
                 # This will cause an error when trying to create directory
-                bad_file = os.path.join(tmpdir, "projects.db", "invalid")
+                db_file_path = os.path.join(tmpdir, "projects.db")
                 Path(tmpdir).mkdir(exist_ok=True)
+                # Create a regular file where database should be created
+                with open(db_file_path, "w") as f:
+                    f.write("this is a file, not a directory")
 
                 # Initialize should handle this gracefully
                 DatabaseSingleton.initialize()
@@ -289,9 +289,9 @@ class TestDatabaseInitializationErrorHandling:
                     db = DatabaseSingleton.get_instance()
                     # If it succeeds, that's fine
                     assert db is not None
-                except Exception as e:
-                    # If it fails, the exception should be raised (not silently ignored)
-                    assert isinstance(e, Exception)
+                except OSError as e:
+                    # If it fails due to file/path issue, the exception should be raised
+                    assert isinstance(e, OSError)
                     raise  # Re-raise to show the error was caught
 
             finally:
