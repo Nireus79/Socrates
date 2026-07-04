@@ -702,8 +702,7 @@ async def get_background_analysis_status(
 
         orchestrator = get_orchestrator()
 
-        # Get status from cache
-        cache = orchestrator.cache
+        # Get job tracker
         job_tracker = orchestrator.job_tracker
 
         # Check status of each analysis
@@ -726,8 +725,7 @@ async def get_background_analysis_status(
                 status_dict["insights"] = job.status.value
 
         # Check if any are still processing
-        any_processing = any(s == "processing" for s in status_dict.values())
-        response_status = 202 if any_processing else 200
+        # (could use for status code in future: 202 if processing else 200)
 
         return APIResponse(
             success=True,

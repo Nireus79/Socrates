@@ -20,7 +20,7 @@ async def websocket_analysis_endpoint(websocket: WebSocket, project_id: str):
     """WebSocket endpoint for subscribing to analysis result updates.
 
     Client connects and receives real-time updates as analysis results become available.
-    
+
     Connection Flow:
     1. Client connects: ws://server/ws/analysis/{project_id}
     2. Server sends {"type": "subscribed", "project_id": "..."}
@@ -29,7 +29,7 @@ async def websocket_analysis_endpoint(websocket: WebSocket, project_id: str):
        - {"type": "conflicts.completed", "data": {...}}
        - {"type": "insights.completed", "data": {...}}
     4. Client can disconnect anytime
-    
+
     Args:
         websocket: WebSocket connection
         project_id: Project identifier

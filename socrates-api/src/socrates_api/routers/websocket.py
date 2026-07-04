@@ -145,6 +145,7 @@ async def websocket_chat_endpoint(
                         user_id or "anonymous",
                         project_id,
                         connection_id,
+                        db,
                     )
 
                     if response:
@@ -356,6 +357,7 @@ async def _handle_command(
     user_id: str,
     project_id: str,
     connection_id: str,
+    db: "ProjectDatabase",
 ):
     """
     Handle a command message with routing to appropriate handler.

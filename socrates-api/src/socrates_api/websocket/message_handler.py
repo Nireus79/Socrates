@@ -12,13 +12,13 @@ import json
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class MessageType(str, Enum):
+class MessageType(StrEnum):
     """WebSocket message types."""
 
     CHAT_MESSAGE = "chat_message"
@@ -28,7 +28,7 @@ class MessageType(str, Enum):
     ERROR = "error"
 
 
-class ResponseType(str, Enum):
+class ResponseType(StrEnum):
     """WebSocket response types."""
 
     ASSISTANT_RESPONSE = "assistant_response"

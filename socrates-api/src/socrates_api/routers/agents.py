@@ -43,10 +43,6 @@ async def list_agents(
 ) -> APIResponse:
     """List all available agents in the system."""
     try:
-        from socrates_api.main import get_orchestrator
-
-        orchestrator = get_orchestrator()
-
         # Available agents with descriptions
         available_agents = {
             "project_manager": "Manages project creation, updates, and lifecycle",

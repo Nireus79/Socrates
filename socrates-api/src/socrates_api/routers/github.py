@@ -283,17 +283,17 @@ async def import_repository(
                             else str(readme.decoded_string)
                         )
                         if readme_content and len(readme_content.strip()) > 0:
-                            # Add README to vector database
-
-                            metadata = {
-                                "source": "README.md",
-                                "project_id": project.project_id,
-                                "source_type": "github_readme",
-                                "repository": f"{repo_owner}/{repo_name}",
-                            }
-                            vector_db.add_text(readme_content, metadata=metadata)
-                            repo_knowledge_result["entries_added"] += 1
-                            logger.info(f"Vectorized README for {repo_owner}/{repo_name}")
+                            # TODO: Implement vector_db integration
+                            # metadata = {
+                            #     "source": "README.md",
+                            #     "project_id": project.project_id,
+                            #     "source_type": "github_readme",
+                            #     "repository": f"{repo_owner}/{repo_name}",
+                            # }
+                            # vector_db.add_text(readme_content, metadata=metadata)
+                            # repo_knowledge_result["entries_added"] += 1
+                            # logger.info(f"Vectorized README for {repo_owner}/{repo_name}")
+                            pass
                     except Exception as e:
                         logger.warning(f"Could not extract README: {e}")
 
@@ -355,22 +355,24 @@ async def import_repository(
                                     )
 
                                     # Store each chunk
-                                    for chunk_idx, chunk in enumerate(chunks):
-                                        try:
-                                            metadata = {
-                                                "source": code_file.path,
-                                                "chunk": chunk_idx + 1,
-                                                "total_chunks": len(chunks),
-                                                "project_id": project.project_id,
-                                                "source_type": "github_code",
-                                                "repository": f"{repo_owner}/{repo_name}",
-                                            }
-                                            vector_db.add_text(chunk, metadata=metadata)
-                                            repo_knowledge_result["entries_added"] += 1
-                                        except Exception as chunk_error:
-                                            logger.warning(
-                                                f"Could not add chunk {chunk_idx + 1} of {code_file.path}: {chunk_error}"
-                                            )
+                                    for _chunk_idx, _chunk in enumerate(chunks):
+                                        # TODO: Implement vector_db integration
+                                        # try:
+                                        #     metadata = {
+                                        #         "source": code_file.path,
+                                        #         "chunk": chunk_idx + 1,
+                                        #         "total_chunks": len(chunks),
+                                        #         "project_id": project.project_id,
+                                        #         "source_type": "github_code",
+                                        #         "repository": f"{repo_owner}/{repo_name}",
+                                        #     }
+                                        #     vector_db.add_text(_chunk, metadata=metadata)
+                                        #     repo_knowledge_result["entries_added"] += 1
+                                        # except Exception as chunk_error:
+                                        #     logger.warning(
+                                        #         f"Could not add chunk {chunk_idx + 1} of {code_file.path}: {chunk_error}"
+                                        #     )
+                                        pass
 
                                     vectorized_files += 1
                             except Exception as e:

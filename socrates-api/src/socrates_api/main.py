@@ -19,6 +19,7 @@ from fastapi import Body, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
 
+from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
 from socrates_api.middleware.cors_fix import SimpleCORSMiddleware
 from socrates_api.middleware.metrics import (
     add_metrics_middleware,
@@ -396,8 +397,6 @@ add_security_headers_middleware(app, environment=environment)
 add_metrics_middleware(app)
 
 # Add activity tracking middleware
-from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
-
 app.add_middleware(ActivityTrackerMiddleware)
 
 # IMPORTANT: Add CORS middleware LAST so it's the outermost layer
@@ -484,10 +483,6 @@ async def search(
         )
 
     try:
-        from socrates_api.database import get_database
-
-        db = get_database()
-
         # Search in projects if user is authenticated
         results = []
 

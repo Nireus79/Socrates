@@ -32,7 +32,6 @@ def get_phase_readiness_status(project, maturity_calculator: MaturityCalculator)
     """
     phase_maturity_scores = getattr(project, "phase_maturity_scores", {}) or {}
     all_phases = list(maturity_calculator.phase_categories.keys())
-    current_phase = getattr(project, "current_phase", "discovery") or "discovery"
 
     readiness_status = {}
     for phase in all_phases:
