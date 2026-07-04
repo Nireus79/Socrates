@@ -6,6 +6,8 @@ This directory contains Docker configurations for running Socrates in a containe
 
 **→ [See QUICKSTART.md for fastest setup](./QUICKSTART.md)**
 
+**⚠️ Important:** If upgrading from an earlier version, the database initialization fix (see [DATABASE_INITIALIZATION_FIX.md](./DATABASE_INITIALIZATION_FIX.md)) ensures projects.db is created properly.
+
 Or follow detailed steps below:
 
 ### 1. Generate Environment & Keys (Automated)

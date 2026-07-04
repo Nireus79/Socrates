@@ -266,6 +266,22 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("Rate limiting is disabled")
 
+    # Initialize database FIRST - required for auth endpoints and data persistence
+    # Must happen before orchestrator initialization so database is always available
+    logger.info("Initializing database...")
+    try:
+        from socrates_api.database import DatabaseSingleton
+
+        DatabaseSingleton.initialize()  # Initialize with defaults
+        db = DatabaseSingleton.get_instance()
+        logger.info(f"✓ Database initialized at {db.db_path}")
+    except Exception as db_e:
+        logger.error(f"✗ CRITICAL: Failed to initialize database: {db_e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        # Re-raise to prevent API from starting without database
+        raise
+
     # Auto-initialize orchestrator on startup
     # All API credentials are per-user from database. No environment variable fallback.
     try:
@@ -297,18 +313,7 @@ async def lifespan(app: FastAPI):
         import traceback
 
         logger.error(f"Traceback: {traceback.format_exc()}")
-
-        # Ensure database is still initialized even if orchestrator fails
-        # This allows auth endpoints to work even without full orchestrator
-        try:
-            from socrates_api.database import DatabaseSingleton
-
-            logger.info("Ensuring database is initialized as fallback...")
-            DatabaseSingleton.initialize()  # Initialize with defaults
-            db = DatabaseSingleton.get_instance()
-            logger.info(f"Database initialized as fallback: {db is not None}")
-        except Exception as db_e:
-            logger.error(f"Failed to initialize database fallback: {db_e}")
+        logger.warning("API will run in auth-only mode (orchestrator features unavailable)")
 
     # Start shutdown monitor background task
     logger.info("Starting shutdown monitor background task...")

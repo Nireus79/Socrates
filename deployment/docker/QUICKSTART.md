@@ -129,12 +129,20 @@ docker-compose ps
 docker-compose restart frontend
 ```
 
-### "Data lost after container restart"
+### "Data lost after container restart" or "Database file not created"
 ```bash
 # Check if SOCRATES_DATA_DIR is set
 docker-compose exec api env | grep SOCRATES_DATA_DIR
 
-# This environment variable MUST be set to /app/data
+# Check if projects.db file exists
+docker-compose exec api ls -la /app/data/
+
+# Run diagnostic to test database initialization
+docker-compose exec api python /app/test-db-init.py
+
+# If projects.db is missing, check API logs
+docker-compose logs api | tail -50
+
 # See: Docker Data Persistence Guide (./DOCKER_DATA_PERSISTENCE.md)
 ```
 
