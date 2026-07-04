@@ -172,46 +172,12 @@ Changelog = "https://github.com/Nireus79/Socrates/releases"
 "PyPI Package" = "https://pypi.org/project/socrates-ai/"
 
 [tool.setuptools]
-packages = [
-    "socrates_ai",
-    "socratic_system",
-    "socratic_system.agents",
-    "socratic_system.api",
-    "socratic_system.api.adapters",
-    "socratic_system.auth",
-    "socratic_system.caching",
-    "socratic_system.clients",
-    "socratic_system.config",
-    "socratic_system.conflict",
-    "socratic_system.core",
-    "socratic_system.database",
-    "socratic_system.docs",
-    "socratic_system.events",
-    "socratic_system.exceptions",
-    "socratic_system.governance",
-    "socratic_system.handlers",
-    "socratic_system.jobs",
-    "socratic_system.knowledge",
-    "socratic_system.learning",
-    "socratic_system.maturity",
-    "socratic_system.messaging",
-    "socratic_system.migration",
-    "socratic_system.models",
-    "socratic_system.orchestration",
-    "socratic_system.parsers",
-    "socratic_system.performance",
-    "socratic_system.reasoning",
-    "socratic_system.repositories",
-    "socratic_system.security",
-    "socratic_system.services",
-    "socratic_system.sponsorships",
-    "socratic_system.subscription",
-    "socratic_system.ui",
-    "socratic_system.ui.commands",
-    "socratic_system.utils",
-    "socratic_system.utils.extractors",
-    "socratic_system.workflow",
-]
+find = {}
+
+[tool.setuptools.package-dir]
+"" = "."
+"socrates_api" = "socrates-api/src"
+"socrates_cli" = "socrates-cli/src"
 
 [tool.setuptools.package-data]
 socratic_system = [
