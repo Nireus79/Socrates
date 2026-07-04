@@ -171,13 +171,13 @@ Repository = "https://github.com/Nireus79/Socrates"
 Changelog = "https://github.com/Nireus79/Socrates/releases"
 "PyPI Package" = "https://pypi.org/project/socrates-ai/"
 
-[tool.setuptools]
-find = {}
-
-[tool.setuptools.package-dir]
-"" = "."
-"socrates_api" = "socrates-api/src"
-"socrates_cli" = "socrates-cli/src"
+[tool.setuptools.packages.find]
+# Find packages in multiple locations
+where = [
+    ".",
+    "socrates-api/src",
+    "socrates-cli/src",
+]
 
 [tool.setuptools.package-data]
 socratic_system = [
