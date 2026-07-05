@@ -72,7 +72,7 @@ def init(api_key, data_dir):
             config = config.with_data_dir(Path(data_dir))
         config = config.build()
 
-        orchestrator = socratic_system.AgentOrchestrator(config=config)
+        orchestrator = socrates.AgentOrchestrator(config=config)
         orchestrator.claude_client.test_connection()
 
         click.echo(f"{Fore.GREEN}✓ Socrates initialized successfully!{Style.RESET_ALL}")
@@ -101,7 +101,7 @@ def project_create(name, owner, description):
     """Create a new project."""
     try:
         config = socrates.SocratesConfig.from_env()
-        orchestrator = socratic_system.AgentOrchestrator(config=config)
+        orchestrator = socrates.AgentOrchestrator(config=config)
 
         result = orchestrator.process_request(
             "project_manager",
@@ -137,7 +137,7 @@ def project_list(owner):
     """List projects."""
     try:
         config = socrates.SocratesConfig.from_env()
-        orchestrator = socratic_system.AgentOrchestrator(config=config)
+        orchestrator = socrates.AgentOrchestrator(config=config)
 
         result = orchestrator.process_request(
             "project_manager", {"action": "list_projects", "owner": owner}
@@ -176,7 +176,7 @@ def generate_code(project_id):
     """Generate code for a project."""
     try:
         config = socrates.SocratesConfig.from_env()
-        orchestrator = socratic_system.AgentOrchestrator(config=config)
+        orchestrator = socrates.AgentOrchestrator(config=config)
 
         # Load the project
         project_result = orchestrator.process_request(
@@ -221,7 +221,7 @@ def info(log_level):
     """Show Socrates system information."""
     try:
         config = socrates.SocratesConfig.from_env()
-        orchestrator = socratic_system.AgentOrchestrator(config=config)
+        orchestrator = socrates.AgentOrchestrator(config=config)
 
         click.echo(f"{Fore.CYAN}{'=' * 50}{Style.RESET_ALL}")
         click.echo(f"{Fore.CYAN}Socrates AI System Information{Style.RESET_ALL}")
