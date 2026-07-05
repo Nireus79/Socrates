@@ -1,0 +1,60 @@
+# Socrates AI - Core Dependencies
+# Generated from pyproject.toml
+
+# Socratic Ecosystem Libraries
+socratic-agents>=0.4.6
+socratic-morality>=0.0.7
+socratic-workflow>=0.1.5
+socratic-maturity>=0.2.1
+socratic-knowledge>=0.1.7
+socratic-conflict>=0.1.6
+socratic-learning>=0.2.1
+socratic-analyzer>=0.1.7
+socratic-performance>=0.2.2
+socratic-nexus>=0.4.3
+
+# Core AI & ML
+anthropic>=0.40.0
+chromadb>=0.5.0
+sentence-transformers>=3.0.0
+
+# Document Processing
+pypdf>=4.0.0
+
+# Date/Time
+python-dateutil>=2.8.0
+
+# Database
+aiosqlite>=0.19.0
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+psycopg2-binary>=2.9.0
+redis>=5.0.0
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+slowapi>=0.1.9
+
+# Authentication & Security
+PyJWT>=2.8.0
+python-jose>=3.3.0
+bcrypt>=4.0.0
+passlib>=1.7.4
+cryptography>=41.0.0
+
+# HTTP & Networking
+httpx>=0.24.0
+requests>=2.31.0
+
+# Monitoring & Metrics
+prometheus-client>=0.19.0
+
+# VCS Integration
+gitpython>=3.1.0
+
+# Production Server
+gunicorn>=21.0.0

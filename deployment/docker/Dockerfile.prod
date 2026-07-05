@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy project files
 COPY pyproject.toml .
+COPY requirements.txt .
 COPY README.md .
 COPY LICENSE .
 COPY socratic_system socratic_system/
@@ -20,6 +21,9 @@ COPY socrates-cli socrates-cli/
 
 # Install Python dependencies with optimization flags
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir \
+    --compile \
+    -r requirements.txt && \
     pip install --no-cache-dir \
     --compile \
     .
