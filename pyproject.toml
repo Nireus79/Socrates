@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "0.2.0.post1"
+version = "0.2.1"
 description = "Multi-agent AI orchestration platform with Constitutional AI governance, Socratic guidance, and RAG knowledge management"
 readme = "README.md"
 license = {file = "LICENSE"}
