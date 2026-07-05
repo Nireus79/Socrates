@@ -12,7 +12,7 @@ from pathlib import Path
 import click
 from colorama import Fore, Style, init
 
-import socrates_ai as socrates
+import socratic_system as socrates
 
 # Initialize colorama for cross-platform colored output
 init(autoreset=True)
@@ -67,12 +67,12 @@ def init(api_key, data_dir):
 
     try:
         # Test the configuration
-        config = socrates.ConfigBuilder(api_key)
+        config = socrates.SocratesConfig(api_key=api_key)
         if data_dir:
             config = config.with_data_dir(Path(data_dir))
         config = config.build()
 
-        orchestrator = socrates.create_orchestrator(config)
+        orchestrator = socratic_system.AgentOrchestrator(config=config)
         orchestrator.claude_client.test_connection()
 
         click.echo(f"{Fore.GREEN}✓ Socrates initialized successfully!{Style.RESET_ALL}")
@@ -101,7 +101,7 @@ def project_create(name, owner, description):
     """Create a new project."""
     try:
         config = socrates.SocratesConfig.from_env()
-        orchestrator = socrates.create_orchestrator(config)
+        orchestrator = socratic_system.AgentOrchestrator(config=config)
 
         result = orchestrator.process_request(
             "project_manager",
@@ -137,7 +137,7 @@ def project_list(owner):
     """List projects."""
     try:
         config = socrates.SocratesConfig.from_env()
-        orchestrator = socrates.create_orchestrator(config)
+        orchestrator = socratic_system.AgentOrchestrator(config=config)
 
         result = orchestrator.process_request(
             "project_manager", {"action": "list_projects", "owner": owner}
@@ -176,7 +176,7 @@ def generate_code(project_id):
     """Generate code for a project."""
     try:
         config = socrates.SocratesConfig.from_env()
-        orchestrator = socrates.create_orchestrator(config)
+        orchestrator = socratic_system.AgentOrchestrator(config=config)
 
         # Load the project
         project_result = orchestrator.process_request(
@@ -221,7 +221,7 @@ def info(log_level):
     """Show Socrates system information."""
     try:
         config = socrates.SocratesConfig.from_env()
-        orchestrator = socrates.create_orchestrator(config)
+        orchestrator = socratic_system.AgentOrchestrator(config=config)
 
         click.echo(f"{Fore.CYAN}{'=' * 50}{Style.RESET_ALL}")
         click.echo(f"{Fore.CYAN}Socrates AI System Information{Style.RESET_ALL}")
