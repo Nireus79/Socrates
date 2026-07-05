@@ -171,13 +171,63 @@ Repository = "https://github.com/Nireus79/Socrates"
 Changelog = "https://github.com/Nireus79/Socrates/releases"
 "PyPI Package" = "https://pypi.org/project/socrates-ai/"
 
-[tool.setuptools.packages.find]
-# Find packages in multiple locations
-where = [
-    ".",
-    "socrates-api/src",
-    "socrates-cli/src",
+# FIXED: Use explicit package list instead of packages.find
+# The find with multiple 'where' clauses was failing in Docker
+# This explicit list ensures all packages are discovered and dependencies installed
+
+[tool.setuptools]
+packages = [
+    "socratic_system",
+    "socratic_system.agents",
+    "socratic_system.api",
+    "socratic_system.api.adapters",
+    "socratic_system.auth",
+    "socratic_system.caching",
+    "socratic_system.clients",
+    "socratic_system.config",
+    "socratic_system.conflict",
+    "socratic_system.core",
+    "socratic_system.database",
+    "socratic_system.docs",
+    "socratic_system.events",
+    "socratic_system.exceptions",
+    "socratic_system.governance",
+    "socratic_system.handlers",
+    "socratic_system.jobs",
+    "socratic_system.knowledge",
+    "socratic_system.learning",
+    "socratic_system.maturity",
+    "socratic_system.messaging",
+    "socratic_system.migration",
+    "socratic_system.models",
+    "socratic_system.orchestration",
+    "socratic_system.parsers",
+    "socratic_system.performance",
+    "socratic_system.reasoning",
+    "socratic_system.repositories",
+    "socratic_system.security",
+    "socratic_system.services",
+    "socratic_system.sponsorships",
+    "socratic_system.subscription",
+    "socratic_system.ui",
+    "socratic_system.ui.commands",
+    "socratic_system.utils",
+    "socratic_system.utils.extractors",
+    "socratic_system.workflow",
+    "socrates_api",
+    "socrates_api.auth",
+    "socrates_api.caching",
+    "socrates_api.middleware",
+    "socrates_api.routers",
+    "socrates_api.services",
+    "socrates_api.websocket",
+    "socrates_cli",
 ]
+
+[tool.setuptools.package-dir]
+"" = "."
+"socrates_api" = "socrates-api/src/socrates_api"
+"socrates_cli" = "socrates-cli/src/socrates_cli"
 
 [tool.setuptools.package-data]
 socratic_system = [
