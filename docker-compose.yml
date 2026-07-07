@@ -57,7 +57,7 @@ services:
         VITE_API_URL: /api
     container_name: socrates-frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
     networks:
       - socrates-network
     depends_on:

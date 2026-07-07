@@ -272,7 +272,10 @@ async def lifespan(app: FastAPI):
     try:
         from socrates_api.database import DatabaseSingleton
 
-        DatabaseSingleton.initialize()  # Initialize with defaults
+        # Respect SOCRATES_DATA_DIR environment variable for persistent volume
+        data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
+        db_path = os.path.join(data_dir, "projects.db")
+        DatabaseSingleton.initialize(db_path=db_path)
         db = DatabaseSingleton.get_instance()
         logger.info(f"✓ Database initialized at {db.db_path}")
     except Exception as db_e:
@@ -290,7 +293,10 @@ async def lifespan(app: FastAPI):
 
         # Initialize orchestrator WITHOUT any global API key
         # All LLM calls must be provider-aware with credentials from database
-        orchestrator = AgentOrchestrator(api_key_or_config=None)
+        # Use SocratesConfig.from_env() to respect SOCRATES_DATA_DIR for persistent volume
+        from socratic_system.config import SocratesConfig
+        config = SocratesConfig.from_env()
+        orchestrator = AgentOrchestrator(api_key_or_config=config)
         logger.info("AgentOrchestrator created successfully (credential-less)")
         logger.info("All agents will use per-user LLM configurations from database")
 
@@ -701,7 +707,10 @@ async def initialize(request: InitializeRequest | None = Body(None)):
 
         # Create orchestrator without any global credentials
         # All LLM calls must use provider_config from database
-        orchestrator = AgentOrchestrator(api_key_or_config=None)
+        # Use SocratesConfig.from_env() to respect SOCRATES_DATA_DIR for persistent volume
+        from socratic_system.config import SocratesConfig
+        config = SocratesConfig.from_env()
+        orchestrator = AgentOrchestrator(api_key_or_config=config)
 
         # Setup event listeners
         _setup_event_listeners(orchestrator)
