@@ -35,10 +35,24 @@ jobs:
           pip install ruff
           ruff check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api
 
-      - name: Format check with black
+      - name: Format with black
         run: |
           pip install black==24.1.0
-          black --check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api
+          black socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api
+
+      - name: Commit formatted files if changed
+        run: |
+          git config --global user.name "Claude Code"
+          git config --global user.email "claude@anthropic.com"
+          if git diff --quiet; then
+            echo "No formatting changes"
+          else
+            git add -A
+            git commit -m "style: format code with black 24.1.0"
+            git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Type check with mypy
         run: |
