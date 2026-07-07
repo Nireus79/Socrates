@@ -14,6 +14,8 @@ services:
       REDIS_URL: redis://redis:6379
       # Data persistence: mount volume for SQLite database
       SOCRATES_DATA_DIR: /app/data
+      # JWT Configuration - CRITICAL for session persistence across container restarts
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-secret-key-change-in-production}
       # Add your encryption key here or pass via environment
       # SOCRATES_ENCRYPTION_KEY: your-key-here
     ports:
