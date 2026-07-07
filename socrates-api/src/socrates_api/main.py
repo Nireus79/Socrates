@@ -296,10 +296,6 @@ async def lifespan(app: FastAPI):
         # Use SocratesConfig.from_env() to respect SOCRATES_DATA_DIR for persistent volume
         from socratic_system.config import SocratesConfig
         config = SocratesConfig.from_env()
-        logger.info(
-            f"Orchestrator config - data_dir: {config.data_dir}, "
-            f"projects_db_path: {config.projects_db_path}"
-        )
         orchestrator = AgentOrchestrator(api_key_or_config=config)
         logger.info("AgentOrchestrator created successfully (credential-less)")
         logger.info("All agents will use per-user LLM configurations from database")
