@@ -40,19 +40,23 @@ jobs:
           pip install black==24.1.0
           black socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api
 
-      - name: Commit formatted files if changed
+      - name: Commit formatted files
+        if: always()
         run: |
-          git config --global user.name "Claude Code"
-          git config --global user.email "claude@anthropic.com"
-          if git diff --quiet; then
-            echo "No formatting changes"
-          else
-            git add -A
-            git commit -m "style: format code with black 24.1.0"
-            git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF}
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          if ! git diff-index --quiet HEAD --; then
+            git commit -m "style: format code with black 24.1.0" || true
+            git push || echo "Push failed - may have no changes"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail if formatting needed
+        run: |
+          if ! git diff-index --quiet HEAD --; then
+            echo "Code formatting is required"
+            exit 1
+          fi
 
       - name: Type check with mypy
         run: |
