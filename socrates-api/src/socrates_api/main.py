@@ -295,7 +295,6 @@ async def lifespan(app: FastAPI):
         # All LLM calls must be provider-aware with credentials from database
         # Use SocratesConfig.from_env() to respect SOCRATES_DATA_DIR for persistent volume
         from socratic_system.config import SocratesConfig
-
         config = SocratesConfig.from_env()
         logger.info(
             f"Orchestrator config - data_dir: {config.data_dir}, "
