@@ -16,6 +16,9 @@ services:
       SOCRATES_DATA_DIR: /app/data
       # JWT Configuration - CRITICAL for session persistence across container restarts
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      # API Security
+      ALLOWED_HOSTS: localhost,127.0.0.1,api,host.docker.internal
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://api:3000
       # Add your encryption key here or pass via environment
       # SOCRATES_ENCRYPTION_KEY: your-key-here
     ports:
