@@ -1603,7 +1603,7 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
-            config_id = f"{user_id}:{provider}"
+            config_id = f"{user_id}:{provider}:{int(datetime.now().timestamp())}"
             now = datetime.now()
 
             cursor.execute(
