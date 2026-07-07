@@ -1538,6 +1538,8 @@ class ProjectDatabase:
                 SELECT id, user_id, provider, config_data, created_at, updated_at
                 FROM llm_provider_configs
                 WHERE user_id = ? AND provider = ?
+                ORDER BY created_at DESC
+                LIMIT 1
             """,
                 (user_id, provider),
             )
