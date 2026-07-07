@@ -352,7 +352,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Auto-detect environment: if ENVIRONMENT is not explicitly set and running on local machine, use development
+# Auto-detect environment: if ENVIRONMENT not set and running locally, use development
 environment = os.getenv("ENVIRONMENT")
 if not environment:
     hostname = socket.gethostname()
@@ -604,7 +604,7 @@ async def metrics_endpoint():
     Example:
         GET /metrics
         http_requests_total{method="GET",endpoint="/health",status="200"} 1234
-        http_request_duration_seconds_bucket{method="GET",endpoint="/health",status="200",le="0.01"} 100
+        http_request_duration_seconds_bucket{endpoint="/health",status="200",le="0.01"} 100
     """
     from fastapi.responses import Response
 
