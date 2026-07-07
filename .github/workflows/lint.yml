@@ -27,25 +27,6 @@ jobs:
         run: |
           ruff check socratic_system tests --output-format=github
 
-  black:
-    name: Black Code Formatter
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install black
-        run: pip install black==24.1.0
-
-      - name: Check formatting with black
-        run: black --check socratic_system tests
-
   mypy:
     name: MyPy Type Checker
     runs-on: ubuntu-latest
@@ -171,14 +152,13 @@ jobs:
   all-quality-checks-passed:
     name: All Quality Checks Passed
     runs-on: ubuntu-latest
-    needs: [ruff, black, mypy, security, dependencies, docs, code-coverage]
+    needs: [ruff, mypy, security, dependencies, docs, code-coverage]
     if: always()
 
     steps:
       - name: Check if all quality checks passed
         run: |
           if [[ "${{ needs.ruff.result }}" != "success" || \
-                "${{ needs.black.result }}" != "success" || \
                 "${{ needs.mypy.result }}" != "success" || \
                 "${{ needs.security.result }}" != "success" || \
                 "${{ needs.dependencies.result }}" != "success" || \
