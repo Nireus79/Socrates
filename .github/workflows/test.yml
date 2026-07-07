@@ -38,7 +38,8 @@ jobs:
       - name: Format check with black
         run: |
           pip install black
-          black --check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api
+          black --diff socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api tests || true
+          black --check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api tests
 
       - name: Type check with mypy
         run: |
