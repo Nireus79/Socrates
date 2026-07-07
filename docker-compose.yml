@@ -12,6 +12,11 @@ services:
       ENVIRONMENT: production
       # Redis connection for Docker (use service name on docker network)
       REDIS_URL: redis://redis:6379
+      # Logging configuration
+      LOG_LEVEL: INFO
+      PYTHONUNBUFFERED: 1
+      # PYTHONPATH: Ensure Python finds all modules
+      PYTHONPATH: /app:/app/socrates-api/src:/app/socrates-cli/src
       # Data persistence: mount volume for SQLite database
       SOCRATES_DATA_DIR: /app/data
       # JWT Configuration - CRITICAL for session persistence across container restarts
@@ -19,8 +24,9 @@ services:
       # API Security
       ALLOWED_HOSTS: localhost,127.0.0.1,api,host.docker.internal
       CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://api:3000
-      # Add your encryption key here or pass via environment
-      # SOCRATES_ENCRYPTION_KEY: your-key-here
+      # Security - ENCRYPTION KEYS (REQUIRED for API key security)
+      SOCRATES_ENCRYPTION_KEY: ${SOCRATES_ENCRYPTION_KEY:-change-me-in-production}
+      DATABASE_ENCRYPTION_KEY: ${DATABASE_ENCRYPTION_KEY:-change-me-in-production}
     ports:
       - "8000:8000"
     networks:
