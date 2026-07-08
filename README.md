@@ -43,6 +43,8 @@ Socrates is a **production-ready system for deploying intelligent agents** that 
 
 ### 1. **Docker Compose** (Recommended - 2 minutes)
 
+**→ [Quick Start: QUICKSTART.md](QUICKSTART.md)**
+
 ```bash
 git clone https://github.com/Nireus79/Socrates.git
 cd Socrates
@@ -56,7 +58,7 @@ That's it! The system auto-generates and manages encryption keys for you.
 
 **Note:** Use `docker compose` (no hyphen), not `docker-compose`. If you get "command not found", update Docker Desktop or install docker-compose-plugin.
 
-**→ [See DOCKER_SETUP_GUIDE.md for complete Docker documentation and troubleshooting](DOCKER_SETUP_GUIDE.md)**
+**→ [Complete Docker Guide: DOCKER_SETUP_GUIDE.md](DOCKER_SETUP_GUIDE.md)****
 
 #### Rebuild/Upgrade
 
