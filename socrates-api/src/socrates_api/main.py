@@ -286,6 +286,40 @@ async def lifespan(app: FastAPI):
         # Re-raise to prevent API from starting without database
         raise
 
+    # Auto-generate JWT_SECRET_KEY if not set (same pattern as encryption keys)
+    logger.info("Initializing JWT secret key...")
+    try:
+        import secrets
+        from pathlib import Path as PathlibPath
+
+        data_dir_path = PathlibPath(data_dir)
+        jwt_key_file = data_dir_path / ".jwt_secret_key"
+
+        # Check if JWT_SECRET_KEY env var is set and non-empty
+        jwt_secret = os.getenv("JWT_SECRET_KEY", "").strip()
+
+        if not jwt_secret:
+            # Try to load from file
+            if jwt_key_file.exists():
+                jwt_secret = jwt_key_file.read_text().strip()
+                logger.info("✓ JWT secret key loaded from file")
+            else:
+                # Generate new key
+                jwt_secret = secrets.token_urlsafe(32)
+                jwt_key_file.write_text(jwt_secret)
+                logger.info("✓ JWT secret key auto-generated and saved")
+
+        # Set environment variable so jwt_handler.py reads it
+        os.environ["JWT_SECRET_KEY"] = jwt_secret
+        logger.info("✓ JWT secret key initialized (auto-generated on first run)")
+
+    except Exception as jwt_e:
+        logger.error(f"✗ CRITICAL: Failed to initialize JWT secret key: {jwt_e}")
+        import traceback
+
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
     # Auto-initialize orchestrator on startup
     # All API credentials are per-user from database. No environment variable fallback.
     try:
