@@ -43,24 +43,83 @@ Socrates is a **production-ready system for deploying intelligent agents** that 
 
 ### 1. **Docker Compose** (Recommended - 3 minutes)
 
+#### First Time Setup
+
 ```bash
 git clone https://github.com/Nireus79/Socrates.git
 cd Socrates
 
-# Generate encryption keys (one-time setup)
+# Step 1: Generate encryption keys (one-time)
 ./setup-secrets.sh
 
-# Start everything (API, Frontend, Database, Cache)
-docker-compose --env-file .env.local up --build
+# Step 2: Start everything (API, Frontend, Database, Cache)
+sudo docker compose --env-file .env.local up --build
 ```
 
-**Then visit:**
+**Note:** Use `docker compose` (no hyphen), not `docker-compose`. If you get "command not found", update Docker Desktop or install docker-compose-plugin.
+
+#### Rebuild/Upgrade
+
+If rebuilding with new code or rotating encryption keys:
+
+```bash
+# Stop running containers
+sudo docker compose down
+
+# Clean up old images to save disk space
+sudo docker image prune -a -f
+sudo docker builder prune -a -f
+
+# Rebuild and restart
+sudo docker compose --env-file .env.local up --build
+```
+
+#### Access Socrates
+
+Once Docker is running:
 - 🌐 **Frontend**: http://localhost:3000
 - 📡 **API**: http://localhost:8000
 - 📚 **API Docs**: http://localhost:8000/docs
 - ⚙️ **Settings**: Configure your LLM API keys (Claude, Ollama, etc.)
 
-**Note**: `setup-secrets.sh` generates secure encryption keys in `.env.local` (not in git)
+#### Encryption Keys
+
+- `setup-secrets.sh` generates secure random keys in `.env.local`
+- `.env.local` is in `.gitignore` (never committed to git)
+- If you lose `.env.local`, re-run `setup-secrets.sh` and re-enter API keys
+- To rotate keys: Run `setup-secrets.sh` again, then rebuild Docker
+
+#### Troubleshooting
+
+**"command not found: docker-compose"**
+```bash
+# Use docker compose (no hyphen) instead
+sudo docker compose --env-file .env.local up --build
+```
+
+**API fails to start: "SOCRATES_ENCRYPTION_KEY not set"**
+```bash
+# Ensure .env.local was generated
+ls -l .env.local
+
+# If missing, run:
+./setup-secrets.sh
+
+# Then rebuild:
+sudo docker compose down
+sudo docker compose --env-file .env.local up --build
+```
+
+**Port already in use (3000 or 8000)**
+```bash
+# Change ports in docker-compose.yml, or stop conflicting services
+sudo docker compose down
+```
+
+**Check logs**
+```bash
+sudo docker compose logs -f socrates-api
+```
 
 ### 2. **Python Package** (For embedding in your app)
 
