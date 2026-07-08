@@ -20,13 +20,16 @@ services:
       # Data persistence: mount volume for SQLite database
       SOCRATES_DATA_DIR: /app/data
       # JWT Configuration - CRITICAL for session persistence across container restarts
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      # Must be provided via environment variables (see setup-secrets.sh)
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       # API Security
       ALLOWED_HOSTS: localhost,127.0.0.1,api,host.docker.internal
       CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://api:3000
       # Security - ENCRYPTION KEYS (REQUIRED for API key security)
-      SOCRATES_ENCRYPTION_KEY: ${SOCRATES_ENCRYPTION_KEY:-change-me-in-production}
-      DATABASE_ENCRYPTION_KEY: ${DATABASE_ENCRYPTION_KEY:-change-me-in-production}
+      # Generate with: ./setup-secrets.sh
+      # Pass with: docker-compose --env-file .env.local up --build
+      SOCRATES_ENCRYPTION_KEY: ${SOCRATES_ENCRYPTION_KEY}
+      DATABASE_ENCRYPTION_KEY: ${DATABASE_ENCRYPTION_KEY}
     ports:
       - "8000:8000"
     networks:
