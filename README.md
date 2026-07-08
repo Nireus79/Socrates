@@ -43,6 +43,8 @@ Socrates is a **production-ready system for deploying intelligent agents** that 
 
 ### 1. **Docker Compose** (Recommended - 3 minutes)
 
+**→ [See DOCKER_SETUP_GUIDE.md for complete Docker documentation](DOCKER_SETUP_GUIDE.md)**
+
 #### First Time Setup
 
 ```bash
