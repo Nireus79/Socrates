@@ -41,23 +41,26 @@ Socrates is a **production-ready system for deploying intelligent agents** that 
 
 ## Quick Start
 
-### 1. **Docker Compose** (Recommended - 2 minutes)
+### 1. **Docker Compose** (Recommended - 3 minutes)
 
 ```bash
 git clone https://github.com/Nireus79/Socrates.git
 cd Socrates
 
-# Create environment
-cp deployment/configurations/.env.example .env
+# Generate encryption keys (one-time setup)
+./setup-secrets.sh
 
 # Start everything (API, Frontend, Database, Cache)
-docker-compose -f deployment/docker/docker-compose.yml up -d
+docker-compose --env-file .env.local up --build
 ```
 
 **Then visit:**
 - 🌐 **Frontend**: http://localhost:3000
 - 📡 **API**: http://localhost:8000
 - 📚 **API Docs**: http://localhost:8000/docs
+- ⚙️ **Settings**: Configure your LLM API keys (Claude, Ollama, etc.)
+
+**Note**: `setup-secrets.sh` generates secure encryption keys in `.env.local` (not in git)
 
 ### 2. **Python Package** (For embedding in your app)
 
