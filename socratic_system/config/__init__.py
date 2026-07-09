@@ -17,6 +17,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .llm_environment import LLMEnvironmentConfig, validate_llm_environment
+
 
 @dataclass
 class SocratesConfig:
@@ -399,9 +401,5 @@ class ConfigBuilder:
 
 # Backward compatibility - CONFIG will be populated when needed
 CONFIG = _get_legacy_config()
-
-
-# Import LLM environment config for deployment-aware LLM provider discovery
-from .llm_environment import LLMEnvironmentConfig, validate_llm_environment
 
 __all__ = ["SocratesConfig", "ConfigBuilder", "LLMEnvironmentConfig", "validate_llm_environment"]
