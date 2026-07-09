@@ -227,7 +227,7 @@ async def set_auth_method(
 
 
 @router.get("/models/{provider}", response_model=APIResponse)
-async def get_models(provider: str, current_user: str = Depends(get_current_user)):
+async def get_models(provider: str):
     try:
         from socrates_api.main import get_orchestrator
 
