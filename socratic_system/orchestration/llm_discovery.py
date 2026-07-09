@@ -8,14 +8,13 @@ Implements Option 4 (Delegation Pattern): Orchestrator discovers environment
 state and provides it to agents, keeping them environment-agnostic.
 """
 
-import os
-from typing import Optional
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 
-def discover_ollama_models() -> Optional[list[str]]:
+def discover_ollama_models() -> list[str] | None:
     """
     Discover available models from Ollama by querying /api/tags endpoint.
 
@@ -62,10 +61,10 @@ def discover_ollama_models() -> Optional[list[str]]:
         logger.warning("httpx not available - skipping Ollama discovery")
         return None
     except TimeoutError:
-        logger.warning(f"Ollama discovery timed out - Ollama may not be running")
+        logger.warning("Ollama discovery timed out - Ollama may not be running")
         return None
     except ConnectionError:
-        logger.warning(f"Could not connect to Ollama - using fallback model list")
+        logger.warning("Could not connect to Ollama - using fallback model list")
         return None
     except Exception as e:
         logger.warning(f"Ollama discovery failed: {e} - using fallback model list")
