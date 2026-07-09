@@ -14,18 +14,18 @@ import { apiClient } from './client';
 
 export interface LLMProvider {
   name: string;
-  label: string;
+  display_name: string;
   models: string[];
-  is_configured: boolean;
   requires_api_key: boolean;
+  available?: boolean;
   description?: string;
   cost_per_1k_input_tokens?: number;
   cost_per_1k_output_tokens?: number;
   context_window?: number;
   supports_streaming?: boolean;
   supports_vision?: boolean;
-  available?: boolean;
   auth_methods?: string[];
+  is_configured?: boolean;
 }
 
 export interface LLMModel {
@@ -82,7 +82,7 @@ export const llmAPI = {
    */
   async listProviders(): Promise<ListProvidersResponse> {
     const response = await apiClient.get<{ providers: LLMProvider[]; total: number }>(
-      '/llm/providers'
+      '/api/providers'
     );
     return response;
   },

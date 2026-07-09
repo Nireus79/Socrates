@@ -59,6 +59,7 @@ export const LLMProviderCard: React.FC<LLMProviderCardProps> = ({ provider }) =>
 
   const isDefault = config?.default_provider === provider.name;
   const providerModels = models.get(provider.name) || [];
+  const isConfigured = isConfigured ?? !provider.requires_api_key;
 
   return (
     <Card>
@@ -68,7 +69,7 @@ export const LLMProviderCard: React.FC<LLMProviderCardProps> = ({ provider }) =>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {provider.label}
+                {provider.display_name}
               </h3>
               {isDefault && (
                 <Badge variant="success">
@@ -77,7 +78,7 @@ export const LLMProviderCard: React.FC<LLMProviderCardProps> = ({ provider }) =>
                   </span>
                 </Badge>
               )}
-              {provider.is_configured ? (
+              {isConfigured ? (
                 <Badge variant="success">
                   <span className="flex items-center gap-1">
                     <Check className="h-3 w-3" /> Configured
@@ -97,7 +98,7 @@ export const LLMProviderCard: React.FC<LLMProviderCardProps> = ({ provider }) =>
             </p>
           </div>
 
-          {provider.is_configured && (
+          {isConfigured && (
             <Button
               variant="secondary"
               size="sm"
@@ -110,7 +111,7 @@ export const LLMProviderCard: React.FC<LLMProviderCardProps> = ({ provider }) =>
         </div>
 
         {/* Set as Default */}
-        {!isDefault && provider.is_configured && (
+        {!isDefault && isConfigured && (
           <Button
             variant="secondary"
             fullWidth
@@ -161,7 +162,7 @@ export const LLMProviderCard: React.FC<LLMProviderCardProps> = ({ provider }) =>
         )}
 
         {/* Not Configured Message */}
-        {!provider.is_configured && (
+        {!isConfigured && (
           <div className="text-sm text-gray-600 dark:text-gray-400 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
             API key required to enable this provider
           </div>
