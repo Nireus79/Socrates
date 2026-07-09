@@ -100,23 +100,31 @@ def _initialize_jwt_secret_key():
 
     # Check if JWT_SECRET_KEY env var is set and non-empty
     jwt_secret = os.getenv("JWT_SECRET_KEY", "").strip()
+    print(f"[JWT INIT] data_dir={data_dir}, jwt_key_file={jwt_key_file}", flush=True)
+    print(f"[JWT INIT] Initial env JWT_SECRET_KEY: {bool(jwt_secret)}", flush=True)
 
     if not jwt_secret:
         # Try to load from file
         if jwt_key_file.exists():
             jwt_secret = jwt_key_file.read_text().strip()
+            print(f"[JWT INIT] Loaded from file: {len(jwt_secret)} chars", flush=True)
         else:
             # Generate new key
             jwt_secret = secrets.token_urlsafe(32)
             jwt_key_file.parent.mkdir(parents=True, exist_ok=True)
             jwt_key_file.write_text(jwt_secret)
+            print(f"[JWT INIT] Generated new key: {len(jwt_secret)} chars", flush=True)
 
     # Set environment variable so jwt_handler.py reads it at import time
     os.environ["JWT_SECRET_KEY"] = jwt_secret
+    print(f"[JWT INIT] Set JWT_SECRET_KEY env var: {len(jwt_secret)} chars", flush=True)
+    print(f"[JWT INIT] Verify env JWT_SECRET_KEY: {bool(os.getenv('JWT_SECRET_KEY'))}", flush=True)
     return jwt_secret
 
 # Initialize JWT before any imports that use it
+print("[JWT INIT] Starting JWT initialization...", flush=True)
 _jwt_key = _initialize_jwt_secret_key()
+print(f"[JWT INIT] JWT initialization complete. Key length: {len(_jwt_key)}", flush=True)
 
 # Initialize rate limiter before app creation
 # Use localhost for local development, redis service for Docker deployments
