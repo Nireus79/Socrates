@@ -7,7 +7,11 @@ These are lightweight integration tests that verify:
 3. Basic error handling works
 """
 
+import os
 from datetime import timedelta
+
+# Set JWT_SECRET_KEY before importing jwt_handler (which reads it at function call time)
+os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-pytest-do-not-use-in-production")
 
 import pytest
 from fastapi.testclient import TestClient

@@ -4,8 +4,13 @@ pytest configuration for client integration tests
 Provides fixtures and configuration for testing LLM clients.
 """
 
+import os
 import sys
 from pathlib import Path
+
+# Set JWT_SECRET_KEY before any imports that use jwt_handler
+# This ensures JWTHandler.create_access_token() works in module-level code
+os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-pytest-do-not-use-in-production")
 
 import pytest
 
