@@ -4,10 +4,11 @@ pytest configuration for client integration tests
 Provides fixtures and configuration for testing LLM clients.
 """
 
+from pathlib import Path
+
 import os
 import sys
 import tempfile
-from pathlib import Path
 
 import pytest
 
