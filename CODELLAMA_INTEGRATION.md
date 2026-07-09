@@ -48,7 +48,7 @@ print(response.json())
 
 ### 3. Configure CodeLlama as Default for Code Tasks
 
-In `socratic_system/config.py` or environment variables:
+Via environment variables or the `socratic_system/config/` module:
 
 ```python
 # Option A: Environment variables
@@ -301,7 +301,7 @@ ollama list
 
 1. ✅ **Start Ollama**: `ollama serve`
 2. ✅ **Pull CodeLlama**: `ollama pull codellama:13b`
-3. ✅ **Configure provider**: Update `config.py` with Ollama endpoint
+3. ✅ **Configure provider**: Set `OLLAMA_HOST` environment variable or use LLMEnvironmentConfig
 4. ✅ **Test endpoint**: `curl http://localhost:11434/api/tags`
 5. ✅ **Route code tasks**: Implement task-based routing
 6. ✅ **Monitor usage**: Track CodeLlama requests and latency
