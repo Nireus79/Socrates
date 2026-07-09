@@ -6,11 +6,17 @@ Provides fixtures and configuration for testing LLM clients.
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
-# Set JWT_SECRET_KEY before any imports that use jwt_handler
+# Set up JWT_SECRET_KEY file for tests before any imports that use jwt_handler
 # This ensures JWTHandler.create_access_token() works in module-level code
-os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-pytest-do-not-use-in-production")
+_test_data_dir = Path(tempfile.gettempdir()) / "socrates_pytest"
+_test_data_dir.mkdir(exist_ok=True)
+_jwt_key_file = _test_data_dir / ".jwt_secret_key"
+if not _jwt_key_file.exists():
+    _jwt_key_file.write_text("test-secret-key-for-pytest-do-not-use-in-production")
+os.environ["SOCRATES_DATA_DIR"] = str(_test_data_dir)
 
 import pytest
 

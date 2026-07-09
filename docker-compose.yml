@@ -20,10 +20,9 @@ services:
       # Data persistence: mount volume for SQLite database
       SOCRATES_DATA_DIR: /app/data
       # JWT Configuration - CRITICAL for session persistence across container restarts
-      # Auto-generated on first run if not provided and persisted in volume at /app/data/.jwt_secret_key
-      # Leave empty to auto-generate, or set JWT_SECRET_KEY env var to use a specific key
+      # Auto-generated on first run and persisted in volume at /app/data/.jwt_secret_key
+      # No environment variable needed - the key file is auto-generated and managed by main.py
       # Change only if rotating keys (will require re-entering API credentials)
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
       # API Security
       ALLOWED_HOSTS: localhost,127.0.0.1,api,host.docker.internal
       CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://api:3000
