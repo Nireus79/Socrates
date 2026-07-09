@@ -4,31 +4,25 @@ pytest configuration for client integration tests
 Provides fixtures and configuration for testing LLM clients.
 """
 
-from pathlib import Path
-
 import os
 import sys
 import tempfile
+from pathlib import Path
 
 import pytest
-
-# Set up JWT_SECRET_KEY file for tests
-# This ensures JWTHandler.create_access_token() works in module-level code
-def _setup_jwt_for_tests():
-    """Initialize JWT key file for test environment."""
-    test_data_dir = Path(tempfile.gettempdir()) / "socrates_pytest"
-    test_data_dir.mkdir(exist_ok=True)
-    jwt_key_file = test_data_dir / ".jwt_secret_key"
-    if not jwt_key_file.exists():
-        jwt_key_file.write_text("test-secret-key-for-pytest-do-not-use-in-production")
-    os.environ["SOCRATES_DATA_DIR"] = str(test_data_dir)
-
-
-_setup_jwt_for_tests()
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
+
+
+# Set up JWT for tests at module level
+_test_jwt_dir = Path(tempfile.gettempdir()) / "socrates_pytest"
+_test_jwt_dir.mkdir(exist_ok=True)
+_test_jwt_file = _test_jwt_dir / ".jwt_secret_key"
+if not _test_jwt_file.exists():
+    _test_jwt_file.write_text("test-secret-key-for-pytest-do-not-use-in-production")
+os.environ["SOCRATES_DATA_DIR"] = str(_test_jwt_dir)
 
 
 @pytest.fixture
