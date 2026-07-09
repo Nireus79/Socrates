@@ -492,6 +492,26 @@ async def health_check():
     }
 
 
+@app.get("/api/providers", response_model=dict)
+async def get_available_providers():
+    """Get all available LLM providers and their models."""
+    from socratic_system.models import list_available_providers
+
+    providers = list_available_providers()
+    return {
+        "providers": [
+            {
+                "name": p.provider,
+                "display_name": p.display_name,
+                "models": p.models,
+                "requires_api_key": p.requires_api_key,
+                "available": p.available,
+            }
+            for p in providers
+        ]
+    }
+
+
 @app.get("/search")
 async def search(
     q: str = None,
