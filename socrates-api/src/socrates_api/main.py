@@ -89,6 +89,35 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize JWT_SECRET_KEY BEFORE importing routers (they import jwt_handler at module load time)
+# This must happen before any router imports to ensure jwt_handler.py reads the correct value
+def _initialize_jwt_secret_key():
+    """Initialize JWT secret key from environment or auto-generate it."""
+    import secrets
+
+    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
+    jwt_key_file = Path(data_dir) / ".jwt_secret_key"
+
+    # Check if JWT_SECRET_KEY env var is set and non-empty
+    jwt_secret = os.getenv("JWT_SECRET_KEY", "").strip()
+
+    if not jwt_secret:
+        # Try to load from file
+        if jwt_key_file.exists():
+            jwt_secret = jwt_key_file.read_text().strip()
+        else:
+            # Generate new key
+            jwt_secret = secrets.token_urlsafe(32)
+            jwt_key_file.parent.mkdir(parents=True, exist_ok=True)
+            jwt_key_file.write_text(jwt_secret)
+
+    # Set environment variable so jwt_handler.py reads it at import time
+    os.environ["JWT_SECRET_KEY"] = jwt_secret
+    return jwt_secret
+
+# Initialize JWT before any imports that use it
+_jwt_key = _initialize_jwt_secret_key()
+
 # Initialize rate limiter before app creation
 # Use localhost for local development, redis service for Docker deployments
 # Set REDIS_URL environment variable to override (e.g., for Docker Compose: "redis://redis:6379")
@@ -286,39 +315,8 @@ async def lifespan(app: FastAPI):
         # Re-raise to prevent API from starting without database
         raise
 
-    # Auto-generate JWT_SECRET_KEY if not set (same pattern as encryption keys)
-    logger.info("Initializing JWT secret key...")
-    try:
-        import secrets
-        from pathlib import Path as PathlibPath
-
-        data_dir_path = PathlibPath(data_dir)
-        jwt_key_file = data_dir_path / ".jwt_secret_key"
-
-        # Check if JWT_SECRET_KEY env var is set and non-empty
-        jwt_secret = os.getenv("JWT_SECRET_KEY", "").strip()
-
-        if not jwt_secret:
-            # Try to load from file
-            if jwt_key_file.exists():
-                jwt_secret = jwt_key_file.read_text().strip()
-                logger.info("✓ JWT secret key loaded from file")
-            else:
-                # Generate new key
-                jwt_secret = secrets.token_urlsafe(32)
-                jwt_key_file.write_text(jwt_secret)
-                logger.info("✓ JWT secret key auto-generated and saved")
-
-        # Set environment variable so jwt_handler.py reads it
-        os.environ["JWT_SECRET_KEY"] = jwt_secret
-        logger.info("✓ JWT secret key initialized (auto-generated on first run)")
-
-    except Exception as jwt_e:
-        logger.error(f"✗ CRITICAL: Failed to initialize JWT secret key: {jwt_e}")
-        import traceback
-
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        raise
+    # JWT_SECRET_KEY already initialized before router imports (see module initialization above)
+    logger.info("✓ JWT secret key initialized (auto-generated on first run if needed)")
 
     # Auto-initialize orchestrator on startup
     # All API credentials are per-user from database. No environment variable fallback.
