@@ -202,6 +202,16 @@ class AgentOrchestrator:
         )
         self.logger.info("Analysis caching and background handlers initialized (Phase 3)")
 
+        # Phase 3.5: Discover LLM provider models (Option 4: Delegation Pattern)
+        # Orchestrator discovers available resources and updates configuration
+        # Agents receive what they're told, not what they assume exists
+        from socratic_system.orchestration.llm_discovery import (
+            update_provider_metadata_with_discovered_models,
+        )
+
+        update_provider_metadata_with_discovered_models()
+        self.logger.info("LLM provider discovery completed (Phase 3.5)")
+
         # Phase 4: Pre-initialize all agents for agent bus discovery
         # This ensures handlers are registered before any endpoints call agent_bus.send_request()
         self._initialize_all_agents()
