@@ -11,10 +11,9 @@ Supports:
 - Clear logging for debugging
 """
 
-import asyncio
 import logging
 import os
-from typing import Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ class LLMEnvironmentConfig:
             return False
 
     @staticmethod
-    def get_ollama_host() -> Optional[str]:
+    def get_ollama_host() -> str | None:
         """
         Auto-detect Ollama endpoint across deployment scenarios.
 
@@ -112,7 +111,7 @@ class LLMEnvironmentConfig:
         return None
 
     @staticmethod
-    def get_provider_config() -> dict[str, any]:
+    def get_provider_config() -> dict[str, Any]:
         """
         Get complete LLM provider configuration for current deployment.
 
