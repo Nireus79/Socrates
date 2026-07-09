@@ -89,3 +89,4 @@ socrates-api/dist/
 
 # Claude Code temporary files
 tmpclaude-*
+socrates-frontend/public/server-config.json
