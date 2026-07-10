@@ -229,16 +229,24 @@ async def set_auth_method(
 @router.get("/models/{provider}", response_model=APIResponse)
 async def get_models(provider: str):
     try:
-        from socrates_api.main import get_orchestrator
+        from socratic_system.models.llm_provider import get_provider_metadata
 
-        orchestrator = get_orchestrator()
-        result = await orchestrator.agent_bus.send_request(
-            "multi_llm_manager", {"action": "get_provider_models", "provider": provider}
-        )
-        if result.get("status") != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
+        metadata = get_provider_metadata(provider)
+        if not metadata:
+            raise HTTPException(status_code=404, detail=f"Provider '{provider}' not found")
+
         return APIResponse(
-            success=True, status="success", message="Models", data=result.get("data", result)
+            success=True,
+            status="success",
+            message="Models",
+            data={
+                "provider": provider,
+                "models": metadata.models,
+                "context_window": metadata.context_window,
+                "supports_streaming": metadata.supports_streaming,
+                "supports_vision": metadata.supports_vision,
+                "default_model": metadata.models[0] if metadata.models else None,
+            }
         )
     except HTTPException:
         raise
