@@ -59,7 +59,7 @@ export const LLMProviderCard: React.FC<LLMProviderCardProps> = ({ provider }) =>
 
   const isDefault = config?.default_provider === provider.name;
   const providerModels = models.get(provider.name) || [];
-  const isConfigured = isConfigured ?? !provider.requires_api_key;
+  const isConfigured = provider.is_configured ?? !provider.requires_api_key;
 
   return (
     <Card>
