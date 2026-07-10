@@ -17,6 +17,8 @@ services:
       PYTHONUNBUFFERED: 1
       # PYTHONPATH: Ensure Python finds all modules
       PYTHONPATH: /app:/app/socrates-api/src:/app/socrates-cli/src
+      # Ollama endpoint for local model discovery
+      OLLAMA_HOST: http://host.docker.internal:11434
       # Data persistence: mount volume for SQLite database
       SOCRATES_DATA_DIR: /app/data
       # JWT Configuration - CRITICAL for session persistence across container restarts
