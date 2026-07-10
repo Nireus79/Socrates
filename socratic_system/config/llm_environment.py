@@ -32,15 +32,16 @@ class LLMEnvironmentConfig:
     OLLAMA_DETECTION_ORDER = [
         # 1. Explicit environment variable (user override)
         ("env_var", "OLLAMA_HOST"),
-        # 2. Docker networks
-        ("docker_network", "http://ollama:11434"),  # Ollama container on same network
-        ("docker_network", "http://host.docker.internal:11434"),  # Docker Desktop host
-        # 3. Local development
+        # 2. Docker Desktop / Docker on Mac (try first - most common)
+        ("docker_desktop", "http://host.docker.internal:11434"),
+        # 3. Docker networks (Ollama container on same network)
+        ("docker_network", "http://ollama:11434"),
+        # 4. Local development (inside container, can reach host via localhost)
         ("local", "http://localhost:11434"),
-        # 4. Kubernetes service discovery
+        # 5. Kubernetes service discovery
         ("kubernetes", "http://ollama.default.svc.cluster.local:11434"),
         ("kubernetes", "http://ollama.kube-system.svc.cluster.local:11434"),
-        # 5. Common remote scenarios (user provides via env var)
+        # 6. Common remote scenarios (user provides via env var)
     ]
 
     @staticmethod
