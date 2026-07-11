@@ -503,26 +503,28 @@ export const LLMSettingsPage: React.FC = () => {
                         </div>
 
                         {/* Pricing */}
-                        {provider.cost_per_1k_input_tokens !== undefined && (
-                          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                              <DollarSign className="h-4 w-4" />
-                              Pricing
-                            </h4>
-                            {provider.cost_per_1k_input_tokens === 0 ? (
-                              <p className="text-sm text-green-700 dark:text-green-300 font-medium">FREE (Local)</p>
-                            ) : (
-                              <div className="space-y-1 text-sm">
-                                <p className="text-gray-600 dark:text-gray-400">
-                                  Input: ${(provider.cost_per_1k_input_tokens * 1000).toFixed(4)}/1M tokens
-                                </p>
-                                <p className="text-gray-600 dark:text-gray-400">
-                                  Output: ${(provider.cost_per_1k_output_tokens * 1000).toFixed(4)}/1M tokens
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" />
+                            Pricing
+                          </h4>
+                          {provider.cost_per_1k_input_tokens === 0 ? (
+                            <p className="text-sm text-green-700 dark:text-green-300 font-medium">FREE (Local)</p>
+                          ) : provider.cost_per_1k_input_tokens !== null && provider.cost_per_1k_input_tokens !== undefined ? (
+                            <div className="space-y-1 text-sm">
+                              <p className="text-gray-600 dark:text-gray-400">
+                                Input: ${(provider.cost_per_1k_input_tokens * 1000).toFixed(4)}/1M tokens
+                              </p>
+                              <p className="text-gray-600 dark:text-gray-400">
+                                Output: ${(provider.cost_per_1k_output_tokens * 1000).toFixed(4)}/1M tokens
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                              Pricing varies by model — check provider's website for details
+                            </p>
+                          )}
+                        </div>
 
                         {/* Action Buttons */}
                         <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex gap-2">

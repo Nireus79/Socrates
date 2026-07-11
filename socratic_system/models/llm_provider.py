@@ -132,9 +132,9 @@ class ProviderMetadata:
     display_name: str
     models: list[str]
     requires_api_key: bool
-    cost_per_1k_input_tokens: float
-    cost_per_1k_output_tokens: float
     context_window: int
+    cost_per_1k_input_tokens: float | None = None  # None if pricing is model-dependent
+    cost_per_1k_output_tokens: float | None = None  # None if pricing is model-dependent
     supports_streaming: bool = True
     supports_vision: bool = False
     available: bool = True
@@ -159,23 +159,23 @@ PROVIDER_METADATA = {
         display_name="Anthropic Claude",
         models=[],  # Discovered dynamically
         requires_api_key=False,  # Uses environment variable
-        cost_per_1k_input_tokens=0.000800,  # Haiku: $0.80 per 1M input
-        cost_per_1k_output_tokens=0.004000,  # Haiku: $4.00 per 1M output
         context_window=200000,
+        cost_per_1k_input_tokens=None,  # Pricing varies by model
+        cost_per_1k_output_tokens=None,  # Pricing varies by model
         supports_streaming=True,
         supports_vision=True,
         available=True,
-        description="Fast and efficient Claude models by Anthropic (Haiku is default)",
-        auth_methods=["subscription", "api_key"],  # Support both subscription and API key
+        description="Fast and efficient Claude models by Anthropic",
+        auth_methods=["subscription", "api_key"],
     ),
     "openai": ProviderMetadata(
         provider="openai",
         display_name="OpenAI",
         models=[],  # Discovered dynamically
         requires_api_key=True,
-        cost_per_1k_input_tokens=0.01,
-        cost_per_1k_output_tokens=0.03,
         context_window=128000,
+        cost_per_1k_input_tokens=None,  # Pricing varies by model
+        cost_per_1k_output_tokens=None,  # Pricing varies by model
         supports_streaming=True,
         supports_vision=True,
         available=True,
@@ -184,11 +184,11 @@ PROVIDER_METADATA = {
     "gemini": ProviderMetadata(
         provider="gemini",
         display_name="Google Gemini",
-        models=[],  # Discovered dynamically from Google API
+        models=[],  # Discovered dynamically
         requires_api_key=True,
-        cost_per_1k_input_tokens=0.0005,
-        cost_per_1k_output_tokens=0.0015,
         context_window=32000,
+        cost_per_1k_input_tokens=None,  # Pricing varies by model
+        cost_per_1k_output_tokens=None,  # Pricing varies by model
         supports_streaming=True,
         supports_vision=True,
         available=True,
