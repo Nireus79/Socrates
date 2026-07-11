@@ -207,7 +207,7 @@ def start_full_stack() -> None:
 
         try:
             env = os.environ.copy()
-            env["VITE_PORT"] = str(frontend_port)
+            env["PORT"] = str(frontend_port)
             env["VITE_API_URL"] = f"http://localhost:{api_port}"
 
             print(f"[INFO] Installing frontend dependencies...")
