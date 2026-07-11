@@ -517,33 +517,54 @@ async def get_available_providers():
 @app.get("/api/providers/{provider}/models", response_model=dict)
 async def get_provider_models(provider: str, current_user: str = Depends(get_current_user), db: ProjectDatabase = Depends(get_database)):
     """Get available models for a specific provider (with dynamic discovery)."""
-    from socratic_system.models import get_provider_metadata
-    from socratic_system.orchestration.llm_discovery import discover_provider_models
-
-    provider_meta = get_provider_metadata(provider)
-    if not provider_meta:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Provider '{provider}' not found"
-        )
-
-    # Fetch user's API key for this provider from database
-    api_key = None
     try:
-        api_key = db.get_api_key(current_user, provider)
+        from socratic_system.models import get_provider_metadata
+        from socratic_system.orchestration.llm_discovery import discover_provider_models
+
+        logger.debug(f"Fetching models for {provider} (user: {current_user})")
+
+        provider_meta = get_provider_metadata(provider)
+        if not provider_meta:
+            logger.warning(f"Provider not found: {provider}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Provider '{provider}' not found"
+            )
+
+        # Fetch user's API key for this provider from database
+        api_key = None
+        try:
+            api_key = db.get_api_key(current_user, provider)
+            logger.debug(f"API key {'found' if api_key else 'not found'} for {provider}")
+        except Exception as e:
+            logger.debug(f"Could not fetch API key for {provider}: {e}")
+
+        # Try to dynamically discover models, fall back to hardcoded list
+        logger.debug(f"Discovering models for {provider}...")
+        discovered_models = await discover_provider_models(provider, api_key)
+
+        if discovered_models:
+            logger.debug(f"Discovered {len(discovered_models)} models for {provider}: {discovered_models[:3]}")
+            models = discovered_models
+        else:
+            logger.debug(f"No discovered models, using fallback: {len(provider_meta.models)} models")
+            models = provider_meta.models
+
+        logger.debug(f"Returning {len(models)} models for {provider}")
+        return {
+            "provider": provider,
+            "display_name": provider_meta.display_name,
+            "models": models,
+            "total": len(models)
+        }
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.debug(f"Could not fetch API key for {provider}: {e}")
-
-    # Try to dynamically discover models, fall back to hardcoded list
-    discovered_models = await discover_provider_models(provider, api_key)
-    models = discovered_models if discovered_models else provider_meta.models
-
-    return {
-        "provider": provider,
-        "display_name": provider_meta.display_name,
-        "models": models,
-        "total": len(models)
-    }
+        logger.error(f"Error fetching models for {provider}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch models: {str(e)}"
+        )
 
 
 @app.get("/search")
