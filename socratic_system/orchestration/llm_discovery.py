@@ -130,6 +130,7 @@ async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list
         api_key: Optional API key. If not provided, checks OPENAI_API_KEY env var.
     """
     try:
+        import asyncio
         import os
         from openai import OpenAI
 
@@ -141,8 +142,15 @@ async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list
 
         client = OpenAI(api_key=api_key)
 
-        # List all models and filter for GPT models
-        models_response = client.models.list()
+        # Run sync blocking call in thread pool to avoid blocking event loop
+        def _list_models():
+            return client.models.list()
+
+        try:
+            models_response = await asyncio.wait_for(asyncio.to_thread(_list_models), timeout=10.0)
+        except asyncio.TimeoutError:
+            logger.debug("OpenAI model discovery timed out")
+            return None
         gpt_models = [
             model.id for model in models_response.data
             if 'gpt' in model.id.lower() and not model.id.startswith('text-')
@@ -172,6 +180,7 @@ async def discover_gemini_models(api_key: Optional[str] = None) -> Optional[list
         api_key: Optional API key. If not provided, checks GOOGLE_API_KEY env var.
     """
     try:
+        import asyncio
         import os
         import google.generativeai as genai
 
@@ -181,10 +190,16 @@ async def discover_gemini_models(api_key: Optional[str] = None) -> Optional[list
             logger.debug("GOOGLE_API_KEY not set - skipping Gemini model discovery")
             return None
 
-        genai.configure(api_key=api_key)
+        # Configure genai in a thread pool since it's sync
+        def _configure_and_list():
+            genai.configure(api_key=api_key)
+            return genai.list_models()
 
-        # List all available Gemini models
-        models = genai.list_models()
+        try:
+            models = await asyncio.wait_for(asyncio.to_thread(_configure_and_list), timeout=10.0)
+        except asyncio.TimeoutError:
+            logger.debug("Gemini model discovery timed out")
+            return None
         model_names = [
             model.name.replace('models/', '') for model in models
             if 'gemini' in model.name.lower()
