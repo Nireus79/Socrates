@@ -78,46 +78,15 @@ def discover_ollama_models() -> list[str] | None:
 async def discover_claude_models(api_key: Optional[str] = None) -> Optional[list[str]]:
     """
     Discover available Claude models from Anthropic.
-    Queries https://api.anthropic.com/models to get latest available models.
-    Falls back to empty list if discovery fails.
+
+    Note: Anthropic does not provide a public models API endpoint.
+    Always returns None to use fallback (empty list for dynamic discovery).
 
     Args:
-        api_key: Optional API key. If not provided, checks ANTHROPIC_API_KEY env var.
+        api_key: Optional API key for the provider (not used).
     """
-    try:
-        import httpx
-        import os
-
-        if not api_key:
-            api_key = os.getenv('ANTHROPIC_API_KEY')
-        if not api_key:
-            logger.debug("ANTHROPIC_API_KEY not set - skipping Claude model discovery")
-            return None
-
-        # Query Anthropic's models endpoint
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://api.anthropic.com/models",
-                headers={"x-api-key": api_key},
-                timeout=5.0
-            )
-            response.raise_for_status()
-            data = response.json()
-
-            # Extract model IDs from response
-            models = [model["id"] for model in data.get("models", []) if "id" in model]
-            if models:
-                logger.info(f"✓ Discovered {len(models)} Claude models")
-                return sorted(models)
-
-        return None
-
-    except ImportError:
-        logger.debug("httpx not available - skipping Claude model discovery")
-        return None
-    except Exception as e:
-        logger.debug(f"Claude model discovery failed: {e}")
-        return None
+    logger.debug("Claude discovery skipped - Anthropic has no public models API")
+    return None
 
 
 async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list[str]]:
