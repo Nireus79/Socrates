@@ -172,6 +172,23 @@ def start_full_stack() -> None:
         print("[INFO] Waiting for API to be ready...")
         return api_ready.wait(timeout=timeout)
 
+    def open_browser():
+        """Open browser after frontend is ready."""
+        frontend_url = f"http://localhost:{frontend_port}"
+        max_retries = 30
+        for attempt in range(max_retries):
+            try:
+                import requests
+                response = requests.get(frontend_url, timeout=2)
+                if response.status_code == 200:
+                    print(f"[INFO] Opening browser at {frontend_url}...")
+                    webbrowser.open(frontend_url)
+                    return
+            except:
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+        print(f"[WARN] Frontend not responding at {frontend_url}")
+
     def start_frontend_process():
         """Start frontend in subprocess."""
         nonlocal frontend_process
@@ -204,6 +221,11 @@ def start_full_stack() -> None:
             )
 
             print(f"[INFO] Starting frontend on port {frontend_port}...")
+
+            # Open browser in background thread
+            browser_thread = threading.Thread(target=open_browser, daemon=True)
+            browser_thread.start()
+
             if frontend_process.stdout:
                 for line in frontend_process.stdout:
                     print(f"[Frontend] {line.rstrip()}")
