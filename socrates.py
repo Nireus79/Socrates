@@ -105,163 +105,86 @@ def start_api(host: str = "127.0.0.1", port: int = 8000, reload: bool = False, a
 
 
 def start_full_stack() -> None:
-    """Start the complete stack: API + Frontend."""
+    """Start the complete stack: API + Frontend via Docker."""
     try:
-        import json
-        import requests
+        import subprocess
     except ImportError:
-        print("[ERROR] Missing required packages for full stack mode")
-        print("[INFO] Install with: pip install requests")
+        print("[ERROR] subprocess module not found")
         sys.exit(1)
 
     project_root = Path(__file__).parent
 
-    # Auto-detect available ports
-    api_port = _find_available_port(8000, "localhost")
-    frontend_port = _find_available_port(5173, "localhost")
-
-    # Write port configuration for frontend
-    config_dir = project_root / "socrates-frontend" / "public"
-    config_dir.mkdir(parents=True, exist_ok=True)
-    config_file = config_dir / "server-config.json"
-    with open(config_file, "w") as f:
-        json.dump({"api_url": f"http://localhost:{api_port}"}, f)
-
-    print(f"[INFO] Wrote server config to {config_file}")
-
     # Process management
-    processes = []
-    api_ready = threading.Event()
-    api_process: Optional[subprocess.Popen] = None
+    docker_process: Optional[subprocess.Popen] = None
 
-    def start_api_process():
-        """Start API in subprocess."""
-        nonlocal api_process
-        try:
-            env = os.environ.copy()
-            env['SOCRATES_API_HOST'] = 'localhost'
-            env['SOCRATES_API_PORT'] = str(api_port)
-            env['SOCRATES_API_RELOAD'] = 'false'
-            env['ENVIRONMENT'] = 'development'
-            env['TMPDIR'] = os.path.expanduser('~/tmp-pip')
+    def signal_handler(sig, frame):
+        """Handle Ctrl+C."""
+        print("\n[INFO] Shutting down Docker Compose...")
 
-            api_process = subprocess.Popen(
-                [sys.executable, "-c", f"""
-import sys
-import os
-sys.path.insert(0, r'{project_root}')
-sys.path.insert(0, r'{project_root / "socrates-api" / "src"}')
-os.environ['SOCRATES_API_HOST'] = 'localhost'
-os.environ['SOCRATES_API_PORT'] = '{api_port}'
-os.environ['SOCRATES_API_RELOAD'] = 'false'
-os.environ['ENVIRONMENT'] = 'development'
-os.environ['TMPDIR'] = os.path.expanduser('~/tmp-pip')
-from socrates_api.main import run
-run()
-"""],
-                cwd=project_root,
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1
-            )
-
-            # Stream output
-            if api_process.stdout:
-                for line in api_process.stdout:
-                    print(f"[API] {line.rstrip()}")
-
-        except KeyboardInterrupt:
-            pass
-        except Exception as e:
-            print(f"[ERROR] API process failed: {e}")
-
-    def wait_for_api(max_retries: int = 30, retry_delay: float = 1.0) -> bool:
-        """Wait for API to be ready."""
-        print("[INFO] Waiting for API server...")
-        for attempt in range(max_retries):
+        if docker_process and docker_process.poll() is None:
             try:
-                response = requests.get(f"http://localhost:{api_port}/health", timeout=2)
-                if response.status_code == 200:
-                    print("[INFO] API is ready!")
-                    api_ready.set()
-                    return True
+                docker_process.terminate()
+                docker_process.wait(timeout=10)
             except:
-                if attempt < max_retries - 1:
-                    print(f"[INFO] API not ready yet... ({attempt + 1}/{max_retries})")
-                    time.sleep(retry_delay)
+                try:
+                    docker_process.kill()
+                except:
+                    pass
 
-        print("[ERROR] API did not start in time")
-        return False
-
-    def wait_for_frontend_and_open_browser(max_retries: int = 30, retry_delay: float = 1.0) -> None:
-        """Wait for frontend and open browser."""
-        frontend_url = f"http://localhost:{frontend_port}"
-        print(f"[INFO] Waiting for frontend at {frontend_url}...")
-
-        for attempt in range(max_retries):
-            try:
-                response = requests.get(frontend_url, timeout=2)
-                if response.status_code == 200:
-                    print("[INFO] Frontend is ready! Opening browser...")
-                    webbrowser.open(frontend_url)
-                    return
-            except:
-                if attempt < max_retries - 1:
-                    print(f"[INFO] Frontend not ready yet... ({attempt + 1}/{max_retries})")
-                    time.sleep(retry_delay)
-
-        print("[WARN] Frontend did not start in time")
-
-    def start_frontend_process():
-        """Start frontend in subprocess."""
-        frontend_dir = project_root / "socrates-frontend"
-        if not frontend_dir.exists():
-            print(f"[ERROR] Frontend directory not found: {frontend_dir}")
-            return
-
-        # Wait for API
-        if not api_ready.wait(timeout=60):
-            print("[ERROR] Frontend startup cancelled: API failed to start")
-            return
-
+        # Also run docker compose down to ensure cleanup
         try:
-            # Install dependencies
-            print("[INFO] Installing frontend dependencies...")
             subprocess.run(
-                "npm install",
-                cwd=frontend_dir,
-                check=False,
-                capture_output=True,
-                shell=True,
-                timeout=300
+                ["docker", "compose", "down"],
+                cwd=project_root,
+                timeout=30,
+                capture_output=True
             )
+        except:
+            pass
 
-            # Start dev server
-            env = os.environ.copy()
-            env["VITE_PORT"] = str(frontend_port)
-            env["VITE_API_URL"] = f"http://localhost:{api_port}"
+        sys.exit(0)
 
-            print(f"[INFO] Starting frontend on port {frontend_port}...")
-            proc = subprocess.Popen(
-                "npm run dev",
-                cwd=frontend_dir,
-                env=env,
-                shell=True
-            )
-            processes.append(proc)
+    # Setup signal handler
+    signal.signal(signal.SIGINT, signal_handler)
 
-            # Wait for frontend and open browser
-            browser_thread = threading.Thread(
-                target=wait_for_frontend_and_open_browser,
-                daemon=True
-            )
-            browser_thread.start()
+    # Print startup info
+    print("=" * 70)
+    print("SOCRATES FULL STACK (Docker)")
+    print("=" * 70)
+    print("[INFO] Starting API, Frontend, Redis, and Nginx...")
+    print("[INFO] Frontend: http://localhost:3000")
+    print("[INFO] API: http://localhost:8000")
+    print("[INFO] Press Ctrl+C to shutdown")
+    print("=" * 70 + "\n")
 
-            proc.wait()
-        except Exception as e:
-            print(f"[ERROR] Frontend failed: {e}")
+    try:
+        # Start docker compose
+        docker_process = subprocess.Popen(
+            ["docker", "compose", "up"],
+            cwd=project_root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+
+        # Stream output
+        if docker_process.stdout:
+            for line in docker_process.stdout:
+                print(line.rstrip())
+
+        # Wait for process to finish
+        docker_process.wait()
+
+    except FileNotFoundError:
+        print("[ERROR] docker or docker-compose not found")
+        print("[INFO] Please install Docker from https://www.docker.com/products/docker-desktop")
+        sys.exit(1)
+    except Exception as e:
+        print(f"[ERROR] Docker Compose failed: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
     def signal_handler(sig, frame):
         """Handle Ctrl+C."""
