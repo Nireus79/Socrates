@@ -77,36 +77,50 @@ def discover_ollama_models() -> list[str] | None:
 
 async def discover_claude_models() -> Optional[list[str]]:
     """
-    Discover available Claude models from Anthropic API.
-    Falls back to hardcoded list if API call fails or API key unavailable.
+    Discover available Claude models from Anthropic.
+    Queries https://api.anthropic.com/models to get latest available models.
+    Falls back to empty list if discovery fails.
     """
     try:
+        import httpx
         import os
-        from anthropic import Anthropic
 
         api_key = os.getenv('ANTHROPIC_API_KEY')
         if not api_key:
-            logger.debug("ANTHROPIC_API_KEY not set - using hardcoded Claude models")
+            logger.debug("ANTHROPIC_API_KEY not set - skipping Claude model discovery")
             return None
 
-        client = Anthropic(api_key=api_key)
-        # Note: Anthropic doesn't have a models endpoint, so we use hardcoded list
-        # In the future if they add a models API, this can be updated
-        logger.debug("Claude models using hardcoded list (Anthropic API endpoint not available)")
+        # Query Anthropic's models endpoint
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.anthropic.com/models",
+                headers={"x-api-key": api_key},
+                timeout=5.0
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            # Extract model IDs from response
+            models = [model["id"] for model in data.get("models", []) if "id" in model]
+            if models:
+                logger.info(f"✓ Discovered {len(models)} Claude models")
+                return sorted(models)
+
         return None
 
     except ImportError:
-        logger.debug("anthropic library not available - using hardcoded Claude models")
+        logger.debug("httpx not available - skipping Claude model discovery")
         return None
     except Exception as e:
-        logger.debug(f"Claude model discovery failed: {e} - using hardcoded list")
+        logger.debug(f"Claude model discovery failed: {e}")
         return None
 
 
 async def discover_openai_models() -> Optional[list[str]]:
     """
-    Discover available OpenAI models.
-    Falls back to hardcoded list if API call fails or API key unavailable.
+    Discover available OpenAI models from OpenAI API.
+    Filters for GPT models (gpt-4, gpt-3.5-turbo, etc).
+    Falls back to empty list if discovery fails.
     """
     try:
         import os
@@ -114,27 +128,37 @@ async def discover_openai_models() -> Optional[list[str]]:
 
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
-            logger.debug("OPENAI_API_KEY not set - using hardcoded OpenAI models")
+            logger.debug("OPENAI_API_KEY not set - skipping OpenAI model discovery")
             return None
 
         client = OpenAI(api_key=api_key)
-        # Note: OpenAI's models API returns all models, we filter for GPT models
-        # This requires API key, so we just return hardcoded list if key not available
-        logger.debug("OpenAI models using hardcoded list (requires OPENAI_API_KEY)")
+
+        # List all models and filter for GPT models
+        models_response = client.models.list()
+        gpt_models = [
+            model.id for model in models_response.data
+            if 'gpt' in model.id.lower() and not model.id.startswith('text-')
+        ]
+
+        if gpt_models:
+            logger.info(f"✓ Discovered {len(gpt_models)} OpenAI models")
+            return sorted(gpt_models, reverse=True)  # Newest first
+
         return None
 
     except ImportError:
-        logger.debug("openai library not available - using hardcoded OpenAI models")
+        logger.debug("openai library not available - skipping OpenAI model discovery")
         return None
     except Exception as e:
-        logger.debug(f"OpenAI model discovery failed: {e} - using hardcoded list")
+        logger.debug(f"OpenAI model discovery failed: {e}")
         return None
 
 
 async def discover_gemini_models() -> Optional[list[str]]:
     """
     Discover available Google Gemini models.
-    Falls back to hardcoded list if API call fails or API key unavailable.
+    Queries genai.list_models() to get available models.
+    Falls back to empty list if discovery fails.
     """
     try:
         import os
@@ -142,20 +166,29 @@ async def discover_gemini_models() -> Optional[list[str]]:
 
         api_key = os.getenv('GOOGLE_API_KEY')
         if not api_key:
-            logger.debug("GOOGLE_API_KEY not set - using hardcoded Gemini models")
+            logger.debug("GOOGLE_API_KEY not set - skipping Gemini model discovery")
             return None
 
         genai.configure(api_key=api_key)
-        # Note: genai.list_models() requires additional setup
-        # For now, use hardcoded list as fallback
-        logger.debug("Gemini models using hardcoded list (requires GOOGLE_API_KEY)")
+
+        # List all available Gemini models
+        models = genai.list_models()
+        model_names = [
+            model.name.replace('models/', '') for model in models
+            if 'gemini' in model.name.lower()
+        ]
+
+        if model_names:
+            logger.info(f"✓ Discovered {len(model_names)} Gemini models")
+            return sorted(model_names, reverse=True)  # Newest first
+
         return None
 
     except ImportError:
-        logger.debug("google.generativeai library not available - using hardcoded Gemini models")
+        logger.debug("google.generativeai library not available - skipping Gemini model discovery")
         return None
     except Exception as e:
-        logger.debug(f"Gemini model discovery failed: {e} - using hardcoded list")
+        logger.debug(f"Gemini model discovery failed: {e}")
         return None
 
 

@@ -157,11 +157,7 @@ PROVIDER_METADATA = {
     "claude": ProviderMetadata(
         provider="claude",
         display_name="Anthropic Claude",
-        models=[
-            "claude-opus-4-20250514",
-            "claude-3-5-sonnet-20241022",
-            "claude-haiku-4-5-20251001",
-        ],
+        models=[],  # Discovered dynamically from Anthropic API
         requires_api_key=False,  # Uses environment variable
         cost_per_1k_input_tokens=0.000800,  # Haiku: $0.80 per 1M input
         cost_per_1k_output_tokens=0.004000,  # Haiku: $4.00 per 1M output
@@ -175,7 +171,7 @@ PROVIDER_METADATA = {
     "openai": ProviderMetadata(
         provider="openai",
         display_name="OpenAI",
-        models=["gpt-4o", "gpt-4-turbo", "gpt-4"],
+        models=[],  # Discovered dynamically from OpenAI API
         requires_api_key=True,
         cost_per_1k_input_tokens=0.01,
         cost_per_1k_output_tokens=0.03,
@@ -188,7 +184,7 @@ PROVIDER_METADATA = {
     "gemini": ProviderMetadata(
         provider="gemini",
         display_name="Google Gemini",
-        models=["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+        models=[],  # Discovered dynamically from Google API
         requires_api_key=True,
         cost_per_1k_input_tokens=0.0005,
         cost_per_1k_output_tokens=0.0015,
