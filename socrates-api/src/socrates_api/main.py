@@ -30,6 +30,8 @@ from socrates_api.middleware.rate_limit import (
     initialize_limiter,
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware
+from socrates_api.auth import get_current_user
+from socrates_api.database import get_database, ProjectDatabase
 from socratic_system.events import EventType
 from socratic_system.exceptions import SocratesError
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
@@ -513,7 +515,7 @@ async def get_available_providers():
 
 
 @app.get("/api/providers/{provider}/models", response_model=dict)
-async def get_provider_models(provider: str):
+async def get_provider_models(provider: str, current_user: str = Depends(get_current_user), db: ProjectDatabase = Depends(get_database)):
     """Get available models for a specific provider (with dynamic discovery)."""
     from socratic_system.models import get_provider_metadata
     from socratic_system.orchestration.llm_discovery import discover_provider_models
@@ -525,8 +527,15 @@ async def get_provider_models(provider: str):
             detail=f"Provider '{provider}' not found"
         )
 
+    # Fetch user's API key for this provider from database
+    api_key = None
+    try:
+        api_key = db.get_api_key(current_user, provider)
+    except Exception as e:
+        logger.debug(f"Could not fetch API key for {provider}: {e}")
+
     # Try to dynamically discover models, fall back to hardcoded list
-    discovered_models = await discover_provider_models(provider)
+    discovered_models = await discover_provider_models(provider, api_key)
     models = discovered_models if discovered_models else provider_meta.models
 
     return {

@@ -75,17 +75,21 @@ def discover_ollama_models() -> list[str] | None:
         return None
 
 
-async def discover_claude_models() -> Optional[list[str]]:
+async def discover_claude_models(api_key: Optional[str] = None) -> Optional[list[str]]:
     """
     Discover available Claude models from Anthropic.
     Queries https://api.anthropic.com/models to get latest available models.
     Falls back to empty list if discovery fails.
+
+    Args:
+        api_key: Optional API key. If not provided, checks ANTHROPIC_API_KEY env var.
     """
     try:
         import httpx
         import os
 
-        api_key = os.getenv('ANTHROPIC_API_KEY')
+        if not api_key:
+            api_key = os.getenv('ANTHROPIC_API_KEY')
         if not api_key:
             logger.debug("ANTHROPIC_API_KEY not set - skipping Claude model discovery")
             return None
@@ -116,17 +120,21 @@ async def discover_claude_models() -> Optional[list[str]]:
         return None
 
 
-async def discover_openai_models() -> Optional[list[str]]:
+async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list[str]]:
     """
     Discover available OpenAI models from OpenAI API.
     Filters for GPT models (gpt-4, gpt-3.5-turbo, etc).
     Falls back to empty list if discovery fails.
+
+    Args:
+        api_key: Optional API key. If not provided, checks OPENAI_API_KEY env var.
     """
     try:
         import os
         from openai import OpenAI
 
-        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
             logger.debug("OPENAI_API_KEY not set - skipping OpenAI model discovery")
             return None
@@ -154,17 +162,21 @@ async def discover_openai_models() -> Optional[list[str]]:
         return None
 
 
-async def discover_gemini_models() -> Optional[list[str]]:
+async def discover_gemini_models(api_key: Optional[str] = None) -> Optional[list[str]]:
     """
     Discover available Google Gemini models.
     Queries genai.list_models() to get available models.
     Falls back to empty list if discovery fails.
+
+    Args:
+        api_key: Optional API key. If not provided, checks GOOGLE_API_KEY env var.
     """
     try:
         import os
         import google.generativeai as genai
 
-        api_key = os.getenv('GOOGLE_API_KEY')
+        if not api_key:
+            api_key = os.getenv('GOOGLE_API_KEY')
         if not api_key:
             logger.debug("GOOGLE_API_KEY not set - skipping Gemini model discovery")
             return None
@@ -192,19 +204,20 @@ async def discover_gemini_models() -> Optional[list[str]]:
         return None
 
 
-async def discover_provider_models(provider: str) -> Optional[list[str]]:
+async def discover_provider_models(provider: str, api_key: Optional[str] = None) -> Optional[list[str]]:
     """
     Discover available models for a given provider.
     Dynamically fetches models if possible, falls back to hardcoded list.
 
     Supports:
     - ollama: Queries local Ollama instance /api/tags
-    - claude: Returns hardcoded list (Anthropic API doesn't have models endpoint)
-    - openai: Returns hardcoded list (requires OPENAI_API_KEY)
-    - gemini: Returns hardcoded list (requires GOOGLE_API_KEY)
+    - claude: Queries Anthropic API (requires api_key or ANTHROPIC_API_KEY env var)
+    - openai: Queries OpenAI API (requires api_key or OPENAI_API_KEY env var)
+    - gemini: Queries Google API (requires api_key or GOOGLE_API_KEY env var)
 
     Args:
         provider: Provider name (claude, openai, gemini, ollama)
+        api_key: Optional API key for the provider. If not provided, checks env vars.
 
     Returns:
         List of model names if discovery succeeds, None to use hardcoded list
@@ -214,11 +227,11 @@ async def discover_provider_models(provider: str) -> Optional[list[str]]:
     if provider == "ollama":
         return discover_ollama_models()
     elif provider == "claude":
-        return await discover_claude_models()
+        return await discover_claude_models(api_key)
     elif provider == "openai":
-        return await discover_openai_models()
+        return await discover_openai_models(api_key)
     elif provider == "gemini":
-        return await discover_gemini_models()
+        return await discover_gemini_models(api_key)
     else:
         logger.warning(f"Unknown provider: {provider}")
         return None
