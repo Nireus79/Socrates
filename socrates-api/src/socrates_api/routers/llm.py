@@ -133,9 +133,12 @@ async def set_model(
             # Get user's API key if available
             api_key = None
             try:
-                api_key = db.get_api_key(current_user, request.provider)
+                encrypted_key = db.get_api_key(current_user, request.provider)
+                if encrypted_key:
+                    from socratic_system.encryption import decrypt_data
+                    api_key = decrypt_data(encrypted_key)
             except Exception as e:
-                logger.debug(f"Could not fetch API key for {request.provider}: {e}")
+                logger.debug(f"Could not fetch/decrypt API key for {request.provider}: {e}")
 
             # Discover actual models
             discovered = await discover_provider_models(request.provider, api_key)

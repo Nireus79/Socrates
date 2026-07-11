@@ -134,6 +134,24 @@ export const LLMSettingsPage: React.FC = () => {
         delete updated[providerName];
         return updated;
       });
+
+      // If this provider is currently expanded, immediately fetch fresh models
+      if (expandedProvider === providerName) {
+        setLoadingModels(prev => ({ ...prev, [providerName]: true }));
+        try {
+          const data = await apiClient.get<{ provider: string; models: string[] }>(
+            `/api/providers/${providerName}/models`
+          );
+          setDynamicModels(prev => ({
+            ...prev,
+            [providerName]: data.models || []
+          }));
+        } catch (err) {
+          console.error(`Failed to fetch ${providerName} models:`, err);
+        } finally {
+          setLoadingModels(prev => ({ ...prev, [providerName]: false }));
+        }
+      }
     } catch (err) {
       console.error('Error adding API key:', err);
     } finally {
@@ -154,6 +172,11 @@ export const LLMSettingsPage: React.FC = () => {
         delete updated[providerName];
         return updated;
       });
+
+      // If this provider is currently expanded, immediately refresh (will show "Add API key" message)
+      if (expandedProvider === providerName) {
+        setLoadingModels(prev => ({ ...prev, [providerName]: false }));
+      }
     } catch (err) {
       console.error('Error removing API key:', err);
     } finally {

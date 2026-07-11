@@ -534,10 +534,15 @@ async def get_provider_models(provider: str, current_user: str = Depends(get_cur
         # Fetch user's API key for this provider from database
         api_key = None
         try:
-            api_key = db.get_api_key(current_user, provider)
-            logger.debug(f"API key {'found' if api_key else 'not found'} for {provider}")
+            encrypted_key = db.get_api_key(current_user, provider)
+            if encrypted_key:
+                from socratic_system.encryption import decrypt_data
+                api_key = decrypt_data(encrypted_key)
+                logger.debug(f"API key found and decrypted for {provider}")
+            else:
+                logger.debug(f"API key not found for {provider}")
         except Exception as e:
-            logger.debug(f"Could not fetch API key for {provider}: {e}")
+            logger.debug(f"Could not fetch/decrypt API key for {provider}: {e}")
 
         # Try to dynamically discover models, fall back to hardcoded list
         logger.debug(f"Discovering models for {provider}...")
