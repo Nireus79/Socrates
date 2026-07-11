@@ -68,21 +68,61 @@ docs/                     # Documentation and architecture guides
 
 ### Setup & Environment
 
+**Option 1: Automated Setup (Recommended for local development)**
+
 ```bash
-# Activate virtual environment
+# Run the setup script - handles sequential installation to avoid disk space issues
+python setup_local.py
+
+# This installs dependencies in stages:
+# 1. Creates virtual environment (.venv)
+# 2. Installs PyTorch (CPU-only, ~600MB)
+# 3. Installs ML dependencies (sentence-transformers, chromadb)
+# 4. Installs Socrates + dev dependencies
+# Takes 10-15 minutes, avoids disk bloat
+```
+
+**Option 2: Docker (Fastest, no local dependencies)**
+
+```bash
+# All dependencies pre-installed in container
+docker compose up
+
+# Ready to develop immediately
+# Access at http://localhost:3000 (frontend) and http://localhost:8000 (API)
+```
+
+**Option 3: Manual Setup (Advanced)**
+
+```bash
+# Create and activate virtual environment
+python3 -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 .venv\Scripts\activate     # Windows
 
-# Install dependencies (includes dev tools)
+# Install dependencies step-by-step (to avoid disk space issues)
+pip install --upgrade pip setuptools wheel
+pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+pip install --no-cache-dir sentence-transformers chromadb
 pip install -e ".[dev]"
-pip install -r requirements-dev.txt  # If exists
 
-# View installed packages
-pip list | grep socratic
-
-# Check environment
+# Verify installation
 python3 -c "import socratic_system; print('✓ socratic_system imported')"
+pip list | grep socratic
 ```
+
+**View installed packages**
+
+```bash
+pip list | grep socratic
+```
+
+**Troubleshooting disk space errors**
+
+If you get "No space left on device" errors:
+1. Clear pip cache: `pip cache purge`
+2. Use `python setup_local.py` which installs sequentially
+3. Or use Docker instead: `docker compose up`
 
 ### Running the Application
 
