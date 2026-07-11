@@ -174,7 +174,7 @@ def start_full_stack() -> None:
 
     def open_browser():
         """Open browser after frontend is ready."""
-        frontend_url = f"http://localhost:{frontend_port}"
+        frontend_url = f"http://127.0.0.1:{frontend_port}"
         max_retries = 30
         for attempt in range(max_retries):
             try:
