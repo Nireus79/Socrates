@@ -126,6 +126,14 @@ export const LLMSettingsPage: React.FC = () => {
     try {
       await addAPIKey(providerName, key);
       setApiKeyInput({ ...apiKeyInput, [providerName]: '' });
+
+      // Refetch provider status and clear model cache to trigger re-discovery
+      await listProviders().catch(console.error);
+      setDynamicModels(prev => {
+        const updated = { ...prev };
+        delete updated[providerName];
+        return updated;
+      });
     } catch (err) {
       console.error('Error adding API key:', err);
     } finally {
@@ -138,6 +146,14 @@ export const LLMSettingsPage: React.FC = () => {
     setSavingProvider(providerName);
     try {
       await removeAPIKey(providerName);
+
+      // Refetch provider status and clear model cache
+      await listProviders().catch(console.error);
+      setDynamicModels(prev => {
+        const updated = { ...prev };
+        delete updated[providerName];
+        return updated;
+      });
     } catch (err) {
       console.error('Error removing API key:', err);
     } finally {
