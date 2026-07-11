@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="b13c29eb-a190-422e-b9a9-1ba216d0bc04" name="Changes" comment="subscription">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/llm/LLMSettingsPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/llm/LLMSettingsPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
