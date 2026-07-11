@@ -210,17 +210,26 @@ def start_full_stack() -> None:
             env["VITE_PORT"] = str(frontend_port)
             env["VITE_API_URL"] = f"http://localhost:{api_port}"
 
+            print(f"[INFO] Installing frontend dependencies...")
+            subprocess.run(
+                "npm install",
+                cwd=frontend_dir,
+                shell=True,
+                capture_output=True,
+                timeout=600
+            )
+
+            print(f"[INFO] Starting frontend dev server on port {frontend_port}...")
             frontend_process = subprocess.Popen(
-                [sys.executable, "-m", "http.server", str(frontend_port)],
+                "npm run dev",
                 cwd=frontend_dir,
                 env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                bufsize=1
+                bufsize=1,
+                shell=True
             )
-
-            print(f"[INFO] Starting frontend on port {frontend_port}...")
 
             # Open browser in background thread
             browser_thread = threading.Thread(target=open_browser, daemon=True)
