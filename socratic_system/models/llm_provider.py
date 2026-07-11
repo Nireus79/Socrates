@@ -197,16 +197,7 @@ PROVIDER_METADATA = {
     "ollama": ProviderMetadata(
         provider="ollama",
         display_name="Ollama (Local)",
-        models=[
-            "codellama:latest",
-            "codellama:13b",
-            "codellama:7b",
-            "codellama:34b",
-            "llama2",
-            "mistral",
-            "neural-chat",
-            "orca-mini",
-        ],
+        models=[],  # Discovered dynamically from local Ollama instance
         requires_api_key=False,
         cost_per_1k_input_tokens=0.0,
         cost_per_1k_output_tokens=0.0,

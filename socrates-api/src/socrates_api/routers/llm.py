@@ -1,12 +1,19 @@
 """LLM Provider API endpoints."""
 
 import logging
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
+from socrates_api.database import get_database, ProjectDatabase
 from socrates_api.models import APIResponse
+
+if TYPE_CHECKING:
+    pass
+
+logger = logging.getLogger(__name__)
 
 
 class ApiKeyRequest(BaseModel):
@@ -112,9 +119,34 @@ async def set_default_provider(
 async def set_model(
     request: ModelRequest,
     current_user: str = Depends(get_current_user),
+    db: "ProjectDatabase" = Depends(get_database),
 ):
     try:
+        from socratic_system.models import get_provider_metadata
+        from socratic_system.orchestration.llm_discovery import discover_provider_models
         from socrates_api.main import get_orchestrator
+
+        # For providers with dynamic model discovery (empty metadata.models),
+        # discover models to validate before sending to agent
+        provider_meta = get_provider_metadata(request.provider)
+        if provider_meta and len(provider_meta.models) == 0:
+            # Get user's API key if available
+            api_key = None
+            try:
+                api_key = db.get_api_key(current_user, request.provider)
+            except Exception as e:
+                logger.debug(f"Could not fetch API key for {request.provider}: {e}")
+
+            # Discover actual models
+            discovered = await discover_provider_models(request.provider, api_key)
+
+            # Validate against discovered models if available
+            if discovered and request.model not in discovered:
+                available = ", ".join(discovered)
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Model '{request.model}' not available for {request.provider}. Available: {available}"
+                )
 
         orchestrator = get_orchestrator()
         result = await orchestrator.agent_bus.send_request(
