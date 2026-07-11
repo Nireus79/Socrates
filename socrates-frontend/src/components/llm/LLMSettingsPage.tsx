@@ -63,6 +63,8 @@ export const LLMSettingsPage: React.FC = () => {
   const [selectedAuthMethod, setSelectedAuthMethod] = useState<{ [key: string]: string }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [savingProvider, setSavingProvider] = useState<string | null>(null);
+  const [dynamicModels, setDynamicModels] = useState<{ [key: string]: string[] }>({});
+  const [loadingModels, setLoadingModels] = useState<{ [key: string]: boolean }>({});
 
   // Load data on mount
   React.useEffect(() => {
@@ -83,6 +85,34 @@ export const LLMSettingsPage: React.FC = () => {
       setSelectedAuthMethod({ claude: 'api_key' });
     }
   }, [config]);
+
+  // Fetch models dynamically when a provider is expanded
+  React.useEffect(() => {
+    if (!expandedProvider) return;
+
+    // Skip if we already have models for this provider
+    if (dynamicModels[expandedProvider]) return;
+
+    const fetchProviderModels = async () => {
+      setLoadingModels(prev => ({ ...prev, [expandedProvider]: true }));
+      try {
+        const response = await fetch(`/api/providers/${expandedProvider}/models`);
+        if (response.ok) {
+          const data = await response.json();
+          setDynamicModels(prev => ({
+            ...prev,
+            [expandedProvider]: data.models || []
+          }));
+        }
+      } catch (err) {
+        console.error(`Failed to fetch ${expandedProvider} models:`, err);
+      } finally {
+        setLoadingModels(prev => ({ ...prev, [expandedProvider]: false }));
+      }
+    };
+
+    fetchProviderModels();
+  }, [expandedProvider, dynamicModels]);
 
   const providersList = Array.from(providers.values());
 
@@ -409,25 +439,32 @@ export const LLMSettingsPage: React.FC = () => {
                         )}
 
                         {/* Model Selection */}
-                        {isConfigured && provider.models && provider.models.length > 0 && (
+                        {isConfigured && (
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Select Model</h4>
-                            <select
-                              value={selectedModel}
-                              onChange={(e) =>
-                                setSelectedModels({
-                                  ...selectedModels,
-                                  [provider.name]: e.target.value,
-                                })
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              {provider.models.map((model) => (
-                                <option key={model} value={model}>
-                                  {model}
-                                </option>
-                              ))}
-                            </select>
+                            {loadingModels[provider.name] ? (
+                              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                <Loader className="h-4 w-4 animate-spin" />
+                                <span className="text-sm">Loading models...</span>
+                              </div>
+                            ) : (
+                              <select
+                                value={selectedModel}
+                                onChange={(e) =>
+                                  setSelectedModels({
+                                    ...selectedModels,
+                                    [provider.name]: e.target.value,
+                                  })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                {(dynamicModels[provider.name] || provider.models || []).map((model) => (
+                                  <option key={model} value={model}>
+                                    {model}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                           </div>
                         )}
 

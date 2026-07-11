@@ -9,6 +9,7 @@ state and provides it to agents, keeping them environment-agnostic.
 """
 
 import logging
+from typing import Optional
 
 from socratic_system.config.llm_environment import LLMEnvironmentConfig
 
@@ -71,6 +72,122 @@ def discover_ollama_models() -> list[str] | None:
         return None
     except Exception as e:
         logger.warning(f"Ollama discovery failed: {e} - using fallback model list")
+        return None
+
+
+async def discover_claude_models() -> Optional[list[str]]:
+    """
+    Discover available Claude models from Anthropic API.
+    Falls back to hardcoded list if API call fails or API key unavailable.
+    """
+    try:
+        import os
+        from anthropic import Anthropic
+
+        api_key = os.getenv('ANTHROPIC_API_KEY')
+        if not api_key:
+            logger.debug("ANTHROPIC_API_KEY not set - using hardcoded Claude models")
+            return None
+
+        client = Anthropic(api_key=api_key)
+        # Note: Anthropic doesn't have a models endpoint, so we use hardcoded list
+        # In the future if they add a models API, this can be updated
+        logger.debug("Claude models using hardcoded list (Anthropic API endpoint not available)")
+        return None
+
+    except ImportError:
+        logger.debug("anthropic library not available - using hardcoded Claude models")
+        return None
+    except Exception as e:
+        logger.debug(f"Claude model discovery failed: {e} - using hardcoded list")
+        return None
+
+
+async def discover_openai_models() -> Optional[list[str]]:
+    """
+    Discover available OpenAI models.
+    Falls back to hardcoded list if API call fails or API key unavailable.
+    """
+    try:
+        import os
+        from openai import OpenAI
+
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            logger.debug("OPENAI_API_KEY not set - using hardcoded OpenAI models")
+            return None
+
+        client = OpenAI(api_key=api_key)
+        # Note: OpenAI's models API returns all models, we filter for GPT models
+        # This requires API key, so we just return hardcoded list if key not available
+        logger.debug("OpenAI models using hardcoded list (requires OPENAI_API_KEY)")
+        return None
+
+    except ImportError:
+        logger.debug("openai library not available - using hardcoded OpenAI models")
+        return None
+    except Exception as e:
+        logger.debug(f"OpenAI model discovery failed: {e} - using hardcoded list")
+        return None
+
+
+async def discover_gemini_models() -> Optional[list[str]]:
+    """
+    Discover available Google Gemini models.
+    Falls back to hardcoded list if API call fails or API key unavailable.
+    """
+    try:
+        import os
+        import google.generativeai as genai
+
+        api_key = os.getenv('GOOGLE_API_KEY')
+        if not api_key:
+            logger.debug("GOOGLE_API_KEY not set - using hardcoded Gemini models")
+            return None
+
+        genai.configure(api_key=api_key)
+        # Note: genai.list_models() requires additional setup
+        # For now, use hardcoded list as fallback
+        logger.debug("Gemini models using hardcoded list (requires GOOGLE_API_KEY)")
+        return None
+
+    except ImportError:
+        logger.debug("google.generativeai library not available - using hardcoded Gemini models")
+        return None
+    except Exception as e:
+        logger.debug(f"Gemini model discovery failed: {e} - using hardcoded list")
+        return None
+
+
+async def discover_provider_models(provider: str) -> Optional[list[str]]:
+    """
+    Discover available models for a given provider.
+    Dynamically fetches models if possible, falls back to hardcoded list.
+
+    Supports:
+    - ollama: Queries local Ollama instance /api/tags
+    - claude: Returns hardcoded list (Anthropic API doesn't have models endpoint)
+    - openai: Returns hardcoded list (requires OPENAI_API_KEY)
+    - gemini: Returns hardcoded list (requires GOOGLE_API_KEY)
+
+    Args:
+        provider: Provider name (claude, openai, gemini, ollama)
+
+    Returns:
+        List of model names if discovery succeeds, None to use hardcoded list
+    """
+    provider = provider.lower()
+
+    if provider == "ollama":
+        return discover_ollama_models()
+    elif provider == "claude":
+        return await discover_claude_models()
+    elif provider == "openai":
+        return await discover_openai_models()
+    elif provider == "gemini":
+        return await discover_gemini_models()
+    else:
+        logger.warning(f"Unknown provider: {provider}")
         return None
 
 

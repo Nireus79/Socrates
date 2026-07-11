@@ -512,6 +512,31 @@ async def get_available_providers():
     }
 
 
+@app.get("/api/providers/{provider}/models", response_model=dict)
+async def get_provider_models(provider: str):
+    """Get available models for a specific provider (with dynamic discovery)."""
+    from socratic_system.models import get_provider_metadata
+    from socratic_system.orchestration.llm_discovery import discover_provider_models
+
+    provider_meta = get_provider_metadata(provider)
+    if not provider_meta:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Provider '{provider}' not found"
+        )
+
+    # Try to dynamically discover models, fall back to hardcoded list
+    discovered_models = await discover_provider_models(provider)
+    models = discovered_models if discovered_models else provider_meta.models
+
+    return {
+        "provider": provider,
+        "display_name": provider_meta.display_name,
+        "models": models,
+        "total": len(models)
+    }
+
+
 @app.get("/search")
 async def search(
     q: str = None,
