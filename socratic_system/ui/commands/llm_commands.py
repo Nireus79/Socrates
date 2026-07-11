@@ -116,9 +116,16 @@ class LLMCommand(BaseCommand):
                     f"  Provider: {Fore.CYAN}{provider['provider']:<20}{Style.RESET_ALL} Status: {available}"
                 )
                 print(f"  Models: {models_count:<20} {requires_key}")
-                print(
-                    f"  Cost: ${provider.get('cost_per_1k_input_tokens', 0):.6f}/1K input, ${provider.get('cost_per_1k_output_tokens', 0):.6f}/1K output"
-                )
+
+                input_cost = provider.get('cost_per_1k_input_tokens')
+                output_cost = provider.get('cost_per_1k_output_tokens')
+                if input_cost is None:
+                    cost_str = "Pricing varies by model"
+                elif input_cost == 0:
+                    cost_str = "FREE (Local)"
+                else:
+                    cost_str = f"${input_cost:.6f}/1K input, ${output_cost:.6f}/1K output"
+                print(f"  Cost: {cost_str}")
                 print()
 
             return self.success(data={"providers_count": len(providers)})
