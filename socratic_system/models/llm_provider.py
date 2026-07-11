@@ -157,7 +157,7 @@ PROVIDER_METADATA = {
     "claude": ProviderMetadata(
         provider="claude",
         display_name="Anthropic Claude",
-        models=[],  # Discovered dynamically from Anthropic API
+        models=[],  # Discovered dynamically
         requires_api_key=False,  # Uses environment variable
         cost_per_1k_input_tokens=0.000800,  # Haiku: $0.80 per 1M input
         cost_per_1k_output_tokens=0.004000,  # Haiku: $4.00 per 1M output
@@ -171,7 +171,7 @@ PROVIDER_METADATA = {
     "openai": ProviderMetadata(
         provider="openai",
         display_name="OpenAI",
-        models=[],  # Discovered dynamically from OpenAI API
+        models=[],  # Discovered dynamically
         requires_api_key=True,
         cost_per_1k_input_tokens=0.01,
         cost_per_1k_output_tokens=0.03,

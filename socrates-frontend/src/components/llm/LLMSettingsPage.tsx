@@ -460,36 +460,42 @@ export const LLMSettingsPage: React.FC = () => {
                           {loadingModels[provider.name] ? (
                             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                               <Loader className="h-4 w-4 animate-spin" />
-                              <span className="text-sm">Loading models...</span>
+                              <span className="text-sm">Discovering models...</span>
                             </div>
                           ) : (
                             <>
-                              <select
-                                value={selectedModel}
-                                onChange={(e) =>
-                                  setSelectedModels({
-                                    ...selectedModels,
-                                    [provider.name]: e.target.value,
-                                  })
-                                }
-                                disabled={!isConfigured}
-                                className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                  !isConfigured ? 'opacity-60 cursor-not-allowed' : ''
-                                }`}
-                              >
-                                {(dynamicModels[provider.name] || provider.models || []).length > 0 ? (
-                                  (dynamicModels[provider.name] || provider.models || []).map((model) => (
+                              {(dynamicModels[provider.name] || provider.models || []).length > 0 ? (
+                                <select
+                                  value={selectedModel}
+                                  onChange={(e) =>
+                                    setSelectedModels({
+                                      ...selectedModels,
+                                      [provider.name]: e.target.value,
+                                    })
+                                  }
+                                  disabled={!isConfigured}
+                                  className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                    !isConfigured ? 'opacity-60 cursor-not-allowed' : ''
+                                  }`}
+                                >
+                                  {(dynamicModels[provider.name] || provider.models || []).map((model) => (
                                     <option key={model} value={model}>
                                       {model}
                                     </option>
-                                  ))
-                                ) : (
-                                  <option value="">Loading models...</option>
-                                )}
-                              </select>
+                                  ))}
+                                </select>
+                              ) : (
+                                <div className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-sm ${
+                                  !isConfigured ? 'opacity-60' : ''
+                                }`}>
+                                  {!isConfigured
+                                    ? 'Add API key above to discover models'
+                                    : 'No models discovered'}
+                                </div>
+                              )}
                               {!isConfigured && (
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                  Add API key above to use this provider
+                                  Add API key above to discover available models
                                 </p>
                               )}
                             </>
