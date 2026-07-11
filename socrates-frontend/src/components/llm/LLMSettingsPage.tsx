@@ -280,7 +280,7 @@ export const LLMSettingsPage: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                            {provider.label}
+                            {provider.display_name}
                           </h3>
                           {[
                             isDefault && (
