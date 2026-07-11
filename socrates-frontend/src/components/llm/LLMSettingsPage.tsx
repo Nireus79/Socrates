@@ -29,6 +29,7 @@ import {
   DollarSign,
 } from 'lucide-react';
 import { useLLMStore } from '../../stores';
+import { apiClient } from '../../api/client';
 import { Button } from '../common';
 import { Card } from '../common';
 import { Alert } from '../common';
@@ -96,14 +97,13 @@ export const LLMSettingsPage: React.FC = () => {
     const fetchProviderModels = async () => {
       setLoadingModels(prev => ({ ...prev, [expandedProvider]: true }));
       try {
-        const response = await fetch(`/api/providers/${expandedProvider}/models`);
-        if (response.ok) {
-          const data = await response.json();
-          setDynamicModels(prev => ({
-            ...prev,
-            [expandedProvider]: data.models || []
-          }));
-        }
+        const data = await apiClient.get<{ provider: string; models: string[] }>(
+          `/api/providers/${expandedProvider}/models`
+        );
+        setDynamicModels(prev => ({
+          ...prev,
+          [expandedProvider]: data.models || []
+        }));
       } catch (err) {
         console.error(`Failed to fetch ${expandedProvider} models:`, err);
       } finally {
