@@ -439,15 +439,15 @@ export const LLMSettingsPage: React.FC = () => {
                         )}
 
                         {/* Model Selection */}
-                        {provider.models && provider.models.length > 0 && (
-                          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Select Model</h4>
-                            {loadingModels[provider.name] ? (
-                              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                                <Loader className="h-4 w-4 animate-spin" />
-                                <span className="text-sm">Loading models...</span>
-                              </div>
-                            ) : (
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Select Model</h4>
+                          {loadingModels[provider.name] ? (
+                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                              <Loader className="h-4 w-4 animate-spin" />
+                              <span className="text-sm">Loading models...</span>
+                            </div>
+                          ) : (
+                            <>
                               <select
                                 value={selectedModel}
                                 onChange={(e) =>
@@ -461,20 +461,24 @@ export const LLMSettingsPage: React.FC = () => {
                                   !isConfigured ? 'opacity-60 cursor-not-allowed' : ''
                                 }`}
                               >
-                                {(dynamicModels[provider.name] || provider.models || []).map((model) => (
-                                  <option key={model} value={model}>
-                                    {model}
-                                  </option>
-                                ))}
+                                {(dynamicModels[provider.name] || provider.models || []).length > 0 ? (
+                                  (dynamicModels[provider.name] || provider.models || []).map((model) => (
+                                    <option key={model} value={model}>
+                                      {model}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option value="">Loading models...</option>
+                                )}
                               </select>
-                            )}
-                            {!isConfigured && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                Add API key above to use this provider
-                              </p>
-                            )}
-                          </div>
-                        )}
+                              {!isConfigured && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                  Add API key above to use this provider
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
 
                         {/* Pricing */}
                         {provider.cost_per_1k_input_tokens !== undefined && (
