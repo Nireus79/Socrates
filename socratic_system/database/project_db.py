@@ -4439,11 +4439,11 @@ class ProjectDatabase:
             if not updates:
                 return False
 
-            query = f"""  # nosec B608
+            query = f"""
                 UPDATE github_auth
                 SET {', '.join(updates)}
                 WHERE username = ?
-            """
+            """  # nosec B608
 
             cursor.execute(query, params)
             conn.commit()
@@ -4492,18 +4492,18 @@ class ProjectDatabase:
                 return False
 
             if sponsorship_id is not None:
-                query = f"""  # nosec B608
+                query = f"""
                     UPDATE sponsorships
                     SET {', '.join(updates)}
                     WHERE id = ?
-                """
+                """  # nosec B608
                 params.append(sponsorship_id)
             else:
-                query = f"""  # nosec B608
+                query = f"""
                     UPDATE sponsorships
                     SET {', '.join(updates)}
                     WHERE username = ?
-                """
+                """  # nosec B608
                 params.append(username)
 
             cursor.execute(query, params)
