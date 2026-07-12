@@ -1,17 +1,11 @@
 """Model selection and switching commands"""
 
+import asyncio
 from typing import Any
 
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
-
-# Available models mapping
-AVAILABLE_MODELS = {
-    "haiku": "claude-haiku-4-5-20251001",
-    "sonnet": "claude-3-5-sonnet-20241022",
-    "opus": "claude-opus-4-20250514",
-}
 
 
 class ModelCommand(BaseCommand):
@@ -49,65 +43,80 @@ class ModelCommand(BaseCommand):
     def _show_status(self, orchestrator) -> dict[str, Any]:
         """Show current model status"""
         current_model = orchestrator.config.claude_model
-        model_name = self._get_model_name_from_full(current_model)
 
-        print(f"\n{Fore.CYAN}Current Model{Style.RESET_ALL}")
-        print(f"  Model: {Fore.GREEN}{model_name}{Style.RESET_ALL} ({current_model})")
+        print(f"\n{Fore.CYAN}Current Claude Model{Style.RESET_ALL}")
+        print(f"  Model: {Fore.GREEN}{current_model}{Style.RESET_ALL}")
 
         return self.success(data={"current_model": current_model})
 
     def _list_models(self, orchestrator) -> dict[str, Any]:
-        """List available models"""
-        print(f"\n{Fore.CYAN}Available Models{Style.RESET_ALL}")
+        """List available Claude models from Anthropic API"""
+        print(f"\n{Fore.CYAN}Available Claude Models{Style.RESET_ALL}")
         current_model = orchestrator.config.claude_model
 
-        for short_name, full_name in AVAILABLE_MODELS.items():
-            is_current = (
-                " " + Fore.GREEN + "✓ (current)" + Style.RESET_ALL
-                if full_name == current_model
-                else ""
-            )
-            print(f"  {Fore.WHITE}{short_name:<10}{Style.RESET_ALL} {full_name}{is_current}")
+        try:
+            # Discover models dynamically
+            from socratic_system.orchestration.llm_discovery import discover_claude_models
 
-        return self.success(data={"models": AVAILABLE_MODELS})
+            models = asyncio.run(discover_claude_models())
+            if not models:
+                print(f"{Fore.YELLOW}  No models discovered - check ANTHROPIC_API_KEY{Style.RESET_ALL}")
+                return self.error("Failed to discover Claude models")
+
+            for model in models:
+                is_current = (
+                    " " + Fore.GREEN + "✓ (current)" + Style.RESET_ALL
+                    if model == current_model
+                    else ""
+                )
+                print(f"  {Fore.WHITE}{model}{Style.RESET_ALL}{is_current}")
+
+            return self.success(data={"models": models})
+        except Exception as e:
+            print(f"{Fore.RED}Error discovering models: {e}{Style.RESET_ALL}")
+            return self.error(f"Failed to discover models: {e}")
 
     def _set_model(
         self, args: list[str], orchestrator, app, context: dict[str, Any]
     ) -> dict[str, Any]:
-        """Set/switch to a new model"""
+        """Set/switch to a Claude model"""
         if not args:
             return self.error("Model name required. Usage: /model set <model_name>")
 
-        model_input = args[0].lower()
+        model_input = args[0]
 
-        # Check if input is a short name
-        if model_input in AVAILABLE_MODELS:
-            full_model_name = AVAILABLE_MODELS[model_input]
-        # Check if input is a full model name
-        elif model_input in AVAILABLE_MODELS.values():
-            full_model_name = model_input
-        else:
-            available = ", ".join(AVAILABLE_MODELS.keys())
-            return self.error(f"Unknown model: {model_input}. Available: {available}")
+        try:
+            # Discover available models dynamically
+            from socratic_system.orchestration.llm_discovery import discover_claude_models
 
-        # Update orchestrator
-        if orchestrator.set_model(full_model_name):
-            # Update user's preferred model if logged in
-            if app.current_user:
-                app.current_user.preferred_model = full_model_name
-                orchestrator.database.save_user(app.current_user)
+            available_models = asyncio.run(discover_claude_models())
+            if not available_models:
+                return self.error("Failed to discover Claude models - check ANTHROPIC_API_KEY")
 
-            model_short_name = self._get_model_name_from_full(full_model_name)
-            self.print_success(f"Model switched to {Fore.GREEN}{model_short_name}{Style.RESET_ALL}")
+            # Case-insensitive search
+            matching_model = None
+            for model in available_models:
+                if model.lower() == model_input.lower():
+                    matching_model = model
+                    break
 
-            return self.success(data={"new_model": full_model_name})
-        else:
-            return self.error("Failed to switch model")
+            if not matching_model:
+                print(f"Available models:")
+                for model in available_models:
+                    print(f"  - {model}")
+                return self.error(f"Model not found: {model_input}")
 
-    @staticmethod
-    def _get_model_name_from_full(full_model_name: str) -> str:
-        """Get short model name from full model name"""
-        for short_name, full_name in AVAILABLE_MODELS.items():
-            if full_name == full_model_name:
-                return short_name
-        return "unknown"
+            # Update orchestrator
+            if orchestrator.set_model(matching_model):
+                # Update user's preferred model if logged in
+                if app.current_user:
+                    app.current_user.preferred_model = matching_model
+                    orchestrator.database.save_user(app.current_user)
+
+                self.print_success(f"Model switched to {Fore.GREEN}{matching_model}{Style.RESET_ALL}")
+                return self.success(data={"new_model": matching_model})
+            else:
+                return self.error("Failed to switch model")
+        except Exception as e:
+            return self.error(f"Error setting model: {e}")
+
