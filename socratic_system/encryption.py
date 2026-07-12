@@ -87,30 +87,52 @@ def decrypt_data(encrypted_data: str, encryption_key: str | None = None) -> str:
         )
 
     try:
-        # Extract salt and encrypted data
-        if ":" in encrypted_data:
-            salt_b64, encrypted_b64 = encrypted_data.split(":", 1)
-            salt = base64.urlsafe_b64decode(salt_b64)
-        else:
-            # Fallback for data without salt prefix (shouldn't happen with new format)
-            raise ValueError("Invalid encrypted data format: missing salt")
-
         secret_bytes = encryption_key.encode()
 
-        # Derive key using same parameters as encryption
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=100000,
-            backend=default_backend(),
-        )
-        derived_key = base64.urlsafe_b64encode(kdf.derive(secret_bytes))
+        # New format: salt_b64:encrypted_b64
+        if ":" in encrypted_data:
+            try:
+                salt_b64, encrypted_b64 = encrypted_data.split(":", 1)
+                salt = base64.urlsafe_b64decode(salt_b64)
 
-        # Decrypt
-        cipher = Fernet(derived_key)
-        decrypted = cipher.decrypt(encrypted_b64.encode())
-        return decrypted.decode()
+                # Derive key using same parameters as encryption
+                kdf = PBKDF2HMAC(
+                    algorithm=hashes.SHA256(),
+                    length=32,
+                    salt=salt,
+                    iterations=100000,
+                    backend=default_backend(),
+                )
+                derived_key = base64.urlsafe_b64encode(kdf.derive(secret_bytes))
+
+                # Decrypt
+                cipher = Fernet(derived_key)
+                decrypted = cipher.decrypt(encrypted_b64.encode())
+                return decrypted.decode()
+            except Exception:
+                # If new format fails, try old format
+                pass
+
+        # Old format: plain Fernet encrypted data (no salt prefix, no PBKDF2)
+        # This handles keys encrypted before the salt-based format was introduced
+        try:
+            # Use a fixed salt of zeros for old-format keys (they were encrypted without PBKDF2)
+            # Actually, old format didn't use salt at all - derive key directly from password
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=b"\x00" * 16,  # Fixed salt for backward compatibility
+                iterations=100000,
+                backend=default_backend(),
+            )
+            derived_key = base64.urlsafe_b64encode(kdf.derive(secret_bytes))
+
+            cipher = Fernet(derived_key)
+            decrypted = cipher.decrypt(encrypted_data.encode())
+            return decrypted.decode()
+        except Exception:
+            # If both formats fail, raise error
+            raise ValueError("Invalid encrypted data format: could not decrypt with either new or old format")
 
     except Exception as e:
         raise RuntimeError(f"Failed to decrypt data: {e}") from e
