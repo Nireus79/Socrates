@@ -241,8 +241,30 @@ async def create_project(
             orchestrator = app_state.get("orchestrator")
             if orchestrator:
                 logger.info("Orchestrator available, using it...")
-                # Get user's LLM provider config with API key credentials (required for all agent operations)
-                provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+                # Get LLM config for project analysis (required)
+                # Used to analyze description and generate first question, but NOT stored in project
+
+                # Allow user to specify a model, otherwise use default
+                if request.llm_provider:
+                    logger.info(f"User specified LLM provider: {request.llm_provider}")
+                    provider_config = db.get_user_llm_config(current_user, request.llm_provider)
+                    if not provider_config:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"LLM provider '{request.llm_provider}' not configured. Please configure it in Settings > LLM.",
+                        )
+                    # If specific model requested, validate it's available
+                    if request.llm_model:
+                        if request.llm_model != provider_config.settings.get("model"):
+                            logger.warning(
+                                f"Requested model {request.llm_model} differs from configured {provider_config.settings.get('model')}"
+                            )
+                            # Allow it - user is explicitly choosing a different model
+                            provider_config.settings["model"] = request.llm_model
+                else:
+                    # Use default provider
+                    provider_config = db.get_user_active_llm_config_with_credentials(current_user)
+
                 require_provider_config(provider_config)
                 # Use orchestrator pattern (same as CLI)
                 # Pass description and knowledge_base_content so ProjectManagerAgent can analyze them

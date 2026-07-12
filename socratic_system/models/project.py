@@ -78,11 +78,6 @@ class ProjectContext:
         None  # Project metadata (use_workflow_optimization flag, etc.)
     )
 
-    # LLM Provider configuration
-    llm_configuration: dict[str, any] | None = (
-        None  # LLM provider config (provider, model, temperature, etc.)
-    )
-
     # GitHub repository tracking (for imported projects)
     repository_url: str | None = None  # GitHub repository URL
     repository_owner: str | None = None  # Repository owner username

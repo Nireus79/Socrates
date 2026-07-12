@@ -6,17 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="b13c29eb-a190-422e-b9a9-1ba216d0bc04" name="Changes" comment="subscription">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/github.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/github.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-cli/src/socrates_cli/cli.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-cli/src/socrates_cli/cli.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/settings/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/settings/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/settings/SettingsPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/settings/SettingsPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/clients/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/clients/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/database/migration_runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/migration_runner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/database/schema_v2.sql" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/schema_v2.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/encryption.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/encryption.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
