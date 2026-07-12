@@ -157,11 +157,7 @@ PROVIDER_METADATA = {
     "claude": ProviderMetadata(
         provider="claude",
         display_name="Anthropic Claude",
-        models=[
-            "claude-3-5-sonnet-20241022",
-            "claude-3-5-haiku-20241022",
-            "claude-3-opus-20250219",
-        ],
+        models=[],  # Discovered dynamically
         requires_api_key=False,  # Uses environment variable
         context_window=200000,
         cost_per_1k_input_tokens=None,  # Pricing varies by model
@@ -175,11 +171,7 @@ PROVIDER_METADATA = {
     "openai": ProviderMetadata(
         provider="openai",
         display_name="OpenAI",
-        models=[
-            "gpt-4o",
-            "gpt-4-turbo",
-            "gpt-3.5-turbo",
-        ],
+        models=[],  # Discovered dynamically
         requires_api_key=True,
         context_window=128000,
         cost_per_1k_input_tokens=None,  # Pricing varies by model
@@ -192,11 +184,7 @@ PROVIDER_METADATA = {
     "gemini": ProviderMetadata(
         provider="gemini",
         display_name="Google Gemini",
-        models=[
-            "gemini-2.0-flash",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash",
-        ],
+        models=[],  # Discovered dynamically
         requires_api_key=True,
         context_window=32000,
         cost_per_1k_input_tokens=None,  # Pricing varies by model
@@ -209,11 +197,7 @@ PROVIDER_METADATA = {
     "ollama": ProviderMetadata(
         provider="ollama",
         display_name="Ollama (Local)",
-        models=[
-            "codellama:latest",
-            "mistral:latest",
-            "llama2:latest",
-        ],
+        models=[],  # Discovered dynamically from local Ollama instance
         requires_api_key=False,
         cost_per_1k_input_tokens=0.0,
         cost_per_1k_output_tokens=0.0,

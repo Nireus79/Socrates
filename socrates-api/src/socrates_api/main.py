@@ -557,23 +557,32 @@ async def get_provider_models(provider: str, current_user: str = Depends(get_cur
         except Exception as e:
             logger.debug(f"Could not fetch/decrypt API key for {provider}: {e}")
 
-        # Try to dynamically discover models, fall back to hardcoded list
+        # Try to dynamically discover models
         logger.debug(f"Discovering models for {provider}...")
         discovered_models = await discover_provider_models(provider, api_key)
+
+        discovery_status = "unknown"
+        models = []
 
         if discovered_models:
             logger.debug(f"Discovered {len(discovered_models)} models for {provider}: {discovered_models[:3]}")
             models = discovered_models
+            discovery_status = "success"
+        elif discovered_models is None:
+            logger.debug(f"Provider {provider}: discovery returned None (no public API or unavailable)")
+            discovery_status = "no_api"
         else:
-            logger.debug(f"No discovered models, using fallback: {len(provider_meta.models)} models")
-            models = provider_meta.models
+            logger.debug(f"Provider {provider}: discovery returned empty list")
+            discovery_status = "empty"
 
-        logger.debug(f"Returning {len(models)} models for {provider}")
+        logger.debug(f"Returning {len(models)} models for {provider} (status: {discovery_status})")
         return {
             "provider": provider,
             "display_name": provider_meta.display_name,
             "models": models,
-            "total": len(models)
+            "total": len(models),
+            "discovery_status": discovery_status,
+            "api_key_configured": api_key is not None,
         }
     except HTTPException:
         raise

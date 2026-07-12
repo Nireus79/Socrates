@@ -511,9 +511,11 @@ export const LLMSettingsPage: React.FC = () => {
                                 <div className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-sm ${
                                   !isConfigured ? 'opacity-60' : ''
                                 }`}>
-                                  {!isConfigured
-                                    ? 'Add API key above to discover models'
-                                    : 'No models discovered'}
+                                  {loadingModels[provider.name]
+                                    ? 'Discovering models...'
+                                    : !isConfigured
+                                      ? 'Add API key above to discover models'
+                                      : 'No models discovered'}
                                 </div>
                               )}
                               {!isConfigured && (

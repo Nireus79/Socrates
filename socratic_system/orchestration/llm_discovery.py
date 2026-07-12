@@ -80,13 +80,22 @@ async def discover_claude_models(api_key: Optional[str] = None) -> Optional[list
     Discover available Claude models from Anthropic.
 
     Note: Anthropic does not provide a public models API endpoint.
-    Always returns None to use fallback (empty list for dynamic discovery).
+    Returns a static list of known current Claude models (updated regularly).
 
     Args:
         api_key: Optional API key for the provider (not used).
     """
-    logger.debug("Claude discovery skipped - Anthropic has no public models API")
-    return None
+    # Anthropic doesn't have a public models API, but we know the current models
+    # This list should be updated when new Claude models are released
+    known_claude_models = [
+        "claude-3-5-sonnet-20241022",  # Latest, most capable for general use
+        "claude-3-5-haiku-20241022",   # Latest, fastest
+        "claude-3-opus-20250219",      # Most capable, highest cost
+        "claude-3-sonnet-20240229",    # Previous generation
+        "claude-3-haiku-20240307",     # Previous generation
+    ]
+    logger.debug(f"Claude: Using known model list ({len(known_claude_models)} models)")
+    return known_claude_models
 
 
 async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list[str]]:
