@@ -78,8 +78,14 @@ class CreateProjectRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=200, description="Project name")
     description: str | None = Field(None, max_length=1000, description="Project description")
     knowledge_base_content: str | None = Field(None, description="Initial knowledge base content")
-    llm_provider: str | None = Field(None, description="Optional LLM provider to use for analysis (e.g., 'ollama', 'claude'). Defaults to user's configured default.")
-    llm_model: str | None = Field(None, description="Optional specific model to use (e.g., 'stable-code:3b'). Requires llm_provider to be set.")
+    llm_provider: str | None = Field(
+        None,
+        description="Optional LLM provider to use for analysis (e.g., 'ollama', 'claude'). Defaults to user's configured default.",
+    )
+    llm_model: str | None = Field(
+        None,
+        description="Optional specific model to use (e.g., 'stable-code:3b'). Requires llm_provider to be set.",
+    )
 
 
 class UpdateProjectRequest(BaseModel):
