@@ -143,9 +143,23 @@ async def set_model(
             # Discover actual models
             discovered = await discover_provider_models(request.provider, api_key)
 
-            # Validate against discovered models if available
-            if discovered and request.model not in discovered:
-                available = ", ".join(discovered)
+            # Validate against discovered models
+            if not discovered:
+                # Discovery failed - could be API error, invalid key, or network issue
+                if provider_meta.requires_api_key and not api_key:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"API key required for {request.provider} to validate models. Add API key and try again."
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=503,
+                        detail=f"Unable to discover {request.provider} models. Try again or check your API key."
+                    )
+            elif request.model not in discovered:
+                available = ", ".join(discovered[:10])  # Show first 10
+                if len(discovered) > 10:
+                    available += f", ... and {len(discovered) - 10} more"
                 raise HTTPException(
                     status_code=400,
                     detail=f"Model '{request.model}' not available for {request.provider}. Available: {available}"
