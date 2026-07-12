@@ -10,8 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
+# Copy project configuration
 COPY pyproject.toml .
 COPY README.md .
 COPY LICENSE .
@@ -21,9 +20,8 @@ COPY socratic_system socratic_system/
 COPY socrates-api socrates-api/
 COPY socrates-cli socrates-cli/
 
-# Install Python dependencies - base requirements first, then dev tools
+# Install Python dependencies from pyproject.toml
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -e ".[dev]"
 
 # Stage 2: Runtime
