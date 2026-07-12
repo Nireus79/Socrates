@@ -274,14 +274,21 @@ def update_provider_metadata_with_discovered_models() -> None:
     resources and updates configuration accordingly. Agents consume what
     they're told, not what they assume exists.
     """
+    import asyncio
     from socratic_system.models.llm_provider import PROVIDER_METADATA
 
     # Log deployment scenario
     config = LLMEnvironmentConfig.get_provider_config()
     logger.info(f"Deployment scenario: {config['deployment_scenario']}")
 
-    # Attempt to discover actual Ollama models
-    discovered_models = discover_ollama_models()
+    # Attempt to discover actual Ollama models (using asyncio.run since this is startup)
+    try:
+        discovered_models = asyncio.run(discover_ollama_models())
+    except RuntimeError:
+        # asyncio.run() fails if event loop is already running
+        # In that case, skip Ollama discovery (will use empty list)
+        logger.debug("Cannot discover Ollama models during startup (event loop already running)")
+        discovered_models = None
 
     if discovered_models:
         # Update Ollama provider metadata with discovered models

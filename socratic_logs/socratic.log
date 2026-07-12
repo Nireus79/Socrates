@@ -2128,3 +2128,98 @@
 [2026-07-12 09:30:25] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
 [2026-07-12 09:30:25] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
 [2026-07-12 09:30:25] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-07-12 09:32:52] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-07-12 09:32:52] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-07-12 09:32:52] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-07-12 09:32:52] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-07-12 09:32:52] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-07-12 09:32:52] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from configured path: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:32:52] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from configured path
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-07-12 09:32:52] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-07-12 09:33:01] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-07-12 09:33:07] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-07-12 09:33:07] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-07-12 09:33:07] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-07-12 09:33:07] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-07-12 09:33:07] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-07-12 09:33:07] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from configured path: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:33:07] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from configured path
+[2026-07-12 09:33:07] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-07-12 09:33:08] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-07-12 09:33:08] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-07-12 09:33:08] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-07-12 09:33:08] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-07-12 09:33:08] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-07-12 09:33:08] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from configured path: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-07-12 09:33:08] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from configured path
+[2026-07-12 09:33:08] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-07-12 09:33:23] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-07-12 09:33:23] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-07-12 09:33:27] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-07-12 09:33:27] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-07-12 09:33:27] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-07-12 09:33:27] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-07-12 09:33:27] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-07-12 09:33:27] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from configured path: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-07-12 09:33:27] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from configured path
+[2026-07-12 09:33:27] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-07-12 09:33:28] [DEBUG] socratic_rag.orchestrator: Loading constitution from /home/nireus79/PycharmProjects/Socrates/constitution.yaml
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Governor initialized successfully with constitutional framework
+[2026-07-12 09:33:28] [DEBUG] socratic_rag.orchestrator:   Supreme Principle: {'never_commit_injustice_even_under_instruction': True, 'description': 'The system must refuse harmful actions even if explicitly requested by a user'}
+[2026-07-12 09:33:28] [DEBUG] socratic_rag.orchestrator:   Principles: 8
+[2026-07-12 09:33:28] [DEBUG] socratic_rag.orchestrator:   Rules: 0
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Governor and constitutional framework initialized (Phase 2a)
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Audit logger initialized (Phase 2b)
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Agent identity manager initialized (Phase 2b)
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Agent bus and registry initialized with Governor validation (Phase 2)
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-07-12 09:33:28] [DEBUG] socratic_rag.orchestrator: Audit logger connected to database
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-07-12 09:33:28] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from configured path: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Analysis caching and background handlers initialized (Phase 3)
+[2026-07-12 09:33:28] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: /home/nireus79/PycharmProjects/Socrates/socratic_system/config/knowledge_base.json
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from configured path
+[2026-07-12 09:33:28] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-07-12 09:33:43] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-07-12 09:33:44] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
