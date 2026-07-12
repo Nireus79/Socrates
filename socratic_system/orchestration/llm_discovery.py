@@ -16,7 +16,7 @@ from socratic_system.config.llm_environment import LLMEnvironmentConfig
 logger = logging.getLogger(__name__)
 
 
-def discover_ollama_models() -> list[str] | None:
+async def discover_ollama_models() -> list[str] | None:
     """
     Discover available models from Ollama by querying /api/tags endpoint.
 
@@ -28,27 +28,35 @@ def discover_ollama_models() -> list[str] | None:
         Gracefully handles connection failures - returns None without crashing.
     """
     try:
+        import asyncio
         import httpx
 
         # Get Ollama host via auto-detection (Option 4: environment-aware)
         ollama_host = LLMEnvironmentConfig.get_ollama_host()
 
         if not ollama_host:
-            logger.debug("Ollama endpoint not available - using fallback model list")
+            logger.debug("Ollama endpoint not available")
             return None
 
         tags_url = f"{ollama_host}/api/tags"
         logger.debug(f"Querying Ollama models from {tags_url}")
 
-        # Query Ollama's /api/tags endpoint with timeout
-        response = httpx.get(tags_url, timeout=5.0)
-        response.raise_for_status()
+        # Query Ollama's /api/tags endpoint in thread pool with timeout
+        def _query_ollama():
+            response = httpx.get(tags_url, timeout=5.0)
+            response.raise_for_status()
+            return response.json()
 
-        data = response.json()
+        try:
+            data = await asyncio.wait_for(asyncio.to_thread(_query_ollama), timeout=10.0)
+        except asyncio.TimeoutError:
+            logger.debug("Ollama discovery timed out")
+            return None
+
         models_data = data.get("models", [])
 
         if not models_data:
-            logger.warning("Ollama returned empty model list")
+            logger.debug("Ollama returned empty model list")
             return None
 
         # Extract model names from Ollama response
@@ -56,22 +64,16 @@ def discover_ollama_models() -> list[str] | None:
         model_names = [model.get("name") for model in models_data if model.get("name")]
 
         if model_names:
-            logger.info(f"✓ Discovered {len(model_names)} Ollama models: {model_names}")
+            logger.info(f"✓ Discovered {len(model_names)} Ollama models")
             return model_names
 
         return None
 
     except ImportError:
-        logger.warning("httpx not available - skipping Ollama discovery")
-        return None
-    except TimeoutError:
-        logger.warning("Ollama discovery timed out - Ollama may not be running")
-        return None
-    except ConnectionError:
-        logger.warning("Could not connect to Ollama - using fallback model list")
+        logger.debug("httpx not available - skipping Ollama discovery")
         return None
     except Exception as e:
-        logger.warning(f"Ollama discovery failed: {e} - using fallback model list")
+        logger.debug(f"Ollama discovery failed: {e}")
         return None
 
 
@@ -227,7 +229,7 @@ async def discover_gemini_models(api_key: Optional[str] = None) -> Optional[list
 async def discover_provider_models(provider: str, api_key: Optional[str] = None) -> Optional[list[str]]:
     """
     Discover available models for a given provider.
-    Dynamically fetches models if possible, falls back to hardcoded list.
+    Dynamically fetches models if possible, falls back to None if unavailable.
 
     Supports:
     - ollama: Queries local Ollama instance /api/tags
@@ -240,12 +242,12 @@ async def discover_provider_models(provider: str, api_key: Optional[str] = None)
         api_key: Optional API key for the provider. If not provided, checks env vars.
 
     Returns:
-        List of model names if discovery succeeds, None to use hardcoded list
+        List of model names if discovery succeeds, None if discovery fails or unavailable
     """
     provider = provider.lower()
 
     if provider == "ollama":
-        return discover_ollama_models()
+        return await discover_ollama_models()
     elif provider == "claude":
         return await discover_claude_models(api_key)
     elif provider == "openai":
