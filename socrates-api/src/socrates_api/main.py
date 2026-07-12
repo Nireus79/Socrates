@@ -495,23 +495,36 @@ async def health_check():
 
 
 @app.get("/api/providers", response_model=dict)
-async def get_available_providers():
-    """Get all available LLM providers and their models."""
+async def get_available_providers(current_user: str = Depends(get_current_user), db: ProjectDatabase = Depends(get_database)):
+    """Get all available LLM providers and their models, with configuration status."""
     from socratic_system.models import list_available_providers
 
     providers = list_available_providers()
-    return {
-        "providers": [
-            {
-                "name": p.provider,
-                "display_name": p.display_name,
-                "models": p.models,
-                "requires_api_key": p.requires_api_key,
-                "available": p.available,
-            }
-            for p in providers
-        ]
-    }
+    result = []
+
+    for p in providers:
+        # Check if this provider has a saved API key for the current user
+        is_configured = False
+        if p.requires_api_key:
+            try:
+                api_key = db.get_api_key(current_user, p.provider)
+                is_configured = api_key is not None
+            except Exception as e:
+                logger.debug(f"Could not check API key status for {p.provider}: {e}")
+        else:
+            # Providers that don't require API key are always configured
+            is_configured = True
+
+        result.append({
+            "name": p.provider,
+            "display_name": p.display_name,
+            "models": p.models,
+            "requires_api_key": p.requires_api_key,
+            "available": p.available,
+            "is_configured": is_configured,
+        })
+
+    return {"providers": result}
 
 
 @app.get("/api/providers/{provider}/models", response_model=dict)
