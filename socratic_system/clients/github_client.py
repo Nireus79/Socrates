@@ -255,7 +255,7 @@ class GitHubClient:
             response = requests.get(
                 f"{self.BASE_URL}/user/repos",
                 headers=self.headers,
-                params={"type": repo_type, "per_page": 100},
+                params={"type": repo_type, "per_page": "100"},
                 timeout=self.TIMEOUT,
             )
 
