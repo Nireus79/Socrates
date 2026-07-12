@@ -126,9 +126,13 @@ async def set_model(
         from socratic_system.orchestration.llm_discovery import discover_provider_models
         from socrates_api.main import get_orchestrator
 
+        logger.info(f"Setting model for user {current_user}: {request.provider}/{request.model}")
+
         # For providers with dynamic model discovery (empty metadata.models),
         # discover models to validate before sending to agent
         provider_meta = get_provider_metadata(request.provider)
+        discovered_models = None
+
         if provider_meta and len(provider_meta.models) == 0:
             # Get user's API key if available
             api_key = None
@@ -170,25 +174,57 @@ async def set_model(
                     status_code=400,
                     detail=f"Model '{request.model}' not available for {request.provider}. Available: {available}"
                 )
+            else:
+                # Store discovered models to pass to agent
+                discovered_models = discovered
+                logger.debug(f"Discovered {len(discovered)} models for {request.provider}: {discovered}")
 
-        orchestrator = get_orchestrator()
-        result = await orchestrator.agent_bus.send_request(
-            "multi_llm_manager",
-            {
+        try:
+            orchestrator = get_orchestrator()
+        except RuntimeError as e:
+            logger.error(f"Orchestrator not initialized: {e}")
+            raise HTTPException(status_code=503, detail="Service not initialized. Please refresh the page.")
+
+        try:
+            # Build request for multi_llm_manager
+            agent_request = {
                 "action": "set_provider_model",
                 "user_id": current_user,
                 "provider": request.provider,
                 "model": request.model,
-            },
-        )
+            }
+
+            # Pass discovered models to agent for validation (Option A architecture)
+            if discovered_models is not None:
+                agent_request["available_models"] = discovered_models
+                logger.debug(f"Passing {len(discovered_models)} discovered models to multi_llm_manager agent")
+
+            result = await orchestrator.agent_bus.send_request(
+                "multi_llm_manager",
+                agent_request,
+            )
+        except HTTPException:
+            raise  # Re-raise HTTP exceptions as-is
+        except Exception as e:
+            logger.error(f"Error sending request to multi_llm_manager: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"Failed to set model: {str(e)}")
+
         if result.get("status") != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
+            # Check if it's a validation error (400) or server error (500)
+            message = result.get("message", "Failed to set model")
+            if "not available" in message.lower():
+                raise HTTPException(status_code=400, detail=message)
+            else:
+                raise HTTPException(status_code=500, detail=message)
+
+        logger.info(f"Model set successfully: {request.provider}/{request.model}")
         return APIResponse(
             success=True, status="success", message="Model set", data=result.get("data", result)
         )
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Unexpected error in set_model: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
