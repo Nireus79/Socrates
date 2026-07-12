@@ -77,25 +77,52 @@ def discover_ollama_models() -> list[str] | None:
 
 async def discover_claude_models(api_key: Optional[str] = None) -> Optional[list[str]]:
     """
-    Discover available Claude models from Anthropic.
+    Discover available Claude models from Anthropic API.
 
-    Note: Anthropic does not provide a public models API endpoint.
-    Returns a static list of known current Claude models (updated regularly).
+    Queries the Anthropic models endpoint to get the current list of available models.
+    Falls back to None if API is unavailable or API key is invalid.
 
     Args:
-        api_key: Optional API key for the provider (not used).
+        api_key: Optional API key. If not provided, checks ANTHROPIC_API_KEY env var.
     """
-    # Anthropic doesn't have a public models API, but we know the current models
-    # This list should be updated when new Claude models are released
-    known_claude_models = [
-        "claude-3-5-sonnet-20241022",  # Latest, most capable for general use
-        "claude-3-5-haiku-20241022",   # Latest, fastest
-        "claude-3-opus-20250219",      # Most capable, highest cost
-        "claude-3-sonnet-20240229",    # Previous generation
-        "claude-3-haiku-20240307",     # Previous generation
-    ]
-    logger.debug(f"Claude: Using known model list ({len(known_claude_models)} models)")
-    return known_claude_models
+    try:
+        import asyncio
+        import os
+        from anthropic import Anthropic
+
+        if not api_key:
+            api_key = os.getenv('ANTHROPIC_API_KEY')
+        if not api_key:
+            logger.debug("ANTHROPIC_API_KEY not set - skipping Claude model discovery")
+            return None
+
+        client = Anthropic(api_key=api_key)
+
+        # Run sync client call in thread pool to avoid blocking event loop
+        def _list_models():
+            return client.models.list()
+
+        try:
+            models_response = await asyncio.wait_for(asyncio.to_thread(_list_models), timeout=10.0)
+        except asyncio.TimeoutError:
+            logger.debug("Claude model discovery timed out")
+            return None
+
+        # Extract model IDs from response
+        claude_models = [model.id for model in models_response.data]
+
+        if claude_models:
+            logger.info(f"✓ Discovered {len(claude_models)} Claude models")
+            return sorted(claude_models, reverse=True)  # Newest first
+
+        return None
+
+    except ImportError:
+        logger.debug("anthropic library not available - skipping Claude model discovery")
+        return None
+    except Exception as e:
+        logger.debug(f"Claude model discovery failed: {e}")
+        return None
 
 
 async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list[str]]:
