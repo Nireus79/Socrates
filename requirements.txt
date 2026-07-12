@@ -2,7 +2,7 @@
 # Generated from pyproject.toml
 
 # Socratic Ecosystem Libraries
-socratic-agents>=0.4.6
+socratic-agents>=0.4.8
 socratic-morality>=0.0.7
 socratic-workflow>=0.1.5
 socratic-maturity>=0.2.1
