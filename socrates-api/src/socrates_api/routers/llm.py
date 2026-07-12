@@ -146,16 +146,22 @@ async def set_model(
             # Validate against discovered models
             if not discovered:
                 # Discovery failed - could be API error, invalid key, or network issue
-                if provider_meta.requires_api_key and not api_key:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"API key required for {request.provider} to validate models. Add API key and try again."
-                    )
+                if provider_meta.requires_api_key:
+                    # API key is required, so discovery failure is an error
+                    if not api_key:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"API key required for {request.provider} to validate models. Add API key and try again."
+                        )
+                    else:
+                        raise HTTPException(
+                            status_code=503,
+                            detail=f"Unable to discover {request.provider} models. Try again or check your API key."
+                        )
                 else:
-                    raise HTTPException(
-                        status_code=503,
-                        detail=f"Unable to discover {request.provider} models. Try again or check your API key."
-                    )
+                    # Optional provider (like Ollama) - allow model selection even if discovery fails
+                    # Just log a warning and let the request proceed
+                    logger.warning(f"Could not discover models for {request.provider}, but allowing selection anyway (optional provider)")
             elif request.model not in discovered:
                 available = ", ".join(discovered[:10])  # Show first 10
                 if len(discovered) > 10:
