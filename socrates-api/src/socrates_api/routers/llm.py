@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
-from socrates_api.database import get_database, ProjectDatabase
+from socrates_api.database import ProjectDatabase, get_database
 from socrates_api.models import APIResponse
 
 if TYPE_CHECKING:
@@ -122,9 +122,9 @@ async def set_model(
     db: "ProjectDatabase" = Depends(get_database),
 ):
     try:
+        from socrates_api.main import get_orchestrator
         from socratic_system.models import get_provider_metadata
         from socratic_system.orchestration.llm_discovery import discover_provider_models
-        from socrates_api.main import get_orchestrator
 
         logger.info(f"Setting model for user {current_user}: {request.provider}/{request.model}")
 
@@ -140,6 +140,7 @@ async def set_model(
                 encrypted_key = db.get_api_key(current_user, request.provider)
                 if encrypted_key:
                     from socratic_system.encryption import decrypt_data
+
                     api_key = decrypt_data(encrypted_key)
             except Exception as e:
                 logger.debug(f"Could not fetch/decrypt API key for {request.provider}: {e}")
@@ -155,35 +156,41 @@ async def set_model(
                     if not api_key:
                         raise HTTPException(
                             status_code=400,
-                            detail=f"API key required for {request.provider} to validate models. Add API key and try again."
+                            detail=f"API key required for {request.provider} to validate models. Add API key and try again.",
                         )
                     else:
                         raise HTTPException(
                             status_code=503,
-                            detail=f"Unable to discover {request.provider} models. Try again or check your API key."
+                            detail=f"Unable to discover {request.provider} models. Try again or check your API key.",
                         )
                 else:
                     # Optional provider (like Ollama) - allow model selection even if discovery fails
                     # Just log a warning and let the request proceed
-                    logger.warning(f"Could not discover models for {request.provider}, but allowing selection anyway (optional provider)")
+                    logger.warning(
+                        f"Could not discover models for {request.provider}, but allowing selection anyway (optional provider)"
+                    )
             elif request.model not in discovered:
                 available = ", ".join(discovered[:10])  # Show first 10
                 if len(discovered) > 10:
                     available += f", ... and {len(discovered) - 10} more"
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Model '{request.model}' not available for {request.provider}. Available: {available}"
+                    detail=f"Model '{request.model}' not available for {request.provider}. Available: {available}",
                 )
             else:
                 # Store discovered models to pass to agent
                 discovered_models = discovered
-                logger.debug(f"Discovered {len(discovered)} models for {request.provider}: {discovered}")
+                logger.debug(
+                    f"Discovered {len(discovered)} models for {request.provider}: {discovered}"
+                )
 
         try:
             orchestrator = get_orchestrator()
         except RuntimeError as e:
             logger.error(f"Orchestrator not initialized: {e}")
-            raise HTTPException(status_code=503, detail="Service not initialized. Please refresh the page.")
+            raise HTTPException(
+                status_code=503, detail="Service not initialized. Please refresh the page."
+            )
 
         try:
             # Build request for multi_llm_manager
@@ -197,7 +204,9 @@ async def set_model(
             # Pass discovered models to agent for validation (Option A architecture)
             if discovered_models is not None:
                 agent_request["available_models"] = discovered_models
-                logger.debug(f"Passing {len(discovered_models)} discovered models to multi_llm_manager agent")
+                logger.debug(
+                    f"Passing {len(discovered_models)} discovered models to multi_llm_manager agent"
+                )
 
             result = await orchestrator.agent_bus.send_request(
                 "multi_llm_manager",
@@ -337,7 +346,7 @@ async def get_models(provider: str):
                 "supports_streaming": metadata.supports_streaming,
                 "supports_vision": metadata.supports_vision,
                 "default_model": metadata.models[0] if metadata.models else None,
-            }
+            },
         )
     except HTTPException:
         raise

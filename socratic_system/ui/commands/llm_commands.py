@@ -117,8 +117,8 @@ class LLMCommand(BaseCommand):
                 )
                 print(f"  Models: {models_count:<20} {requires_key}")
 
-                input_cost = provider.get('cost_per_1k_input_tokens')
-                output_cost = provider.get('cost_per_1k_output_tokens')
+                input_cost = provider.get("cost_per_1k_input_tokens")
+                output_cost = provider.get("cost_per_1k_output_tokens")
                 if input_cost is None:
                     cost_str = "Pricing varies by model"
                 elif input_cost == 0:

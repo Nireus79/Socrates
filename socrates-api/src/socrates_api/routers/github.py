@@ -6,7 +6,7 @@ Provides GitHub repository import, pull, push, and sync functionality.
 
 import logging
 import os
-from datetime import UTC
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from socratic_agents import (
@@ -1364,4 +1364,404 @@ async def disconnect_github(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to disconnect GitHub: {str(e)}",
+        )
+
+
+# ============================================================================
+# GitHub Authentication & Sponsorship Verification Endpoints
+# ============================================================================
+
+
+@router.post(
+    "/link-account",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Link GitHub Personal Access Token",
+)
+async def link_github_account(
+    request_data: dict,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Link GitHub Personal Access Token to Socrates account.
+
+    Validates token with GitHub API before storing encrypted in database.
+
+    Args:
+        request_data: Dictionary with 'token' field containing GitHub PAT
+        current_user: Authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse with GitHub username and scopes
+    """
+    try:
+        token = request_data.get("token", "").strip()
+
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="GitHub token cannot be empty",
+            )
+
+        logger.info(f"Linking GitHub account for user: {current_user}")
+
+        # Validate token with GitHub API
+        from socratic_system.clients.github_client import GitHubClient
+
+        try:
+            client = GitHubClient(token)
+
+            # Verify token is valid
+            if not client.verify_token():
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="GitHub token is invalid or expired",
+                )
+
+            # Get user info
+            user_info = client.get_user_info()
+            github_username = user_info.get("login")
+            github_user_id = user_info.get("id")
+
+            # Get token scopes
+            scopes = client.get_token_scopes()
+
+            # Validate required scopes
+            if "user" not in scopes:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="GitHub token must have 'user' scope for sponsorship verification",
+                )
+
+            logger.debug(f"GitHub token validated for: {github_username}")
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"GitHub token validation error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Failed to validate GitHub token: {str(e)}",
+            )
+
+        # Encrypt token
+        from socratic_system.encryption import encrypt_data
+
+        try:
+            encrypted_token = encrypt_data(token)
+        except RuntimeError as e:
+            logger.error(f"Encryption failed: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Server configuration error: encryption not available. Contact administrator.",
+            )
+
+        # Check if GitHub username is already linked to another Socrates account
+        existing = db.get_github_auth_by_github_username(github_username)
+        if existing and existing.get("username") != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"GitHub account {github_username} is already linked to another Socrates account",
+            )
+
+        # Save to database
+        db.save_github_auth(
+            {
+                "username": current_user,
+                "github_username": github_username,
+                "github_user_id": github_user_id,
+                "github_token": encrypted_token,
+                "token_scopes": ",".join(scopes),
+                "token_created_at": datetime.now().isoformat(),
+                "verification_status": "active",
+            }
+        )
+
+        logger.info(f"GitHub account linked: {current_user} → {github_username}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"GitHub account linked successfully: {github_username}",
+            data={
+                "github_username": github_username,
+                "scopes": scopes,
+                "linked_at": datetime.now().isoformat(),
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error linking GitHub account: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to link GitHub account: {str(e)}",
+        )
+
+
+@router.get(
+    "/auth/status",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get GitHub Authentication Status",
+)
+async def get_github_auth_status(
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Check if GitHub account is linked and get sponsorship status.
+
+    Args:
+        current_user: Authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse with GitHub auth status and sponsorship info
+    """
+    try:
+        # Check if GitHub is linked
+        github_auth = db.get_github_auth(current_user)
+
+        if not github_auth:
+            return APIResponse(
+                success=False,
+                status="error",
+                error_code="github_not_linked",
+                message="GitHub account is not linked",
+                data={
+                    "linked": False,
+                    "username": current_user,
+                },
+            )
+
+        # Decrypt token and verify
+        from socratic_system.clients.github_client import GitHubClient
+        from socratic_system.encryption import decrypt_data
+
+        try:
+            encrypted_token = github_auth.get("github_token")
+            token = decrypt_data(encrypted_token)
+            client = GitHubClient(token)
+
+            # Check if token is still valid
+            if not client.verify_token():
+                logger.warning(f"GitHub token invalid for user: {current_user}")
+                db.update_github_verification(
+                    current_user,
+                    verification_status="invalid",
+                    verification_error="Token is invalid or expired",
+                )
+
+                return APIResponse(
+                    success=False,
+                    status="error",
+                    error_code="github_token_invalid",
+                    message="GitHub token is invalid or expired",
+                    data={
+                        "linked": True,
+                        "github_username": github_auth.get("github_username"),
+                        "token_valid": False,
+                    },
+                )
+
+            # Get sponsorship status
+            sponsorship = client.get_sponsorship_status("Nireus79")
+
+            # Update verification timestamp
+            db.update_github_verification(
+                current_user,
+                verified_at=datetime.now().isoformat(),
+                verification_status="verified",
+            )
+
+            sponsorship_data = {}
+            if sponsorship:
+                tier_price = sponsorship.get("tier", {}).get("monthly_price_in_cents", 0)
+                sponsorship_data = {
+                    "active": True,
+                    "tier": "pro" if tier_price < 1500 else "enterprise",
+                    "amount_usd": tier_price / 100,
+                    "expires_at": sponsorship.get("sponsorship_renewable_until"),
+                }
+            else:
+                sponsorship_data = {"active": False}
+
+            return APIResponse(
+                success=True,
+                status="success",
+                message="GitHub account is linked",
+                data={
+                    "linked": True,
+                    "github_username": github_auth.get("github_username"),
+                    "token_valid": True,
+                    "scopes": github_auth.get("token_scopes", "").split(","),
+                    "verification_status": github_auth.get("verification_status"),
+                    "last_verified_at": github_auth.get("last_verified_at"),
+                    "sponsorship": sponsorship_data,
+                },
+            )
+
+        except Exception as e:
+            logger.error(f"Error checking GitHub status: {e}")
+            return APIResponse(
+                success=False,
+                status="error",
+                message=f"Error checking GitHub status: {str(e)}",
+                data={
+                    "linked": True,
+                    "github_username": github_auth.get("github_username"),
+                    "token_valid": False,
+                },
+            )
+
+    except Exception as e:
+        logger.error(f"Error getting GitHub status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get GitHub status: {str(e)}",
+        )
+
+
+@router.delete(
+    "/unlink",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Unlink GitHub Account",
+)
+async def unlink_github_account(
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Unlink GitHub account from Socrates.
+
+    Revokes and deletes the stored GitHub Personal Access Token.
+
+    Args:
+        current_user: Authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse confirming unlink
+    """
+    try:
+        # Delete GitHub auth record
+        deleted = db.delete_github_auth(current_user)
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="GitHub account is not linked",
+            )
+
+        logger.info(f"GitHub account unlinked for user: {current_user}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="GitHub account unlinked successfully",
+            data={
+                "linked": False,
+                "username": current_user,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error unlinking GitHub account: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to unlink GitHub account: {str(e)}",
+        )
+
+
+@router.post(
+    "/refresh-verification",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Refresh GitHub Sponsorship Verification",
+)
+async def refresh_github_verification(
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Manually refresh GitHub sponsorship verification.
+
+    Calls GitHub API to verify current sponsorship status.
+
+    Args:
+        current_user: Authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse with current sponsorship status
+    """
+    try:
+        # Get GitHub auth
+        github_auth = db.get_github_auth(current_user)
+
+        if not github_auth:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="GitHub account is not linked",
+            )
+
+        # Decrypt token and verify sponsorship
+        from datetime import datetime
+
+        from socratic_system.clients.github_client import GitHubClient
+        from socratic_system.encryption import decrypt_data
+
+        encrypted_token = github_auth.get("github_token")
+        token = decrypt_data(encrypted_token)
+        client = GitHubClient(token)
+
+        # Get sponsorship status
+        sponsorship = client.get_sponsorship_status("Nireus79")
+
+        # Update verification
+        db.update_github_verification(
+            current_user,
+            verified_at=datetime.now().isoformat(),
+            verification_status="verified",
+        )
+
+        sponsorship_data = {}
+        if sponsorship:
+            tier_price = sponsorship.get("tier", {}).get("monthly_price_in_cents", 0)
+            sponsorship_data = {
+                "active": True,
+                "tier": "pro" if tier_price < 1500 else "enterprise",
+                "amount_usd": tier_price / 100,
+                "expires_at": sponsorship.get("sponsorship_renewable_until"),
+            }
+        else:
+            sponsorship_data = {"active": False}
+
+        logger.info(f"Refreshed GitHub sponsorship verification for: {current_user}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="GitHub sponsorship verified",
+            data={
+                "verified": True,
+                "verified_at": datetime.now().isoformat(),
+                "sponsorship": sponsorship_data,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error refreshing GitHub verification: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to refresh GitHub verification: {str(e)}",
         )

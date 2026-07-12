@@ -19,6 +19,8 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
 
+from socrates_api.auth import get_current_user
+from socrates_api.database import ProjectDatabase, get_database
 from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
 from socrates_api.middleware.cors_fix import SimpleCORSMiddleware
 from socrates_api.middleware.metrics import (
@@ -30,8 +32,6 @@ from socrates_api.middleware.rate_limit import (
     initialize_limiter,
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware
-from socrates_api.auth import get_current_user
-from socrates_api.database import get_database, ProjectDatabase
 from socratic_system.events import EventType
 from socratic_system.exceptions import SocratesError
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
@@ -91,6 +91,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 # Initialize JWT_SECRET_KEY file (auto-generate if not exists)
 # This ensures jwt_handler.py can read it at function call time
 def _initialize_jwt_secret_key():
@@ -109,6 +110,7 @@ def _initialize_jwt_secret_key():
     jwt_key_file.parent.mkdir(parents=True, exist_ok=True)
     jwt_key_file.write_text(jwt_secret)
     logger.info(f"✓ JWT secret key auto-generated and saved to {jwt_key_file}")
+
 
 # Initialize JWT secret key file before any imports
 _initialize_jwt_secret_key()
@@ -310,7 +312,6 @@ async def lifespan(app: FastAPI):
         # Re-raise to prevent API from starting without database
         raise
 
-
     # Auto-initialize orchestrator on startup
     # All API credentials are per-user from database. No environment variable fallback.
     try:
@@ -320,6 +321,7 @@ async def lifespan(app: FastAPI):
         # All LLM calls must be provider-aware with credentials from database
         # Use SocratesConfig.from_env() to respect SOCRATES_DATA_DIR for persistent volume
         from socratic_system.config import SocratesConfig
+
         config = SocratesConfig.from_env()
         orchestrator = AgentOrchestrator(api_key_or_config=config)
         logger.info("AgentOrchestrator created successfully (credential-less)")
@@ -495,7 +497,9 @@ async def health_check():
 
 
 @app.get("/api/providers", response_model=dict)
-async def get_available_providers(current_user: str = Depends(get_current_user), db: ProjectDatabase = Depends(get_database)):
+async def get_available_providers(
+    current_user: str = Depends(get_current_user), db: ProjectDatabase = Depends(get_database)
+):
     """Get all available LLM providers and their models, with configuration status."""
     from socratic_system.models import list_available_providers
 
@@ -515,20 +519,26 @@ async def get_available_providers(current_user: str = Depends(get_current_user),
             # Providers that don't require API key are always configured
             is_configured = True
 
-        result.append({
-            "name": p.provider,
-            "display_name": p.display_name,
-            "models": p.models,
-            "requires_api_key": p.requires_api_key,
-            "available": p.available,
-            "is_configured": is_configured,
-        })
+        result.append(
+            {
+                "name": p.provider,
+                "display_name": p.display_name,
+                "models": p.models,
+                "requires_api_key": p.requires_api_key,
+                "available": p.available,
+                "is_configured": is_configured,
+            }
+        )
 
     return {"providers": result}
 
 
 @app.get("/api/providers/{provider}/models", response_model=dict)
-async def get_provider_models(provider: str, current_user: str = Depends(get_current_user), db: ProjectDatabase = Depends(get_database)):
+async def get_provider_models(
+    provider: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
     """Get available models for a specific provider (with dynamic discovery)."""
     try:
         from socratic_system.models import get_provider_metadata
@@ -540,8 +550,7 @@ async def get_provider_models(provider: str, current_user: str = Depends(get_cur
         if not provider_meta:
             logger.warning(f"Provider not found: {provider}")
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Provider '{provider}' not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"Provider '{provider}' not found"
             )
 
         # Fetch user's API key for this provider from database
@@ -550,6 +559,7 @@ async def get_provider_models(provider: str, current_user: str = Depends(get_cur
             encrypted_key = db.get_api_key(current_user, provider)
             if encrypted_key:
                 from socratic_system.encryption import decrypt_data
+
                 api_key = decrypt_data(encrypted_key)
                 logger.debug(f"API key found and decrypted for {provider}")
             else:
@@ -565,11 +575,15 @@ async def get_provider_models(provider: str, current_user: str = Depends(get_cur
         models = []
 
         if discovered_models:
-            logger.debug(f"Discovered {len(discovered_models)} models for {provider}: {discovered_models[:3]}")
+            logger.debug(
+                f"Discovered {len(discovered_models)} models for {provider}: {discovered_models[:3]}"
+            )
             models = discovered_models
             discovery_status = "success"
         elif discovered_models is None:
-            logger.debug(f"Provider {provider}: discovery returned None (no public API or unavailable)")
+            logger.debug(
+                f"Provider {provider}: discovery returned None (no public API or unavailable)"
+            )
             discovery_status = "no_api"
         else:
             logger.debug(f"Provider {provider}: discovery returned empty list")
@@ -590,7 +604,7 @@ async def get_provider_models(provider: str, current_user: str = Depends(get_cur
         logger.error(f"Error fetching models for {provider}: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch models: {str(e)}"
+            detail=f"Failed to fetch models: {str(e)}",
         )
 
 
@@ -834,6 +848,7 @@ async def initialize(request: InitializeRequest | None = Body(None)):
         # All LLM calls must use provider_config from database
         # Use SocratesConfig.from_env() to respect SOCRATES_DATA_DIR for persistent volume
         from socratic_system.config import SocratesConfig
+
         config = SocratesConfig.from_env()
         orchestrator = AgentOrchestrator(api_key_or_config=config)
 

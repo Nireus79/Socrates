@@ -161,7 +161,10 @@ class JWTHandler:
         try:
             # Don't verify signature/expiry, just decode
             payload = jwt.decode(
-                token, _get_secret_key(), algorithms=[ALGORITHM], options={"verify_signature": False}
+                token,
+                _get_secret_key(),
+                algorithms=[ALGORITHM],
+                options={"verify_signature": False},
             )
             return payload.get("sub")
         except jwt.InvalidTokenError:

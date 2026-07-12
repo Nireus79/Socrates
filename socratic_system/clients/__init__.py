@@ -14,6 +14,14 @@ from socratic_nexus.clients import (
     OllamaClient,
 )
 
+# Import GitHub client for sponsorship verification and repo access
+from socratic_system.clients.github_client import (
+    GitHubAPIError,
+    GitHubAuthError,
+    GitHubClient,
+    GitHubClientError,
+)
+
 # Import Socrates agent client (Phase 4 - API Adapter)
 from socratic_system.clients.socrates_agent_client import (
     SocratesAgentClient,
@@ -31,6 +39,10 @@ try:
         "OllamaClient",
         "SocratesAgentClient",
         "SocratesAgentClientSync",
+        "GitHubClient",
+        "GitHubClientError",
+        "GitHubAuthError",
+        "GitHubAPIError",
     ]
 except ImportError:
     __all__ = [
@@ -39,6 +51,10 @@ except ImportError:
         "OllamaClient",
         "SocratesAgentClient",
         "SocratesAgentClientSync",
+        "GitHubClient",
+        "GitHubClientError",
+        "GitHubAuthError",
+        "GitHubAPIError",
     ]
 
 logger = logging.getLogger("socrates.clients")

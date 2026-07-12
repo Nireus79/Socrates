@@ -21,7 +21,7 @@ import {
 } from '../../components/common';
 import { Modal } from '../../components/common/dialog';
 import { LLMSettingsPage } from '../../components/llm';
-import { ChangePasswordModal, TwoFactorSetup, SessionManager } from '../../components/settings';
+import { ChangePasswordModal, TwoFactorSetup, SessionManager, GitHubIntegrationSection } from '../../components/settings';
 
 export const SettingsPage: React.FC = () => {
   const { user, logout, deleteAccount, setTestingMode, isLoading } = useAuthStore();
@@ -65,6 +65,7 @@ export const SettingsPage: React.FC = () => {
     { label: 'Account', value: 'account', icon: Lock },
     { label: 'Preferences', value: 'preferences', icon: Moon },
     { label: 'LLM Providers', value: 'llm', icon: Zap },
+    { label: 'GitHub', value: 'github', icon: Github },
     { label: 'Security', value: 'security', icon: Shield },
     { label: 'Subscription', value: 'subscription', icon: CreditCard },
     { label: 'API Keys', value: 'api', icon: Github },
@@ -576,6 +577,11 @@ export const SettingsPage: React.FC = () => {
               }} />
             </Card>
           </div>
+        )}
+
+        {/* GitHub Integration Tab */}
+        {activeTab === 'github' && (
+          <GitHubIntegrationSection />
         )}
 
         {/* API Keys Tab */}

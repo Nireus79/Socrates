@@ -32,9 +32,20 @@ def encrypt_data(data: str, encryption_key: str | None = None) -> str:
         encryption_key = os.getenv("SOCRATES_ENCRYPTION_KEY")
 
     if not encryption_key:
+        # Try to auto-initialize encryption key from SocratesConfig
+        try:
+            from socratic_system.config import SocratesConfig
+
+            SocratesConfig.from_env()
+            encryption_key = os.getenv("SOCRATES_ENCRYPTION_KEY")
+        except Exception:
+            pass
+
+    if not encryption_key:
         raise RuntimeError(
-            "SOCRATES_ENCRYPTION_KEY environment variable is required for encryption. "
-            'Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
+            "SOCRATES_ENCRYPTION_KEY not available. "
+            "Encryption key should be auto-generated during startup. "
+            "If problem persists, check data directory permissions."
         )
 
     try:
@@ -82,8 +93,20 @@ def decrypt_data(encrypted_data: str, encryption_key: str | None = None) -> str:
         encryption_key = os.getenv("SOCRATES_ENCRYPTION_KEY")
 
     if not encryption_key:
+        # Try to auto-initialize encryption key from SocratesConfig
+        try:
+            from socratic_system.config import SocratesConfig
+
+            SocratesConfig.from_env()
+            encryption_key = os.getenv("SOCRATES_ENCRYPTION_KEY")
+        except Exception:
+            pass
+
+    if not encryption_key:
         raise RuntimeError(
-            "SOCRATES_ENCRYPTION_KEY environment variable is required for decryption"
+            "SOCRATES_ENCRYPTION_KEY not available. "
+            "Encryption key should be auto-generated during startup. "
+            "If problem persists, check data directory permissions."
         )
 
     try:
@@ -132,7 +155,9 @@ def decrypt_data(encrypted_data: str, encryption_key: str | None = None) -> str:
             return decrypted.decode()
         except Exception:
             # If both formats fail, raise error
-            raise ValueError("Invalid encrypted data format: could not decrypt with either new or old format")
+            raise ValueError(
+                "Invalid encrypted data format: could not decrypt with either new or old format"
+            )
 
     except Exception as e:
         raise RuntimeError(f"Failed to decrypt data: {e}") from e

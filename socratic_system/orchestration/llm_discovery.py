@@ -9,7 +9,6 @@ state and provides it to agents, keeping them environment-agnostic.
 """
 
 import logging
-from typing import Optional
 
 from socratic_system.config.llm_environment import LLMEnvironmentConfig
 
@@ -29,6 +28,7 @@ async def discover_ollama_models() -> list[str] | None:
     """
     try:
         import asyncio
+
         import httpx
 
         # Get Ollama host via auto-detection (Option 4: environment-aware)
@@ -49,7 +49,7 @@ async def discover_ollama_models() -> list[str] | None:
 
         try:
             data = await asyncio.wait_for(asyncio.to_thread(_query_ollama), timeout=10.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.debug("Ollama discovery timed out")
             return None
 
@@ -77,7 +77,7 @@ async def discover_ollama_models() -> list[str] | None:
         return None
 
 
-async def discover_claude_models(api_key: Optional[str] = None) -> Optional[list[str]]:
+async def discover_claude_models(api_key: str | None = None) -> list[str] | None:
     """
     Discover available Claude models from Anthropic API.
 
@@ -90,10 +90,11 @@ async def discover_claude_models(api_key: Optional[str] = None) -> Optional[list
     try:
         import asyncio
         import os
+
         from anthropic import Anthropic
 
         if not api_key:
-            api_key = os.getenv('ANTHROPIC_API_KEY')
+            api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             logger.debug("ANTHROPIC_API_KEY not set - skipping Claude model discovery")
             return None
@@ -106,7 +107,7 @@ async def discover_claude_models(api_key: Optional[str] = None) -> Optional[list
 
         try:
             models_response = await asyncio.wait_for(asyncio.to_thread(_list_models), timeout=10.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.debug("Claude model discovery timed out")
             return None
 
@@ -127,7 +128,7 @@ async def discover_claude_models(api_key: Optional[str] = None) -> Optional[list
         return None
 
 
-async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list[str]]:
+async def discover_openai_models(api_key: str | None = None) -> list[str] | None:
     """
     Discover available OpenAI models from OpenAI API.
     Filters for GPT models (gpt-4, gpt-3.5-turbo, etc).
@@ -139,10 +140,11 @@ async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list
     try:
         import asyncio
         import os
+
         from openai import OpenAI
 
         if not api_key:
-            api_key = os.getenv('OPENAI_API_KEY')
+            api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             logger.debug("OPENAI_API_KEY not set - skipping OpenAI model discovery")
             return None
@@ -155,12 +157,13 @@ async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list
 
         try:
             models_response = await asyncio.wait_for(asyncio.to_thread(_list_models), timeout=10.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.debug("OpenAI model discovery timed out")
             return None
         gpt_models = [
-            model.id for model in models_response.data
-            if 'gpt' in model.id.lower() and not model.id.startswith('text-')
+            model.id
+            for model in models_response.data
+            if "gpt" in model.id.lower() and not model.id.startswith("text-")
         ]
 
         if gpt_models:
@@ -177,7 +180,7 @@ async def discover_openai_models(api_key: Optional[str] = None) -> Optional[list
         return None
 
 
-async def discover_gemini_models(api_key: Optional[str] = None) -> Optional[list[str]]:
+async def discover_gemini_models(api_key: str | None = None) -> list[str] | None:
     """
     Discover available Google Gemini models.
     Queries genai.list_models() to get available models.
@@ -189,10 +192,11 @@ async def discover_gemini_models(api_key: Optional[str] = None) -> Optional[list
     try:
         import asyncio
         import os
+
         import google.generativeai as genai
 
         if not api_key:
-            api_key = os.getenv('GOOGLE_API_KEY')
+            api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             logger.debug("GOOGLE_API_KEY not set - skipping Gemini model discovery")
             return None
@@ -204,12 +208,11 @@ async def discover_gemini_models(api_key: Optional[str] = None) -> Optional[list
 
         try:
             models = await asyncio.wait_for(asyncio.to_thread(_configure_and_list), timeout=10.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.debug("Gemini model discovery timed out")
             return None
         model_names = [
-            model.name.replace('models/', '') for model in models
-            if 'gemini' in model.name.lower()
+            model.name.replace("models/", "") for model in models if "gemini" in model.name.lower()
         ]
 
         if model_names:
@@ -226,7 +229,7 @@ async def discover_gemini_models(api_key: Optional[str] = None) -> Optional[list
         return None
 
 
-async def discover_provider_models(provider: str, api_key: Optional[str] = None) -> Optional[list[str]]:
+async def discover_provider_models(provider: str, api_key: str | None = None) -> list[str] | None:
     """
     Discover available models for a given provider.
     Dynamically fetches models if possible, falls back to None if unavailable.
@@ -275,6 +278,7 @@ def update_provider_metadata_with_discovered_models() -> None:
     they're told, not what they assume exists.
     """
     import asyncio
+
     from socratic_system.models.llm_provider import PROVIDER_METADATA
 
     # Log deployment scenario

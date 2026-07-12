@@ -60,7 +60,9 @@ class ModelCommand(BaseCommand):
 
             models = asyncio.run(discover_claude_models())
             if not models:
-                print(f"{Fore.YELLOW}  No models discovered - check ANTHROPIC_API_KEY{Style.RESET_ALL}")
+                print(
+                    f"{Fore.YELLOW}  No models discovered - check ANTHROPIC_API_KEY{Style.RESET_ALL}"
+                )
                 return self.error("Failed to discover Claude models")
 
             for model in models:
@@ -101,7 +103,7 @@ class ModelCommand(BaseCommand):
                     break
 
             if not matching_model:
-                print(f"Available models:")
+                print("Available models:")
                 for model in available_models:
                     print(f"  - {model}")
                 return self.error(f"Model not found: {model_input}")
@@ -113,10 +115,11 @@ class ModelCommand(BaseCommand):
                     app.current_user.preferred_model = matching_model
                     orchestrator.database.save_user(app.current_user)
 
-                self.print_success(f"Model switched to {Fore.GREEN}{matching_model}{Style.RESET_ALL}")
+                self.print_success(
+                    f"Model switched to {Fore.GREEN}{matching_model}{Style.RESET_ALL}"
+                )
                 return self.success(data={"new_model": matching_model})
             else:
                 return self.error("Failed to switch model")
         except Exception as e:
             return self.error(f"Error setting model: {e}")
-

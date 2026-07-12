@@ -6,6 +6,7 @@ Uses Click for command-line argument parsing and colorama for colored output.
 """
 
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -242,6 +243,175 @@ def info(log_level):
             click.echo(f"{Fore.RED}✗ Claude API Connection: FAILED{Style.RESET_ALL}")
 
         click.echo("")
+
+    except Exception as e:
+        click.echo(f"{Fore.RED}✗ Error: {e}{Style.RESET_ALL}", err=True)
+        sys.exit(1)
+
+
+@main.group()
+def github():
+    """Manage GitHub integration and sponsorships."""
+    pass
+
+
+@github.command("link")
+@click.option(
+    "--token",
+    envvar="GITHUB_TOKEN",
+    prompt=False,
+    hide_input=True,
+    help="GitHub Personal Access Token (or set GITHUB_TOKEN env var)",
+)
+def github_link(token):
+    """Link your GitHub account to Socrates.
+
+    This allows Socrates to:
+    - Verify your GitHub Sponsors donation in real-time
+    - Import code from your private repositories
+    - Sync projects back to your private repos
+    """
+    if not token:
+        token = click.prompt("Enter your GitHub Personal Access Token", hide_input=True)
+
+    try:
+        from socratic_system.clients.github_client import GitHubClient
+        from socratic_system.database import ProjectDatabase
+        from socratic_system.encryption import encrypt_data
+
+        # Validate token with GitHub API
+        client = GitHubClient(token)
+
+        click.echo(f"{Fore.CYAN}Validating GitHub token...{Style.RESET_ALL}")
+
+        if not client.verify_token():
+            raise click.ClickException("GitHub token is invalid or expired")
+
+        # Get user info
+        user_info = client.get_user_info()
+        github_username = user_info.get("login")
+
+        # Verify scopes
+        scopes = client.get_token_scopes()
+        if "user" not in scopes:
+            raise click.ClickException(
+                "GitHub token must have 'user' scope for sponsorship verification"
+            )
+
+        click.echo(f"{Fore.GREEN}✓ GitHub token validated!{Style.RESET_ALL}")
+        click.echo(f"  Linked to: {github_username}")
+        click.echo(f"  Scopes: {', '.join(scopes)}")
+
+        # Encrypt and store token
+        db = ProjectDatabase()
+        encrypted_token = encrypt_data(token)
+
+        # Get current Socrates username
+        current_user = os.getenv("SOCRATES_USERNAME") or click.prompt(
+            "Enter your Socrates username"
+        )
+
+        db.save_github_auth(
+            {
+                "username": current_user,
+                "github_username": github_username,
+                "github_user_id": user_info.get("id"),
+                "github_token": encrypted_token,
+                "token_scopes": ",".join(scopes),
+                "verification_status": "active",
+            }
+        )
+
+        click.echo(f"{Fore.GREEN}✓ GitHub account linked successfully!{Style.RESET_ALL}")
+
+        # Check sponsorship status
+        sponsorships = client.check_active_sponsorships()
+        if sponsorships:
+            click.echo(f"\n{Fore.CYAN}Active sponsorships:{Style.RESET_ALL}")
+            for s in sponsorships:
+                maintainer = s.get("maintainer", {})
+                tier = s.get("tier", {})
+                amount = tier.get("monthly_price_in_cents", 0) / 100
+                click.echo(f"  • {maintainer.get('login')}: ${amount}/month")
+
+    except click.ClickException:
+        raise
+    except Exception as e:
+        click.echo(f"{Fore.RED}✗ Error: {e}{Style.RESET_ALL}", err=True)
+        sys.exit(1)
+
+
+@github.command("status")
+def github_status():
+    """Check GitHub integration status."""
+    try:
+        from socratic_system.clients.github_client import GitHubClient
+        from socratic_system.database import ProjectDatabase
+        from socratic_system.encryption import decrypt_data
+
+        # Get current Socrates username
+        current_user = os.getenv("SOCRATES_USERNAME") or click.prompt(
+            "Enter your Socrates username"
+        )
+
+        db = ProjectDatabase()
+        github_auth = db.get_github_auth(current_user)
+
+        if not github_auth:
+            click.echo(f"{Fore.YELLOW}GitHub account is not linked.{Style.RESET_ALL}")
+            click.echo("Link it with: socrates github link")
+            return
+
+        click.echo(f"{Fore.GREEN}✓ GitHub account linked{Style.RESET_ALL}")
+        click.echo(f"  GitHub username: {github_auth['github_username']}")
+        click.echo(f"  Status: {github_auth['verification_status']}")
+
+        if github_auth.get("last_verified_at"):
+            click.echo(f"  Last verified: {github_auth['last_verified_at']}")
+
+        # Check sponsorship status
+        encrypted_token = github_auth["github_token"]
+        token = decrypt_data(encrypted_token)
+        client = GitHubClient(token)
+
+        sponsorships = client.check_active_sponsorships()
+        if sponsorships:
+            click.echo(f"\n{Fore.CYAN}Active sponsorships:{Style.RESET_ALL}")
+            for s in sponsorships:
+                maintainer = s.get("maintainer", {})
+                tier = s.get("tier", {})
+                amount = tier.get("monthly_price_in_cents", 0) / 100
+                click.echo(f"  • {maintainer.get('login')}: ${amount}/month")
+        else:
+            click.echo(f"\n{Fore.YELLOW}No active sponsorships found{Style.RESET_ALL}")
+
+    except Exception as e:
+        click.echo(f"{Fore.RED}✗ Error: {e}{Style.RESET_ALL}", err=True)
+        sys.exit(1)
+
+
+@github.command("unlink")
+@click.confirmation_option(
+    prompt="Are you sure you want to unlink your GitHub account? "
+    "This will revoke your GitHub token."
+)
+def github_unlink():
+    """Unlink your GitHub account from Socrates."""
+    try:
+        from socratic_system.database import ProjectDatabase
+
+        # Get current Socrates username
+        current_user = os.getenv("SOCRATES_USERNAME") or click.prompt(
+            "Enter your Socrates username"
+        )
+
+        db = ProjectDatabase()
+        deleted = db.delete_github_auth(current_user)
+
+        if deleted:
+            click.echo(f"{Fore.GREEN}✓ GitHub account unlinked{Style.RESET_ALL}")
+        else:
+            click.echo(f"{Fore.YELLOW}GitHub account was not linked{Style.RESET_ALL}")
 
     except Exception as e:
         click.echo(f"{Fore.RED}✗ Error: {e}{Style.RESET_ALL}", err=True)

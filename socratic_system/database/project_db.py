@@ -4282,3 +4282,236 @@ class ProjectDatabase:
             return {}
         finally:
             conn.close()
+
+    # ========================================================================
+    # GITHUB AUTHENTICATION & INTEGRATION
+    # ========================================================================
+
+    def save_github_auth(self, github_auth_data: dict) -> int:
+        """Save or update GitHub authentication record"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        self.logger.debug(f"Saving GitHub auth for user: {github_auth_data.get('username')}")
+        self.logger.debug(f"GitHub auth data keys: {github_auth_data.keys()}")
+        try:
+            now_iso = datetime.now().isoformat()
+            self.logger.debug(f"Generated timestamp: {now_iso}")
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO github_auth (
+                    username, github_username, github_user_id, github_token,
+                    token_scopes, token_created_at, token_expires_at,
+                    last_verified_at, verification_status, verification_error,
+                    updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    github_auth_data.get("username"),
+                    github_auth_data.get("github_username"),
+                    github_auth_data.get("github_user_id"),
+                    github_auth_data.get("github_token"),
+                    github_auth_data.get("token_scopes", "user,repo"),
+                    github_auth_data.get("token_created_at"),
+                    github_auth_data.get("token_expires_at"),
+                    github_auth_data.get("last_verified_at"),
+                    github_auth_data.get("verification_status", "active"),
+                    github_auth_data.get("verification_error"),
+                    now_iso,
+                ),
+            )
+            conn.commit()
+            self.logger.info(
+                f"GitHub auth saved successfully for user: {github_auth_data.get('username')}"
+            )
+            return cursor.lastrowid
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving GitHub auth: {e}", exc_info=True)
+            raise
+        finally:
+            conn.close()
+
+    def get_github_auth(self, username: str) -> dict | None:
+        """Get GitHub authentication record for user"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM github_auth
+                WHERE username = ?
+                LIMIT 1
+            """,
+                (username,),
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        except Exception as e:
+            self.logger.error(f"Error getting GitHub auth for {username}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def get_github_auth_by_github_username(self, github_username: str) -> dict | None:
+        """Get GitHub authentication record by GitHub username"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM github_auth
+                WHERE github_username = ?
+                LIMIT 1
+            """,
+                (github_username,),
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        except Exception as e:
+            self.logger.error(f"Error getting GitHub auth for {github_username}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def delete_github_auth(self, username: str) -> bool:
+        """Delete GitHub authentication record for user"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                DELETE FROM github_auth
+                WHERE username = ?
+            """,
+                (username,),
+            )
+            conn.commit()
+            deleted = cursor.rowcount > 0
+            if deleted:
+                self.logger.info(f"Deleted GitHub auth for {username}")
+            return deleted
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error deleting GitHub auth for {username}: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def update_github_verification(
+        self,
+        username: str,
+        verified_at: str | None = None,
+        verification_status: str | None = None,
+        verification_error: str | None = None,
+    ) -> bool:
+        """Update GitHub token verification status"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            updates = []
+            params = []
+
+            if verified_at is not None:
+                updates.append("last_verified_at = ?")
+                params.append(verified_at)
+
+            if verification_status is not None:
+                updates.append("verification_status = ?")
+                params.append(verification_status)
+
+            if verification_error is not None:
+                updates.append("verification_error = ?")
+                params.append(verification_error)
+
+            updates.append("updated_at = ?")
+            params.append(datetime.now().isoformat())
+
+            params.append(username)
+
+            if not updates:
+                return False
+
+            query = f"""
+                UPDATE github_auth
+                SET {', '.join(updates)}
+                WHERE username = ?
+            """
+
+            cursor.execute(query, params)
+            conn.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error updating GitHub verification for {username}: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def update_sponsorship_verification(
+        self,
+        username: str,
+        sponsorship_id: int | None = None,
+        verified_at: str | None = None,
+        verification_status: str | None = None,
+        api_verification_error: str | None = None,
+        github_token_used: bool | None = None,
+    ) -> bool:
+        """Update sponsorship verification status"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            updates = []
+            params = []
+
+            if verified_at is not None:
+                updates.append("verified_at = ?")
+                params.append(verified_at)
+
+            if verification_status is not None:
+                updates.append("verification_status = ?")
+                params.append(verification_status)
+
+            if api_verification_error is not None:
+                updates.append("api_verification_error = ?")
+                params.append(api_verification_error)
+
+            if github_token_used is not None:
+                updates.append("github_token_used = ?")
+                params.append(github_token_used)
+
+            if not updates:
+                return False
+
+            if sponsorship_id is not None:
+                query = f"""
+                    UPDATE sponsorships
+                    SET {', '.join(updates)}
+                    WHERE id = ?
+                """
+                params.append(sponsorship_id)
+            else:
+                query = f"""
+                    UPDATE sponsorships
+                    SET {', '.join(updates)}
+                    WHERE username = ?
+                """
+                params.append(username)
+
+            cursor.execute(query, params)
+            conn.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error updating sponsorship verification: {e}")
+            raise
+        finally:
+            conn.close()

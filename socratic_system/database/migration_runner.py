@@ -205,12 +205,16 @@ class MigrationRunner:
         # Check for testing_mode_enabled_at column in users table (24-hour expiration tracking)
         testing_mode_timestamp_exists = self._column_exists("users", "testing_mode_enabled_at")
 
+        # Check for github_auth table
+        github_auth_table_exists = self.table_exists("github_auth")
+
         status = {
             "github_import_tables": github_tables_exist,
             "users_claude_auth_method": users_column_exists,
             "knowledge_documents_columns": knowledge_columns_exist,
             "code_history_column": code_history_exists,
             "testing_mode_enabled_at_column": testing_mode_timestamp_exists,
+            "github_auth_table": github_auth_table_exists,
         }
 
         return status
@@ -282,6 +286,11 @@ class MigrationRunner:
                 "Testing mode enabled timestamp column (24-hour expiration)",
                 True,
             ),  # optional
+            (
+                "add_github_auth_table.sql",
+                "GitHub authentication and sponsorship verification",
+                True,
+            ),  # optional
         ]
 
         all_migrations_successful = True
@@ -316,6 +325,10 @@ class MigrationRunner:
             elif migration_file == "add_testing_mode_enabled_at_column.sql" and status.get(
                 "testing_mode_enabled_at_column"
             ):
+                self.logger.debug(f"{migration_name} already applied, skipping")
+                messages.append(f"{migration_name}: already applied")
+                continue
+            elif migration_file == "add_github_auth_table.sql" and status.get("github_auth_table"):
                 self.logger.debug(f"{migration_name} already applied, skipping")
                 messages.append(f"{migration_name}: already applied")
                 continue

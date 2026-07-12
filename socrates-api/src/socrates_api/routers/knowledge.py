@@ -748,15 +748,33 @@ async def import_url(
         # Create document ID first (for source consistency)
         doc_id = str(uuid.uuid4())
 
+        # Get GitHub token if URL is a GitHub repository
+        github_token = None
+        if "github.com" in url.lower():
+            try:
+                github_auth = db.get_github_auth(current_user)
+                if github_auth:
+                    from socratic_system.encryption import decrypt_data
+
+                    encrypted_token = github_auth.get("github_token")
+                    github_token = decrypt_data(encrypted_token)
+                    logger.debug(f"Using GitHub token for user {current_user} to access {url}")
+            except Exception as e:
+                logger.warning(f"Could not retrieve GitHub token for {current_user}: {e}")
+
         # Process via DocumentProcessorAgent
+        request_data = {
+            "action": "import_url",
+            "url": url,
+            "project_id": project_id,
+            "document_id": doc_id,  # Pass doc_id for source name consistency
+        }
+        if github_token:
+            request_data["github_token"] = github_token
+
         result = await orchestrator.agent_bus.send_request(
             "document_processor",
-            {
-                "action": "import_url",
-                "url": url,
-                "project_id": project_id,
-                "document_id": doc_id,  # Pass doc_id for source name consistency
-            },
+            request_data,
         )
 
         logger.debug(f"DocumentProcessor result: {result}")
