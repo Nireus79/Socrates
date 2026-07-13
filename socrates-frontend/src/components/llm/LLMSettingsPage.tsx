@@ -329,7 +329,7 @@ export const LLMSettingsPage: React.FC = () => {
               // For providers with multiple auth methods (like Anthropic), only show as configured if API key is stored
               // For regular providers, show as configured if API key is stored OR if it doesn't require one
               const isConfigured = provider.is_configured ||
-                (!isApiRequired && !provider.auth_methods?.length && (provider.models?.length > 0 || dynamicModels[provider.name]?.length > 0));
+                (!isApiRequired && !provider.auth_methods?.length && (provider.models?.length > 0 || dynamicModels[provider.name]?.length > 0 || loadingModels[provider.name]));
               const isDefault = config?.default_provider === provider.name;
               // Use dynamicModels (discovered) first, then fallback to staticModels or saved selection
               const availableModels = dynamicModels[provider.name] || provider.models || [];
