@@ -402,11 +402,17 @@ class AgentOrchestrator:
 
             elif provider == "ollama":
                 from socratic_nexus.clients import OllamaClient
+                import os
 
                 # Ollama doesn't need API key, but uses model and base_url from settings
                 settings = provider_config.get("settings", {})
                 model = settings.get("model", "mistral")
-                base_url = settings.get("base_url", "http://localhost:11434")
+                base_url = settings.get("base_url")
+
+                # If base_url not in settings, check OLLAMA_HOST env var, then default
+                if not base_url:
+                    base_url = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+                    self.logger.debug(f"Using OLLAMA_HOST from environment: {base_url}")
 
                 # Set ollama_* attributes on config so OllamaClient can access them
                 # Map common setting names to expected config attribute names
