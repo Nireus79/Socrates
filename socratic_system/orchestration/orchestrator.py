@@ -403,14 +403,23 @@ class AgentOrchestrator:
             elif provider == "ollama":
                 from socratic_nexus.clients import OllamaClient
 
-                # Ollama doesn't need API key, but can use base_url from settings
+                # Ollama doesn't need API key, but uses model and base_url from settings
                 settings = provider_config.get("settings", {})
+                model = settings.get("model", "mistral")
                 base_url = settings.get("base_url", "http://localhost:11434")
+
+                # Set ollama_* attributes on config so OllamaClient can access them
+                # Map common setting names to expected config attribute names
+                self.config.ollama_model = model
+                self.config.ollama_url = base_url
+                # Also set any other settings directly (prefixed with ollama_)
+                for key, value in settings.items():
+                    attr_name = f"ollama_{key}"
+                    if not hasattr(self.config, attr_name):
+                        setattr(self.config, attr_name, value)
+
                 client = OllamaClient(api_key=api_key, orchestrator=self)
-                # Set base URL if available
-                if hasattr(client, "base_url"):
-                    client.base_url = base_url
-                self.logger.debug(f"Created OllamaClient for {provider} (base_url: {base_url})")
+                self.logger.debug(f"Created OllamaClient for {provider} (model: {model}, url: {base_url})")
                 return client
 
             elif provider == "openai":
