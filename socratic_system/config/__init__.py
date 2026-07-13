@@ -51,6 +51,10 @@ class SocratesConfig:
     claude_model: str = "claude-haiku-4-5-20251001"
     embedding_model: str = "all-MiniLM-L6-v2"
 
+    # Provider-specific model configuration (set dynamically by orchestrator)
+    ollama_model: str | None = None
+    ollama_url: str | None = None
+
     # Storage Configuration
     data_dir: Path = field(default_factory=lambda: Path.home() / ".socrates")
     projects_db_path: Path | None = None
