@@ -12,6 +12,7 @@ Coordinates all agents and manages their interactions, including:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -402,7 +403,6 @@ class AgentOrchestrator:
 
             elif provider == "ollama":
                 from socratic_nexus.clients import OllamaClient
-                import os
 
                 # Ollama doesn't need API key, but uses model and base_url from settings
                 settings = provider_config.get("settings", {})
