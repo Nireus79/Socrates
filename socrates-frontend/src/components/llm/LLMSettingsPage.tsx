@@ -555,22 +555,26 @@ export const LLMSettingsPage: React.FC = () => {
 
                         {/* Action Buttons */}
                         <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex gap-2">
-                          {isConfigured && selectedModel && !isDefault && (
-                            <Button
-                              variant="primary"
-                              fullWidth
-                              onClick={() => handleSetAsDefault(provider.name, selectedModel)}
-                              disabled={savingProvider === provider.name}
-                            >
-                              {savingProvider === provider.name ? 'Setting...' : 'Set as Default'}
-                            </Button>
-                          )}
-                          {isDefault && (
-                            <div className="flex-1 text-center py-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                              <p className="text-sm font-semibold text-green-700 dark:text-green-300">
-                                ✓ Currently Using
-                              </p>
-                            </div>
+                          {isConfigured && selectedModel && (
+                            isDefault ? (
+                              <Button
+                                variant="secondary"
+                                fullWidth
+                                onClick={() => handleSetAsDefault(provider.name, selectedModel)}
+                                disabled={savingProvider === provider.name}
+                              >
+                                {savingProvider === provider.name ? 'Switching...' : 'Switch Model'}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="primary"
+                                fullWidth
+                                onClick={() => handleSetAsDefault(provider.name, selectedModel)}
+                                disabled={savingProvider === provider.name}
+                              >
+                                {savingProvider === provider.name ? 'Setting...' : 'Set as Default'}
+                              </Button>
+                            )
                           )}
                           {!isConfigured && isApiRequired && (
                             <div className="flex-1 text-center py-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
