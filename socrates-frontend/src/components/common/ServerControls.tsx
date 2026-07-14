@@ -26,6 +26,7 @@ export function ServerControls({ className }: ServerControlsProps) {
   const [isShuttingDown, setIsShuttingDown] = useState(false);
   const [serverStatus, setServerStatus] = useState<ServerStatus>('unknown');
   const [shutdownRemaining, setShutdownRemaining] = useState<number | null>(null);
+  const [countdownInterval, setCountdownInterval] = useState<NodeJS.Timeout | null>(null);
 
   // Check server status periodically
   useEffect(() => {
@@ -62,7 +63,13 @@ export function ServerControls({ className }: ServerControlsProps) {
   }, []);
 
   const handleShutdownClick = () => {
-    setIsShutdownModalOpen(true);
+    if (shutdownRemaining !== null && shutdownRemaining > 0) {
+      // Cancel shutdown
+      handleCancelShutdown();
+    } else {
+      // Start shutdown
+      setIsShutdownModalOpen(true);
+    }
   };
 
   const handleConfirmShutdown = async () => {
@@ -75,18 +82,21 @@ export function ServerControls({ className }: ServerControlsProps) {
       // Update status to show shutdown is scheduled
       setShutdownRemaining(5);
 
-      // Show countdown alert with information
+      // Show countdown with information
       let remaining = 5;
-      const countdownInterval = setInterval(() => {
+      const interval = setInterval(() => {
         remaining--;
+        setShutdownRemaining(remaining);
         if (remaining <= 0) {
-          clearInterval(countdownInterval);
+          clearInterval(interval);
+          setCountdownInterval(null);
           alert(
             'Server shutdown initiated. The backend processes are being cleaned up. ' +
             'You can restart the server from the command line.'
           );
         }
       }, 1000);
+      setCountdownInterval(interval);
     } catch (error) {
       console.error('Failed to shutdown server:', error);
       alert(
@@ -95,6 +105,27 @@ export function ServerControls({ className }: ServerControlsProps) {
       );
     } finally {
       setIsShuttingDown(false);
+    }
+  };
+
+  const handleCancelShutdown = async () => {
+    try {
+      // Clear local countdown interval
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        setCountdownInterval(null);
+      }
+
+      // Call API to cancel shutdown
+      await apiClient.post('/system/shutdown/cancel');
+      setShutdownRemaining(null);
+      alert('Server shutdown cancelled.');
+    } catch (error) {
+      console.error('Failed to cancel shutdown:', error);
+      alert(
+        'Failed to cancel shutdown. Error: ' +
+        (error instanceof Error ? error.message : String(error))
+      );
     }
   };
 
@@ -135,13 +166,16 @@ export function ServerControls({ className }: ServerControlsProps) {
       <StatusIndicator />
 
       <Button
-        variant="danger"
+        variant={shutdownRemaining !== null && shutdownRemaining > 0 ? 'secondary' : 'danger'}
         size="sm"
         icon={<Power size={16} />}
         onClick={handleShutdownClick}
         disabled={serverStatus !== 'online'}
+        title={shutdownRemaining !== null && shutdownRemaining > 0 ? 'Click to cancel shutdown' : 'Shutdown Server'}
       >
-        Shutdown Server
+        {shutdownRemaining !== null && shutdownRemaining > 0
+          ? `Cancel Shutdown (${shutdownRemaining}s)`
+          : 'Shutdown Server'}
       </Button>
 
       {/* Confirmation Modal */}

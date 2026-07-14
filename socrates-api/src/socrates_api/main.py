@@ -234,49 +234,6 @@ async def _cleanup_orchestrator():
         logger.error(f"Error during orchestrator cleanup: {e}")
 
 
-async def _monitor_shutdown():
-    """Background task to monitor and execute scheduled shutdown
-
-    When running in full-stack mode (python socrates.py --full), the API runs
-    as a subprocess. This task sends signals to the parent process to ensure
-    coordinated shutdown of all components (API, frontend, parent).
-
-    Currently handles:
-    - Browser-close detection: 5-minute delay before shutdown
-    - Graceful cleanup of orchestrator and background tasks
-    """
-    from socrates_api.middleware.activity_tracker import should_shutdown_now
-
-    while True:
-        try:
-            await asyncio.sleep(5)  # Check every 5 seconds
-
-            # Check if browser-close shutdown is due (scheduled by client)
-            if should_shutdown_now():
-                logger.info("Executing scheduled shutdown...")
-
-                # Gracefully cleanup orchestrator before shutdown
-                await _cleanup_orchestrator()
-
-                # Send SIGTERM to parent process (for full-stack mode)
-                # If running standalone, this will shutdown this process
-                parent_pid = os.getppid()
-                if parent_pid > 1:  # Not init process
-                    logger.info(f"Sending SIGTERM to parent process {parent_pid}")
-                    os.kill(parent_pid, signal.SIGTERM)
-                else:
-                    # Running standalone, shutdown self
-                    logger.info("No parent process, shutting down self")
-                    os.kill(os.getpid(), signal.SIGTERM)
-                break
-
-        except asyncio.CancelledError:
-            logger.info("Shutdown monitor task cancelled")
-            break
-        except Exception as e:
-            logger.error(f"Error in shutdown monitor: {e}")
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -347,21 +304,10 @@ async def lifespan(app: FastAPI):
         logger.error(f"Traceback: {traceback.format_exc()}")
         logger.warning("API will run in auth-only mode (orchestrator features unavailable)")
 
-    # Start shutdown monitor background task
-    logger.info("Starting shutdown monitor background task...")
-    shutdown_monitor_task = asyncio.create_task(_monitor_shutdown())
-
     yield  # App is running
 
     # Shutdown
     logger.info("Shutting down Socrates API server...")
-
-    # Cancel shutdown monitor task
-    shutdown_monitor_task.cancel()
-    try:
-        await shutdown_monitor_task
-    except asyncio.CancelledError:
-        logger.info("Shutdown monitor task cancelled")
 
     # Close database connection
     from socrates_api.database import close_database

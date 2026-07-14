@@ -6,7 +6,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore, useSubscriptionStore } from './stores';
 import { apiClient } from './api/client';
-import { useServerLifecycle } from './hooks/useServerLifecycle';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -67,22 +66,6 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/**
- * Server Lifecycle Manager Component
- * Handles browser close detection and auto-shutdown when authenticated
- */
-function ServerLifecycleManager() {
-  const { isAuthenticated } = useAuthStore();
-
-  // Enable server lifecycle management when user is authenticated
-  useServerLifecycle({
-    enabled: isAuthenticated,
-    shutdownDelay: 1800000, // 30 minutes - gives user time to return
-  });
-
-  return null;
-}
-
 function App() {
   const { user } = useAuthStore();
   const { refreshSubscription } = useSubscriptionStore();
@@ -113,7 +96,6 @@ function App() {
   return (
     <ErrorBoundary>
       <NotificationProvider />
-      <ServerLifecycleManager />
       <BrowserRouter>
         <Routes>
           {/* Auth Routes */}
