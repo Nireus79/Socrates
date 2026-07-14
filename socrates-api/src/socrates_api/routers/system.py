@@ -23,6 +23,9 @@ from socratic_system.utils.logger import is_debug_mode, set_debug_mode
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/system", tags=["system"])
 
+# Track scheduled shutdown task so it can be cancelled
+_shutdown_task = None
+
 
 @router.get(
     "/help",
@@ -683,13 +686,39 @@ async def schedule_server_shutdown(
         SuccessResponse with shutdown schedule information
     """
     try:
-        from socrates_api.middleware.activity_tracker import (
-            get_shutdown_time_remaining,
-            schedule_shutdown,
-        )
+        import asyncio
+        import os
+        import signal
+
+        from socrates_api.database import close_database
 
         logger.info(f"Server shutdown scheduled with {delay_seconds}s delay")
-        schedule_shutdown(delay_seconds)
+
+        async def delayed_shutdown():
+            """Execute shutdown after delay"""
+            await asyncio.sleep(delay_seconds)
+            logger.info("Executing server shutdown...")
+
+            # Close database connection
+            try:
+                close_database()
+                logger.info("Database connection closed")
+            except Exception as e:
+                logger.warning(f"Error closing database: {e}")
+
+            # Send SIGTERM to self (or parent if in subprocess mode)
+            parent_pid = os.getppid()
+            if parent_pid > 1:  # Not init process
+                logger.info(f"Sending SIGTERM to parent process {parent_pid}")
+                os.kill(parent_pid, signal.SIGTERM)
+            else:
+                # Running standalone, shutdown self
+                logger.info("Sending SIGTERM to self")
+                os.kill(os.getpid(), signal.SIGTERM)
+
+        # Schedule shutdown as background task and store reference for cancellation
+        global _shutdown_task
+        _shutdown_task = asyncio.create_task(delayed_shutdown())
 
         return APIResponse(
             success=True,
@@ -698,7 +727,6 @@ async def schedule_server_shutdown(
             data={
                 "scheduled": True,
                 "delay_seconds": delay_seconds,
-                "remaining_seconds": get_shutdown_time_remaining(),
             },
         )
 
@@ -724,17 +752,25 @@ async def cancel_server_shutdown():
         SuccessResponse with cancellation confirmation
     """
     try:
-        from socrates_api.middleware.activity_tracker import cancel_shutdown
+        global _shutdown_task
 
-        logger.info("Server shutdown cancelled")
-        cancel_shutdown()
-
-        return APIResponse(
-            success=True,
-            status="success",
-            message="Server shutdown cancelled",
-            data={"scheduled": False},
-        )
+        if _shutdown_task and not _shutdown_task.done():
+            logger.info("Server shutdown cancelled")
+            _shutdown_task.cancel()
+            _shutdown_task = None
+            return APIResponse(
+                success=True,
+                status="success",
+                message="Server shutdown cancelled",
+                data={"scheduled": False},
+            )
+        else:
+            return APIResponse(
+                success=True,
+                status="success",
+                message="No shutdown scheduled",
+                data={"scheduled": False},
+            )
 
     except Exception as e:
         logger.error(f"Error cancelling server shutdown: {str(e)}")
@@ -754,19 +790,15 @@ async def get_shutdown_status():
     """
     Get the current shutdown schedule status.
 
-    Returns whether shutdown is scheduled and how many seconds remain.
+    Returns whether shutdown is scheduled.
 
     Returns:
         SuccessResponse with shutdown status
     """
     try:
-        from socrates_api.middleware.activity_tracker import (
-            get_shutdown_time_remaining,
-            is_shutdown_scheduled,
-        )
+        global _shutdown_task
 
-        scheduled = is_shutdown_scheduled()
-        remaining = get_shutdown_time_remaining()
+        scheduled = _shutdown_task is not None and not _shutdown_task.done()
 
         return APIResponse(
             success=True,
@@ -774,7 +806,7 @@ async def get_shutdown_status():
             message="Shutdown status retrieved",
             data={
                 "scheduled": scheduled,
-                "remaining_seconds": remaining,
+                "remaining_seconds": None,  # Frontend tracks countdown
             },
         )
 
