@@ -4,10 +4,8 @@ Socrates API - FastAPI application for Socrates AI tutoring system
 Provides REST endpoints for project management, Socratic questioning, and code generation.
 """
 
-import asyncio
 import logging
 import os
-import signal
 import socket
 import time
 from contextlib import asynccontextmanager
