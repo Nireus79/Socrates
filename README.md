@@ -1,4 +1,5 @@
 # Socrates AI — Production AI Multi-Agent System
+<img width="1600" height="896" alt="Socrates AI" src="https://github.com/user-attachments/assets/e5fa8455-e137-455e-b829-af5da33e8ba2" />
 
 [![PyPI Version](https://img.shields.io/pypi/v/socrates-ai.svg?style=flat-square)](https://pypi.org/project/socrates-ai/)
 [![Downloads](https://img.shields.io/pypi/dm/socrates-ai.svg?style=flat-square)](https://pypi.org/project/socrates-ai/)
