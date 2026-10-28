@@ -1,3 +1,5 @@
+> **Proof of concept, not a product.** This repository is the earlier Python research prototype of Socratic questioning with several agents. It is not maintained as a product, and any pricing, tiers or quotas mentioned here are not offered: everything is free. The current products are [Moly](https://nireus79.github.io/Moly/) and [Socrates](https://github.com/Nireus79/Socrates-ai), listed at [nireus79.github.io](https://nireus79.github.io/). Contact: Hermes_creative@proton.me.
+
 # Socrates AI — Production AI Multi-Agent System
 <img width="1600" height="896" alt="Socrates AI" src="https://github.com/user-attachments/assets/e5fa8455-e137-455e-b829-af5da33e8ba2" />
 
@@ -556,7 +558,7 @@ docker-compose -f deployment/docker/docker-compose.yml up -d
 - **Timezone:** GMT+2 (flexible for projects)
 
 **Get Started:**
-- 📧 Email: [contact@socrates-ai.dev](mailto:contact@socrates-ai.dev)
+- 📧 Email: [Hermes_creative@proton.me](mailto:Hermes_creative@proton.me)
 - 🤝 [Schedule Consultation](https://calendly.com/socrates-ai/consultation)
 - 💬 [GitHub Discussions](https://github.com/Nireus79/Socrates/discussions)
 
@@ -577,7 +579,7 @@ docker-compose -f deployment/docker/docker-compose.yml up -d
 
 - **Issues**: [GitHub Issues](https://github.com/Nireus79/Socrates/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Nireus79/Socrates/discussions)
-- **Email**: support@socrates-ai.dev
+- **Email**: Hermes_creative@proton.me
 
 ### 🎁 Sponsorship
 
