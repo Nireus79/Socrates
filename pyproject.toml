@@ -9,10 +9,10 @@ description = "Multi-agent AI orchestration platform with Constitutional AI gove
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
-    {name = "Socrates AI Contributors"}
+    {name = "Efthimios Angelopoulos", email = "Hermes_creative@proton.me"}
 ]
 maintainers = [
-    {name = "Socrates AI Contributors"}
+    {name = "Efthimios Angelopoulos", email = "Hermes_creative@proton.me"}
 ]
 keywords = [
     "ai",
