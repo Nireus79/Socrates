@@ -90,3 +90,9 @@ socrates-api/dist/
 # Claude Code temporary files
 tmpclaude-*
 socrates-frontend/public/server-config.json
+
+# local artifacts
+.idea/
+MagicMock/
+socratic_logs/
+=*
