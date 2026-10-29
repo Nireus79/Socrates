@@ -101,7 +101,7 @@ class AgentOrchestrator:
             allow_file_write=True,
             allow_network=False,
         )
-        self._sandbox = None  # Lazy-loaded
+        self._sandbox: Sandbox | None = None  # Lazy-loaded
 
         # Initialize event emitter
         self.event_emitter = EventEmitter()

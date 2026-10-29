@@ -1,12 +1,11 @@
 name: Docker Build and Publish
 
+# Proof of concept: images are built only on a v* tag or by hand, not on every push.
 on:
   push:
-    branches:
-      - main
-      - master
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
