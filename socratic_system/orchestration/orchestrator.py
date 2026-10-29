@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from socratic_nexus.clients import ClaudeClient
 
@@ -101,7 +101,7 @@ class AgentOrchestrator:
             allow_file_write=True,
             allow_network=False,
         )
-        self._sandbox = None  # Lazy-loaded
+        self._sandbox: Optional[Sandbox] = None  # Lazy-loaded
 
         # Initialize event emitter
         self.event_emitter = EventEmitter()
