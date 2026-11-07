@@ -27,10 +27,6 @@ pip install socrates-ai
 
 Python 3.8 or newer (`pyproject.toml`). It calls a model provider you choose (Claude, OpenAI, Google or Ollama) with your own key. See [QUICKSTART.md](QUICKSTART.md).
 
-## The earlier README
-
-The original README, with its feature list and claims that were never measured, is kept as [docs/README_ORIGINAL.md](docs/README_ORIGINAL.md) for reference. Treat it as history.
-
 ## Development
 
 Written by an independent programmer in Greece, working with AI coding assistants (Claude Code). I design the products, review the code and test it; the tests are in `tests/`.
