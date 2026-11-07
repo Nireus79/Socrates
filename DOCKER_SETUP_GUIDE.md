@@ -484,4 +484,4 @@ sudo docker run --rm -v socrates_data:/data -v $(pwd):/backup \
 ---
 
 **Last Updated**: July 8, 2026  
-**Version**: Production-Ready (Auto-Generated Keys)
+**Version**: Auto-generated keys

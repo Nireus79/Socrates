@@ -205,7 +205,7 @@
 - ✅ Memory usage < 2GB
 - ✅ Disk space > 20GB available
 - ✅ No critical errors in logs
-- ✅ Uptime > 99.9%
+- ✅ Uptime target defined
 
 ---
 

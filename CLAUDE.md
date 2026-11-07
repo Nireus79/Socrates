@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Socrates AI** is a production-ready, modular multi-agent orchestration platform that applies the Socratic method to human-AI communication. It solves the "context problem"—where undefined context causes miscommunication—by systematically questioning and extracting explicit project definitions before implementation.
+**Socrates AI** is a modular multi-agent orchestration platform that applies the Socratic method to human-AI communication. It solves the "context problem"—where undefined context causes miscommunication—by systematically questioning and extracting explicit project definitions before implementation.
 
 **Key Capabilities:**
 - Multi-agent orchestration with constitutional AI governance
 - RAG (Retrieval-Augmented Generation) knowledge management
 - Socratic dialogue system for project definition refinement
-- Production-grade infrastructure (Kubernetes-ready, monitored, secured)
+- Docker and Kubernetes deployment files
 - REST API, Python library, and CLI interfaces
 - Modular architecture: 37+ internal modules + 8 specialized external libraries
 
@@ -449,8 +449,6 @@ The project uses GitHub Actions (in `.github/workflows/`):
 ## Useful Resources
 
 - **Main README**: Architecture overview and quick start
-- **WHAT_SOCRATES_ACTUALLY_DOES_AND_HOW.md**: Deep dive on Socratic method and problem-solving approach
-- **ECOSYSTEM.md**: Complete feature breakdown and library descriptions
 - **SUBSCRIPTION_SYSTEM.md**: Subscription/user management details (if applicable)
 - **GitHub Issues**: For bugs, features, and discussions
 - **PyPI Packages**: Each `socratic-*` library has its own documentation on PyPI

@@ -18,7 +18,7 @@
 1. **Pedagogical Excellence**: Deliver Socratic tutoring at scale using AI
 2. **Autonomy & Extensibility**: 14+ specialized agents, easily extensible
 3. **Constitutional Governance**: All agent actions validated against constitutional principles
-4. **Production Maturity**: Enterprise-grade reliability, monitoring, security
+4. **Operability**: logging, monitoring hooks and security measures (design goals, not verified in production)
 5. **User Control**: Support both platform-hosted and self-hosted deployments
 
 ### Architectural Principles
@@ -460,7 +460,7 @@ Secrets:
   ANTHROPIC_API_KEY, database password, JWT secret
 ```
 
-**Suitable for**: Enterprise, high availability, auto-scaling
+**Intended for**: larger deployments (not tested at scale)
 
 ---
 
@@ -571,7 +571,7 @@ Development:
 
 ## Summary
 
-Socrates is built on a **modular, event-driven, production-ready architecture**:
+Socrates is built on a **modular, event-driven architecture**:
 
 1. **Modular**: 14+ agents, each with clear responsibilities
 2. **Event-Driven**: Loose coupling via pub/sub, background processing
@@ -579,6 +579,6 @@ Socrates is built on a **modular, event-driven, production-ready architecture**:
 4. **Observable**: Comprehensive metrics, health checks, audit logs
 5. **Secure**: Encryption, JWT auth, zero-trust authorization
 6. **Scalable**: Single-node to multi-node horizontal scaling
-7. **Production-Ready**: Enterprise-grade error handling, logging, monitoring
+7. **Operability**: error handling, logging, monitoring
 
-The architecture supports both self-hosted deployments (Docker Compose) and enterprise deployments (Kubernetes + managed services) with minimal code changes.
+The architecture supports both self-hosted deployments (Docker Compose) and Kubernetes deployments.

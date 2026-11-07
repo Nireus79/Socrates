@@ -4,7 +4,6 @@
 
 **New to Socrates?**
 - 📖 **[Main README](../README.md)** - What Socrates is and what it does
-- 🏗️ **[ECOSYSTEM.md](../ECOSYSTEM.md)** - Complete architecture and modules (THE reference)
 - ⚡ **[QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - Get running in 5-10 minutes
 
 **Already installed?**
@@ -14,7 +13,7 @@
 
 ---
 
-Welcome to **Socrates AI**, a production-ready AI multi-agent orchestration platform.
+Welcome to **Socrates AI**, an earlier research prototype: an AI multi-agent platform that uses the Socratic method.
 
 ## Table of Contents
 
@@ -47,7 +46,7 @@ socrates --help
 
 ### Docker Deployment (Recommended)
 
-For a containerized, production-ready deployment, use Docker Compose:
+For a containerized setup, use Docker Compose:
 
 ```bash
 # Clone repository
@@ -83,7 +82,7 @@ See [Docker Deployment Guide](DOCKER_DEPLOYMENT.md) and [Docker Build Instructio
 
 1. **Guides Discovery** - Asks clarifying questions to deeply understand your project goals
 2. **Ensures Consistency** - Detects conflicts between requirements, goals, and constraints
-3. **Generates Code** - Creates production-ready code based on your project context
+3. **Generates Code** - Generates code based on your project context
 4. **Manages Knowledge** - Builds and maintains a knowledge base specific to your projects
 5. **Tracks Progress** - Monitors project phases (discovery → analysis → design → implementation)
 
@@ -187,7 +186,7 @@ Start here if you want to **extend or contribute**:
 Start here for **strategic information**:
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and scalability
 - **[API_REFERENCE.md](API_REFERENCE.md)** - Integration capabilities
-- **[CONFIGURATION.md](CONFIGURATION.md)** - Enterprise deployment options
+- **[CONFIGURATION.md](CONFIGURATION.md)** - Configuration options
 
 ---
 

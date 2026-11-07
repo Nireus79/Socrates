@@ -7,7 +7,6 @@ This document provides a comprehensive technical overview of Socrates AI's archi
 **New to Socrates?** Start with these documents in order:
 
 1. **[Main README](../README.md)** - What Socrates does and why it matters
-2. **[ECOSYSTEM.md](../ECOSYSTEM.md)** - Complete module reference and component breakdown
 3. **This document** - Deep technical architecture
 4. **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Setting up your development environment
 5. **[FRAMEWORK_INTEGRATIONS.md](../FRAMEWORK_INTEGRATIONS.md)** - LangChain/LangGraph integration
@@ -308,7 +307,7 @@ class Agent(ABC):
 - Phase-aware prompts and hints
 
 #### 3. **CodeGeneratorAgent**
-**Purpose**: Generate production-ready code
+**Purpose**: Generate code
 
 **Actions**:
 - `generate_script` - Generate code file
@@ -1282,7 +1281,7 @@ DEBUG_MODE = true  # or false
    └─ User asks: /code generate
    └─ CodeGeneratorAgent.generate_script()
    └─ Build comprehensive prompt from ProjectContext
-   └─ Claude generates production-ready code
+   └─ Claude generates code
    └─ Store result
    └─ Emit: CODE_GENERATED
 

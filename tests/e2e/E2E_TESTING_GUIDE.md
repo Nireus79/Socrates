@@ -709,7 +709,7 @@ The E2E test suite provides:
 - **5 edge case coverage** including token, permission, conflict, network, and file size
 - **Error recovery testing** for all error scenarios
 - **Performance metrics** to ensure efficiency
-- **Production-ready validation** before deployment
+- **Validation** before deployment
 
 All tests are located in `tests/e2e/` and follow pytest conventions for easy discovery and execution.
 

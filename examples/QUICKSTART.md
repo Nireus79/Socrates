@@ -1,6 +1,6 @@
 # Socrates AI - Quick Start Guide
 
-Socrates AI is a complete, production-ready Python library for building intelligent tutoring systems using Claude AI. You can install it with one command and start using it immediately.
+Socrates AI is a Python library for building intelligent tutoring systems using Claude AI. You can install it with one command and start using it immediately.
 
 ## Installation
 

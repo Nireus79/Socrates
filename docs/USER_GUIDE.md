@@ -328,7 +328,7 @@ The system:
 1. Gathers all project context
 2. Builds comprehensive specification
 3. Calls Claude AI to generate code
-4. Returns production-ready code
+4. Returns generated code
 
 ```
 Generating code for: My Mobile App

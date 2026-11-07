@@ -506,5 +506,5 @@ governance = await initialize_morality_governance(
 ---
 
 **Version**: 0.2.0 (Socrates) + 0.0.5 (Socratic-Morality)
-**Status**: Production Ready
+**Status**: Research prototype
 **Last Updated**: May 2026

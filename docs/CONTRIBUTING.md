@@ -2,35 +2,7 @@
 
 Thank you for your interest in contributing to Socrates! There are many ways to support the project.
 
-## Financial Support (Sponsorship)
-
-The most impactful way to support Socrates development is through **GitHub Sponsors**:
-
-### 🎁 Become a Sponsor
-
-Visit [GitHub Sponsors - Nireus79](https://github.com/sponsors/Nireus79) to become a sponsor.
-
-**Your sponsorship:**
-- ✅ Directly funds development and maintenance
-- ✅ Automatically upgrades your Socrates account to premium tiers
-- ✅ Supports open-source innovation
-- ✅ Gets you a sponsor badge on GitHub
-
-**Sponsorship Tiers:**
-
-| Tier | Amount | Socrates Upgrade |
-|------|--------|------------------|
-| Supporter | $5/month | **Pro Tier** (10 projects, 100GB storage) |
-| Contributor | $15/month | **Enterprise Tier** (unlimited everything) |
-| Custom | $25+/month | **Enterprise+** (priority support) |
-
-**How Sponsorship Works:**
-1. Sponsor on GitHub
-2. Your Socrates account automatically upgrades (within seconds)
-3. No additional setup needed!
-4. View your payment history in Socrates Settings
-
-👉 [Full Sponsorship Guide](SPONSORSHIP.md)
+This is an earlier research prototype and is not maintained as a product. Issues and pull requests are welcome, but responses are not guaranteed.
 
 ---
 
@@ -228,7 +200,6 @@ mypy socrates_api/
 - **Questions?** Check [Discussions](https://github.com/Nireus79/Socrates/discussions)
 - **Found a bug?** Open an [Issue](https://github.com/Nireus79/Socrates/issues)
 - **Want to chat?** Join our community
-- **Sponsorship questions?** See [SPONSORSHIP.md](SPONSORSHIP.md)
 
 ---
 

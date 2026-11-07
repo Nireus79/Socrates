@@ -1,5 +1,8 @@
 # Socrates Security Guide
 
+> **Research prototype.** This document describes design intent. The measures listed have not been independently reviewed, and no compliance with any standard or regulation is claimed.
+
+
 Comprehensive security documentation covering authentication, data protection, infrastructure security, and security best practices for Socrates deployments.
 
 ## Table of Contents
@@ -310,9 +313,7 @@ sslscan api.socrates-ai.dev
 
 **Default Limits**:
 ```
-Free Tier: 100 requests/minute per user
-Pro Tier: 1,000 requests/minute per user
-Enterprise: Custom limits
+Default: per-user request limits (see configuration)
 ```
 
 **Implementation**:
@@ -526,7 +527,6 @@ kubectl create secret generic socrates-secrets \
 **Why Rotate?**
 - Limits damage if key compromised
 - Industry best practice (annual minimum)
-- Compliance requirement (PCI-DSS, HIPAA)
 
 **Rotation Strategy**:
 ```python
@@ -630,36 +630,7 @@ Socrates addresses all OWASP Top 10 vulnerabilities:
 | 7. XSS | Input sanitization, Content-Security-Policy | ✅ Implemented |
 | 8. Insecure Deserialization | Pickle only for internal data | ⚠️ Planned for removal |
 | 9. Using Components with Vulnerabilities | Dependency scanning with Dependabot | ✅ Implemented |
-| 10. Insufficient Logging | Comprehensive audit logging | ✅ Implemented |
-
-### GDPR Compliance
-
-**User Rights**:
-- ✅ Right to access
-- ✅ Right to rectification
-- ✅ Right to erasure ("right to be forgotten")
-- ✅ Right to data portability
-
-**Data Export**:
-```python
-POST /auth/data/export
-→ Returns JSON dump of all user data
-→ Async job completes within 30 days
-→ Email with download link
-```
-
-**Account Deletion**:
-```python
-POST /auth/delete-account
-{
-    "password": "confirm_password",
-    "confirmation": "DELETE"
-}
-→ Permanent deletion after 30-day grace period
-→ Audit log retained for compliance
-```
-
----
+| 10. Insufficient Logging | Audit logging | ✅ Implemented |
 
 ## Security Incident Response
 

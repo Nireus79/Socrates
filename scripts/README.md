@@ -213,7 +213,6 @@ python scripts/generate_docs.py
    - Capability lists
    - Integration points
 
-4. **docs/INDEX.md** - Documentation index
    - Quick links
    - Documentation organization
    - Navigation guide
@@ -311,7 +310,6 @@ Accept up to 10% variance due to system load.
 
 ### Documentation
 
-- Check `docs/INDEX.md` for overview
 - Use `docs/API.md` for API reference
 - Use `docs/TESTS.md` for test details
 
