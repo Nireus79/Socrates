@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "0.2.4"
+version = "0.2.5"
 description = "Multi-agent AI orchestration platform with Constitutional AI governance, Socratic guidance, and RAG knowledge management"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -63,16 +63,16 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "socratic-agents>=0.4.8",
-    "socratic-morality>=0.0.7",
+    "socratic-agents>=0.4.10",
+    "socratic-morality>=0.0.9",
     "socratic-workflow>=0.1.5",
     "socratic-maturity>=0.2.1",
-    "socratic-knowledge>=0.1.7",
+    "socratic-knowledge>=0.1.9",
     "socratic-conflict>=0.1.6",
     "socratic-learning>=0.2.1",
-    "socratic-analyzer>=0.1.7",
+    "socratic-analyzer>=0.1.9",
     "socratic-performance>=0.2.2",
-    "socratic-nexus>=0.4.3",
+    "socratic-nexus>=0.4.5",
     "anthropic>=0.40.0",
     "chromadb>=0.5.0",
     "sentence-transformers>=3.0.0",
@@ -138,7 +138,7 @@ openclaw = [
 
 # Extended Socratic modules
 extensions = [
-    "socratic-analyzer>=0.1.6",
+    "socratic-analyzer>=0.1.9",
     "socratic-conflict>=0.1.5",
     "socratic-docs>=0.2.1",
     "socratic-learning>=0.2.0",
